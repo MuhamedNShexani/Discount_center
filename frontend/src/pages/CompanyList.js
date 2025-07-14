@@ -111,7 +111,7 @@ const CompanyList = () => {
               {company.logo ? (
                 <CardMedia
                   component="img"
-                  height="160"
+                  height="170"
                   image={company.logo}
                   alt={company.name}
                   sx={{
