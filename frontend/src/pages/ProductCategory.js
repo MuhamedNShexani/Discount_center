@@ -251,7 +251,7 @@ const ProductCategory = () => {
                 <CardMedia
                   component="img"
                   height="200"
-                  image={product.image}
+                  image={`${process.env.REACT_APP_BACKEND_URL}${product.image}`}
                   alt={product.name || "Product image"}
                   sx={{ objectFit: "contain" }}
                 />

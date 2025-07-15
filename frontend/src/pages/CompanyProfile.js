@@ -114,7 +114,7 @@ const CompanyProfile = () => {
             {company.logo ? (
               <CardMedia
                 component="img"
-                image={company.logo}
+                image={`${process.env.REACT_APP_BACKEND_URL}${company.logo}`}
                 alt={company.name}
                 sx={{
                   height: 200,
@@ -206,7 +206,7 @@ const CompanyProfile = () => {
                       component="img"
                       height="200"
                       sx={{ objectFit: "contain" }}
-                      image={product.image}
+                      image={`${process.env.REACT_APP_BACKEND_URL}${product.image}`}
                       alt={product.name}
                     />
                   )}

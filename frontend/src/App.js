@@ -1,11 +1,6 @@
 import "./i18n";
 import React, { useState, useMemo, useEffect } from "react";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  
-} from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { Container, Typography, Box } from "@mui/material";
@@ -21,12 +16,13 @@ import ProductCategory from "./pages/ProductCategory";
 import DataEntryForm from "./pages/DataEntryForm";
 import ProductDetail from "./pages/ProductDetail";
 import CompanyProfile from "./pages/CompanyProfile";
-import NavigationBar from "./NavigationBar";
+import NavigationBar from "./NavigationBar"; // Make sure this path is correct
 import { AuthProvider } from "./context/AuthContext";
 import LoginPage from "./pages/LoginPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ScrollToTop from "./components/ScrollToTop";
 
+// Footer component remains the same
 const Footer = () => (
   <Box
     component="footer"
@@ -193,49 +189,57 @@ function App() {
     <CacheProvider value={cacheRtl}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <NavigationBar
-          darkMode={darkMode}
-          setDarkMode={setDarkMode}
-          lang={lang}
-          setLang={setLang}
-          handleLangChange={handleLangChange}
-          t={t}
-          i18n={i18n}
-        />
         <Box
-          component="main"
           sx={{
-            flexGrow: 1,
-            py: 3,
-            backgroundColor: (theme) => theme.palette.background.default,
-            minHeight: "calc(100vh - 64px - 50px)",
+            display: "flex",
+            flexDirection: "column",
+            minHeight: "100vh", // Make the Box cover the full viewport height
           }}
         >
-          <Container maxWidth="lg">
-            <Routes>
-              <Route path="/" element={<MainPage />} />
-              <Route path="/companies" element={<CompanyList />} />
-              <Route path="/companies/:id" element={<CompanyProfile />} />
-              <Route path="/categories" element={<ProductCategory />} />
-              <Route
-                path="/admin"
-                element={
-                  <ProtectedRoute>
-                    <DataEntryForm />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/products/:id" element={<ProductDetail />} />
-            </Routes>
-          </Container>
+          <NavigationBar
+            darkMode={darkMode}
+            setDarkMode={setDarkMode}
+            lang={lang}
+            // setLang={setLang} // setLang is not used directly by NavigationBar anymore
+            handleLangChange={handleLangChange}
+            t={t}
+            // i18n={i18n} // i18n is not used directly by NavigationBar anymore
+          />
+          <Box
+            component="main"
+            sx={{
+              flexGrow: 1, // Allows this Box to expand and push the footer down
+              py: 3,
+              backgroundColor: (theme) => theme.palette.background.default,
+            }}
+          >
+            <Container maxWidth="lg">
+              <Routes>
+                <Route path="/" element={<MainPage />} />
+                <Route path="/companies" element={<CompanyList />} />
+                <Route path="/companies/:id" element={<CompanyProfile />} />
+                <Route path="/categories" element={<ProductCategory />} />
+                <Route
+                  path="/admin"
+                  element={
+                    <ProtectedRoute>
+                      <DataEntryForm />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/products/:id" element={<ProductDetail />} />
+              </Routes>
+            </Container>
+          </Box>
+          <Footer />
         </Box>
-        <Footer />
       </ThemeProvider>
     </CacheProvider>
   );
 }
 
+// Root component remains the same
 const Root = () => (
   <AuthProvider>
     <Router>

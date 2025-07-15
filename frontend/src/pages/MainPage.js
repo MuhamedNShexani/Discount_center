@@ -310,7 +310,7 @@ const MainPage = () => {
                 <CardMedia
                   component="img"
                   sx={{ width: 60, height: 60, mr: 2, borderRadius: 1 }}
-                  image={company.logo}
+                  image={`${process.env.REACT_APP_BACKEND_URL}${company.logo}`}
                   alt={company.name}
                 />
               )}
@@ -396,7 +396,7 @@ const MainPage = () => {
                       <CardMedia
                         component="img"
                         height="140"
-                        image={product.image}
+                        image={`${process.env.REACT_APP_BACKEND_URL}${product.image}`}
                         alt={product.name}
                         sx={{
                           borderRadius: "16px 16px 0 0",

@@ -127,7 +127,7 @@ const ProductDetail = () => {
             {product.image ? (
               <CardMedia
                 component="img"
-                image={product.image}
+                image={`${process.env.REACT_APP_BACKEND_URL}${product.image}`}
                 alt={product.name}
                 sx={{
                   height: 400,

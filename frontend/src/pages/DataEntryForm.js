@@ -40,7 +40,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@mui/material/styles";
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+const API_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
 
 const DataEntryForm = () => {
   const theme = useTheme();

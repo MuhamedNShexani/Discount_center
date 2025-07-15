@@ -101,7 +101,7 @@ const CompanyList = () => {
                 <CardMedia
                   component="img"
                   height="170"
-                  image={company.logo}
+                  image={`${process.env.REACT_APP_BACKEND_URL}${company.logo}`}
                   alt={company.name}
                   sx={{
                     width: "100%",
