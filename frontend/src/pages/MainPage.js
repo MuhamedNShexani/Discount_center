@@ -8,14 +8,12 @@ import {
   Button,
   Box,
   Chip,
-  CircularProgress,
   Alert,
   TextField,
   InputAdornment,
   MenuItem,
   FormControl,
   Select,
-  Slider,
   Paper,
 } from "@mui/material";
 import { Link } from "react-router-dom";

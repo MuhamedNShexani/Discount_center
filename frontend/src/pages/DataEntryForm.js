@@ -409,7 +409,6 @@ const DataEntryForm = () => {
         expireDate: data.expireDate
           ? new Date(data.expireDate).toISOString().split("T")[0]
           : "",
-        image: data.image,
       });
     }
     setEditDialog({ open: true, type, data });

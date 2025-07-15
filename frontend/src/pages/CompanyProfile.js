@@ -11,7 +11,6 @@ import {
   Paper,
   CircularProgress,
   Alert,
-  Divider,
   Chip,
 } from "@mui/material";
 import { ArrowBack, Phone, LocationOn, Business } from "@mui/icons-material";
@@ -20,7 +19,6 @@ import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 
-import DescriptionIcon from "@mui/icons-material/Description";
 import { useTranslation } from "react-i18next";
 
 const CompanyProfile = () => {

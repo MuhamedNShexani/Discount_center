@@ -7,8 +7,6 @@ import {
   Typography,
   Button,
   Box,
-  Chip,
-  CircularProgress,
   Alert,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
@@ -53,15 +51,6 @@ const CompanyList = () => {
 
   const handleCompanyClick = (company) => {
     navigate(`/companies/${company._id}`);
-  };
-
-  const formatPrice = (price) => {
-    return `ID ${price?.toFixed(2) || "0.00"}`;
-  };
-
-  const calculateDiscount = (previousPrice, newPrice) => {
-    if (!previousPrice || !newPrice) return 0;
-    return Math.round(((previousPrice - newPrice) / previousPrice) * 100);
   };
 
   if (loading) return <Loader message="Loading companies..." />;
