@@ -30,7 +30,10 @@ app.use("/api/companies", require("./routes/company"));
 app.use("/api/products", require("./routes/product"));
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+// app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+app.listen(PORT, "0.0.0.0", () =>
+  console.log(`Server started on http://0.0.0.0:${PORT}`)
+);
 
 // Debug message for frontend
 console.log("Compiled successfully!");
