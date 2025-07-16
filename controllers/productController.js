@@ -16,6 +16,7 @@ const getProducts = async (req, res) => {
     if (category) {
       query.type = category;
     }
+    console.log("hello");
 
     const products = await Product.find(query)
       .populate("companyId", "name logo")
