@@ -68,10 +68,7 @@ export default function NavigationBar({
   ];
 
   return (
-    <AppBar
-      position="static"
-      sx={{ backgroundColor: darkMode ? "#FFFFFF" : "#2B8264" }}
-    >
+    <AppBar position="static" sx={{ backgroundColor: "#2B8264" }}>
       <Toolbar>
         {/* Logo and Title - Always visible, aligned left */}
         <Box
@@ -102,7 +99,7 @@ export default function NavigationBar({
             variant="h6"
             component="div"
             sx={{
-              color: darkMode ? "#2B8264" : "#FFFFFF",
+              color: "#FFFFFF",
               fontWeight: 700,
               fontSize: { xs: "1rem", sm: "1.25rem" }, // Responsive font size
               whiteSpace: "nowrap", // Prevent wrapping
@@ -153,7 +150,7 @@ export default function NavigationBar({
                         to={item.path}
                         selected={location.pathname === item.path} // Highlight active link
                         sx={{
-                          color: darkMode ? "#2B8264" : "#FFFFFF",
+                          color: "#FFFFFF",
                           "&.Mui-selected": {
                             backgroundColor: theme.palette.action.selected,
                           },
@@ -275,7 +272,7 @@ export default function NavigationBar({
                     component={RouterLink}
                     to={item.path}
                     sx={{
-                      color: darkMode ? "#2B8264" : "#FFFFFF",
+                      color: "#FFFFFF",
                       mx: 0.5, // Reduced horizontal margin for better fit
                       fontWeight:
                         location.pathname === item.path ? "bold" : "normal",
@@ -298,9 +295,7 @@ export default function NavigationBar({
 
               {/* Theme Switch */}
               <Box sx={{ display: "flex", alignItems: "center", mx: 1 }}>
-                <WbSunnyIcon
-                  sx={{ color: darkMode ? "#2B8264" : "#FFD600", fontSize: 22 }}
-                />
+                <WbSunnyIcon sx={{ color: "#FFD600", fontSize: 22 }} />
                 <Switch
                   checked={darkMode}
                   onChange={() => setDarkMode((prev) => !prev)}
@@ -319,9 +314,7 @@ export default function NavigationBar({
                     },
                   }}
                 />
-                <NightsStayIcon
-                  sx={{ color: darkMode ? "#2B8264" : "#FFD600", fontSize: 22 }}
-                />
+                <NightsStayIcon sx={{ color: "#FFD600", fontSize: 22 }} />
               </Box>
 
               {/* Language Selector */}
@@ -330,14 +323,14 @@ export default function NavigationBar({
                 onChange={handleLangChange}
                 size="small"
                 sx={{
-                  color: darkMode ? "#2B8264" : "#FFFFFF",
+                  color: "#FFFFFF",
                   backgroundColor: darkMode
                     ? "rgba(19, 18, 18, 0.08)"
                     : "rgba(255,255,255,0.08)",
                   borderRadius: 1,
                   minWidth: 90,
                   ".MuiSvgIcon-root": {
-                    color: darkMode ? "#2B8264" : "#FFFFFF",
+                    color: "#FFFFFF",
                   },
                   "& .MuiOutlinedInput-notchedOutline": { border: 0 }, // Remove border
                   "&:hover .MuiOutlinedInput-notchedOutline": { border: 0 },
@@ -348,8 +341,8 @@ export default function NavigationBar({
                 MenuProps={{
                   PaperProps: {
                     sx: {
-                      backgroundColor: darkMode ? "#FFFFFF" : "#2B8264",
-                      color: darkMode ? "#2B8264" : "#FFFFFF",
+                      backgroundColor: "#2B8264",
+                      color: "#FFFFFF",
                     },
                   },
                 }}
@@ -365,7 +358,7 @@ export default function NavigationBar({
                   onClick={logout}
                   startIcon={<LogoutIcon />}
                   sx={{
-                    color: darkMode ? "#2B8264" : "#FFFFFF",
+                    color: "#FFFFFF",
                     ml: 1,
                     fontSize: { sm: 14, md: 16, lg: 18 }, // Responsive font size
                     py: 1,
@@ -381,6 +374,7 @@ export default function NavigationBar({
                   to="/login"
                   startIcon={<LoginIcon />}
                   sx={{
+                    color: "#FFFFFF",
                     ml: 1,
                     fontSize: { sm: 14, md: 16, lg: 18 }, // Responsive font size
                     py: 1,
