@@ -15,6 +15,8 @@ const {
 
 // @route   GET /api/products
 // @desc    Get all products (with optional filters)
+
+
 router.get("/", getProducts);
 
 // @route   GET /api/products/categories

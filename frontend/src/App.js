@@ -79,52 +79,52 @@ function App() {
         palette: {
           mode: darkMode ? "dark" : "light",
           primary: {
-            main: "#714329",
-            light: "#B08463",
-            dark: "#4A2A1A",
+            main: "#2B8264", // Dark green (main brand color)
+            light: "#58A789", // Lighter green for hover/highlights
+            dark: "#1E5F49", // Darker green
           },
           secondary: {
-            main: "#B9937B",
-            light: "#D0B9A7",
-            dark: "#8B6B5A",
+            main: "#A5D6C2", // Soft mint green (secondary/accent)
+            light: "#CFF0E5",
+            dark: "#78B39B",
           },
           background: darkMode
             ? {
-                default: "#2C1810",
-                paper: "#3E2723",
+                default: "#1A2D28", // deep greenish background
+                paper: "#24423B",
               }
             : {
-                default: "#F8F6F4",
+                default: "#F4FAF8", // very light mint/white
                 paper: "#FFFFFF",
               },
           text: darkMode
             ? {
-                primary: "#F8F6F4",
-                secondary: "#B08463",
+                primary: "#FFFFFF",
+                secondary: "#A5D6C2",
               }
             : {
-                primary: "#2C1810",
-                secondary: "#714329",
+                primary: "#2B2B2B",
+                secondary: "#2B8264",
               },
           error: { main: "#D32F2F" },
           warning: { main: "#ED6C02" },
           success: { main: "#2E7D32" },
           info: { main: "#0288D1" },
-          divider: darkMode ? "#5A3521" : "#D0B9A7",
+          divider: darkMode ? "#396A5A" : "#CFF0E5",
         },
         typography: {
-          h1: { color: darkMode ? "#F8F6F4" : "#714329" },
-          h2: { color: darkMode ? "#F8F6F4" : "#714329" },
-          h3: { color: darkMode ? "#F8F6F4" : "#714329" },
-          h4: { color: darkMode ? "#F8F6F4" : "#714329" },
-          h5: { color: darkMode ? "#F8F6F4" : "#714329" },
-          h6: { color: darkMode ? "#F8F6F4" : "#714329" },
+          h1: { color: darkMode ? "#FFFFFF" : "#2B8264" },
+          h2: { color: darkMode ? "#FFFFFF" : "#2B8264" },
+          h3: { color: darkMode ? "#FFFFFF" : "#2B8264" },
+          h4: { color: darkMode ? "#FFFFFF" : "#2B8264" },
+          h5: { color: darkMode ? "#FFFFFF" : "#2B8264" },
+          h6: { color: darkMode ? "#FFFFFF" : "#2B8264" },
         },
         components: {
           MuiAppBar: {
             styleOverrides: {
               root: {
-                backgroundColor: darkMode ? "#3E2723" : "#714329",
+                backgroundColor: darkMode ? "#24423B" : "#2B8264",
               },
             },
           },
@@ -136,19 +136,19 @@ function App() {
                 fontWeight: 600,
               },
               contained: {
-                backgroundColor: darkMode ? "#714329" : "#714329",
+                backgroundColor: darkMode ? "#2B8264" : "#2B8264",
                 "&:hover": {
-                  backgroundColor: darkMode ? "#5A3521" : "#5A3521",
+                  backgroundColor: darkMode ? "#1E5F49" : "#1E5F49",
                 },
               },
               outlined: {
-                borderColor: "#714329",
-                color: "#714329",
+                borderColor: "#2B8264",
+                color: "#2B8264",
                 "&:hover": {
-                  borderColor: "#5A3521",
+                  borderColor: "#1E5F49",
                   backgroundColor: darkMode
-                    ? "rgba(113, 67, 41, 0.2)"
-                    : "rgba(113, 67, 41, 0.04)",
+                    ? "rgba(43, 130, 100, 0.2)"
+                    : "rgba(43, 130, 100, 0.04)",
                 },
               },
             },
@@ -158,11 +158,11 @@ function App() {
               root: {
                 borderRadius: 12,
                 boxShadow: darkMode
-                  ? "0 4px 12px rgba(255,255,255,0.05)"
-                  : "0 4px 12px rgba(113, 67, 41, 0.1)",
+                  ? "0 4px 12px rgba(0,0,0,0.15)"
+                  : "0 4px 12px rgba(43,130,100,0.1)",
                 border: darkMode
-                  ? "1px solid #5A3521"
-                  : "1px solid rgba(176, 132, 99, 0.2)",
+                  ? "1px solid #396A5A"
+                  : "1px solid rgba(165, 214, 194, 0.3)",
               },
             },
           },
@@ -170,8 +170,8 @@ function App() {
             styleOverrides: {
               root: { borderRadius: 16 },
               colorPrimary: {
-                backgroundColor: "#B9937B",
-                color: "#FFFFFF",
+                backgroundColor: "#A5D6C2",
+                color: "#1E5F49",
               },
             },
           },

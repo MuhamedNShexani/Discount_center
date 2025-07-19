@@ -70,7 +70,7 @@ export default function NavigationBar({
   return (
     <AppBar
       position="static"
-      sx={{ backgroundColor: darkMode ? "#3E2723" : "#714329" }}
+      sx={{ backgroundColor: darkMode ? "#FFFFFF" : "#2B8264" }}
     >
       <Toolbar>
         {/* Logo and Title - Always visible, aligned left */}
@@ -102,7 +102,7 @@ export default function NavigationBar({
             variant="h6"
             component="div"
             sx={{
-              color: "#FFFFFF",
+              color: darkMode ? "#2B8264" : "#FFFFFF",
               fontWeight: 700,
               fontSize: { xs: "1rem", sm: "1.25rem" }, // Responsive font size
               whiteSpace: "nowrap", // Prevent wrapping
@@ -153,6 +153,7 @@ export default function NavigationBar({
                         to={item.path}
                         selected={location.pathname === item.path} // Highlight active link
                         sx={{
+                          color: darkMode ? "#2B8264" : "#FFFFFF",
                           "&.Mui-selected": {
                             backgroundColor: theme.palette.action.selected,
                           },
@@ -274,6 +275,7 @@ export default function NavigationBar({
                     component={RouterLink}
                     to={item.path}
                     sx={{
+                      color: darkMode ? "#2B8264" : "#FFFFFF",
                       mx: 0.5, // Reduced horizontal margin for better fit
                       fontWeight:
                         location.pathname === item.path ? "bold" : "normal",
@@ -297,7 +299,7 @@ export default function NavigationBar({
               {/* Theme Switch */}
               <Box sx={{ display: "flex", alignItems: "center", mx: 1 }}>
                 <WbSunnyIcon
-                  sx={{ color: darkMode ? "#B08463" : "#FFD600", fontSize: 22 }}
+                  sx={{ color: darkMode ? "#2B8264" : "#FFD600", fontSize: 22 }}
                 />
                 <Switch
                   checked={darkMode}
@@ -306,10 +308,10 @@ export default function NavigationBar({
                   inputProps={{ "aria-label": "theme switch" }}
                   sx={{
                     "& .MuiSwitch-thumb": {
-                      backgroundColor: darkMode ? "#fff" : "#fff", // Thumb color
+                      backgroundColor: darkMode ? "#2B8264" : "#fff", // Thumb color
                     },
                     "& .MuiSwitch-track": {
-                      backgroundColor: darkMode ? "#B08463" : "#714329", // Track color
+                      backgroundColor: darkMode ? "#2B8264" : "#714329", // Track color
                       opacity: 1,
                     },
                     "&.Mui-checked + .MuiSwitch-track": {
@@ -318,7 +320,7 @@ export default function NavigationBar({
                   }}
                 />
                 <NightsStayIcon
-                  sx={{ color: darkMode ? "#FFD600" : "#B08463", fontSize: 22 }}
+                  sx={{ color: darkMode ? "#2B8264" : "#FFD600", fontSize: 22 }}
                 />
               </Box>
 
@@ -328,11 +330,15 @@ export default function NavigationBar({
                 onChange={handleLangChange}
                 size="small"
                 sx={{
-                  color: "#fff",
-                  backgroundColor: "rgba(255,255,255,0.08)",
+                  color: darkMode ? "#2B8264" : "#FFFFFF",
+                  backgroundColor: darkMode
+                    ? "rgba(19, 18, 18, 0.08)"
+                    : "rgba(255,255,255,0.08)",
                   borderRadius: 1,
                   minWidth: 90,
-                  ".MuiSvgIcon-root": { color: "#fff" },
+                  ".MuiSvgIcon-root": {
+                    color: darkMode ? "#2B8264" : "#FFFFFF",
+                  },
                   "& .MuiOutlinedInput-notchedOutline": { border: 0 }, // Remove border
                   "&:hover .MuiOutlinedInput-notchedOutline": { border: 0 },
                   "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
@@ -342,8 +348,8 @@ export default function NavigationBar({
                 MenuProps={{
                   PaperProps: {
                     sx: {
-                      backgroundColor: darkMode ? "#3E2723" : "#fff",
-                      color: darkMode ? "#fff" : "#714329",
+                      backgroundColor: darkMode ? "#FFFFFF" : "#2B8264",
+                      color: darkMode ? "#2B8264" : "#FFFFFF",
                     },
                   },
                 }}
@@ -356,10 +362,10 @@ export default function NavigationBar({
               {/* Login/Logout Button */}
               {user ? (
                 <Button
-                  color="inherit"
                   onClick={logout}
                   startIcon={<LogoutIcon />}
                   sx={{
+                    color: darkMode ? "#2B8264" : "#FFFFFF",
                     ml: 1,
                     fontSize: { sm: 14, md: 16, lg: 18 }, // Responsive font size
                     py: 1,
