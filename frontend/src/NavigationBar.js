@@ -90,7 +90,7 @@ export default function NavigationBar({
               height: 56,
               width: 76,
               mr: { xs: 1, sm: 2 }, // Smaller margin on xs
-              borderRadius: "50%",
+              borderRadius: "30%",
               objectFit: "cover",
               background: "#fff",
             }}
