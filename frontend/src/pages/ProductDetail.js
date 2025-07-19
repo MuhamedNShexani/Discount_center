@@ -365,9 +365,7 @@ const ProductDetail = () => {
                 <Button
                   variant="outlined"
                   size="large"
-                  onClick={() =>
-                    navigate(`/companies/${product.companyId?._id}`)
-                  }
+                  onClick={() => navigate(`/markets/${product.companyId?._id}`)}
                 >
                   {t("View Company")}
                 </Button>

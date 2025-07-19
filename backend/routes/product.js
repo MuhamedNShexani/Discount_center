@@ -20,7 +20,7 @@ router.get("/", getProducts);
 router.get("/categories", getCategories);
 
 // @route   GET /api/products/company/:companyId
-// @desc    Get products by company
+// @desc    Get products by market
 router.get("/company/:companyId", getProductsByCompany);
 
 // @route   GET /api/products/category/:category

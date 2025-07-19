@@ -1,15 +1,15 @@
 # Market Products Website
 
-A full-stack web application for managing and displaying market products and companies. Built with React (frontend), Node.js/Express (backend), and MongoDB (database).
+A full-stack web application for managing and displaying market products and markets. Built with React (frontend), Node.js/Express (backend), and MongoDB (database).
 
 ## 🚀 Features
 
 ### Frontend (React)
 
-- **Main Page**: Companies with their products grouped by company
-- **Company List**: Browse all companies and view their products
+- **Main Page**: Markets with their products grouped by market
+- **Market List**: Browse all markets and view their products
 - **Product Categories**: Filter products by category
-- **Admin Panel**: Add new companies and products
+- **Admin Panel**: Add new markets and products
 - **Responsive Design**: Works on all devices
 - **Modern UI**: Beautiful Material-UI components
 
@@ -29,13 +29,13 @@ market-products/
 │   ├── config/
 │   │   └── db.js          # MongoDB connection
 │   ├── controllers/
-│   │   ├── companyController.js
+│   │   ├── marketController.js
 │   │   └── productController.js
 │   ├── models/
-│   │   ├── Company.js
+│   │   ├── Market.js
 │   │   └── Product.js
 │   ├── routes/
-│   │   ├── company.js
+│   │   ├── market.js
 │   │   └── product.js
 │   ├── server.js          # Express server
 │   ├── test-api.js        # API test script
@@ -44,7 +44,8 @@ market-products/
 │   ├── src/
 │   │   ├── pages/
 │   │   │   ├── MainPage.js
-│   │   │   ├── CompanyList.js
+│   │   │   ├── MarketList.js
+│   │   │   ├── MarketProfile.js
 │   │   │   ├── ProductCategory.js
 │   │   │   └── DataEntryForm.js
 │   │   ├── services/
@@ -98,24 +99,24 @@ Make sure MongoDB is running locally or update the `MONGO_URI` in the backend `.
 
 ## 🎯 API Endpoints
 
-### Companies
+### Markets
 
-- `GET /api/companies` - Get all companies
-- `GET /api/companies/:id` - Get company by ID
-- `POST /api/companies` - Create new company
+- `GET /api/markets` - Get all markets
+- `GET /api/markets/:id` - Get market by ID
+- `POST /api/markets` - Create new market
 
 ### Products
 
 - `GET /api/products` - Get all products (with optional filters)
 - `GET /api/products/:id` - Get product by ID
 - `POST /api/products` - Create new product
-- `GET /api/products/company/:companyId` - Get products by company
+- `GET /api/products/company/:companyId` - Get products by market
 - `GET /api/products/category/:category` - Get products by category
 - `GET /api/products/categories` - Get all categories
 
 ## 📊 Database Schema
 
-### Company
+### Market
 
 ```javascript
 {
@@ -138,7 +139,7 @@ Make sure MongoDB is running locally or update the `MONGO_URI` in the backend `.
   image: String,
   previousPrice: Number,
   newPrice: Number,
-  companyId: ObjectId (ref to Company, required),
+  companyId: ObjectId (ref to Market, required),
   expireDate: Date
 }
 ```
@@ -147,16 +148,16 @@ Make sure MongoDB is running locally or update the `MONGO_URI` in the backend `.
 
 ### 1. Main Page (`/`)
 
-- Displays companies grouped by company
-- Each company shows up to 10 products
-- Links to company profiles and product details
-- "More Products" button for each company
+- Displays markets grouped by market
+- Each market shows up to 10 products
+- Links to market profiles and product details
+- "More Products" button for each market
 
-### 2. Company List (`/companies`)
+### 2. Market List (`/markets`)
 
-- Grid layout of all companies
-- Click to view company details and products
-- Modal dialog for company products
+- Grid layout of all markets
+- Click to view market details and products
+- Modal dialog for market products
 
 ### 3. Product Categories (`/categories`)
 
@@ -166,7 +167,7 @@ Make sure MongoDB is running locally or update the `MONGO_URI` in the backend `.
 
 ### 4. Admin Panel (`/admin`)
 
-- Add new companies
+- Add new markets
 - Add new products
 - Form validation and error handling
 
@@ -236,10 +237,10 @@ The frontend is fully responsive and works on:
 
 ## 🎯 Key Features Implemented
 
-✅ **Main Page**: Companies with products grouped by company  
-✅ **Company List**: Browse all companies and their products  
+✅ **Main Page**: Markets with products grouped by market  
+✅ **Market List**: Browse all markets and their products  
 ✅ **Product Categories**: Filter products by category  
-✅ **Admin Panel**: Add companies and products  
+✅ **Admin Panel**: Add markets and products  
 ✅ **Responsive Design**: Works on all devices  
 ✅ **Modern UI**: Material-UI components  
 ✅ **API Integration**: Full CRUD operations  

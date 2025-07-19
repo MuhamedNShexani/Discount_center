@@ -6,16 +6,38 @@ const resources = {
   en: {
     translation: {
       "Market Products": "Market Products",
-      Companies: "Companies",
+      Markets: "Markets",
       Categories: "Categories",
       Admin: "Admin",
       "Main Page": "Main Page",
+      "Browse All Categories": "Browse All Categories",
+      Latest: "Latest",
+      "Hot Deals": "Hot Deals",
+      "More Categories": "More Categories",
+      "Search for items...": "Search for items...",
+      "View all products": "View all products",
+      Available: "Available",
+      "Click to explore products": "Click to explore products",
+      "No markets found": "No markets found",
+      "Premium Market": "Premium Market",
+      "Discover amazing products from this market":
+        "Discover amazing products from this market",
+      "No products available": "No products available",
+      "This market hasn't added any products yet. Check back later!":
+        "This market hasn't added any products yet. Check back later!",
+      "Mobile Menu": "Mobile Menu",
+      Theme: "Theme",
+      "Light Mode": "Light Mode",
+      "Admin Dashboard": "Admin Dashboard",
+      "Manage markets and products efficiently":
+        "Manage markets and products efficiently",
+      "Add Market": "Add Market",
       "More Products": "More Products",
       "View Profile": "View Profile",
-      "Discover products from various companies":
-        "Discover products from various companies",
-      "Browse all companies and their products":
-        "Browse all companies and their products",
+      "Discover products from various markets":
+        "Discover products from various markets",
+      "Browse all markets and their products":
+        "Browse all markets and their products",
       English: "English",
       Arabic: "Arabic",
       Kurdish: "Kurdish",
@@ -29,8 +51,8 @@ const resources = {
       Expires: "Expires",
       Close: "Close",
       "Admin Panel": "Admin Panel",
-      "Add companies and products to the marketplace":
-        "Add companies and products to the marketplace",
+      "Add markets and products to the marketplace":
+        "Add markets and products to the marketplace",
       "Add Company": "Add Company",
       "Add Product": "Add Product",
       "Bulk Upload": "Bulk Upload",
@@ -58,10 +80,10 @@ const resources = {
       "Column C: Previous Price (optional)":
         "Column C: Previous Price (optional)",
       "Column D: New Price (required)": "Column D: New Price (required)",
-      "Column E: Company ID (required)": "Column E: Company ID (required)",
+      "Column E: Market ID (required)": "Column E: Market ID (required)",
       "Column F: Expire Date (optional, YYYY-MM-DD format)":
         "Column F: Expire Date (optional, YYYY-MM-DD format)",
-      "All Companies": "All Companies",
+      "All Markets": "All Markets",
       Name: "Name",
       Logo: "Logo",
       Actions: "Actions",
@@ -136,15 +158,37 @@ const resources = {
   ar: {
     translation: {
       "Market Products": "منتجات السوق",
-      Companies: "الشركات",
+      Markets: "الأسواق",
       Categories: "الفئات",
       Admin: "الإدارة",
       "Main Page": "الصفحة الرئيسية",
+      "Browse All Categories": "تصفح جميع الفئات",
+      Latest: "الأحدث",
+      "Hot Deals": "العروض الساخنة",
+      "More Categories": "المزيد من الفئات",
+      "Search for items...": "البحث عن العناصر...",
+      "View all products": "عرض جميع المنتجات",
+      Available: "متاح",
+      "Click to explore products": "انقر لاستكشاف المنتجات",
+      "No markets found": "لم يتم العثور على أسواق",
+      "Premium Market": "سوق عظيم",
+      "Discover amazing products from this market":
+        "اكتشف المنتجات العظيمة من هذا السوق",
+      "No products available": "لا توجد منتجات متاحة",
+      "This market hasn't added any products yet. Check back later!":
+        "لم يتم إضافة منتجات لهذا السوق بعد. يرجى التحقق لاحقاً!",
+      "Mobile Menu": "القائمة المحمولة",
+      Theme: "المظهر",
+      "Light Mode": "الوضع الفاتح",
+      "Admin Dashboard": "لوحة التحكم الإدارية",
+      "Manage markets and products efficiently":
+        "إدارة الأسواق والمنتجات بكفاءة",
+      "Add Market": "إضافة سوق",
       "More Products": "المزيد من المنتجات",
       "View Profile": "عرض الملف الشخصي",
-      "Discover products from various companies":
-        "اكتشف المنتجات من مختلف الشركات",
-      "Browse all companies and their products": "تصفح جميع الشركات ومنتجاتها",
+      "Discover products from various markets":
+        "اكتشف المنتجات من مختلف الأسواق",
+      "Browse all markets and their products": "تصفح جميع الأسواق ومنتجاتها",
       English: "الإنجليزية",
       Arabic: "العربية",
       Kurdish: "الكردية",
@@ -158,8 +202,8 @@ const resources = {
       Expires: "تاريخ الانتهاء",
       Close: "إغلاق",
       "Admin Panel": "لوحة الإدارة",
-      "Add companies and products to the marketplace":
-        "أضف الشركات والمنتجات إلى السوق",
+      "Add markets and products to the marketplace":
+        "إضافة الأسواق والمنتجات إلى السوق",
       "Add Company": "إضافة شركة",
       "Add Product": "إضافة منتج",
       "Bulk Upload": "رفع جماعي",
@@ -189,7 +233,7 @@ const resources = {
       "Column E: Company ID (required)": "العمود E: معرف الشركة (إجباري)",
       "Column F: Expire Date (optional, YYYY-MM-DD format)":
         "العمود F: تاريخ الانتهاء (اختياري، بصيغة YYYY-MM-DD)",
-      "All Companies": "جميع الشركات",
+      "All Markets": "جميع الأسواق",
       Name: "الاسم",
       Logo: "الشعار",
       Actions: "الإجراءات",
@@ -249,10 +293,8 @@ const resources = {
       "Product updated successfully!": "تم تحديث المنتج بنجاح!",
       "Failed to update. Please try again.":
         "فشل التحديث. يرجى المحاولة مرة أخرى.",
-      "Number of products that are available in the system":
-        "عدد المنتجات المتاحة في النظام",
-      "Number of companies that are available in the system":
-        "عدد الشركات المتاحة في النظام",
+      "Number of markets that are available in the system":
+        "عدد الأسواق المتاحة في النظام",
       "Company deleted successfully!": "تم حذف الشركة بنجاح!",
       "Product deleted successfully!": "تم حذف المنتج بنجاح!",
       "Failed to delete. Please try again.":
@@ -267,16 +309,38 @@ const resources = {
     translation: {
       "Market Products": "ناوەندی داشکاندەکان",
       "Data Lists": "لیستى داتاکان",
-      Companies: "مارکێتەکان",
+      Markets: "مارکێتەکان",
       "Market Companies": "مارکێتەکان",
       Categories: "جۆرەکان",
       Admin: "ئەدمین",
       "Main Page": "پەڕەی سەرەکی",
+      "Browse All Categories": "هەموو جۆرەکان بگەڕێ",
+      Latest: "نوێترین",
+      "Hot Deals": "پیشکەشە گەرمەکان",
+      "More Categories": "جۆری زیاتر",
+      "Search for items...": "گەڕان بۆ شتەکان...",
+      "View all products": "پیشاندانی هەموو کاڵاکان",
+      Available: "بەردەست",
+      "Click to explore products": "بەردەستکردنی کاڵاکان",
+      "No markets found": "هیچ مارکێتەکان نەیاتوو",
+      "Premium Market": "مارکێتی زۆربەر",
+      "Discover amazing products from this market":
+        "کاڵاکان بدۆزەوە لە مارکێتە زۆربەر",
+      "No products available": "هیچ کاڵاکان نەبێتەوە",
+      "This market hasn't added any products yet. Check back later!":
+        "مارکێتەکە نەتوانرێت بەردەست بکەوە چونکە کاڵای هەیە. لە پاشەیەکی زیاتر بەردەست بکەوە.",
+      "Mobile Menu": "لیستی مۆبایل",
+      Theme: "ڕەنگ",
+      "Light Mode": "ڕۆشنایی",
+      "Admin Dashboard": "ڕێکخستنی بەڕێوەبەری",
+      "Manage markets and products efficiently":
+        "بەڕێوەبردنی مارکێت و کاڵاکان بە شێوازێکی باش",
+      "Add Market": "زیادکردنی مارکێت",
       "More Products": "کاڵای زیاتر",
       "View Profile": "پیشاندانی پرۆفایل",
-      "Discover products from various companies":
+      "Discover products from various markets":
         "کاڵاکان بدۆزەوە لە مارکێتە جیاوازەکان",
-      "Browse all companies and their products":
+      "Browse all markets and their products":
         "هەموو مارکێتەکان و کاڵاکانیان بگەڕێ",
       English: "ئینگلیزی",
       Arabic: "عەرەبی",
@@ -291,8 +355,8 @@ const resources = {
       Expires: "ڕێکەوتى کۆتایی داشکان",
       Close: "داخستن",
       "Admin Panel": "پەڕەی ئەدمین",
-      "Add companies and products to the marketplace":
-        "مارکێت و کاڵاکان زیاد بکە بۆ بازاڕەکە",
+      "Add markets and products to the marketplace":
+        "مارکێت و کاڵا زیاد بکە بۆ بازاڕ",
       "Add Company": "زیادکردنی مارکێت",
       "Add Product": "زیادکردنی کاڵا",
       "Bulk Upload": "بارکردنی گشتی",
@@ -322,13 +386,13 @@ const resources = {
       "Column E: Company ID (required)": "ستوونی E: ناسنامەی مارکێت (پێویست)",
       "Column F: Expire Date (optional, YYYY-MM-DD format)":
         "ستوونی F: بەسەرچوون (هەلبژێری، فۆرمی YYYY-MM-DD)",
-      "All Companies": "هەموو مارکێتەکان",
+      "All Markets": "هەموو مارکێتەکان",
       Name: "ناو",
       Logo: "لوگۆ",
       "Number of products that are available in the system":
         "ژمارەی کاڵاکان کە لە سیستەمدا هەیە",
-      "Number of companies that are available in the system":
-        "ژمارەی کۆمپانیاکان کە لە سیستەمدا هەیە",
+      "Number of markets that are available in the system":
+        "ژمارەی مارکێتەکان کە لە سیستەمدا بەردەستن",
       Actions: "کردارەکان",
       "All Products": "هەموو کاڵاکان",
       Type: "جۆر",
@@ -396,6 +460,7 @@ const resources = {
         "مارکێتکە ناتوانرێت بسڕێتەوە چونکە کاڵای پەیوەستداری هەیە. تکایە سەرەتا کاڵاکان بسڕەوە.",
       Discount: "داشکاندن",
       ID: "دینار",
+      "View Products": "بینینی کاڵاکان",
     },
   },
 };

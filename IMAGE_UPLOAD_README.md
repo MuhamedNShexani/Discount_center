@@ -1,6 +1,6 @@
 # Image Upload Functionality
 
-This document describes the image upload functionality implemented for company logos and product images.
+This document describes the image upload functionality implemented for market logos and product images.
 
 ## Backend Implementation
 
@@ -13,7 +13,7 @@ This document describes the image upload functionality implemented for company l
 
 ### 2. Upload Routes
 
-- **Company Logo Upload**: `POST /api/companies/upload-logo`
+- **Market Logo Upload**: `POST /api/markets/upload-logo`
 - **Product Image Upload**: `POST /api/products/upload-image`
 
 ### 3. Static File Serving
@@ -25,7 +25,7 @@ This document describes the image upload functionality implemented for company l
 
 ### 1. File Upload UI
 
-- File input buttons for both company logos and product images
+- File input buttons for both market logos and product images
 - Visual feedback showing selected filename
 - Accepts only image files (`image/*`)
 
@@ -34,7 +34,7 @@ This document describes the image upload functionality implemented for company l
 1. User selects an image file
 2. File is uploaded to the backend when form is submitted
 3. Backend returns the image URL
-4. Image URL is saved with the company/product data
+4. Image URL is saved with the market/product data
 
 ### 3. Image Display
 
@@ -44,12 +44,12 @@ This document describes the image upload functionality implemented for company l
 
 ## Usage
 
-### Adding a Company with Logo
+### Adding a Market with Logo
 
-1. Fill in company details
+1. Fill in market details
 2. Either enter a logo URL or click "Upload Logo" to select a file
 3. Submit the form
-4. The logo will be uploaded and displayed in the companies table
+4. The logo will be uploaded and displayed in the markets table
 
 ### Adding a Product with Image
 
@@ -83,7 +83,7 @@ This document describes the image upload functionality implemented for company l
 ### Upload Endpoints
 
 ```
-POST /api/companies/upload-logo
+POST /api/markets/upload-logo
 POST /api/products/upload-image
 ```
 

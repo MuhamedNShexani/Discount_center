@@ -11,13 +11,13 @@ const api = axios.create({
   },
 });
 
-// Company API calls
-export const companyAPI = {
-  getAll: () => api.get("/companies"),
-  getById: (id) => api.get(`/companies/${id}`),
-  create: (data) => api.post("/companies", data),
-  update: (id, data) => api.put(`/companies/${id}`, data),
-  delete: (id) => api.delete(`/companies/${id}`),
+// Market API calls
+export const marketAPI = {
+  getAll: () => api.get("/markets"),
+  getById: (id) => api.get(`/markets/${id}`),
+  create: (data) => api.post("/markets", data),
+  update: (id, data) => api.put(`/markets/${id}`, data),
+  delete: (id) => api.delete(`/markets/${id}`),
 };
 
 // Product API calls

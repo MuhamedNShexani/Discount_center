@@ -69,7 +69,8 @@ src/
 ├── components/          # Reusable components
 ├── pages/              # Page components
 │   ├── MainPage.js
-│   ├── CompanyList.js
+│   ├── MarketList.js
+│   ├── MarketProfile.js
 │   ├── ProductCategory.js
 │   └── DataEntryForm.js
 ├── services/           # API services
@@ -82,7 +83,7 @@ src/
 
 The frontend communicates with the backend API at `http://localhost:5000/api`:
 
-- **Companies**: GET, POST operations
+- **Markets**: GET, POST operations
 - **Products**: GET, POST operations with filtering
 - **Categories**: GET all categories
 - **Error Handling**: Comprehensive error handling and loading states

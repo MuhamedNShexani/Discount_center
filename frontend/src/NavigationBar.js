@@ -4,46 +4,49 @@ import {
   Toolbar,
   Typography,
   Button,
+  Box,
   IconButton,
   Drawer,
   List,
   ListItem,
-  ListItemText,
   ListItemIcon,
-  Switch,
+  ListItemText,
+  useMediaQuery,
+  useTheme,
   FormControlLabel,
   Select,
   MenuItem,
-  useMediaQuery,
-  useTheme,
-  Box,
+  Avatar,
+  Fade,
+  Slide,
+  Paper,
+  Chip,
 } from "@mui/material";
-import MenuIcon from "@mui/icons-material/Menu";
-import NightsStayIcon from "@mui/icons-material/NightsStay"; // Moon icon for dark mode
-import WbSunnyIcon from "@mui/icons-material/WbSunny"; // Sun icon for light mode
-import LanguageIcon from "@mui/icons-material/Language";
-import HomeIcon from "@mui/icons-material/Home";
-import BusinessIcon from "@mui/icons-material/Business"; // Changed from StorefrontIcon for consistency with user's code
-import CategoryIcon from "@mui/icons-material/Category";
-import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
-import LoginIcon from "@mui/icons-material/Login";
-import LogoutIcon from "@mui/icons-material/Logout";
-import { Link as RouterLink, useLocation } from "react-router-dom"; // Using RouterLink for clarity
-import { useAuth } from "./context/AuthContext";
+import {
+  Menu as MenuIcon,
+  Home as HomeIcon,
+  Business as BusinessIcon,
+  Category as CategoryIcon,
+  AdminPanelSettings as AdminPanelSettingsIcon,
+  Brightness4 as Brightness4Icon,
+  Brightness7 as Brightness7Icon,
+  Language as LanguageIcon,
+  Store as StoreIcon,
+} from "@mui/icons-material";
+import { Link, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
-export default function NavigationBar({
-  darkMode,
-  setDarkMode,
-  lang,
-  handleLangChange,
-  t,
-}) {
+const NavigationBar = ({ darkMode, setDarkMode }) => {
   const theme = useTheme();
-  // Check if screen is small (mobile)
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const { t, i18n } = useTranslation();
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const { user, logout } = useAuth(); // Using 'user' as per your AuthContext usage
-  const location = useLocation(); // To highlight active link
+  const isSmUp = useMediaQuery(theme.breakpoints.up("md"));
+  const lang = i18n.language;
+  const location = useLocation();
+
+  const handleLangChange = (event) => {
+    i18n.changeLanguage(event.target.value);
+  };
 
   const toggleDrawer = (open) => (event) => {
     if (
@@ -57,337 +60,395 @@ export default function NavigationBar({
 
   const navItems = [
     { name: t("Main Page"), path: "/", icon: <HomeIcon /> },
-    { name: t("Companies"), path: "/companies", icon: <BusinessIcon /> },
+    { name: t("Markets"), path: "/markets", icon: <BusinessIcon /> },
     { name: t("Categories"), path: "/categories", icon: <CategoryIcon /> },
     {
       name: t("Admin"),
       path: "/admin",
       icon: <AdminPanelSettingsIcon />,
-      protected: true,
-    }, // Protected route
+    },
   ];
 
   return (
-    <AppBar position="static" sx={{ backgroundColor: "#2B8264" }}>
-      <Toolbar>
-        {/* Logo and Title - Always visible, aligned left */}
-        <Box
-          component={RouterLink}
-          to="/"
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            textDecoration: "none",
-            mr: 2, // Margin right for spacing
-            flexShrink: 0, // Prevent shrinking on small screens
-          }}
-        >
-          <Box
-            component="img"
-            src="/logo192.png" // Ensure this path is correct
-            alt="Logo"
-            sx={{
-              height: 56,
-              width: 76,
-              mr: { xs: 1, sm: 2 }, // Smaller margin on xs
-              borderRadius: "30%",
-              objectFit: "cover",
-              background: "#fff",
-            }}
-          />
-          <Typography
-            variant="h6"
-            component="div"
-            sx={{
-              color: "#FFFFFF",
-              fontWeight: 700,
-              fontSize: { xs: "1rem", sm: "1.25rem" }, // Responsive font size
-              whiteSpace: "nowrap", // Prevent wrapping
-            }}
-          >
-            {t("Market Products")}
-          </Typography>
-        </Box>
-
-        {isMobile ? (
-          <>
-            {/* Mobile: Hamburger menu icon on the right */}
-            <Box sx={{ flexGrow: 1 }} /> {/* Pushes menu icon to the right */}
-            <IconButton
-              edge="end" // Aligns to the end (right)
-              color="inherit"
-              aria-label="menu"
-              onClick={toggleDrawer(true)}
-              sx={{ ml: 2 }}
+    <>
+      <AppBar
+        position="fixed"
+        elevation={0}
+        sx={{
+          background:
+            theme.palette.mode === "dark"
+              ? "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)"
+              : "linear-gradient(135deg, #52b788 0%, #40916c 100%)",
+          backdropFilter: "blur(20px)",
+          borderBottom: `1px solid ${
+            theme.palette.mode === "dark"
+              ? "rgba(255,255,255,0.1)"
+              : "rgba(255,255,255,0.2)"
+          }`,
+          boxShadow:
+            theme.palette.mode === "dark"
+              ? "0 8px 32px rgba(0,0,0,0.3)"
+              : "0 8px 32px rgba(0,0,0,0.1)",
+        }}
+      >
+        <Toolbar sx={{ justifyContent: "space-between", px: { xs: 2, md: 4 } }}>
+          {/* Logo and Brand */}
+          <Box display="flex" alignItems="center">
+            <Avatar
+              sx={{
+                mr: 2,
+                width: 40,
+                height: 40,
+                background: "linear-gradient(135deg, #ffffff20, #ffffff40)",
+                backdropFilter: "blur(10px)",
+                border: "2px solid rgba(255,255,255,0.3)",
+              }}
             >
-              <MenuIcon />
-            </IconButton>
-            <Drawer
-              anchor={theme.direction === "rtl" ? "left" : "right"} // Drawer opens from right for LTR, left for RTL
-              open={drawerOpen}
-              onClose={toggleDrawer(false)}
-              PaperProps={{
-                sx: {
-                  width: 250, // Fixed width for the drawer
-                  backgroundColor: theme.palette.background.paper,
-                  color: theme.palette.text.primary,
+              <StoreIcon sx={{ color: "white", fontSize: 24 }} />
+            </Avatar>
+            <Typography
+              variant="h5"
+              component={Link}
+              to="/"
+              sx={{
+                textDecoration: "none",
+                color: "white",
+                fontWeight: 700,
+                fontSize: { xs: "1.25rem", md: "1.5rem" },
+                textShadow: "0 2px 4px rgba(0,0,0,0.3)",
+                background: "linear-gradient(45deg, #ffffff, #f0f0f0)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+                transition: "all 0.3s ease",
+                "&:hover": {
+                  transform: "scale(1.05)",
                 },
               }}
             >
-              <Box
-                sx={{ width: 250 }}
-                role="presentation"
-                onClick={toggleDrawer(false)}
-                onKeyDown={toggleDrawer(false)}
-              >
-                <List>
-                  {navItems.map((item) =>
-                    item.protected && !user ? null : ( // Only show admin if logged in
-                      <ListItem
-                        button
-                        key={item.name}
-                        component={RouterLink}
-                        to={item.path}
-                        selected={location.pathname === item.path} // Highlight active link
-                        sx={{
-                          color: "#FFFFFF",
-                          "&.Mui-selected": {
-                            backgroundColor: theme.palette.action.selected,
-                          },
-                          "&:hover": {
-                            backgroundColor: theme.palette.action.hover,
-                          },
-                        }}
-                      >
-                        <ListItemIcon
-                          sx={{ color: theme.palette.text.secondary }}
-                        >
-                          {item.icon}
-                        </ListItemIcon>
-                        <ListItemText primary={item.name} />
-                      </ListItem>
-                    )
-                  )}
+              {t("Market Products")}
+            </Typography>
+          </Box>
 
-                  {/* Language Selector in Drawer */}
-                  <ListItem>
-                    <ListItemIcon sx={{ color: theme.palette.text.secondary }}>
-                      <LanguageIcon />
-                    </ListItemIcon>
-                    <FormControlLabel
-                      control={
-                        <Select
-                          value={lang}
-                          onChange={handleLangChange}
-                          size="small"
-                          sx={{
-                            color: theme.palette.text.primary,
-                            "& .MuiOutlinedInput-notchedOutline": {
-                              borderColor: theme.palette.divider,
-                            },
-                            "&:hover .MuiOutlinedInput-notchedOutline": {
-                              borderColor: theme.palette.primary.main,
-                            },
-                            "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                              borderColor: theme.palette.primary.main,
-                            },
-                            "& .MuiSvgIcon-root": {
-                              color: theme.palette.text.secondary,
-                            },
-                          }}
-                        >
-                          <MenuItem value="en">{t("English")}</MenuItem>
-                          <MenuItem value="ar">{t("Arabic")}</MenuItem>
-                          <MenuItem value="ku">{t("Kurdish")}</MenuItem>
-                        </Select>
-                      }
-                      label="" // Label is handled by ListItemText
-                      labelPlacement="start"
-                    />
-                  </ListItem>
-
-                  {/* Dark Mode Toggle in Drawer */}
-                  <ListItem>
-                    <ListItemIcon sx={{ color: theme.palette.text.secondary }}>
-                      {darkMode ? <WbSunnyIcon /> : <NightsStayIcon />}
-                    </ListItemIcon>
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={darkMode}
-                          onChange={() => setDarkMode(!darkMode)}
-                          name="darkMode"
-                          color="primary"
-                        />
-                      }
-                      label={darkMode ? t("Dark Mode") : t("Light Mode")}
-                      sx={{ color: theme.palette.text.primary }}
-                    />
-                  </ListItem>
-
-                  {/* Login/Logout Button in Drawer */}
-                  <ListItem
-                    button
-                    onClick={
-                      user
-                        ? logout
-                        : () => {
-                            /* navigate to login */
-                          }
-                    } // Add actual navigation if not logged in
-                    component={user ? "div" : RouterLink} // Use RouterLink if not logged in
-                    to={user ? "" : "/login"} // Navigate to login if not logged in
-                    sx={{
-                      "&:hover": {
-                        backgroundColor: theme.palette.action.hover,
-                      },
-                    }}
-                  >
-                    <ListItemIcon sx={{ color: theme.palette.text.secondary }}>
-                      {user ? <LogoutIcon /> : <LoginIcon />}
-                    </ListItemIcon>
-                    <ListItemText primary={user ? t("Logout") : t("Login")} />
-                  </ListItem>
-                </List>
-              </Box>
-            </Drawer>
-          </>
-        ) : (
-          <>
-            {/* Desktop: Regular navigation buttons */}
-            <Box
-              sx={{
-                flexGrow: 1, // Pushes elements to the right
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "flex-end", // Aligns items to the right
-                gap: 2, // Spacing between items
-              }}
-            >
-              {navItems.map((item) =>
-                item.protected && !user ? null : (
-                  <Button
-                    key={item.name}
-                    color="inherit"
-                    component={RouterLink}
-                    to={item.path}
-                    sx={{
-                      color: "#FFFFFF",
-                      mx: 0.5, // Reduced horizontal margin for better fit
-                      fontWeight:
-                        location.pathname === item.path ? "bold" : "normal",
-                      borderBottom:
-                        location.pathname === item.path
-                          ? "2px solid white"
-                          : "none",
-                      "&:hover": {
-                        borderBottom: "2px solid white",
-                      },
-                      fontSize: { sm: 14, md: 16, lg: 18 }, // Responsive font size
-                      py: 1, // Adjusted padding
-                      px: 2, // Adjusted padding
-                    }}
-                  >
-                    {item.name}
-                  </Button>
-                )
-              )}
-
-              {/* Theme Switch */}
-              <Box sx={{ display: "flex", alignItems: "center", mx: 1 }}>
-                <WbSunnyIcon sx={{ color: "#FFD600", fontSize: 22 }} />
-                <Switch
-                  checked={darkMode}
-                  onChange={() => setDarkMode((prev) => !prev)}
-                  color="default"
-                  inputProps={{ "aria-label": "theme switch" }}
+          {/* Desktop Navigation */}
+          {isSmUp && (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              {navItems.map((item) => (
+                <Button
+                  key={item.path}
+                  component={Link}
+                  to={item.path}
+                  startIcon={item.icon}
                   sx={{
-                    "& .MuiSwitch-thumb": {
-                      backgroundColor: darkMode ? "#2B8264" : "#fff", // Thumb color
+                    color: "white",
+                    textTransform: "none",
+                    fontWeight: 600,
+                    px: 2,
+                    py: 1,
+                    borderRadius: 2,
+                    minWidth: "auto",
+                    position: "relative",
+                    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                    backgroundColor:
+                      location.pathname === item.path
+                        ? "rgba(255,255,255,0.2)"
+                        : "transparent",
+                    backdropFilter:
+                      location.pathname === item.path ? "blur(10px)" : "none",
+                    border:
+                      location.pathname === item.path
+                        ? "1px solid rgba(255,255,255,0.3)"
+                        : "1px solid transparent",
+                    "&:hover": {
+                      backgroundColor: "rgba(255,255,255,0.15)",
+                      backdropFilter: "blur(10px)",
+                      transform: "translateY(-2px)",
+                      boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
                     },
-                    "& .MuiSwitch-track": {
-                      backgroundColor: darkMode ? "#2B8264" : "#714329", // Track color
-                      opacity: 1,
-                    },
-                    "&.Mui-checked + .MuiSwitch-track": {
-                      backgroundColor: "#714329 !important", // Track color when checked
+                    "&::after": {
+                      content: '""',
+                      position: "absolute",
+                      bottom: -2,
+                      left: "50%",
+                      transform: "translateX(-50%)",
+                      width: location.pathname === item.path ? "80%" : "0%",
+                      height: 2,
+                      backgroundColor: "white",
+                      borderRadius: 1,
+                      transition: "width 0.3s ease",
                     },
                   }}
-                />
-                <NightsStayIcon sx={{ color: "#FFD600", fontSize: 22 }} />
-              </Box>
+                >
+                  {item.name}
+                </Button>
+              ))}
+            </Box>
+          )}
 
-              {/* Language Selector */}
+          {/* Controls */}
+          <Box display="flex" alignItems="center" gap={1}>
+            {/* Language Selector */}
+            <Paper
+              elevation={0}
+              sx={{
+                backgroundColor: "rgba(255,255,255,0.1)",
+                backdropFilter: "blur(10px)",
+                border: "1px solid rgba(255,255,255,0.2)",
+                borderRadius: 2,
+              }}
+            >
               <Select
                 value={lang}
                 onChange={handleLangChange}
                 size="small"
+                variant="standard"
+                disableUnderline
                 sx={{
-                  color: "#FFFFFF",
-                  backgroundColor: darkMode
-                    ? "rgba(19, 18, 18, 0.08)"
-                    : "rgba(255,255,255,0.08)",
-                  borderRadius: 1,
-                  minWidth: 90,
-                  ".MuiSvgIcon-root": {
-                    color: "#FFFFFF",
+                  color: "white",
+                  minWidth: 80,
+                  px: 1,
+                  "& .MuiSvgIcon-root": {
+                    color: "white",
                   },
-                  "& .MuiOutlinedInput-notchedOutline": { border: 0 }, // Remove border
-                  "&:hover .MuiOutlinedInput-notchedOutline": { border: 0 },
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    border: 0,
-                  },
-                }}
-                MenuProps={{
-                  PaperProps: {
-                    sx: {
-                      backgroundColor: "#2B8264",
-                      color: "#FFFFFF",
-                    },
+                  "& .MuiSelect-select": {
+                    py: 0.5,
                   },
                 }}
               >
-                <MenuItem value="en">English</MenuItem>
-                <MenuItem value="ar">العربية</MenuItem>
-                <MenuItem value="ku">کوردی</MenuItem>
+                <MenuItem value="en">🇺🇸 EN</MenuItem>
+                <MenuItem value="ar">🇸🇦 AR</MenuItem>
+                <MenuItem value="ku">🏳️ KU</MenuItem>
               </Select>
+            </Paper>
 
-              {/* Login/Logout Button */}
-              {user ? (
-                <Button
-                  onClick={logout}
-                  startIcon={<LogoutIcon />}
+            {/* Dark Mode Toggle */}
+            <IconButton
+              onClick={() => setDarkMode(!darkMode)}
+              sx={{
+                color: "white",
+                backgroundColor: "rgba(255,255,255,0.1)",
+                backdropFilter: "blur(10px)",
+                border: "1px solid rgba(255,255,255,0.2)",
+                transition: "all 0.3s ease",
+                "&:hover": {
+                  backgroundColor: "rgba(255,255,255,0.2)",
+                  transform: "scale(1.1) rotate(180deg)",
+                },
+              }}
+            >
+              {darkMode ? <Brightness7Icon /> : <Brightness4Icon />}
+            </IconButton>
+
+            {/* Mobile Menu Toggle */}
+            {!isSmUp && (
+              <IconButton
+                edge="start"
+                color="inherit"
+                aria-label="menu"
+                onClick={toggleDrawer(true)}
+                sx={{
+                  color: "white",
+                  backgroundColor: "rgba(255,255,255,0.1)",
+                  backdropFilter: "blur(10px)",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                  transition: "all 0.3s ease",
+                  "&:hover": {
+                    backgroundColor: "rgba(255,255,255,0.2)",
+                    transform: "scale(1.1)",
+                  },
+                }}
+              >
+                <MenuIcon />
+              </IconButton>
+            )}
+          </Box>
+        </Toolbar>
+      </AppBar>
+
+      {/* Enhanced Mobile Drawer */}
+      <Drawer
+        anchor="right"
+        open={drawerOpen}
+        onClose={toggleDrawer(false)}
+        PaperProps={{
+          sx: {
+            width: 280,
+            background:
+              theme.palette.mode === "dark"
+                ? "linear-gradient(180deg, #2c3e50 0%, #34495e 100%)"
+                : "linear-gradient(180deg, #52b788 0%, #40916c 100%)",
+            color: "white",
+            backdropFilter: "blur(20px)",
+            border: "none",
+          },
+        }}
+      >
+        <Box sx={{ p: 3 }}>
+          {/* Drawer Header */}
+          <Box sx={{ mb: 3, textAlign: "center" }}>
+            <Avatar
+              sx={{
+                mx: "auto",
+                mb: 2,
+                width: 60,
+                height: 60,
+                background: "linear-gradient(135deg, #ffffff20, #ffffff40)",
+                backdropFilter: "blur(10px)",
+                border: "2px solid rgba(255,255,255,0.3)",
+              }}
+            >
+              <StoreIcon sx={{ color: "white", fontSize: 32 }} />
+            </Avatar>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 700,
+                textShadow: "0 2px 4px rgba(0,0,0,0.3)",
+                mb: 1,
+              }}
+            >
+              {t("Market Products")}
+            </Typography>
+            <Chip
+              label={t("Mobile Menu")}
+              size="small"
+              sx={{
+                backgroundColor: "rgba(255,255,255,0.2)",
+                color: "white",
+                backdropFilter: "blur(10px)",
+              }}
+            />
+          </Box>
+
+          {/* Navigation Items */}
+          <List sx={{ p: 0 }}>
+            {navItems.map((item, index) => (
+              <Fade in={true} timeout={300 + index * 100} key={item.path}>
+                <ListItem
+                  button
+                  component={Link}
+                  to={item.path}
+                  onClick={toggleDrawer(false)}
+                  selected={location.pathname === item.path}
                   sx={{
-                    color: "#FFFFFF",
-                    ml: 1,
-                    fontSize: { sm: 14, md: 16, lg: 18 }, // Responsive font size
-                    py: 1,
-                    px: 2,
+                    mb: 1,
+                    borderRadius: 2,
+                    backgroundColor:
+                      location.pathname === item.path
+                        ? "rgba(255,255,255,0.2)"
+                        : "transparent",
+                    backdropFilter:
+                      location.pathname === item.path ? "blur(10px)" : "none",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      backgroundColor: "rgba(255,255,255,0.15)",
+                      backdropFilter: "blur(10px)",
+                      transform: "translateX(8px)",
+                    },
+                    "&.Mui-selected": {
+                      backgroundColor: "rgba(255,255,255,0.2)",
+                    },
                   }}
                 >
-                  {t("Logout")}
-                </Button>
-              ) : (
-                <Button
-                  color="inherit"
-                  component={RouterLink}
-                  to="/login"
-                  startIcon={<LoginIcon />}
+                  <ListItemIcon
+                    sx={{
+                      color: "white",
+                      minWidth: 40,
+                      "& .MuiSvgIcon-root": {
+                        fontSize: 24,
+                      },
+                    }}
+                  >
+                    {item.icon}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={item.name}
+                    sx={{
+                      "& .MuiTypography-root": {
+                        fontWeight: location.pathname === item.path ? 700 : 500,
+                        fontSize: "1rem",
+                      },
+                    }}
+                  />
+                </ListItem>
+              </Fade>
+            ))}
+          </List>
+
+          {/* Drawer Controls */}
+          <Box
+            sx={{ mt: 4, pt: 3, borderTop: "1px solid rgba(255,255,255,0.2)" }}
+          >
+            {/* Language Selector */}
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="body2" sx={{ mb: 1, opacity: 0.8 }}>
+                {t("Language")}
+              </Typography>
+              <Paper
+                elevation={0}
+                sx={{
+                  backgroundColor: "rgba(255,255,255,0.1)",
+                  backdropFilter: "blur(10px)",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                  borderRadius: 2,
+                }}
+              >
+                <Select
+                  value={lang}
+                  onChange={handleLangChange}
+                  fullWidth
+                  size="small"
+                  variant="standard"
+                  disableUnderline
                   sx={{
-                    color: "#FFFFFF",
-                    ml: 1,
-                    fontSize: { sm: 14, md: 16, lg: 18 }, // Responsive font size
-                    py: 1,
+                    color: "white",
                     px: 2,
+                    py: 1,
+                    "& .MuiSvgIcon-root": {
+                      color: "white",
+                    },
                   }}
                 >
-                  {t("Login")}
-                </Button>
-              )}
+                  <MenuItem value="en">🇺🇸 {t("English")}</MenuItem>
+                  <MenuItem value="ar">🇸🇦 {t("Arabic")}</MenuItem>
+                  <MenuItem value="ku">🏳️ {t("Kurdish")}</MenuItem>
+                </Select>
+              </Paper>
             </Box>
-          </>
-        )}
-      </Toolbar>
-    </AppBar>
+
+            {/* Dark Mode Toggle */}
+            <Box>
+              <Typography variant="body2" sx={{ mb: 1, opacity: 0.8 }}>
+                {t("Theme")}
+              </Typography>
+              <Button
+                fullWidth
+                variant="outlined"
+                startIcon={darkMode ? <Brightness7Icon /> : <Brightness4Icon />}
+                onClick={() => setDarkMode(!darkMode)}
+                sx={{
+                  color: "white",
+                  borderColor: "rgba(255,255,255,0.3)",
+                  backgroundColor: "rgba(255,255,255,0.1)",
+                  backdropFilter: "blur(10px)",
+                  textTransform: "none",
+                  borderRadius: 2,
+                  py: 1,
+                  "&:hover": {
+                    borderColor: "rgba(255,255,255,0.5)",
+                    backgroundColor: "rgba(255,255,255,0.2)",
+                  },
+                }}
+              >
+                {darkMode ? t("Light Mode") : t("Dark Mode")}
+              </Button>
+            </Box>
+          </Box>
+        </Box>
+      </Drawer>
+    </>
   );
-}
+};
+
+export default NavigationBar;

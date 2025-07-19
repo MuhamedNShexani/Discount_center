@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const companySchema = new mongoose.Schema({
+const marketSchema = new mongoose.Schema({
   name: { type: String, required: true },
   logo: { type: String },
   address: { type: String },
@@ -8,4 +8,4 @@ const companySchema = new mongoose.Schema({
   description: { type: String },
 });
 
-module.exports = mongoose.model("Company", companySchema);
+module.exports = mongoose.model("Market", marketSchema);

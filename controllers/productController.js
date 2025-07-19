@@ -1,5 +1,5 @@
 const Product = require("../models/Product");
-const Company = require("../models/Company");
+const Market = require("../models/Market");
 
 // @desc    Get all products
 // @route   GET /api/products
@@ -63,14 +63,14 @@ const createProduct = async (req, res) => {
     req.body;
 
   try {
-    // Check if company exists
-    const company = await Company.findById(companyId);
-    if (!company) {
+    // Check if market exists
+    const market = await Market.findById(companyId);
+    if (!market) {
       console.error(
-        "[createProduct] Company not found for companyId:",
+        "[createProduct] Market not found for companyId:",
         companyId
       );
-      return res.status(404).json({ msg: "Company not found" });
+      return res.status(404).json({ msg: "Market not found" });
     }
 
     const newProduct = new Product({

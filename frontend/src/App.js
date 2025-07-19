@@ -11,11 +11,11 @@ import rtlPlugin from "stylis-plugin-rtl";
 
 // Import pages
 import MainPage from "./pages/MainPage";
-import CompanyList from "./pages/CompanyList";
+import MarketList from "./pages/MarketList";
 import ProductCategory from "./pages/ProductCategory";
 import DataEntryForm from "./pages/DataEntryForm";
 import ProductDetail from "./pages/ProductDetail";
-import CompanyProfile from "./pages/CompanyProfile";
+import MarketProfile from "./pages/MarketProfile";
 import NavigationBar from "./NavigationBar"; // Make sure this path is correct
 import { AuthProvider } from "./context/AuthContext";
 import LoginPage from "./pages/LoginPage";
@@ -216,8 +216,8 @@ function App() {
             <Container maxWidth="lg">
               <Routes>
                 <Route path="/" element={<MainPage />} />
-                <Route path="/companies" element={<CompanyList />} />
-                <Route path="/companies/:id" element={<CompanyProfile />} />
+                <Route path="/markets" element={<MarketList />} />
+                <Route path="/markets/:id" element={<MarketProfile />} />
                 <Route path="/categories" element={<ProductCategory />} />
                 <Route
                   path="/admin"

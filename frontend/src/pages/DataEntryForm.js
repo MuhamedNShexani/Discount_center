@@ -28,8 +28,15 @@ import {
   TableHead,
   TableRow,
   Paper,
+  Container,
+  Chip,
+  Avatar,
+  Fade,
+  Slide,
+  Divider,
+  useTheme,
 } from "@mui/material";
-import { companyAPI, productAPI } from "../services/api";
+import { marketAPI, productAPI } from "../services/api";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import BusinessIcon from "@mui/icons-material/Business";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
@@ -38,8 +45,11 @@ import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import InventoryIcon from "@mui/icons-material/Inventory";
+import StoreIcon from "@mui/icons-material/Store";
 import { useTranslation } from "react-i18next";
-import { useTheme } from "@mui/material/styles";
+
 const API_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
 
 const DataEntryForm = () => {
@@ -47,7 +57,7 @@ const DataEntryForm = () => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState(0);
   const [activeListTab, setActiveListTab] = useState(0); // State for list tabs
-  const [companies, setCompanies] = useState([]);
+  const [markets, setMarkets] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
@@ -99,19 +109,19 @@ const DataEntryForm = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
-    fetchCompanies();
+    fetchMarkets();
   }, []);
 
   useEffect(() => {
     fetchProducts(selectedCompanyFilter);
   }, [selectedCompanyFilter]);
 
-  const fetchCompanies = async () => {
+  const fetchMarkets = async () => {
     try {
-      const response = await companyAPI.getAll();
-      setCompanies(response.data);
+      const response = await marketAPI.getAll();
+      setMarkets(response.data);
     } catch (err) {
-      console.error("Error fetching companies:", err);
+      console.error("Error fetching markets:", err);
     }
   };
 
@@ -183,7 +193,7 @@ const DataEntryForm = () => {
     formData.append("logo", file);
 
     try {
-      const response = await fetch(`${API_URL}/api/companies/upload-logo`, {
+      const response = await fetch(`${API_URL}/api/markets/upload-logo`, {
         method: "POST",
         body: formData,
       });
@@ -312,7 +322,7 @@ const DataEntryForm = () => {
         logo: logoUrl,
       };
 
-      await companyAPI.create(companyData);
+      await marketAPI.create(companyData);
       setMessage({ type: "success", text: t("Company created successfully!") });
       setCompanyForm({
         name: "",
@@ -322,7 +332,7 @@ const DataEntryForm = () => {
         description: "",
       });
       setSelectedCompanyLogo(null);
-      fetchCompanies(); // Refresh companies list
+      fetchMarkets(); // Refresh markets list
     } catch (err) {
       setMessage({
         type: "error",
@@ -429,7 +439,7 @@ const DataEntryForm = () => {
           logoUrl = await uploadCompanyLogo(selectedEditImage);
         }
 
-        await companyAPI.update(editDialog.data._id, {
+        await marketAPI.update(editDialog.data._id, {
           ...editForm,
           logo: logoUrl,
         });
@@ -437,7 +447,7 @@ const DataEntryForm = () => {
           type: "success",
           text: t("Company updated successfully!"),
         });
-        fetchCompanies();
+        fetchMarkets();
       } else if (editDialog.type === "product") {
         let imageUrl = editForm.image;
         if (selectedEditImage) {
@@ -478,12 +488,12 @@ const DataEntryForm = () => {
     setDeleteLoading(true);
     try {
       if (deleteDialog.type === "company") {
-        await companyAPI.delete(deleteDialog.data._id);
+        await marketAPI.delete(deleteDialog.data._id);
         setMessage({
           type: "success",
           text: t("Company deleted successfully!"),
         });
-        fetchCompanies();
+        fetchMarkets();
         fetchProducts(selectedCompanyFilter); // Refresh products as some might be deleted
       } else if (deleteDialog.type === "product") {
         await productAPI.delete(deleteDialog.data._id);
@@ -517,65 +527,196 @@ const DataEntryForm = () => {
   };
 
   return (
-    <Box>
-      <Box display="flex" alignItems="center" mb={3}>
-        <AdminPanelSettingsIcon
-          sx={{ fontSize: 40, mr: 2, color: "#714329" }}
-        />
-        <Box>
-          <Typography
-            variant="h4"
-            component="h1"
-            gutterBottom
-            sx={{
-              color: theme.palette.mode === "dark" ? "contained" : "#714329",
-            }}
-          >
-            {t("Admin Panel")}
-          </Typography>
-          <Typography
-            variant="subtitle1"
-            sx={{ color: "#B08463" }}
-            gutterBottom
-          >
-            {t("Add companies and products to the marketplace")}
-          </Typography>
-        </Box>
-      </Box>
-
-      <Card
+    <Container maxWidth="xl" sx={{ py: 4 }}>
+      {/* Enhanced Admin Header */}
+      <Paper
+        elevation={0}
         sx={{
-          mt: 3,
-          backgroundColor: (theme) => theme.palette.background.paper,
-          border: "1px solid #D0B9A7",
+          mb: 4,
+          borderRadius: 4,
+          overflow: "hidden",
+          background:
+            theme.palette.mode === "dark"
+              ? "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)"
+              : "linear-gradient(135deg, #52b788 0%, #40916c 100%)",
+          boxShadow:
+            theme.palette.mode === "dark"
+              ? "0 12px 40px rgba(0,0,0,0.3)"
+              : "0 12px 40px rgba(0,0,0,0.1)",
         }}
       >
-        <CardContent>
-          <Tabs value={activeTab} onChange={handleTabChange} sx={{ mb: 3 }}>
-            <Tab
-              color={theme.palette.mode === "dark" ? "contained" : "#714329"}
-              label={t("Add Company")}
-              icon={<BusinessIcon />}
-              iconPosition="start"
-            />
-            <Tab
-              color={theme.palette.mode === "dark" ? "contained" : "#714329"}
-              label={t("Add Product")}
-              icon={<ShoppingCartIcon />}
-              iconPosition="start"
-            />
-            <Tab
-              color={theme.palette.mode === "dark" ? "contained" : "#714329"}
-              label={t("Bulk Upload")}
-              icon={<AddIcon />}
-              iconPosition="start"
-            />
-          </Tabs>
+        <Box sx={{ p: 4, color: "white", position: "relative" }}>
+          <Grid container spacing={3} alignItems="center">
+            <Grid item xs={12} md={8}>
+              <Box display="flex" alignItems="center" mb={2}>
+                <Avatar
+                  sx={{
+                    width: 80,
+                    height: 80,
+                    mr: 3,
+                    background: "linear-gradient(135deg, #ffffff20, #ffffff40)",
+                    backdropFilter: "blur(10px)",
+                    border: "3px solid rgba(255,255,255,0.3)",
+                  }}
+                >
+                  <DashboardIcon sx={{ fontSize: 40 }} />
+                </Avatar>
+                <Box>
+                  <Typography
+                    variant="h2"
+                    component="h1"
+                    gutterBottom
+                    sx={{
+                      fontWeight: 700,
+                      fontSize: { xs: "2rem", md: "2.5rem" },
+                      textShadow: "0 4px 8px rgba(0,0,0,0.3)",
+                      mb: 1,
+                    }}
+                  >
+                    {t("Admin Dashboard")}
+                  </Typography>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      opacity: 0.9,
+                      fontSize: "1.125rem",
+                      textShadow: "0 2px 4px rgba(0,0,0,0.3)",
+                    }}
+                  >
+                    {t("Manage markets and products efficiently")}
+                  </Typography>
+                </Box>
+              </Box>
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Box
+                display="flex"
+                gap={2}
+                justifyContent={{ xs: "center", md: "flex-end" }}
+              >
+                <Chip
+                  icon={<StoreIcon />}
+                  label={`${markets.length} ${t("Markets")}`}
+                  sx={{
+                    backgroundColor: "rgba(255,255,255,0.2)",
+                    color: "white",
+                    fontWeight: 600,
+                    backdropFilter: "blur(10px)",
+                  }}
+                />
+                <Chip
+                  icon={<InventoryIcon />}
+                  label={`${products.length} ${t("Products")}`}
+                  sx={{
+                    backgroundColor: "rgba(255,255,255,0.2)",
+                    color: "white",
+                    fontWeight: 600,
+                    backdropFilter: "blur(10px)",
+                  }}
+                />
+              </Box>
+            </Grid>
+          </Grid>
+        </Box>
+      </Paper>
+
+      {/* Enhanced Main Content Card */}
+      <Card
+        sx={{
+          borderRadius: 3,
+          overflow: "hidden",
+          background:
+            theme.palette.mode === "dark"
+              ? "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)"
+              : "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
+          border: `1px solid ${
+            theme.palette.mode === "dark" ? "#34495e" : "#e9ecef"
+          }`,
+          boxShadow:
+            theme.palette.mode === "dark"
+              ? "0 8px 32px rgba(0,0,0,0.3)"
+              : "0 8px 32px rgba(0,0,0,0.1)",
+        }}
+      >
+        <CardContent sx={{ p: 4 }}>
+          {/* Enhanced Tabs */}
+          <Paper
+            elevation={0}
+            sx={{
+              mb: 4,
+              borderRadius: 2,
+              backgroundColor:
+                theme.palette.mode === "dark"
+                  ? "rgba(255,255,255,0.05)"
+                  : "rgba(82, 183, 136, 0.05)",
+              border: `1px solid ${
+                theme.palette.mode === "dark"
+                  ? "rgba(255,255,255,0.1)"
+                  : "rgba(82, 183, 136, 0.1)"
+              }`,
+            }}
+          >
+            <Tabs
+              value={activeTab}
+              onChange={handleTabChange}
+              sx={{
+                p: 1,
+                "& .MuiTab-root": {
+                  borderRadius: 2,
+                  mx: 0.5,
+                  transition: "all 0.3s ease",
+                  fontWeight: 600,
+                  "&.Mui-selected": {
+                    backgroundColor:
+                      theme.palette.mode === "dark" ? "#52b788" : "#52b788",
+                    color: "white",
+                    boxShadow: "0 4px 12px rgba(82, 183, 136, 0.3)",
+                  },
+                },
+                "& .MuiTabs-indicator": {
+                  display: "none",
+                },
+              }}
+            >
+              <Tab
+                label={t("Add Market")}
+                icon={<BusinessIcon />}
+                iconPosition="start"
+                sx={{ textTransform: "none" }}
+              />
+              <Tab
+                label={t("Add Product")}
+                icon={<ShoppingCartIcon />}
+                iconPosition="start"
+                sx={{ textTransform: "none" }}
+              />
+              <Tab
+                label={t("Bulk Upload")}
+                icon={<CloudUploadIcon />}
+                iconPosition="start"
+                sx={{ textTransform: "none" }}
+              />
+            </Tabs>
+          </Paper>
 
           {message.text && (
-            <Alert severity={message.type} sx={{ mb: 2 }}>
-              {message.text}
-            </Alert>
+            <Fade in={true}>
+              <Alert
+                severity={message.type}
+                sx={{
+                  mb: 3,
+                  borderRadius: 2,
+                  backgroundColor:
+                    theme.palette.mode === "dark"
+                      ? message.type === "success"
+                        ? "#1b5e20"
+                        : "#d32f2f"
+                      : undefined,
+                }}
+              >
+                {message.text}
+              </Alert>
+            </Fade>
           )}
 
           {activeTab === 0 && (
@@ -750,9 +891,9 @@ const DataEntryForm = () => {
                       <MenuItem value="">
                         <em>{t("Select Company")}</em>
                       </MenuItem>
-                      {companies.map((company) => (
-                        <MenuItem key={company._id} value={company._id}>
-                          {company.name}
+                      {markets.map((market) => (
+                        <MenuItem key={market._id} value={market._id}>
+                          {market.name}
                         </MenuItem>
                       ))}
                     </Select>
@@ -908,7 +1049,7 @@ const DataEntryForm = () => {
             sx={{ mb: 2 }}
           >
             <Tab
-              label={t("Companies")}
+              label={t("Markets")}
               icon={<BusinessIcon />}
               iconPosition="start"
             />
@@ -991,24 +1132,24 @@ const DataEntryForm = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {companies.map((company, idx) => (
-                    <TableRow key={company._id}>
+                  {markets.map((market, idx) => (
+                    <TableRow key={market._id}>
                       <TableCell>{idx + 1}</TableCell>
                       <TableCell
                         width={200}
                         sx={{ fontSize: "18px", fontWeight: "bold" }}
                       >
-                        {company.name}
+                        {market.name}
                       </TableCell>
                       <TableCell>
-                        {company.logo && (
+                        {market.logo && (
                           <img
                             src={
-                              company.logo.startsWith("http")
-                                ? company.logo
-                                : `${API_URL}${company.logo}`
+                              market.logo.startsWith("http")
+                                ? market.logo
+                                : `${API_URL}${market.logo}`
                             }
-                            alt={company.name}
+                            alt={market.name}
                             width={80}
                             height={80}
                             style={{
@@ -1018,8 +1159,8 @@ const DataEntryForm = () => {
                           />
                         )}
                       </TableCell>
-                      {/* <TableCell>{company.address}</TableCell> */}
-                      <TableCell>{company.phone}</TableCell>
+                      {/* <TableCell>{market.address}</TableCell> */}
+                      <TableCell>{market.phone}</TableCell>
                       <TableCell
                         width="100px"
                         height="100px"
@@ -1029,12 +1170,12 @@ const DataEntryForm = () => {
                           textOverflow: "ellipsis",
                         }}
                       >
-                        {company.description}
+                        {market.description}
                       </TableCell>
                       <TableCell>
                         <IconButton
                           color="primary"
-                          onClick={() => handleEditOpen("company", company)}
+                          onClick={() => handleEditOpen("company", market)}
                         >
                           <EditIcon />
                         </IconButton>
@@ -1044,7 +1185,7 @@ const DataEntryForm = () => {
                             setDeleteDialog({
                               open: true,
                               type: "company",
-                              data: company,
+                              data: market,
                             })
                           }
                         >
@@ -1077,11 +1218,11 @@ const DataEntryForm = () => {
                     label={t("Filter by Company")}
                   >
                     <MenuItem value="">
-                      <em>{t("All Companies")}</em>
+                      <em>{t("All Markets")}</em>
                     </MenuItem>
-                    {companies.map((company) => (
-                      <MenuItem key={company._id} value={company._id}>
-                        {company.name}
+                    {markets.map((market) => (
+                      <MenuItem key={market._id} value={market._id}>
+                        {market.name}
                       </MenuItem>
                     ))}
                   </Select>
@@ -1405,9 +1546,9 @@ const DataEntryForm = () => {
                   onChange={handleEditFormChange}
                   label={t("Company")}
                 >
-                  {companies.map((company) => (
-                    <MenuItem key={company._id} value={company._id}>
-                      {company.name}
+                  {markets.map((market) => (
+                    <MenuItem key={market._id} value={market._id}>
+                      {market.name}
                     </MenuItem>
                   ))}
                 </Select>
@@ -1470,7 +1611,7 @@ const DataEntryForm = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </Container>
   );
 };
 
