@@ -8,8 +8,13 @@ const productSchema = new mongoose.Schema({
   newPrice: { type: Number },
   companyId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Market",
+    ref: "Company",
     required: true,
+  },
+  marketId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Market",
+    required: false,
   },
   expireDate: { type: Date },
 });

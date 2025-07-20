@@ -5,8 +5,6 @@ import {
   Card,
   CardContent,
   CardMedia,
-  Grid,
-  Alert,
   useTheme,
   Container,
   Fade,
@@ -14,7 +12,7 @@ import {
   IconButton,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { marketAPI } from "../services/api";
+import { companyAPI } from "../services/api";
 import BusinessIcon from "@mui/icons-material/Business";
 import PhoneIcon from "@mui/icons-material/Phone";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
@@ -23,24 +21,25 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import Loader from "../components/Loader";
 import { useTranslation } from "react-i18next";
 
-const MarketList = () => {
+const CompanyList = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const { t } = useTranslation();
 
-  const [markets, setMarkets] = useState([]);
+  const [companies, setcompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetchMarkets();
+    fetchcompanies();
   }, []);
 
-  const fetchMarkets = async () => {
+  const fetchcompanies = async () => {
     try {
       setLoading(true);
-      const response = await marketAPI.getAll();
-      setMarkets(response.data);
+      const response = await companyAPI.getAll();
+
+      setcompanies(response.data);
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -48,17 +47,17 @@ const MarketList = () => {
           err.message ||
           "Network error. Please check your connection."
       );
-      console.error("Error fetching markets:", err);
+      console.error("Error fetching companies:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleMarketClick = (market) => {
-    navigate(`/markets/${market._id}`);
+  const handleCompanyClick = (company) => {
+    navigate(`/companies/${company._id}`);
   };
 
-  if (loading) return <Loader message="Loading markets..." />;
+  if (loading) return <Loader message="Loading companies..." />;
   if (error) return <Loader message={error} />;
 
   return (
@@ -102,7 +101,7 @@ const MarketList = () => {
                 textShadow: "0 4px 8px rgba(0,0,0,0.3)",
               }}
             >
-              {t("Markets")}
+              {t("companies")}
             </Typography>
             <Typography
               variant="h5"
@@ -113,10 +112,10 @@ const MarketList = () => {
                 color: "white",
               }}
             >
-              {t("Browse all markets and their products")}
+              {t("Browse all companies and their products")}
             </Typography>
             <Chip
-              label={`${markets.length} ${t("Markets")} ${t("Available")}`}
+              label={`${companies.length} ${t("companies Available")}`}
               sx={{
                 mt: 3,
                 backgroundColor: "rgba(255,255,255,0.2)",
@@ -132,7 +131,7 @@ const MarketList = () => {
         </Box>
       </Box>
 
-      {/* Markets Grid */}
+      {/* companies Grid */}
       <Box
         sx={{
           alignItems: "center",
@@ -144,11 +143,11 @@ const MarketList = () => {
           justifyContent: "flex-start",
         }}
       >
-        {markets.map((market, index) => (
-          <Fade in={true} timeout={300 + index * 100} key={market._id}>
+        {companies.map((company, index) => (
+          <Fade in={true} timeout={300 + index * 100} key={company._id}>
             <Card
               sx={{
-                height: "420px", // Increased height for market cards
+                height: "420px", // Increased height for company cards
                 width: "280px", // Fixed width - no exceptions
                 maxWidth: "280px", // Force exact width
                 minWidth: "280px", // Force exact width
@@ -176,18 +175,18 @@ const MarketList = () => {
                     theme.palette.mode === "dark"
                       ? "0 24px 48px rgba(0,0,0,0.4)"
                       : "0 24px 48px rgba(0,0,0,0.15)",
-                  "& .market-arrow": {
+                  "& .company-arrow": {
                     transform: "translateX(8px)",
                     opacity: 1,
                   },
-                  "& .market-image": {
+                  "& .company-image": {
                     transform: "scale(1.1)",
                   },
                 },
               }}
-              onClick={() => handleMarketClick(market)}
+              onClick={() => handleCompanyClick(company)}
             >
-              {/* Market Image/Logo */}
+              {/* Company Image/Logo */}
               <Box
                 sx={{
                   position: "relative",
@@ -200,13 +199,13 @@ const MarketList = () => {
                       : "linear-gradient(135deg, #52b788 0%, #40916c 100%)",
                 }}
               >
-                {market.logo ? (
+                {company.logo ? (
                   <CardMedia
                     component="img"
                     height="200"
-                    image={`${process.env.REACT_APP_BACKEND_URL}${market.logo}`}
-                    alt={market.name}
-                    className="market-image"
+                    image={`${process.env.REACT_APP_BACKEND_URL}${company.logo}`}
+                    alt={company.name}
+                    className="company-image"
                     sx={{
                       objectFit: "cover",
                       transition: "transform 0.4s ease",
@@ -244,7 +243,7 @@ const MarketList = () => {
 
                 {/* Arrow Icon */}
                 <IconButton
-                  className="market-arrow"
+                  className="company-arrow"
                   sx={{
                     position: "absolute",
                     top: 16,
@@ -263,7 +262,7 @@ const MarketList = () => {
                 </IconButton>
               </Box>
 
-              {/* Market Content */}
+              {/* Company Content */}
               <CardContent
                 sx={{
                   p: 3,
@@ -291,10 +290,10 @@ const MarketList = () => {
                     WebkitBoxOrient: "vertical",
                   }}
                 >
-                  {market.name}
+                  {company.name}
                 </Typography>
 
-                {/* Market Details - Fixed Layout */}
+                {/* Company Details - Fixed Layout */}
                 <Box sx={{ mb: 2, height: "120px", overflow: "hidden" }}>
                   {/* Address - Always show with fixed height */}
                   <Box
@@ -325,7 +324,7 @@ const MarketList = () => {
                         WebkitBoxOrient: "vertical",
                       }}
                     >
-                      {market.address || t("address not provided")}
+                      {company.address || t("address not provided")}
                     </Typography>
                   </Box>
 
@@ -355,7 +354,7 @@ const MarketList = () => {
                         whiteSpace: "nowrap",
                       }}
                     >
-                      {market.phone || t("phone not provided")}
+                      {company.phone || t("phone not provided")}
                     </Typography>
                   </Box>
 
@@ -373,7 +372,7 @@ const MarketList = () => {
                       height: "45px",
                     }}
                   >
-                    {market.description || t("description not provided")}
+                    {company.description || t("description not provided")}
                   </Typography>
                 </Box>
 
@@ -425,7 +424,7 @@ const MarketList = () => {
       </Box>
 
       {/* Empty State */}
-      {markets.length === 0 && (
+      {companies.length === 0 && (
         <Box
           sx={{
             textAlign: "center",
@@ -449,7 +448,7 @@ const MarketList = () => {
               mb: 2,
             }}
           >
-            {t("No markets found")}
+            {t("No companies found")}
           </Typography>
           <Typography
             variant="body1"
@@ -460,7 +459,9 @@ const MarketList = () => {
               lineHeight: 1.6,
             }}
           >
-            {t("No markets found. Add some markets through the admin panel.")}
+            {t(
+              "No companies found. Add some companies through the admin panel."
+            )}
           </Typography>
         </Box>
       )}
@@ -468,4 +469,4 @@ const MarketList = () => {
   );
 };
 
-export default MarketList;
+export default CompanyList;

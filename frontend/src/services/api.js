@@ -20,6 +20,16 @@ export const marketAPI = {
   delete: (id) => api.delete(`/markets/${id}`),
 };
 
+// Company API calls
+
+export const companyAPI = {
+  getAll: () => api.get("/companies"),
+  getById: (id) => api.get(`/companies/${id}`),
+  create: (data) => api.post("/companies", data),
+  update: (id, data) => api.put(`/companies/${id}`, data),
+  delete: (id) => api.delete(`/companies/${id}`),
+};
+
 // Product API calls
 export const productAPI = {
   getAll: (filters = {}) => api.get("/products", { params: filters }),
@@ -28,6 +38,7 @@ export const productAPI = {
   update: (id, data) => api.put(`/products/${id}`, data),
   delete: (id) => api.delete(`/products/${id}`),
   getByCompany: (companyId) => api.get(`/products/company/${companyId}`),
+  getByMarket: (marketId) => api.get(`/products/market/${marketId}`),
   getByCategory: (category) => api.get(`/products/category/${category}`),
   getCategories: () => api.get("/products/categories"),
 };

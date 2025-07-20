@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import {
-  Grid,
   Card,
   CardContent,
   CardMedia,
@@ -14,8 +13,11 @@ import {
   MenuItem,
   FormControl,
   Select,
-  Paper,
 } from "@mui/material";
+import Slider from "react-slick";
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
+
 import { Link } from "react-router-dom";
 import { marketAPI, productAPI } from "../services/api";
 import StorefrontIcon from "@mui/icons-material/Storefront";
@@ -27,11 +29,17 @@ import SearchIcon from "@mui/icons-material/Search";
 import Loader from "../components/Loader";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@mui/material/styles";
-
+import banner1 from "./assests/1.png";
+import banner2 from "./assests/2.png";
+import banner3 from "./assests/3.png";
+import banner4 from "./assests/4.png";
+import banner5 from "./assests/5.png";
+import banner7 from "./assests/7.png";
+import banner6 from "./assests/6.png";
 const MainPage = () => {
   const theme = useTheme();
   const [markets, setMarkets] = useState([]);
-  const [productsByCompany, setProductsByCompany] = useState({});
+  const [productsByMarket, setProductsByMarket] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const { t } = useTranslation();
@@ -40,6 +48,26 @@ const MainPage = () => {
   const [priceRange, setPriceRange] = useState([0, 1000000]);
   const [allTypes, setAllTypes] = useState([]);
 
+  const bannerImages = [
+    banner1,
+    banner2,
+    banner3,
+    banner4,
+    banner5,
+    banner6,
+    banner7,
+  ];
+
+  const bannerSettings = {
+    dots: true,
+    infinite: true,
+    speed: 500,
+    slidesToShow: 1,
+    slidesToScroll: 1,
+    autoplay: true,
+    autoplaySpeed: 3000,
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -47,13 +75,13 @@ const MainPage = () => {
   // Collect all product types for filter dropdown
   useEffect(() => {
     const types = new Set();
-    Object.values(productsByCompany).forEach((products) => {
+    Object.values(productsByMarket).forEach((products) => {
       products?.forEach((p) => {
         if (p.type) types.add(p.type);
       });
     });
     setAllTypes(Array.from(types));
-  }, [productsByCompany]);
+  }, [productsByMarket]);
 
   const fetchData = async () => {
     try {
@@ -67,10 +95,10 @@ const MainPage = () => {
       // Fetch products for each market (limit to 10 per market)
       const productsMap = {};
       for (const market of marketsData) {
-        const productsResponse = await productAPI.getByCompany(market._id);
+        const productsResponse = await productAPI.getByMarket(market._id);
         productsMap[market._id] = productsResponse.data.slice(0, 12); // Limit to 12 products
       }
-      setProductsByCompany(productsMap);
+      setProductsByMarket(productsMap);
     } catch (err) {
       setError(
         err.response
@@ -102,7 +130,7 @@ const MainPage = () => {
     const marketNameMatch = market.name
       ?.toLowerCase()
       .includes(search.toLowerCase());
-    const filteredProducts = (productsByCompany[market._id] || []).filter(
+    const filteredProducts = (productsByMarket[market._id] || []).filter(
       (product) => {
         const nameMatch = product.name
           ?.toLowerCase()
@@ -118,171 +146,272 @@ const MainPage = () => {
     return filteredProducts.length > 0;
   });
 
-  if (loading) return <Loader message="Loading markets..." />;
+  if (loading) return <Loader message="Loading ..." />;
   if (error) return <Loader message={error} />;
 
   return (
     <Box>
-      {/* Combined Title, Subtitle, and Filters */}
+      {/* Banner Slider Section */}
+      <Box sx={{ mb: 4, mt: 10 }}>
+        <Box
+          sx={{
+            width: "100%",
+            height: "300px",
+            borderRadius: 3,
+            overflow: "hidden",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
+            mb: 3,
+          }}
+        >
+          <Slider {...bannerSettings}>
+            {bannerImages.map((src, index) => (
+              <div key={index}>
+                <img
+                  src={src}
+                  alt={`Banner ${index + 1}`}
+                  style={{
+                    width: "100%",
+                    height: "400px",
+                    objectFit: "cover",
+                  }}
+                />
+              </div>
+            ))}
+          </Slider>
+        </Box>
+      </Box>
+
+      {/* Title and Stats Section */}
       <Box display="flex" flexDirection="column" alignItems="center" mb={4}>
         <StorefrontIcon
           sx={{
-            fontSize: 40,
-            color: theme.palette.mode === "dark" ? "contained" : "#714329",
+            fontSize: "3rem",
+            color: theme.palette.mode === "dark" ? "contained" : "#40916c",
             mb: 1,
           }}
         />
-        <Typography
-          variant="h4"
-          component="h1"
-          gutterBottom
-          sx={{
-            color: theme.palette.mode === "dark" ? "contained" : "#714329",
-          }}
-        >
-          {t("Market Products")}
-        </Typography>
+
         <Typography
           variant="subtitle1"
           sx={{
-            color: theme.palette.mode === "dark" ? "contained" : "#714329",
-            mb: 2,
+            fontSize: "3rem",
+            color: theme.palette.mode === "dark" ? "contained" : "#40916c",
+            mb: 3,
+            textAlign: "center",
           }}
           gutterBottom
         >
           {t("Discover products from various markets")}
-          <br />
-          {t("Number of products that are available in the system")} :{" "}
-          {Object.values(productsByCompany).flat().length || 0} {"     ,    "}
-          {t("Number of markets that are available in the system")} :{" "}
-          {markets.length}
         </Typography>
-        {/* Modern Horizontal Category Filters */}
+      </Box>
+
+      {/* Filters Section */}
+      <Box
+        sx={{
+          backgroundColor:
+            theme.palette.mode === "dark" ? "#2c3e50" : "#52b788",
+          borderRadius: 3,
+          p: { xs: 2, md: 3 },
+          mb: 4,
+          boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
+        }}
+      >
+        {/* Search Bar */}
         <Box
           sx={{
-            backgroundColor:
-              theme.palette.mode === "dark" ? "#2c3e50" : "#52b788",
-            borderRadius: 2,
-            p: { xs: 1.5, md: 2 },
-            mb: 3,
-            mt: 1,
-            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+            mb: 2,
+            display: "flex",
+            gap: { xs: 1, md: 2 },
+            alignItems: "center",
+            flexDirection: { xs: "column", sm: "row" },
           }}
         >
-          {/* Search Bar */}
+          <TextField
+            variant="outlined"
+            placeholder={t("Search for items...")}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            sx={{
+              flex: 1,
+              width: { xs: "100%", sm: "auto" },
+              maxWidth: 400,
+              backgroundColor: "white",
+              borderRadius: 1,
+              "& .MuiOutlinedInput-root": {
+                "& fieldset": {
+                  borderColor: "transparent",
+                },
+                "&:hover fieldset": {
+                  borderColor: "transparent",
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: theme.palette.primary.main,
+                },
+              },
+            }}
+            size="small"
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: "grey.500" }} />
+                </InputAdornment>
+              ),
+            }}
+          />
+
+          {/* Price Range Filters */}
           <Box
             sx={{
-              mb: 2,
               display: "flex",
-              gap: { xs: 1, md: 2 },
+              gap: 1,
               alignItems: "center",
-              flexDirection: { xs: "column", sm: "row" },
             }}
           >
             <TextField
-              variant="outlined"
-              placeholder={t("Search for items...")}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              type="number"
+              placeholder={t("Min Price")}
+              value={priceRange[0] || ""}
+              onChange={(e) => {
+                const val = Number(e.target.value) || 0;
+                setPriceRange([val, priceRange[1]]);
+              }}
               sx={{
-                flex: 1,
-                width: { xs: "100%", sm: "auto" },
-                maxWidth: 400,
+                width: { xs: 80, md: 120 },
                 backgroundColor: "white",
                 borderRadius: 1,
                 "& .MuiOutlinedInput-root": {
-                  "& fieldset": {
-                    borderColor: "transparent",
-                  },
-                  "&:hover fieldset": {
-                    borderColor: "transparent",
-                  },
+                  "& fieldset": { borderColor: "transparent" },
+                  "&:hover fieldset": { borderColor: "transparent" },
                   "&.Mui-focused fieldset": {
                     borderColor: theme.palette.primary.main,
                   },
                 },
               }}
               size="small"
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon sx={{ color: "grey.500" }} />
-                  </InputAdornment>
-                ),
-              }}
             />
 
-            {/* Price Range Filters */}
-            <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-              <TextField
-                type="number"
-                placeholder={t("Min Price")}
-                value={priceRange[0] || ""}
-                onChange={(e) => {
-                  const val = Number(e.target.value) || 0;
-                  setPriceRange([val, priceRange[1]]);
-                }}
-                sx={{
-                  width: { xs: 80, md: 100 },
-                  backgroundColor: "white",
-                  borderRadius: 1,
-                  "& .MuiOutlinedInput-root": {
-                    "& fieldset": { borderColor: "transparent" },
-                    "&:hover fieldset": { borderColor: "transparent" },
-                    "&.Mui-focused fieldset": {
-                      borderColor: theme.palette.primary.main,
-                    },
-                  },
-                }}
-                size="small"
-              />
+            <Typography sx={{ color: "white", fontSize: "0.875rem" }}>
+              -
+            </Typography>
 
-              <Typography sx={{ color: "white", fontSize: "0.875rem" }}>
-                -
-              </Typography>
-
-              <TextField
-                type="number"
-                placeholder={t("Max Price")}
-                value={priceRange[1] === 1000000 ? "" : priceRange[1]}
-                onChange={(e) => {
-                  const val = Number(e.target.value) || 1000000;
-                  setPriceRange([priceRange[0], val]);
-                }}
-                sx={{
-                  width: { xs: 80, md: 100 },
-                  backgroundColor: "white",
-                  borderRadius: 1,
-                  "& .MuiOutlinedInput-root": {
-                    "& fieldset": { borderColor: "transparent" },
-                    "&:hover fieldset": { borderColor: "transparent" },
-                    "&.Mui-focused fieldset": {
-                      borderColor: theme.palette.primary.main,
-                    },
+            <TextField
+              type="number"
+              placeholder={t("Max Price")}
+              value={priceRange[1] === 1000000 ? "" : priceRange[1]}
+              onChange={(e) => {
+                const val = Number(e.target.value) || 1000000;
+                setPriceRange([priceRange[0], val]);
+              }}
+              sx={{
+                width: { xs: 80, md: 120 },
+                backgroundColor: "white",
+                borderRadius: 1,
+                "& .MuiOutlinedInput-root": {
+                  "& fieldset": { borderColor: "transparent" },
+                  "&:hover fieldset": { borderColor: "transparent" },
+                  "&.Mui-focused fieldset": {
+                    borderColor: theme.palette.primary.main,
                   },
-                }}
-                size="small"
-              />
-            </Box>
+                },
+              }}
+              size="small"
+            />
           </Box>
+        </Box>
 
-          {/* Category Buttons */}
-          <Box
+        {/* Category Buttons */}
+        <Box
+          sx={{
+            display: "flex",
+            gap: 1,
+            flexWrap: "wrap",
+            alignItems: "center",
+            justifyContent: { xs: "center", md: "flex-start" },
+          }}
+        >
+          {/* Browse All Categories */}
+          <Button
+            variant={type === "" ? "contained" : "outlined"}
+            onClick={() => setType("")}
             sx={{
-              display: "flex",
-              gap: 1,
-              flexWrap: "wrap",
-              alignItems: "center",
-              justifyContent: { xs: "center", md: "flex-start" },
+              backgroundColor:
+                type === ""
+                  ? theme.palette.mode === "dark"
+                    ? "#34495e"
+                    : "#40916c"
+                  : "transparent",
+              color: "white",
+              border: "1px solid rgba(255,255,255,0.3)",
+              borderRadius: 2,
+              px: { xs: 1.5, md: 2 },
+              py: 0.5,
+              fontSize: { xs: "0.75rem", md: "0.875rem" },
+              textTransform: "none",
+              minHeight: "32px",
+              "&:hover": {
+                backgroundColor:
+                  theme.palette.mode === "dark" ? "#34495e" : "#40916c",
+                borderColor: "rgba(255,255,255,0.5)",
+              },
+            }}
+            startIcon={<CategoryIcon sx={{ fontSize: "16px" }} />}
+          >
+            {t("Browse All Categories")}
+          </Button>
+
+          {/* Latest Button */}
+          <Button
+            variant="outlined"
+            onClick={() => setType("LatesDiscount")}
+            sx={{
+              color: "white",
+              border: "1px solid rgba(255,255,255,0.3)",
+              borderRadius: 2,
+              px: { xs: 1.5, md: 2 },
+              py: 0.5,
+              fontSize: { xs: "0.75rem", md: "0.875rem" },
+              textTransform: "none",
+              minHeight: "32px",
+              "&:hover": {
+                backgroundColor: "rgba(255,255,255,0.1)",
+                borderColor: "rgba(255,255,255,0.5)",
+              },
             }}
           >
-            {/* Browse All Categories */}
+            {t("Latest")}
+          </Button>
+
+          {/* Hot Deals Button */}
+          <Button
+            variant="outlined"
+            sx={{
+              color: "white",
+              border: "1px solid rgba(255,255,255,0.3)",
+              borderRadius: 2,
+              px: { xs: 1.5, md: 2 },
+              py: 0.5,
+              fontSize: { xs: "0.75rem", md: "0.875rem" },
+              textTransform: "none",
+              minHeight: "32px",
+              "&:hover": {
+                backgroundColor: "rgba(255,255,255,0.1)",
+                borderColor: "rgba(255,255,255,0.5)",
+              },
+            }}
+            startIcon={<LocalOfferIcon sx={{ fontSize: "16px" }} />}
+          >
+            🔥 {t("Hot Deals")}
+          </Button>
+
+          {/* Category Filter Buttons */}
+          {allTypes.slice(0, 6).map((categoryType) => (
             <Button
-              variant={type === "" ? "contained" : "outlined"}
-              onClick={() => setType("")}
+              key={categoryType}
+              variant={type === categoryType ? "contained" : "outlined"}
+              onClick={() => setType(categoryType)}
               sx={{
                 backgroundColor:
-                  type === ""
+                  type === categoryType
                     ? theme.palette.mode === "dark"
                       ? "#34495e"
                       : "#40916c"
@@ -297,160 +426,84 @@ const MainPage = () => {
                 minHeight: "32px",
                 "&:hover": {
                   backgroundColor:
-                    theme.palette.mode === "dark" ? "#34495e" : "#40916c",
-                  borderColor: "rgba(255,255,255,0.5)",
-                },
-              }}
-              startIcon={<CategoryIcon sx={{ fontSize: "16px" }} />}
-            >
-              {t("Browse All Categories")}
-            </Button>
-
-            {/* Latest Button */}
-            <Button
-              variant="outlined"
-              sx={{
-                color: "white",
-                border: "1px solid rgba(255,255,255,0.3)",
-                borderRadius: 2,
-                px: { xs: 1.5, md: 2 },
-                py: 0.5,
-                fontSize: { xs: "0.75rem", md: "0.875rem" },
-                textTransform: "none",
-                minHeight: "32px",
-                "&:hover": {
-                  backgroundColor: "rgba(255,255,255,0.1)",
-                  borderColor: "rgba(255,255,255,0.5)",
-                },
-              }}
-            >
-              {t("Latest")}
-            </Button>
-
-            {/* Hot Deals Button */}
-            <Button
-              variant="outlined"
-              sx={{
-                color: "white",
-                border: "1px solid rgba(255,255,255,0.3)",
-                borderRadius: 2,
-                px: { xs: 1.5, md: 2 },
-                py: 0.5,
-                fontSize: { xs: "0.75rem", md: "0.875rem" },
-                textTransform: "none",
-                minHeight: "32px",
-                "&:hover": {
-                  backgroundColor: "rgba(255,255,255,0.1)",
-                  borderColor: "rgba(255,255,255,0.5)",
-                },
-              }}
-              startIcon={<LocalOfferIcon sx={{ fontSize: "16px" }} />}
-            >
-              🔥 {t("Hot Deals")}
-            </Button>
-
-            {/* Category Filter Buttons */}
-            {allTypes.slice(0, 6).map((categoryType) => (
-              <Button
-                key={categoryType}
-                variant={type === categoryType ? "contained" : "outlined"}
-                onClick={() => setType(categoryType)}
-                sx={{
-                  backgroundColor:
                     type === categoryType
                       ? theme.palette.mode === "dark"
                         ? "#34495e"
                         : "#40916c"
-                      : "transparent",
-                  color: "white",
-                  border: "1px solid rgba(255,255,255,0.3)",
-                  borderRadius: 2,
-                  px: { xs: 1.5, md: 2 },
-                  py: 0.5,
-                  fontSize: { xs: "0.75rem", md: "0.875rem" },
-                  textTransform: "none",
-                  minHeight: "32px",
-                  "&:hover": {
-                    backgroundColor:
-                      type === categoryType
-                        ? theme.palette.mode === "dark"
-                          ? "#34495e"
-                          : "#40916c"
-                        : "rgba(255,255,255,0.1)",
-                    borderColor: "rgba(255,255,255,0.5)",
-                  },
-                }}
-              >
-                {t(categoryType)}
-              </Button>
-            ))}
-
-            {/* More Categories Dropdown for remaining categories */}
-            {allTypes.length > 6 && (
-              <FormControl size="small">
-                <Select
-                  displayEmpty
-                  value={allTypes.slice(6).includes(type) ? type : ""}
-                  onChange={(e) => setType(e.target.value)}
-                  sx={{
-                    color: "white",
-                    border: "1px solid rgba(255,255,255,0.3)",
-                    borderRadius: 2,
-                    fontSize: { xs: "0.75rem", md: "0.875rem" },
-                    minHeight: "32px",
-                    "& .MuiOutlinedInput-notchedOutline": {
-                      border: "none",
-                    },
-                    "& .MuiSelect-icon": {
-                      color: "white",
-                    },
-                  }}
-                  renderValue={(selected) =>
-                    selected ? t(selected) : t("More Categories")
-                  }
-                >
-                  {allTypes.slice(6).map((categoryType) => (
-                    <MenuItem key={categoryType} value={categoryType}>
-                      {t(categoryType)}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            )}
-
-            {/* Reset Filters Button */}
-            <Button
-              variant="outlined"
-              onClick={() => {
-                setSearch("");
-                setType("");
-                setPriceRange([0, 1000000]);
-              }}
-              sx={{
-                color: "white",
-                border: "1px solid rgba(255,255,255,0.3)",
-                borderRadius: 2,
-                px: { xs: 1.5, md: 2 },
-                py: 0.5,
-                fontSize: { xs: "0.75rem", md: "0.875rem" },
-                textTransform: "none",
-                minHeight: "32px",
-                ml: { xs: 0, md: "auto" },
-                "&:hover": {
-                  backgroundColor: "rgba(255,255,255,0.1)",
+                      : "rgba(255,255,255,0.1)",
                   borderColor: "rgba(255,255,255,0.5)",
                 },
               }}
             >
-              {t("Reset Filters")}
+              {t(categoryType)}
             </Button>
-          </Box>
+          ))}
+
+          {/* More Categories Dropdown for remaining categories */}
+          {allTypes.length > 6 && (
+            <FormControl size="small">
+              <Select
+                displayEmpty
+                value={allTypes.slice(6).includes(type) ? type : ""}
+                onChange={(e) => setType(e.target.value)}
+                sx={{
+                  color: "white",
+                  border: "1px solid rgba(255,255,255,0.3)",
+                  borderRadius: 2,
+                  fontSize: { xs: "0.75rem", md: "0.875rem" },
+                  minHeight: "32px",
+                  "& .MuiOutlinedInput-notchedOutline": {
+                    border: "none",
+                  },
+                  "& .MuiSelect-icon": {
+                    color: "white",
+                  },
+                }}
+                renderValue={(selected) =>
+                  selected ? t(selected) : t("More Categories")
+                }
+              >
+                {allTypes.slice(6).map((categoryType) => (
+                  <MenuItem key={categoryType} value={categoryType}>
+                    {t(categoryType)}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
+
+          {/* Reset Filters Button */}
+          <Button
+            variant="outlined"
+            onClick={() => {
+              setSearch("");
+              setType("");
+              setPriceRange([0, 1000000]);
+            }}
+            sx={{
+              color: "white",
+              border: "1px solid rgba(255,255,255,0.3)",
+              borderRadius: 2,
+              px: { xs: 1.5, md: 2 },
+              py: 0.5,
+              fontSize: { xs: "0.75rem", md: "0.875rem" },
+              textTransform: "none",
+              minHeight: "32px",
+              ml: { xs: 0, md: "auto" },
+              "&:hover": {
+                backgroundColor: "rgba(255,255,255,0.1)",
+                borderColor: "rgba(255,255,255,0.5)",
+              },
+            }}
+          >
+            {t("Reset Filters")}
+          </Button>
         </Box>
       </Box>
 
       {filteredMarkets.map((market) => {
         // Filter products for this market based on the same logic as in filteredMarkets
-        const filteredProducts = (productsByCompany[market._id] || []).filter(
+        const filteredProducts = (productsByMarket[market._id] || []).filter(
           (product) => {
             const nameMatch = product.name
               ?.toLowerCase()
@@ -592,6 +645,10 @@ const MainPage = () => {
                   <Typography
                     variant="body1"
                     sx={{
+                      width: "800px",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
                       color: "rgba(255,255,255,0.9)",
                       mt: 0.5,
                       textShadow: "0 1px 2px rgba(0,0,0,0.3)",
@@ -600,7 +657,9 @@ const MainPage = () => {
                     {market.address}
                   </Typography>
                   <Chip
-                    label={`${filteredProducts.length} ${t("Products")}`}
+                    label={`${filteredProducts.length} ${t(
+                      "Discounted Products"
+                    )}`}
                     sx={{
                       mt: 1,
                       backgroundColor: "rgba(255,255,255,0.2)",
@@ -657,12 +716,12 @@ const MainPage = () => {
                   return (
                     <Card
                       component={Link}
-                      to={`/product/${product._id}`}
+                      to={`/products/${product._id}`}
                       sx={{
                         height: "350px", // Fixed height - no exceptions
-                        width: "280px", // Fixed width - no exceptions
-                        maxWidth: "280px", // Force exact width
-                        minWidth: "280px", // Force exact width
+                        width: "250px", // Fixed width - no exceptions
+                        maxWidth: "250px", // Force exact width
+                        minWidth: "250px", // Force exact width
                         textDecoration: "none",
                         borderRadius: 2,
                         overflow: "hidden",
@@ -750,21 +809,6 @@ const MainPage = () => {
                             }}
                           />
                         )}
-
-                        {/* Product Type Badge */}
-                        <Chip
-                          label={t(product.type)}
-                          sx={{
-                            position: "absolute",
-                            top: 12,
-                            left: 12,
-                            backgroundColor: "rgba(82, 183, 136, 0.9)",
-                            color: "white",
-                            fontSize: "0.75rem",
-                            fontWeight: 600,
-                            backdropFilter: "blur(10px)",
-                          }}
-                        />
                       </Box>
 
                       {/* Product Content */}
@@ -774,11 +818,12 @@ const MainPage = () => {
                           flex: 1, // Fill remaining space
                           display: "flex",
                           flexDirection: "column",
-                          minHeight: "140px", // Minimum height for consistent content area
+                          minHeight: "120px", // Minimum height for consistent content area
                         }}
                       >
                         <Typography
                           variant="h6"
+                          align="center"
                           sx={{
                             fontWeight: 600,
                             fontSize: "1rem",
@@ -791,7 +836,19 @@ const MainPage = () => {
                         >
                           {product.name}
                         </Typography>
-
+                        {/* Product Type Badge */}
+                        <Chip
+                          label={t(product.type)}
+                          sx={{
+                            width: "fit-content",
+                            marginBottom: 1,
+                            backgroundColor: "rgba(82, 183, 136, 0.9)",
+                            color: "white",
+                            fontSize: "0.75rem",
+                            fontWeight: 600,
+                            backdropFilter: "blur(10px)",
+                          }}
+                        />
                         <Box sx={{ mt: "auto" }}>
                           <Box
                             display="flex"
@@ -808,7 +865,7 @@ const MainPage = () => {
                                     fontSize: "0.875rem",
                                   }}
                                 >
-                                  ${product.previousPrice}
+                                  {formatPrice(product.previousPrice)}
                                 </Typography>
                               )}
                             <Typography
@@ -819,7 +876,7 @@ const MainPage = () => {
                                 fontSize: "1.125rem",
                               }}
                             >
-                              ${product.newPrice}
+                              {formatPrice(product.newPrice)}
                             </Typography>
                           </Box>
                         </Box>

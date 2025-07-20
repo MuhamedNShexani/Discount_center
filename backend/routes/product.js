@@ -5,6 +5,7 @@ const {
   getProductById,
   createProduct,
   getProductsByCompany,
+  getProductsByMarket,
   getProductsByCategory,
   getCategories,
   updateProduct,
@@ -22,6 +23,9 @@ router.get("/categories", getCategories);
 // @route   GET /api/products/company/:companyId
 // @desc    Get products by market
 router.get("/company/:companyId", getProductsByCompany);
+
+// @desc    Get products by market
+router.get("/market/:marketId", getProductsByMarket);
 
 // @route   GET /api/products/category/:category
 // @desc    Get products by category

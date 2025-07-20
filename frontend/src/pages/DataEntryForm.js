@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Typography,
@@ -36,7 +36,8 @@ import {
   Divider,
   useTheme,
 } from "@mui/material";
-import { marketAPI, productAPI } from "../services/api";
+import { marketAPI, productAPI, companyAPI } from "../services/api";
+
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import BusinessIcon from "@mui/icons-material/Business";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
@@ -58,12 +59,27 @@ const DataEntryForm = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [activeListTab, setActiveListTab] = useState(0); // State for list tabs
   const [markets, setMarkets] = useState([]);
+  const [companies, setCompanies] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
 
+  // Refs for file inputs
+  const companyLogoFileRef = useRef(null);
+  const productImageFileRef = useRef(null);
+  const editProductImageFileRef = useRef(null);
+  const marketLogoFileRef = useRef(null);
+
   // Company form state
   const [companyForm, setCompanyForm] = useState({
+    name: "",
+    logo: "",
+    address: "",
+    phone: "",
+    description: "",
+  });
+  // Market form state
+  const [marketForm, setMarketForm] = useState({
     name: "",
     logo: "",
     address: "",
@@ -78,7 +94,7 @@ const DataEntryForm = () => {
     image: "",
     previousPrice: "",
     newPrice: "",
-    companyId: "",
+    marketId: "",
     expireDate: "",
   });
 
@@ -89,7 +105,9 @@ const DataEntryForm = () => {
   const [selectedExcelFile, setSelectedExcelFile] = useState(null);
   const [bulkUploadLoading, setBulkUploadLoading] = useState(false);
   const [selectedEditImage, setSelectedEditImage] = useState(null);
+  const [selectedMarketLogo, setSelectedMarketLogo] = useState(null);
 
+  const [selectedMarketFilter, setSelectedMarketFilter] = useState("");
   const [editDialog, setEditDialog] = useState({
     open: false,
     type: "",
@@ -101,8 +119,6 @@ const DataEntryForm = () => {
     data: null,
   });
 
-  const [selectedCompanyFilter, setSelectedCompanyFilter] = useState("");
-
   // Edit dialog form state
   const [editForm, setEditForm] = useState({});
   const [editLoading, setEditLoading] = useState(false);
@@ -110,11 +126,12 @@ const DataEntryForm = () => {
 
   useEffect(() => {
     fetchMarkets();
+    fetchCompanies();
   }, []);
 
   useEffect(() => {
-    fetchProducts(selectedCompanyFilter);
-  }, [selectedCompanyFilter]);
+    fetchProducts(selectedMarketFilter);
+  }, [selectedMarketFilter]);
 
   const fetchMarkets = async () => {
     try {
@@ -125,19 +142,39 @@ const DataEntryForm = () => {
     }
   };
 
-  const fetchProducts = async (companyId) => {
+  const fetchProducts = async (marketId) => {
     try {
-      const filters = companyId ? { company: companyId } : {};
-      const response = await productAPI.getAll(filters);
-      setProducts(response.data);
+      if (marketId) {
+        const response = await productAPI.getByMarket(marketId);
+        setProducts(response.data);
+      } else {
+        const response = await productAPI.getAll();
+        setProducts(response.data);
+      }
     } catch (err) {
       console.error("Error fetching products:", err);
+    }
+  };
+
+  const fetchCompanies = async () => {
+    try {
+      const response = await companyAPI.getAll();
+      setCompanies(response.data);
+    } catch (err) {
+      console.error("Error fetching companies:", err);
     }
   };
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
     setMessage({ type: "", text: "" });
+  };
+
+  const handleMarketFormChange = (e) => {
+    setMarketForm({
+      ...marketForm,
+      [e.target.name]: e.target.value,
+    });
   };
 
   // Handler for the new list tabs
@@ -153,7 +190,7 @@ const DataEntryForm = () => {
   };
 
   const handleFilterChange = (e) => {
-    setSelectedCompanyFilter(e.target.value);
+    setSelectedMarketFilter(e.target.value);
   };
 
   const handleProductFormChange = (e) => {
@@ -193,6 +230,30 @@ const DataEntryForm = () => {
     formData.append("logo", file);
 
     try {
+      const response = await fetch(`${API_URL}/api/companies/upload-logo`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Upload failed");
+      }
+
+      const data = await response.json();
+      return data.url;
+    } catch (error) {
+      console.error("Error uploading logo:", error);
+      throw error;
+    }
+  };
+
+  // Upload market logo
+  const uploadMarketLogo = async (file) => {
+    const formData = new FormData();
+    formData.append("logo", file);
+
+    try {
       const response = await fetch(`${API_URL}/api/markets/upload-logo`, {
         method: "POST",
         body: formData,
@@ -210,7 +271,6 @@ const DataEntryForm = () => {
       throw error;
     }
   };
-
   // Upload product image
   const uploadProductImage = async (file) => {
     const formData = new FormData();
@@ -288,7 +348,7 @@ const DataEntryForm = () => {
         });
       }
 
-      fetchProducts(selectedCompanyFilter); // Refresh products list
+      fetchProducts(selectedMarketFilter); // Refresh products list
       setSelectedExcelFile(null); // Clear file input
     } catch (err) {
       setMessage({
@@ -315,14 +375,17 @@ const DataEntryForm = () => {
     try {
       setUploadLoading(true);
       const logoUrl = await uploadCompanyLogo(selectedCompanyLogo);
+      console.log("Logo uploaded successfully:", logoUrl);
       setUploadLoading(false);
 
       const companyData = {
         ...companyForm,
         logo: logoUrl,
       };
+      console.log("Company data to be saved:", companyData);
 
-      await marketAPI.create(companyData);
+      const result = await companyAPI.create(companyData);
+      console.log("Company created successfully:", result);
       setMessage({ type: "success", text: t("Company created successfully!") });
       setCompanyForm({
         name: "",
@@ -332,19 +395,68 @@ const DataEntryForm = () => {
         description: "",
       });
       setSelectedCompanyLogo(null);
-      fetchMarkets(); // Refresh markets list
+      if (companyLogoFileRef.current) {
+        companyLogoFileRef.current.value = "";
+      }
+      fetchCompanies(); // Refresh companies list
     } catch (err) {
+      console.error("Error creating company:", err);
+      console.error("Error response:", err.response?.data);
       setMessage({
         type: "error",
-        text: t("Failed to create company. Please try again."),
+        text:
+          err.response?.data?.message ||
+          err.message ||
+          t("Failed to create company. Please try again."),
       });
-      console.error("Error creating company:", err);
     } finally {
       setLoading(false);
       setUploadLoading(false);
     }
   };
+  const handleMarketSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage({ type: "", text: "" });
 
+    if (!selectedMarketLogo) {
+      setMessage({ type: "error", text: t("Please select a logo file.") });
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setUploadLoading(true);
+      const logoUrl = await uploadMarketLogo(selectedMarketLogo);
+      setUploadLoading(false);
+
+      const marketData = {
+        ...marketForm,
+        logo: logoUrl,
+      };
+
+      await marketAPI.create(marketData);
+      setMessage({ type: "success", text: t("Market created successfully!") });
+      setMarketForm({
+        name: "",
+        logo: "",
+        address: "",
+        phone: "",
+        description: "",
+      });
+      setSelectedMarketLogo(null);
+      fetchMarkets(); // Refresh markets list
+    } catch (err) {
+      setMessage({
+        type: "error",
+        text: t("Failed to create market. Please try again."),
+      });
+      console.error("Error creating market:", err);
+    } finally {
+      setLoading(false);
+      setUploadLoading(false);
+    }
+  };
   const handleProductSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -381,11 +493,14 @@ const DataEntryForm = () => {
         image: "",
         previousPrice: "",
         newPrice: "",
-        companyId: "",
+        marketId: "",
         expireDate: "",
       });
       setSelectedProductImage(null);
-      fetchProducts(selectedCompanyFilter);
+      if (productImageFileRef.current) {
+        productImageFileRef.current.value = "";
+      }
+      fetchProducts(selectedMarketFilter);
     } catch (err) {
       setMessage({
         type: "error",
@@ -415,7 +530,7 @@ const DataEntryForm = () => {
         image: data.image,
         previousPrice: data.previousPrice,
         newPrice: data.newPrice,
-        companyId: data.companyId?._id || data.companyId,
+        marketId: data.marketId?._id || data.marketId,
         expireDate: data.expireDate
           ? new Date(data.expireDate).toISOString().split("T")[0]
           : "",
@@ -439,7 +554,7 @@ const DataEntryForm = () => {
           logoUrl = await uploadCompanyLogo(selectedEditImage);
         }
 
-        await marketAPI.update(editDialog.data._id, {
+        await companyAPI.update(editDialog.data._id, {
           ...editForm,
           logo: logoUrl,
         });
@@ -447,7 +562,7 @@ const DataEntryForm = () => {
           type: "success",
           text: t("Company updated successfully!"),
         });
-        fetchMarkets();
+        fetchCompanies();
       } else if (editDialog.type === "product") {
         let imageUrl = editForm.image;
         if (selectedEditImage) {
@@ -469,7 +584,7 @@ const DataEntryForm = () => {
           type: "success",
           text: t("Product updated successfully!"),
         });
-        fetchProducts(selectedCompanyFilter);
+        fetchProducts(selectedMarketFilter);
       }
     } catch (err) {
       setMessage({
@@ -484,24 +599,24 @@ const DataEntryForm = () => {
     }
   };
 
-  const handleDeleteConfirm = async () => {
+  const handleDeleteCompanyConfirm = async () => {
     setDeleteLoading(true);
     try {
       if (deleteDialog.type === "company") {
-        await marketAPI.delete(deleteDialog.data._id);
+        await companyAPI.delete(deleteDialog.data._id);
         setMessage({
           type: "success",
           text: t("Company deleted successfully!"),
         });
-        fetchMarkets();
-        fetchProducts(selectedCompanyFilter); // Refresh products as some might be deleted
+        fetchCompanies();
+        fetchProducts(selectedMarketFilter); // Refresh products as some might be deleted
       } else if (deleteDialog.type === "product") {
         await productAPI.delete(deleteDialog.data._id);
         setMessage({
           type: "success",
           text: t("Product deleted successfully!"),
         });
-        fetchProducts(selectedCompanyFilter);
+        fetchProducts(selectedMarketFilter);
       }
       setDeleteDialog({ open: false, type: "", data: null });
     } catch (err) {
@@ -525,9 +640,50 @@ const DataEntryForm = () => {
       setDeleteLoading(false);
     }
   };
+  const handleDeleteMarketConfirm = async () => {
+    setDeleteLoading(true);
+    try {
+      if (deleteDialog.type === "market") {
+        await marketAPI.delete(deleteDialog.data._id);
+        setMessage({
+          type: "success",
+          text: t("Market deleted successfully!"),
+        });
+        fetchMarkets();
+        fetchProducts(selectedMarketFilter); // Refresh products as some might be deleted
+      } else if (deleteDialog.type === "product") {
+        await productAPI.delete(deleteDialog.data._id);
+        setMessage({
+          type: "success",
+          text: t("Product deleted successfully!"),
+        });
+        fetchProducts(selectedMarketFilter);
+      }
+      setDeleteDialog({ open: false, type: "", data: null });
+    } catch (err) {
+      console.log("Full error from backend:", err);
+      console.log("Error response object:", err.response);
+      let errorMsg = t("Failed to delete. Please try again.");
+      if (
+        err.response?.data?.msg ===
+        "Cannot delete market. It has associated products. Please delete the products first."
+      ) {
+        errorMsg = t(
+          "Cannot delete market. It has associated products. Please delete the products first."
+        );
+      }
+      setMessage({
+        type: "error",
+        text: errorMsg,
+      });
+      console.error("Error deleting:", err);
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
+    <Container maxWidth="xl" sx={{ py: 10 }}>
       {/* Enhanced Admin Header */}
       <Paper
         elevation={0}
@@ -567,6 +723,7 @@ const DataEntryForm = () => {
                     component="h1"
                     gutterBottom
                     sx={{
+                      color: "white",
                       fontWeight: 700,
                       fontSize: { xs: "2rem", md: "2.5rem" },
                       textShadow: "0 4px 8px rgba(0,0,0,0.3)",
@@ -578,6 +735,7 @@ const DataEntryForm = () => {
                   <Typography
                     variant="h6"
                     sx={{
+                      color: "white",
                       opacity: 0.9,
                       fontSize: "1.125rem",
                       textShadow: "0 2px 4px rgba(0,0,0,0.3)",
@@ -596,7 +754,7 @@ const DataEntryForm = () => {
               >
                 <Chip
                   icon={<StoreIcon />}
-                  label={`${markets.length} ${t("Markets")}`}
+                  label={`${t("Markets")}(${markets.length})`}
                   sx={{
                     backgroundColor: "rgba(255,255,255,0.2)",
                     color: "white",
@@ -606,7 +764,7 @@ const DataEntryForm = () => {
                 />
                 <Chip
                   icon={<InventoryIcon />}
-                  label={`${products.length} ${t("Products")}`}
+                  label={`${t("Products")}(${products.length}) `}
                   sx={{
                     backgroundColor: "rgba(255,255,255,0.2)",
                     color: "white",
@@ -680,6 +838,12 @@ const DataEntryForm = () => {
             >
               <Tab
                 label={t("Add Market")}
+                icon={<StoreIcon />}
+                iconPosition="start"
+                sx={{ textTransform: "none" }}
+              />
+              <Tab
+                label={t("Add Company")}
                 icon={<BusinessIcon />}
                 iconPosition="start"
                 sx={{ textTransform: "none" }}
@@ -720,6 +884,101 @@ const DataEntryForm = () => {
           )}
 
           {activeTab === 0 && (
+            <Box component="form" onSubmit={handleMarketSubmit}>
+              <Grid container spacing={2}>
+                {/* Company Form Fields */}
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("Market Name")}
+                    name="name"
+                    value={marketForm.name}
+                    onChange={handleMarketFormChange}
+                    required
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <StoreIcon />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Grid>
+                <Grid xs={12}>
+                  <TextField
+                    fullWidth
+                    label={t("Address")}
+                    name="address"
+                    value={marketForm.address}
+                    onChange={handleMarketFormChange}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("Phone")}
+                    name="phone"
+                    value={marketForm.phone}
+                    onChange={handleMarketFormChange}
+                  />
+                </Grid>
+                <Grid xs={12}>
+                  <TextField
+                    fullWidth
+                    label={t("Description")}
+                    name="description"
+                    value={marketForm.description}
+                    onChange={handleMarketFormChange}
+                    multiline
+                    rows={3}
+                  />
+                </Grid>
+                <Grid xs={12}>
+                  <input
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    id="company-logo-file"
+                    type="file"
+                    onChange={handleCompanyLogoChange}
+                  />
+                  <label htmlFor="company-logo-file">
+                    <Button
+                      variant="outlined"
+                      component="span"
+                      fullWidth
+                      startIcon={<AddIcon />}
+                    >
+                      {selectedMarketLogo
+                        ? selectedMarketLogo.name
+                        : t("Upload Logo")}
+                    </Button>
+                  </label>
+                </Grid>
+                <Grid xs={12}>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    disabled={loading || uploadLoading}
+                    startIcon={
+                      loading || uploadLoading ? (
+                        <CircularProgress size={20} />
+                      ) : (
+                        <AddIcon />
+                      )
+                    }
+                    fullWidth
+                  >
+                    {loading
+                      ? t("Creating...")
+                      : uploadLoading
+                      ? t("Uploading...")
+                      : t("Add Market")}
+                  </Button>
+                </Grid>
+              </Grid>
+            </Box>
+          )}
+          {activeTab === 1 && (
             <Box component="form" onSubmit={handleCompanySubmit}>
               <Grid container spacing={2}>
                 {/* Company Form Fields */}
@@ -775,6 +1034,7 @@ const DataEntryForm = () => {
                     style={{ display: "none" }}
                     id="company-logo-file"
                     type="file"
+                    ref={companyLogoFileRef}
                     onChange={handleCompanyLogoChange}
                   />
                   <label htmlFor="company-logo-file">
@@ -814,8 +1074,7 @@ const DataEntryForm = () => {
               </Grid>
             </Box>
           )}
-
-          {activeTab === 1 && (
+          {activeTab === 2 && (
             <Box component="form" onSubmit={handleProductSubmit}>
               <Grid container spacing={2}>
                 {/* Product Form Fields */}
@@ -879,17 +1138,17 @@ const DataEntryForm = () => {
                 </Grid>
                 <Grid xs={12} sm={6}>
                   <FormControl fullWidth required>
-                    <InputLabel shrink>{t("Company")}</InputLabel>
+                    <InputLabel shrink>{t("Market")}</InputLabel>
                     <Select
-                      name="companyId"
-                      value={productForm.companyId}
+                      name="marketId"
+                      value={productForm.marketId}
                       onChange={handleProductFormChange}
-                      label={t("Company")}
+                      label={t("Market")}
                       displayEmpty
-                      labelId="add-product-company-label"
+                      labelId="add-product-market-label"
                     >
                       <MenuItem value="">
-                        <em>{t("Select Company")}</em>
+                        <em>{t("Select Market")}</em>
                       </MenuItem>
                       {markets.map((market) => (
                         <MenuItem key={market._id} value={market._id}>
@@ -899,6 +1158,7 @@ const DataEntryForm = () => {
                     </Select>
                   </FormControl>
                 </Grid>
+
                 <Grid xs={12} sm={6}>
                   <TextField
                     fullWidth
@@ -918,6 +1178,7 @@ const DataEntryForm = () => {
                     style={{ display: "none" }}
                     id="product-image-file"
                     type="file"
+                    ref={productImageFileRef}
                     onChange={handleProductImageChange}
                   />
                   <label htmlFor="product-image-file">
@@ -958,7 +1219,7 @@ const DataEntryForm = () => {
             </Box>
           )}
 
-          {activeTab === 2 && (
+          {activeTab === 3 && (
             <Box component="form" onSubmit={handleBulkUpload}>
               <Grid container spacing={2}>
                 {/* Bulk Upload Fields */}
@@ -1038,7 +1299,16 @@ const DataEntryForm = () => {
       {/* NEW: Tabbed section for lists */}
       <Card sx={{ mt: 5 }}>
         <CardContent>
-          <Typography variant="h5" gutterBottom sx={{ color: "#714329" }}>
+          <Typography
+            variant="h5"
+            gutterBottom
+            sx={{
+              color:
+                theme.palette.mode === "dark"
+                  ? "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)"
+                  : "linear-gradient(135deg, #52b788 0%, #40916c 100%)",
+            }}
+          >
             {t("Data Lists")}
           </Typography>
           <Tabs
@@ -1050,6 +1320,11 @@ const DataEntryForm = () => {
           >
             <Tab
               label={t("Markets")}
+              icon={<StoreIcon />}
+              iconPosition="start"
+            />
+            <Tab
+              label={t("Companies")}
               icon={<BusinessIcon />}
               iconPosition="start"
             />
@@ -1175,7 +1450,7 @@ const DataEntryForm = () => {
                       <TableCell>
                         <IconButton
                           color="primary"
-                          onClick={() => handleEditOpen("company", market)}
+                          onClick={() => handleEditOpen("market", market)}
                         >
                           <EditIcon />
                         </IconButton>
@@ -1184,7 +1459,7 @@ const DataEntryForm = () => {
                           onClick={() =>
                             setDeleteDialog({
                               open: true,
-                              type: "company",
+                              type: "market",
                               data: market,
                             })
                           }
@@ -1199,8 +1474,146 @@ const DataEntryForm = () => {
             </TableContainer>
           )}
 
-          {/* Product List Panel */}
+          {/* Company List Panel */}
           {activeListTab === 1 && (
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell
+                      sx={{
+                        fontWeight: "bold",
+                        backgroundColor: "primary.light",
+                        color: "primary.contrastText",
+                      }}
+                    >
+                      {t("No.")}
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        fontWeight: "bold",
+                        backgroundColor: "primary.light",
+                        color: "primary.contrastText",
+                      }}
+                    >
+                      {t("Name")}
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        fontWeight: "bold",
+                        backgroundColor: "primary.light",
+                        color: "primary.contrastText",
+                      }}
+                    >
+                      {t("Logo")}
+                    </TableCell>
+                    {/* <TableCell
+                      sx={{
+                        fontWeight: "bold",
+                        backgroundColor: "primary.light",
+                        color: "primary.contrastText",
+                      }}
+                    >
+                      {t("Address")}
+                    </TableCell> */}
+                    <TableCell
+                      sx={{
+                        fontWeight: "bold",
+                        backgroundColor: "primary.light",
+                        color: "primary.contrastText",
+                      }}
+                    >
+                      {t("Phone")}
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        fontWeight: "bold",
+                        backgroundColor: "primary.light",
+                        color: "primary.contrastText",
+                      }}
+                    >
+                      {t("Description")}
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        fontWeight: "bold",
+                        backgroundColor: "primary.light",
+                        color: "primary.contrastText",
+                      }}
+                    >
+                      {t("Actions")}
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {companies.map((company, idx) => (
+                    <TableRow key={company._id}>
+                      <TableCell>{idx + 1}</TableCell>
+                      <TableCell
+                        width={200}
+                        sx={{ fontSize: "18px", fontWeight: "bold" }}
+                      >
+                        {company.name}
+                      </TableCell>
+                      <TableCell>
+                        {company.logo && (
+                          <img
+                            src={
+                              company.logo.startsWith("http")
+                                ? company.logo
+                                : `${API_URL}${company.logo}`
+                            }
+                            alt={company.name}
+                            width={80}
+                            height={80}
+                            style={{
+                              objectFit: "cover",
+                              borderRadius: "4px",
+                            }}
+                          />
+                        )}
+                      </TableCell>
+                      {/* <TableCell>{market.address}</TableCell> */}
+                      <TableCell>{company.phone}</TableCell>
+                      <TableCell
+                        width="100px"
+                        height="100px"
+                        sx={{
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {company.description}
+                      </TableCell>
+                      <TableCell>
+                        <IconButton
+                          color="primary"
+                          onClick={() => handleEditOpen("company", company)}
+                        >
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton
+                          color="error"
+                          onClick={() =>
+                            setDeleteDialog({
+                              open: true,
+                              type: "company",
+                              data: company,
+                            })
+                          }
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+          {/* Product List Panel */}
+          {activeListTab === 2 && (
             <Box>
               <Box
                 sx={{
@@ -1211,11 +1624,11 @@ const DataEntryForm = () => {
                 }}
               >
                 <FormControl sx={{ minWidth: 240 }}>
-                  <InputLabel>{t("Filter by Company")}</InputLabel>
+                  <InputLabel>{t("Filter by Market")}</InputLabel>
                   <Select
-                    value={selectedCompanyFilter}
+                    value={selectedMarketFilter}
                     onChange={handleFilterChange}
-                    label={t("Filter by Company")}
+                    label={t("Filter by Market")}
                   >
                     <MenuItem value="">
                       <em>{t("All Markets")}</em>
@@ -1294,7 +1707,7 @@ const DataEntryForm = () => {
                           color: "primary.contrastText",
                         }}
                       >
-                        {t("Company")}
+                        {t("Market")}
                       </TableCell>
                       <TableCell
                         sx={{
@@ -1324,7 +1737,11 @@ const DataEntryForm = () => {
                         <TableCell>
                           {product.image && (
                             <img
-                              src={product.image}
+                              src={
+                                product.image.startsWith("http")
+                                  ? product.image
+                                  : `${API_URL}${product.image}`
+                              }
                               alt={product.name}
                               style={{
                                 width: 48,
@@ -1346,7 +1763,7 @@ const DataEntryForm = () => {
                             ? `${t("ID")} ${product.newPrice.toFixed(2)}`
                             : ""}
                         </TableCell>
-                        <TableCell>{product.companyId?.name || ""}</TableCell>
+                        <TableCell>{product.marketId?.name || ""}</TableCell>
                         <TableCell>
                           {product.expireDate
                             ? new Date(product.expireDate).toLocaleDateString()
@@ -1604,7 +2021,11 @@ const DataEntryForm = () => {
           <Button
             variant="contained"
             color="error"
-            onClick={handleDeleteConfirm}
+            onClick={() =>
+              deleteDialog.type === "company"
+                ? handleDeleteCompanyConfirm
+                : handleDeleteMarketConfirm
+            }
             disabled={deleteLoading}
           >
             {deleteLoading ? t("Deleting...") : t("Delete")}

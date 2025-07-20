@@ -123,13 +123,13 @@ const ProductCategory = () => {
   }
 
   return (
-    <Box>
+    <Box sx={{ py: 8 }}>
       <Box display="flex" alignItems="center" mb={3}>
         <CategoryIcon
           sx={{
             fontSize: 40,
             mr: 2,
-            color: theme.palette.mode === "dark" ? "contained" : "#714329",
+            color: theme.palette.mode === "dark" ? "contained" : "#primary",
           }}
         />
         <Box>
@@ -138,7 +138,7 @@ const ProductCategory = () => {
             component="h1"
             gutterBottom
             sx={{
-              color: theme.palette.mode === "dark" ? "contained" : "#714329",
+              color: theme.palette.mode === "dark" ? "contained" : "#primary",
             }}
           >
             {t("Product Categories")}
@@ -146,7 +146,7 @@ const ProductCategory = () => {
           <Typography
             variant="subtitle1"
             sx={{
-              color: theme.palette.mode === "dark" ? "contained" : "#714329",
+              color: theme.palette.mode === "dark" ? "contained" : "#primary",
             }}
             gutterBottom
           >

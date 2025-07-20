@@ -60,7 +60,8 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
 
   const navItems = [
     { name: t("Main Page"), path: "/", icon: <HomeIcon /> },
-    { name: t("Markets"), path: "/markets", icon: <BusinessIcon /> },
+    { name: t("Markets"), path: "/markets", icon: <StoreIcon /> },
+    { name: t("Companies"), path: "/companies", icon: <BusinessIcon /> },
     { name: t("Categories"), path: "/categories", icon: <CategoryIcon /> },
     {
       name: t("Admin"),
@@ -132,7 +133,13 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
 
           {/* Desktop Navigation */}
           {isSmUp && (
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+              }}
+            >
               {navItems.map((item) => (
                 <Button
                   key={item.path}
@@ -142,7 +149,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   sx={{
                     color: "white",
                     textTransform: "none",
-                    fontWeight: 600,
+                    fontSize: "1.3rem",
                     px: 2,
                     py: 1,
                     borderRadius: 2,

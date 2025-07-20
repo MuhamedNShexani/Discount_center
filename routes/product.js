@@ -9,13 +9,13 @@ const {
   updateProduct,
   deleteProduct,
   getProductsByCompany,
+  getProductsByMarket,
   getProductsByCategory,
   getCategories,
 } = require("../controllers/productController");
 
 // @route   GET /api/products
 // @desc    Get all products (with optional filters)
-
 
 router.get("/", getProducts);
 
@@ -26,6 +26,10 @@ router.get("/categories", getCategories);
 // @route   GET /api/products/company/:companyId
 // @desc    Get products by company
 router.get("/company/:companyId", getProductsByCompany);
+
+// @route   GET /api/products/market/:marketId
+// @desc    Get products by market
+router.get("/market/:marketId", getProductsByMarket);
 
 // @route   GET /api/products/category/:category
 // @desc    Get products by category

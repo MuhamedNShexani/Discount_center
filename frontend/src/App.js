@@ -12,6 +12,8 @@ import rtlPlugin from "stylis-plugin-rtl";
 // Import pages
 import MainPage from "./pages/MainPage";
 import MarketList from "./pages/MarketList";
+import CompanyList from "./pages/CompanyList";
+import CompanyProfile from "./pages/CompanyProfile";
 import ProductCategory from "./pages/ProductCategory";
 import DataEntryForm from "./pages/DataEntryForm";
 import ProductDetail from "./pages/ProductDetail";
@@ -219,6 +221,8 @@ function App() {
                 <Route path="/markets" element={<MarketList />} />
                 <Route path="/markets/:id" element={<MarketProfile />} />
                 <Route path="/categories" element={<ProductCategory />} />
+                <Route path="/companies" element={<CompanyList />} />
+                <Route path="/companies/:id" element={<CompanyProfile />} />
                 <Route
                   path="/admin"
                   element={

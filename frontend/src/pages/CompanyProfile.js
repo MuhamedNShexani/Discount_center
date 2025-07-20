@@ -26,7 +26,7 @@ import {
   Business,
   Store,
 } from "@mui/icons-material";
-import { marketAPI, productAPI } from "../services/api";
+import { companyAPI, productAPI } from "../services/api";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import StorefrontIcon from "@mui/icons-material/Storefront";
@@ -34,13 +34,13 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import { useTranslation } from "react-i18next";
 import Loader from "../components/Loader";
 
-const MarketProfile = () => {
+const CompanyProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const theme = useTheme();
   const { t } = useTranslation();
 
-  const [market, setMarket] = useState(null);
+  const [company, setCompany] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -51,19 +51,19 @@ const MarketProfile = () => {
 
   useEffect(() => {
     if (id) {
-      fetchMarketData();
+      fetchCompanyData();
     }
   }, [id]);
 
-  const fetchMarketData = async () => {
+  const fetchCompanyData = async () => {
     try {
       setLoading(true);
 
-      // Fetch market details
-      const marketResponse = await marketAPI.getById(id);
-      setMarket(marketResponse.data);
+      // Fetch company details
+      const companyResponse = await companyAPI.getById(id);
+      setCompany(companyResponse.data);
 
-      // Fetch products for this market
+      // Fetch products for this company
       const productsResponse = await productAPI.getByCompany(id);
       setProducts(productsResponse.data);
     } catch (err) {
@@ -73,7 +73,7 @@ const MarketProfile = () => {
           err.message ||
           "Network error. Please check your connection."
       );
-      console.error("Error fetching market data:", err);
+      console.error("Error fetching company data:", err);
     } finally {
       setLoading(false);
     }
@@ -101,9 +101,9 @@ const MarketProfile = () => {
     return daysDiff > 0 ? daysDiff : 0;
   };
 
-  if (loading) return <Loader message="Loading market details..." />;
+  if (loading) return <Loader message="Loading company details..." />;
   if (error) return <Loader message={error} />;
-  if (!market) return <Alert severity="error">Market not found</Alert>;
+  if (!company) return <Alert severity="error">Company not found</Alert>;
 
   return (
     <Container maxWidth="xl" sx={{ py: 8 }}>
@@ -133,7 +133,7 @@ const MarketProfile = () => {
         {t("Back")}
       </Button>
 
-      {/* Enhanced Market Header */}
+      {/* Enhanced Company Header */}
       <Paper
         elevation={0}
         sx={{
@@ -178,10 +178,10 @@ const MarketProfile = () => {
           <Box position="relative" zIndex={1}>
             <Grid container spacing={4} alignItems="center">
               <Grid item xs={12} md={3}>
-                {market.logo ? (
+                {company.logo ? (
                   <Avatar
-                    src={`${process.env.REACT_APP_BACKEND_URL}${market.logo}`}
-                    alt={market.name}
+                    src={`${process.env.REACT_APP_BACKEND_URL}${company.logo}`}
+                    alt={company.name}
                     sx={{
                       width: { xs: 120, md: 150 },
                       height: { xs: 120, md: 150 },
@@ -219,11 +219,11 @@ const MarketProfile = () => {
                     color: "white",
                   }}
                 >
-                  {market.name}
+                  {company.name}
                 </Typography>
 
                 <Box sx={{ mb: 3 }}>
-                  {market.address && (
+                  {company.address && (
                     <Box
                       display="flex"
                       alignItems="center"
@@ -242,12 +242,12 @@ const MarketProfile = () => {
                         }}
                         color="white"
                       >
-                        {market.address}
+                        {company.address}
                       </Typography>
                     </Box>
                   )}
 
-                  {market.phone && (
+                  {company.phone && (
                     <Box
                       display="flex"
                       alignItems="center"
@@ -264,13 +264,13 @@ const MarketProfile = () => {
                           color: "white",
                         }}
                       >
-                        {market.phone}
+                        {company.phone}
                       </Typography>
                     </Box>
                   )}
                 </Box>
 
-                {market.description && (
+                {company.description && (
                   <Typography
                     variant="body1"
                     sx={{
@@ -283,7 +283,7 @@ const MarketProfile = () => {
                       color: "white",
                     }}
                   >
-                    {market.description}
+                    {company.description}
                   </Typography>
                 )}
 
@@ -309,7 +309,7 @@ const MarketProfile = () => {
                   />
                   <Chip
                     icon={<ShoppingCartIcon />}
-                    label={t("Premium Market")}
+                    label={t("Premium Company")}
                     sx={{
                       backgroundColor: "rgba(255,255,255,0.2)",
                       color: "white",
@@ -347,7 +347,7 @@ const MarketProfile = () => {
               mb: 3,
             }}
           >
-            {t("Discover amazing products from this market")}
+            {t("Discover amazing products from this company")}
           </Typography>
           <Divider sx={{ maxWidth: 200, mx: "auto" }} />
         </Box>
@@ -388,7 +388,7 @@ const MarketProfile = () => {
               }}
             >
               {t(
-                "This market hasn't added any products yet. Check back later!"
+                "This company hasn't added any products yet. Check back later!"
               )}
             </Typography>
           </Box>
@@ -637,4 +637,4 @@ const MarketProfile = () => {
   );
 };
 
-export default MarketProfile;
+export default CompanyProfile;

@@ -108,6 +108,22 @@ const getProductsByCompany = async (req, res) => {
   }
 };
 
+// @desc    Get products by market
+// @route   GET /api/products/market/:marketId
+// @access  Public
+const getProductsByMarket = async (req, res) => {
+  try {
+    const products = await Product.find({ marketId: req.params.marketId })
+      .populate("companyId", "name logo")
+      .sort({ name: 1 });
+
+    res.json(products);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+};
+
 // @desc    Get products by category
 // @route   GET /api/products/category/:category
 // @access  Public
@@ -185,6 +201,7 @@ module.exports = {
   updateProduct,
   deleteProduct,
   getProductsByCompany,
+  getProductsByMarket,
   getProductsByCategory,
   getCategories,
 };

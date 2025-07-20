@@ -9,6 +9,12 @@ const testMarket = {
   address: "123 Test Street, Test City",
   phone: "+1-234-567-8900",
 };
+const testCompany = {
+  name: "Test Company",
+  logo: "https://via.placeholder.com/150",
+  address: "123 Test Street, Test City",
+  phone: "+1-234-567-8900",
+};
 
 const testProduct = {
   name: "Test Product",
@@ -17,7 +23,7 @@ const testProduct = {
   previousPrice: 25.99,
   newPrice: 19.99,
   expireDate: "2024-12-31",
-  companyId: "", // Will be filled after market creation
+  marketId: "", // Will be filled after market creation
 };
 
 const API_URL = process.env.API_URL || "http://localhost:3001/api";
