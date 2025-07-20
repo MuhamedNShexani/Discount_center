@@ -1,4 +1,5 @@
 import "./i18n";
+import "./styles/kurdishFonts.css";
 import React, { useState, useMemo, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
@@ -52,10 +53,13 @@ function App() {
   const { t, i18n } = useTranslation();
   const [lang, setLang] = useState(i18n.language || "en");
 
-  // RTL/LTR direction effect
+  // RTL/LTR direction effect and language data attribute
   useEffect(() => {
     document.body.dir =
       i18n.language === "ar" || i18n.language === "ku" ? "rtl" : "ltr";
+
+    // Add language data attribute for Kurdish font styling
+    document.documentElement.setAttribute("data-lang", i18n.language);
   }, [i18n.language]);
 
   // MUI RTL cache
@@ -115,12 +119,52 @@ function App() {
           divider: darkMode ? "#396A5A" : "#CFF0E5",
         },
         typography: {
-          h1: { color: darkMode ? "#FFFFFF" : "#2B8264" },
-          h2: { color: darkMode ? "#FFFFFF" : "#2B8264" },
-          h3: { color: darkMode ? "#FFFFFF" : "#2B8264" },
-          h4: { color: darkMode ? "#FFFFFF" : "#2B8264" },
-          h5: { color: darkMode ? "#FFFFFF" : "#2B8264" },
-          h6: { color: darkMode ? "#FFFFFF" : "#2B8264" },
+          fontFamily:
+            i18n.language === "ku"
+              ? "'Noto Sans Kurdish', 'Scheherazade New', 'Arial', sans-serif"
+              : "'Roboto', 'Helvetica', 'Arial', sans-serif",
+          h1: {
+            color: darkMode ? "#FFFFFF" : "#2B8264",
+            fontFamily:
+              i18n.language === "ku"
+                ? "'Noto Sans Kurdish', 'Scheherazade New', 'Arial', sans-serif"
+                : "'Roboto', 'Helvetica', 'Arial', sans-serif",
+          },
+          h2: {
+            color: darkMode ? "#FFFFFF" : "#2B8264",
+            fontFamily:
+              i18n.language === "ku"
+                ? "'Noto Sans Kurdish', 'Scheherazade New', 'Arial', sans-serif"
+                : "'Roboto', 'Helvetica', 'Arial', sans-serif",
+          },
+          h3: {
+            color: darkMode ? "#FFFFFF" : "#2B8264",
+            fontFamily:
+              i18n.language === "ku"
+                ? "'Noto Sans Kurdish', 'Scheherazade New', 'Arial', sans-serif"
+                : "'Roboto', 'Helvetica', 'Arial', sans-serif",
+          },
+          h4: {
+            color: darkMode ? "#FFFFFF" : "#2B8264",
+            fontFamily:
+              i18n.language === "ku"
+                ? "'Noto Sans Kurdish', 'Scheherazade New', 'Arial', sans-serif"
+                : "'Roboto', 'Helvetica', 'Arial', sans-serif",
+          },
+          h5: {
+            color: darkMode ? "#FFFFFF" : "#2B8264",
+            fontFamily:
+              i18n.language === "ku"
+                ? "'Noto Sans Kurdish', 'Scheherazade New', 'Arial', sans-serif"
+                : "'Roboto', 'Helvetica', 'Arial', sans-serif",
+          },
+          h6: {
+            color: darkMode ? "#FFFFFF" : "#2B8264",
+            fontFamily:
+              i18n.language === "ku"
+                ? "'Noto Sans Kurdish', 'Scheherazade New', 'Arial', sans-serif"
+                : "'Roboto', 'Helvetica', 'Arial', sans-serif",
+          },
         },
         components: {
           MuiAppBar: {
