@@ -34,10 +34,9 @@ const getProducts = async (req, res) => {
 // @access  Public
 const getProductById = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id).populate(
-      "companyId",
-      "name logo address phone description"
-    );
+    const product = await Product.findById(req.params.id)
+      .populate("companyId", "name logo address phone description")
+      .populate("marketId", "name address phone description");
 
     if (!product) {
       return res.status(404).json({ msg: "Product not found" });

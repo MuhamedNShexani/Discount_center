@@ -362,13 +362,27 @@ const ProductDetail = () => {
                 <Button variant="contained" size="large" sx={{ mr: 2 }}>
                   {t("Contact Seller")}
                 </Button>
-                <Button
-                  variant="outlined"
-                  size="large"
-                  onClick={() => navigate(`/markets/${product.companyId?._id}`)}
-                >
-                  {t("View Company")}
-                </Button>
+                {product.marketId && product.marketId._id && (
+                  <Button
+                    variant="outlined"
+                    size="large"
+                    onClick={() => navigate(`/markets/${product.marketId._id}`)}
+                    sx={{ mr: 2 }}
+                  >
+                    {t("View Market")}
+                  </Button>
+                )}
+                {product.companyId && product.companyId._id && (
+                  <Button
+                    variant="outlined"
+                    size="large"
+                    onClick={() =>
+                      navigate(`/companies/${product.companyId._id}`)
+                    }
+                  >
+                    {t("View Company")}
+                  </Button>
+                )}
               </Box>
             </Box>
           </Grid>

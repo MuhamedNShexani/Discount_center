@@ -208,8 +208,7 @@ const MainPage = () => {
       {/* Filters Section */}
       <Box
         sx={{
-          backgroundColor:
-            theme.palette.mode === "dark" ? "#2c3e50" : "#52b788",
+          backgroundColor: "#2c3e50",
           borderRadius: 3,
           p: { xs: 2, md: 3 },
           mb: 4,

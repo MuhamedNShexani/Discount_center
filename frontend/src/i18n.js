@@ -498,6 +498,8 @@ const resources = {
       "Company ID": "ناسنامەی کۆمپانیا",
       "Select Market": "مارکێت هەلبژێرە",
       "Select Company": "کۆمپانیا هەلبژێرە",
+      "View Market": "بینینی مارکێت",
+      "View Company": "بینینی کۆمپانیا",
       Companies: "کۆمپانیاکان",
     },
   },

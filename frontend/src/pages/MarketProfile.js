@@ -64,7 +64,7 @@ const MarketProfile = () => {
       setMarket(marketResponse.data);
 
       // Fetch products for this market
-      const productsResponse = await productAPI.getByCompany(id);
+      const productsResponse = await productAPI.getByMarket(id);
       setProducts(productsResponse.data);
     } catch (err) {
       setError(

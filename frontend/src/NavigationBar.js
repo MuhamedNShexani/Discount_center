@@ -32,13 +32,16 @@ import {
   Brightness7 as Brightness7Icon,
   Language as LanguageIcon,
   Store as StoreIcon,
+  Login as LoginIcon,
 } from "@mui/icons-material";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "./context/AuthContext";
 
 const NavigationBar = ({ darkMode, setDarkMode }) => {
   const theme = useTheme();
   const { t, i18n } = useTranslation();
+  const { user, logout } = useAuth();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const isSmUp = useMediaQuery(theme.breakpoints.up("md"));
   const lang = i18n.language;
@@ -63,11 +66,16 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
     { name: t("Markets"), path: "/markets", icon: <StoreIcon /> },
     { name: t("Companies"), path: "/companies", icon: <BusinessIcon /> },
     { name: t("Categories"), path: "/categories", icon: <CategoryIcon /> },
-    {
-      name: t("Admin"),
-      path: "/admin",
-      icon: <AdminPanelSettingsIcon />,
-    },
+    // Only show Admin link when logged in
+    ...(user
+      ? [
+          {
+            name: t("Admin"),
+            path: "/admin",
+            icon: <AdminPanelSettingsIcon />,
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -194,6 +202,58 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
 
           {/* Controls */}
           <Box display="flex" alignItems="center" gap={1}>
+            {/* Login/Logout Button */}
+            {user ? (
+              <Button
+                onClick={logout}
+                startIcon={<LoginIcon />}
+                sx={{
+                  color: "white",
+                  textTransform: "none",
+                  fontSize: "0.9rem",
+                  px: 2,
+                  py: 0.8,
+                  borderRadius: 2,
+                  backgroundColor: "rgba(255,255,255,0.1)",
+                  backdropFilter: "blur(10px)",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                  transition: "all 0.3s ease",
+                  "&:hover": {
+                    backgroundColor: "rgba(255,255,255,0.2)",
+                    transform: "translateY(-2px)",
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+                  },
+                }}
+              >
+                {t("Logout")}
+              </Button>
+            ) : (
+              <Button
+                component={Link}
+                to="/login"
+                startIcon={<LoginIcon />}
+                sx={{
+                  color: "white",
+                  textTransform: "none",
+                  fontSize: "0.9rem",
+                  px: 2,
+                  py: 0.8,
+                  borderRadius: 2,
+                  backgroundColor: "rgba(255,255,255,0.1)",
+                  backdropFilter: "blur(10px)",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                  transition: "all 0.3s ease",
+                  "&:hover": {
+                    backgroundColor: "rgba(255,255,255,0.2)",
+                    transform: "translateY(-2px)",
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+                  },
+                }}
+              >
+                {t("Login")}
+              </Button>
+            )}
+
             {/* Language Selector */}
             <Paper
               elevation={0}
