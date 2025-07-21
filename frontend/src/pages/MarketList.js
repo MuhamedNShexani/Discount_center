@@ -116,7 +116,7 @@ const MarketList = () => {
               {t("Browse all markets and their products")}
             </Typography>
             <Chip
-              label={`${markets.length} ${t("Markets")} ${t("Available")}`}
+              label={`(${markets.length})${t("markets Available")}`}
               sx={{
                 mt: 3,
                 backgroundColor: "rgba(255,255,255,0.2)",
@@ -265,12 +265,13 @@ const MarketList = () => {
 
               {/* Market Content */}
               <CardContent
+                align="center"
                 sx={{
                   p: 3,
                   flex: 1,
                   display: "flex",
                   flexDirection: "column",
-                  height: "220px", // Increased height for content area
+                  height: "200px", // Increased height for content area
                   overflow: "hidden",
                 }}
               >
@@ -280,10 +281,10 @@ const MarketList = () => {
                   sx={{
                     fontWeight: 700,
                     color: theme.palette.text.primary,
-                    fontSize: "1.125rem",
+                    fontSize: "1.3rem",
                     lineHeight: 1.3,
                     mb: 1,
-                    height: "30px", // Fixed height for title
+                    height: "100px", // Fixed height for title
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     display: "-webkit-box",
@@ -295,14 +296,9 @@ const MarketList = () => {
                 </Typography>
 
                 {/* Market Details - Fixed Layout */}
-                <Box sx={{ mb: 2, height: "120px", overflow: "hidden" }}>
+                <Box sx={{ mb: 2, overflow: "hidden" }}>
                   {/* Address - Always show with fixed height */}
-                  <Box
-                    display="flex"
-                    alignItems="flex-start"
-                    mb={1}
-                    sx={{ height: "45px" }}
-                  >
+                  <Box display="flex" alignItems="flex-start" mb={1}>
                     <LocationOnIcon
                       sx={{
                         fontSize: 16,

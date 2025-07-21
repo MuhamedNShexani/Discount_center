@@ -483,6 +483,8 @@ const DataEntryForm = () => {
         expireDate: productForm.expireDate
           ? new Date(productForm.expireDate).toISOString()
           : null,
+        companyId: productForm.companyId,
+        marketId: productForm.marketId,
       };
 
       await productAPI.create(productData);
@@ -523,6 +525,14 @@ const DataEntryForm = () => {
         phone: data.phone,
         description: data.description || "",
       });
+    } else if (type === "market") {
+      setEditForm({
+        name: data.name,
+        logo: data.logo,
+        address: data.address,
+        phone: data.phone,
+        description: data.description || "",
+      });
     } else if (type === "product") {
       setEditForm({
         name: data.name,
@@ -531,11 +541,13 @@ const DataEntryForm = () => {
         previousPrice: data.previousPrice,
         newPrice: data.newPrice,
         marketId: data.marketId?._id || data.marketId,
+        companyId: data.companyId?._id || data.companyId,
         expireDate: data.expireDate
           ? new Date(data.expireDate).toISOString().split("T")[0]
           : "",
       });
     }
+
     setEditDialog({ open: true, type, data });
   };
 
@@ -553,7 +565,6 @@ const DataEntryForm = () => {
         if (selectedEditImage) {
           logoUrl = await uploadCompanyLogo(selectedEditImage);
         }
-
         await companyAPI.update(editDialog.data._id, {
           ...editForm,
           logo: logoUrl,
@@ -563,6 +574,21 @@ const DataEntryForm = () => {
           text: t("Company updated successfully!"),
         });
         fetchCompanies();
+      } else if (editDialog.type === "market") {
+        let logoUrl = editForm.logo;
+        if (selectedEditImage) {
+          logoUrl = await uploadMarketLogo(selectedEditImage);
+        }
+
+        await marketAPI.update(editDialog.data._id, {
+          ...editForm,
+          logo: logoUrl,
+        });
+        setMessage({
+          type: "success",
+          text: t("Market updated successfully!"),
+        });
+        fetchMarkets();
       } else if (editDialog.type === "product") {
         let imageUrl = editForm.image;
         if (selectedEditImage) {
@@ -577,6 +603,8 @@ const DataEntryForm = () => {
           expireDate: editForm.expireDate
             ? new Date(editForm.expireDate).toISOString()
             : null,
+          companyId: editForm.companyId,
+          marketId: editForm.marketId,
         };
 
         await productAPI.update(editDialog.data._id, productUpdateData);
@@ -1153,6 +1181,31 @@ const DataEntryForm = () => {
                       {markets.map((market) => (
                         <MenuItem key={market._id} value={market._id}>
                           {market.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel shrink>{t("Company")}</InputLabel>
+                    <Select
+                      name="companyId"
+                      value={productForm.companyId}
+                      onChange={handleProductFormChange}
+                      label={t("Company")}
+                      displayEmpty
+                      sx={{
+                        width: "150px",
+                      }}
+                      labelId="add-product-market-label"
+                    >
+                      <MenuItem value="">
+                        <em>{t("Select Company")}</em>
+                      </MenuItem>
+                      {companies.map((company) => (
+                        <MenuItem key={company._id} value={company._id}>
+                          {company.name}
                         </MenuItem>
                       ))}
                     </Select>
@@ -1805,10 +1858,59 @@ const DataEntryForm = () => {
         onClose={() => setEditDialog({ open: false, type: "", data: null })}
       >
         <DialogTitle>
-          {t(editDialog.type === "company" ? "Edit Company" : "Edit Product")}
+          {t(
+            editDialog.type === "company"
+              ? "Edit Company"
+              : editDialog.type === "market"
+              ? "Edit Market"
+              : "Edit Product"
+          )}
         </DialogTitle>
         <DialogContent>
           {editDialog.type === "company" ? (
+            <Box component="form" sx={{ mt: 1 }}>
+              <TextField
+                margin="normal"
+                fullWidth
+                label={t("Name")}
+                name="name"
+                value={editForm.name}
+                onChange={handleEditFormChange}
+              />
+              <TextField
+                margin="normal"
+                fullWidth
+                label={t("Logo URL")}
+                name="logo"
+                value={editForm.logo}
+                onChange={handleEditFormChange}
+              />
+              <TextField
+                margin="normal"
+                fullWidth
+                label={t("Address")}
+                name="address"
+                value={editForm.address}
+                onChange={handleEditFormChange}
+              />
+              <TextField
+                margin="normal"
+                fullWidth
+                label={t("Phone")}
+                name="phone"
+                value={editForm.phone}
+                onChange={handleEditFormChange}
+              />
+              <TextField
+                margin="normal"
+                fullWidth
+                label={t("Description")}
+                name="description"
+                value={editForm.description}
+                onChange={handleEditFormChange}
+              />
+            </Box>
+          ) : editDialog.type === "market" ? (
             <Box component="form" sx={{ mt: 1 }}>
               <TextField
                 margin="normal"
@@ -1956,6 +2058,21 @@ const DataEntryForm = () => {
                 onChange={handleEditFormChange}
               />
               <FormControl fullWidth margin="normal">
+                <InputLabel>{t("Market")}</InputLabel>
+                <Select
+                  name="marketId"
+                  value={editForm.marketId}
+                  onChange={handleEditFormChange}
+                  label={t("Market")}
+                >
+                  {markets.map((market) => (
+                    <MenuItem key={market._id} value={market._id}>
+                      {market.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControl fullWidth margin="normal">
                 <InputLabel>{t("Company")}</InputLabel>
                 <Select
                   name="companyId"
@@ -1963,9 +2080,9 @@ const DataEntryForm = () => {
                   onChange={handleEditFormChange}
                   label={t("Company")}
                 >
-                  {markets.map((market) => (
-                    <MenuItem key={market._id} value={market._id}>
-                      {market.name}
+                  {companies.map((company) => (
+                    <MenuItem key={company._id} value={company._id}>
+                      {company.name}
                     </MenuItem>
                   ))}
                 </Select>

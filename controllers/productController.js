@@ -1,5 +1,6 @@
 const Product = require("../models/Product");
 const Market = require("../models/Market");
+const Company = require("../models/Company");
 
 // @desc    Get all products
 // @route   GET /api/products
@@ -58,18 +59,33 @@ const getProductById = async (req, res) => {
 const createProduct = async (req, res) => {
   // Log the incoming request body for debugging
   console.log("[createProduct] Request body:", req.body);
-  const { name, type, image, previousPrice, newPrice, companyId, expireDate } =
-    req.body;
+  const {
+    name,
+    type,
+    image,
+    previousPrice,
+    newPrice,
+    companyId,
+    marketId,
+    expireDate,
+  } = req.body;
 
   try {
     // Check if market exists
-    const market = await Market.findById(companyId);
+    const market = await Market.findById(marketId);
     if (!market) {
+      console.error("[createProduct] Market not found for marketId:", marketId);
+      return res.status(404).json({ msg: "Market not found" });
+    }
+
+    // Check if company exists
+    const company = await Company.findById(companyId);
+    if (!company) {
       console.error(
-        "[createProduct] Market not found for companyId:",
+        "[createProduct] Company not found for companyId:",
         companyId
       );
-      return res.status(404).json({ msg: "Market not found" });
+      return res.status(404).json({ msg: "Company not found" });
     }
 
     const newProduct = new Product({
@@ -79,6 +95,7 @@ const createProduct = async (req, res) => {
       previousPrice,
       newPrice,
       companyId,
+      marketId,
       expireDate,
     });
 

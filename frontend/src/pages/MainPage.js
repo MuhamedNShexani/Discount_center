@@ -234,6 +234,7 @@ const MainPage = () => {
               flex: 1,
               width: { xs: "100%", sm: "auto" },
               maxWidth: 400,
+
               backgroundColor: "white",
               borderRadius: 1,
               "& .MuiOutlinedInput-root": {
@@ -250,9 +251,20 @@ const MainPage = () => {
             }}
             size="small"
             InputProps={{
+              inputProps: {
+                style: {
+                  color: theme.palette.mode === "dark" ? "black" : "grey.500",
+                },
+              },
+
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchIcon sx={{ color: "grey.500" }} />
+                  <SearchIcon
+                    sx={{
+                      color:
+                        theme.palette.mode === "dark" ? "#2c3e50" : "grey.500",
+                    }}
+                  />
                 </InputAdornment>
               ),
             }}
@@ -287,21 +299,36 @@ const MainPage = () => {
                 },
               }}
               size="small"
+              InputProps={{
+                inputProps: {
+                  style: {
+                    color: theme.palette.mode === "dark" ? "black" : "grey.500",
+                  },
+                },
+              }}
             />
 
-            <Typography sx={{ color: "white", fontSize: "0.875rem" }}>
+            <Typography
+              sx={{
+                fontSize: "0.875rem",
+                color: theme.palette.mode === "dark" ? "white" : "grey.500",
+              }}
+            >
               -
             </Typography>
 
             <TextField
               type="number"
               placeholder={t("Max Price")}
+              color={theme.palette.mode === "dark" ? "#2c3e50" : "grey.500"}
               value={priceRange[1] === 1000000 ? "" : priceRange[1]}
               onChange={(e) => {
                 const val = Number(e.target.value) || 1000000;
                 setPriceRange([priceRange[0], val]);
               }}
               sx={{
+                color: theme.palette.mode === "dark" ? "#2c3e50" : "grey.500",
+
                 width: { xs: 80, md: 120 },
                 backgroundColor: "white",
                 borderRadius: 1,
@@ -314,6 +341,13 @@ const MainPage = () => {
                 },
               }}
               size="small"
+              InputProps={{
+                inputProps: {
+                  style: {
+                    color: theme.palette.mode === "dark" ? "black" : "grey.500",
+                  },
+                },
+              }}
             />
           </Box>
         </Box>
@@ -821,12 +855,15 @@ const MainPage = () => {
                         }}
                       >
                         <Typography
-                          variant="h6"
+                          variant="h5"
                           align="center"
                           sx={{
-                            fontWeight: 600,
-                            fontSize: "1rem",
-                            color: theme.palette.text.primary,
+                            backgroundColor: "yellow",
+                            height: "50px",
+                            fontWeight: 1000,
+                            fontSize: "1.2rem",
+                            color: "black",
+                            textAlign: "center",
                             mb: 1,
                             overflow: "hidden",
                             textOverflow: "ellipsis",
@@ -848,20 +885,20 @@ const MainPage = () => {
                             backdropFilter: "blur(10px)",
                           }}
                         />
-                        <Box sx={{ mt: "auto" }}>
+                        <Box display="flex" flexDirection="column">
                           <Box
-                            display="flex"
+                            display="contents"
+                            flexDirection="column"
                             alignItems="center"
-                            justifyContent="space-between"
                           >
                             {product.previousPrice &&
                               product.previousPrice > product.newPrice && (
                                 <Typography
-                                  variant="body2"
+                                  variant="h6"
                                   sx={{
                                     textDecoration: "line-through",
-                                    color: theme.palette.text.secondary,
-                                    fontSize: "0.875rem",
+                                    color: "red",
+                                    fontSize: "1rem",
                                   }}
                                 >
                                   {formatPrice(product.previousPrice)}
@@ -869,10 +906,11 @@ const MainPage = () => {
                               )}
                             <Typography
                               variant="h6"
+                              align="center"
                               sx={{
                                 color: "#52b788",
                                 fontWeight: 700,
-                                fontSize: "1.125rem",
+                                fontSize: "1.5rem",
                               }}
                             >
                               {formatPrice(product.newPrice)}
