@@ -7,20 +7,23 @@ const Company = require("../models/Company");
 // @access  Public
 const getProducts = async (req, res) => {
   try {
-    const { company, category } = req.query;
+    const { company, category, market } = req.query;
     let query = {};
 
     if (company) {
       query.companyId = company;
     }
+    if (market) {
+      query.marketId = market;
+    }
 
     if (category) {
       query.type = category;
     }
-    console.log("hello");
 
     const products = await Product.find(query)
       .populate("companyId", "name logo")
+      .populate("marketId", "name logo")
       .sort({ name: 1 });
 
     res.json(products);
@@ -65,7 +68,11 @@ const createProduct = async (req, res) => {
     image,
     previousPrice,
     newPrice,
+    isDiscount,
+    weight,
     companyId,
+    description,
+    barcode,
     marketId,
     expireDate,
   } = req.body;
@@ -91,9 +98,13 @@ const createProduct = async (req, res) => {
     const newProduct = new Product({
       name,
       type,
+      description,
+      barcode,
       image,
       previousPrice,
       newPrice,
+      isDiscount,
+      weight,
       companyId,
       marketId,
       expireDate,
@@ -115,6 +126,7 @@ const getProductsByCompany = async (req, res) => {
   try {
     const products = await Product.find({ companyId: req.params.companyId })
       .populate("companyId", "name logo")
+      .populate("marketId", "name logo")
       .sort({ name: 1 });
 
     res.json(products);
@@ -131,6 +143,7 @@ const getProductsByMarket = async (req, res) => {
   try {
     const products = await Product.find({ marketId: req.params.marketId })
       .populate("companyId", "name logo")
+      .populate("marketId", "name logo")
       .sort({ name: 1 });
 
     res.json(products);
@@ -147,6 +160,7 @@ const getProductsByCategory = async (req, res) => {
   try {
     const products = await Product.find({ type: req.params.category })
       .populate("companyId", "name logo")
+      .populate("marketId", "name logo")
       .sort({ name: 1 });
 
     res.json(products);

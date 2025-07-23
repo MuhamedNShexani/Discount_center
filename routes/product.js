@@ -98,22 +98,31 @@ router.post("/bulk-upload", upload.single("excelFile"), async (req, res) => {
 
       try {
         const productData = {
-          name: row[0] || "",
-          type: row[1] || "",
-          previousPrice: row[2] ? parseFloat(row[2]) : null,
-          newPrice: parseFloat(row[3]) || 0,
-          companyId: row[4] || "",
-          expireDate: row[5] ? new Date(row[5]).toISOString() : null,
+          barcode: row[0] || "",
+          name: row[1] || "",
+          type: row[2] || "",
+          previousPrice: row[3] ? parseFloat(row[3]) : null,
+          newPrice: row[4] ? parseFloat(row[4]) : null,
+          isDiscount: row[5] === "true" || row[5] === "1" || row[5] === true,
+          companyId: row[6] || "",
+          marketId: row[7] || "",
+          description: row[8] || "",
+          expireDate: row[9] ? new Date(row[9]).toISOString() : null,
+          weight: row[10] || "",
         };
 
         // Validate required fields
         if (
           !productData.name ||
           !productData.type ||
-          !productData.newPrice ||
-          !productData.companyId
+          productData.isDiscount === undefined ||
+          !productData.marketId
         ) {
-          errors.push(`Row ${i + 2}: Missing required fields`);
+          errors.push(
+            `Row ${
+              i + 2
+            }: Missing required fields (name, type, isDiscount, marketId)`
+          );
           continue;
         }
 

@@ -12,6 +12,7 @@ import {
   Alert,
   CircularProgress,
   FormControl,
+  FormControlLabel,
   InputLabel,
   Select,
   MenuItem,
@@ -35,8 +36,10 @@ import {
   Slide,
   Divider,
   useTheme,
+  TablePagination,
 } from "@mui/material";
 import { marketAPI, productAPI, companyAPI } from "../services/api";
+import * as XLSX from "xlsx";
 
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import BusinessIcon from "@mui/icons-material/Business";
@@ -49,6 +52,7 @@ import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import InventoryIcon from "@mui/icons-material/Inventory";
 import StoreIcon from "@mui/icons-material/Store";
+import DownloadIcon from "@mui/icons-material/Download";
 import { useTranslation } from "react-i18next";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
@@ -63,6 +67,12 @@ const DataEntryForm = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
+
+  // Pagination states
+  const [marketsPage, setMarketsPage] = useState(0);
+  const [companiesPage, setCompaniesPage] = useState(0);
+  const [productsPage, setProductsPage] = useState(0);
+  const [rowsPerPage] = useState(10);
 
   // Refs for file inputs
   const companyLogoFileRef = useRef(null);
@@ -94,6 +104,10 @@ const DataEntryForm = () => {
     image: "",
     previousPrice: "",
     newPrice: "",
+    isDiscount: false,
+    description: "",
+    barcode: "",
+    weight: "",
     marketId: "",
     expireDate: "",
   });
@@ -106,6 +120,14 @@ const DataEntryForm = () => {
   const [bulkUploadLoading, setBulkUploadLoading] = useState(false);
   const [selectedEditImage, setSelectedEditImage] = useState(null);
   const [selectedMarketLogo, setSelectedMarketLogo] = useState(null);
+
+  // Company and Market bulk upload state
+  const [selectedCompanyExcelFile, setSelectedCompanyExcelFile] =
+    useState(null);
+  const [selectedMarketExcelFile, setSelectedMarketExcelFile] = useState(null);
+  const [companyBulkUploadLoading, setCompanyBulkUploadLoading] =
+    useState(false);
+  const [marketBulkUploadLoading, setMarketBulkUploadLoading] = useState(false);
 
   const [selectedMarketFilter, setSelectedMarketFilter] = useState("");
   const [editDialog, setEditDialog] = useState({
@@ -182,6 +204,19 @@ const DataEntryForm = () => {
     setActiveListTab(newValue);
   };
 
+  // Pagination handlers
+  const handleMarketsPageChange = (event, newPage) => {
+    setMarketsPage(newPage);
+  };
+
+  const handleCompaniesPageChange = (event, newPage) => {
+    setCompaniesPage(newPage);
+  };
+
+  const handleProductsPageChange = (event, newPage) => {
+    setProductsPage(newPage);
+  };
+
   const handleCompanyFormChange = (e) => {
     setCompanyForm({
       ...companyForm,
@@ -205,6 +240,14 @@ const DataEntryForm = () => {
     const file = e.target.files[0];
     if (file) {
       setSelectedCompanyLogo(file);
+    }
+  };
+
+  // Handle file selection for market logo
+  const handleMarketLogoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedMarketLogo(file);
     }
   };
 
@@ -303,6 +346,22 @@ const DataEntryForm = () => {
     }
   };
 
+  // Handle Company Excel file selection
+  const handleCompanyExcelFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedCompanyExcelFile(file);
+    }
+  };
+
+  // Handle Market Excel file selection
+  const handleMarketExcelFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedMarketExcelFile(file);
+    }
+  };
+
   // Process Excel file and create products
   const handleBulkUpload = async (e) => {
     e.preventDefault();
@@ -358,6 +417,185 @@ const DataEntryForm = () => {
       console.error("Error uploading products:", err);
     } finally {
       setBulkUploadLoading(false);
+    }
+  };
+
+  // Process Excel file and create companies
+  const handleCompanyBulkUpload = async (e) => {
+    e.preventDefault();
+    if (!selectedCompanyExcelFile) {
+      setMessage({
+        type: "error",
+        text: t("Please select an Excel file."),
+      });
+      return;
+    }
+
+    setCompanyBulkUploadLoading(true);
+    setMessage({ type: "", text: "" });
+
+    try {
+      const formData = new FormData();
+      formData.append("excelFile", selectedCompanyExcelFile);
+
+      const response = await fetch(`${API_URL}/api/companies/bulk-upload`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Bulk upload failed");
+      }
+
+      const data = await response.json();
+      setMessage({
+        type: "success",
+        text: t("Successfully uploaded {{count}} companies", {
+          count: data.createdCount,
+        }),
+      });
+
+      if (data.errors && data.errors.length > 0) {
+        setMessage({
+          type: "warning",
+          text: t("Upload complete with {{count}} errors", {
+            count: data.errors.length,
+          }),
+        });
+      }
+
+      fetchCompanies(); // Refresh companies list
+      setSelectedCompanyExcelFile(null); // Clear file input
+    } catch (err) {
+      setMessage({
+        type: "error",
+        text: "Failed to upload companies. Please check your Excel file format.",
+      });
+      console.error("Error uploading companies:", err);
+    } finally {
+      setCompanyBulkUploadLoading(false);
+    }
+  };
+
+  // Process Excel file and create markets
+  const handleMarketBulkUpload = async (e) => {
+    e.preventDefault();
+    if (!selectedMarketExcelFile) {
+      setMessage({
+        type: "error",
+        text: t("Please select an Excel file."),
+      });
+      return;
+    }
+
+    setMarketBulkUploadLoading(true);
+    setMessage({ type: "", text: "" });
+
+    try {
+      const formData = new FormData();
+      formData.append("excelFile", selectedMarketExcelFile);
+
+      const response = await fetch(`${API_URL}/api/markets/bulk-upload`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Bulk upload failed");
+      }
+
+      const data = await response.json();
+      setMessage({
+        type: "success",
+        text: t("Successfully uploaded {{count}} markets", {
+          count: data.createdCount,
+        }),
+      });
+
+      if (data.errors && data.errors.length > 0) {
+        setMessage({
+          type: "warning",
+          text: t("Upload complete with {{count}} errors", {
+            count: data.errors.length,
+          }),
+        });
+      }
+
+      fetchMarkets(); // Refresh markets list
+      setSelectedMarketExcelFile(null); // Clear file input
+    } catch (err) {
+      setMessage({
+        type: "error",
+        text: "Failed to upload markets. Please check your Excel file format.",
+      });
+      console.error("Error uploading markets:", err);
+    } finally {
+      setMarketBulkUploadLoading(false);
+    }
+  };
+
+  // Export companies to Excel
+  const exportCompaniesToExcel = () => {
+    try {
+      // Prepare data for export
+      const exportData = companies.map((company, index) => ({
+        "No.": index + 1,
+        ID: company._id || "",
+        Name: company.name || "",
+        Logo: company.logo || "",
+        Address: company.address || "",
+        Phone: company.phone || "",
+        Description: company.description || "",
+        "Created Date": company.createdAt
+          ? new Date(company.createdAt).toLocaleDateString()
+          : "",
+        "Updated Date": company.updatedAt
+          ? new Date(company.updatedAt).toLocaleDateString()
+          : "",
+      }));
+
+      // Create workbook and worksheet
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+
+      // Set column widths
+      const columnWidths = [
+        { wch: 5 }, // No.
+        { wch: 25 }, // ID
+        { wch: 25 }, // Name
+        { wch: 30 }, // Logo
+        { wch: 30 }, // Address
+        { wch: 15 }, // Phone
+        { wch: 40 }, // Description
+        { wch: 15 }, // Created Date
+        { wch: 15 }, // Updated Date
+      ];
+      worksheet["!cols"] = columnWidths;
+
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Companies");
+
+      // Generate filename with current date
+      const date = new Date().toISOString().split("T")[0];
+      const filename = `companies_export_${date}.xlsx`;
+
+      // Save file
+      XLSX.writeFile(workbook, filename);
+
+      setMessage({
+        type: "success",
+        text: t("Companies exported successfully to {{filename}}", {
+          filename,
+        }),
+      });
+    } catch (error) {
+      console.error("Error exporting companies:", error);
+      setMessage({
+        type: "error",
+        text: t("Failed to export companies. Please try again."),
+      });
     }
   };
 
@@ -480,6 +718,8 @@ const DataEntryForm = () => {
         image: imageUrl,
         previousPrice: parseFloat(productForm.previousPrice) || null,
         newPrice: parseFloat(productForm.newPrice) || null,
+        isDiscount: productForm.isDiscount,
+        weight: productForm.weight,
         expireDate: productForm.expireDate
           ? new Date(productForm.expireDate).toISOString()
           : null,
@@ -495,6 +735,10 @@ const DataEntryForm = () => {
         image: "",
         previousPrice: "",
         newPrice: "",
+        isDiscount: false,
+        description: "",
+        barcode: "",
+        weight: "",
         marketId: "",
         expireDate: "",
       });
@@ -540,6 +784,10 @@ const DataEntryForm = () => {
         image: data.image,
         previousPrice: data.previousPrice,
         newPrice: data.newPrice,
+        isDiscount: data.isDiscount || false,
+        description: data.description || "",
+        barcode: data.barcode || "",
+        weight: data.weight || "",
         marketId: data.marketId?._id || data.marketId,
         companyId: data.companyId?._id || data.companyId,
         expireDate: data.expireDate
@@ -600,6 +848,10 @@ const DataEntryForm = () => {
           image: imageUrl,
           previousPrice: parseFloat(editForm.previousPrice) || null,
           newPrice: parseFloat(editForm.newPrice) || null,
+          isDiscount: editForm.isDiscount,
+          description: editForm.description,
+          barcode: editForm.barcode,
+          weight: editForm.weight,
           expireDate: editForm.expireDate
             ? new Date(editForm.expireDate).toISOString()
             : null,
@@ -965,11 +1217,11 @@ const DataEntryForm = () => {
                   <input
                     accept="image/*"
                     style={{ display: "none" }}
-                    id="company-logo-file"
+                    id="market-logo-file"
                     type="file"
-                    onChange={handleCompanyLogoChange}
+                    onChange={handleMarketLogoChange}
                   />
-                  <label htmlFor="company-logo-file">
+                  <label htmlFor="market-logo-file">
                     <Button
                       variant="outlined"
                       component="span"
@@ -1002,6 +1254,116 @@ const DataEntryForm = () => {
                       ? t("Uploading...")
                       : t("Add Market")}
                   </Button>
+                </Grid>
+              </Grid>
+            </Box>
+          )}
+
+          {/* Market Bulk Upload Section */}
+          {activeTab === 0 && (
+            <Box
+              sx={{ mt: 4, p: 3, backgroundColor: "#f8f9fa", borderRadius: 2 }}
+            >
+              <Typography variant="h6" gutterBottom sx={{ color: "#2c3e50" }}>
+                {t("Bulk Upload Markets")}
+              </Typography>
+              <Typography variant="body2" sx={{ color: "#B08463", mb: 2 }}>
+                {t(
+                  "Upload an Excel file (.xlsx) with market data. The file should have columns: Name, Logo, Address, Phone, Description"
+                )}
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid xs={12}>
+                  <input
+                    accept=".xlsx,.xls"
+                    style={{ display: "none" }}
+                    id="market-excel-file"
+                    type="file"
+                    onChange={handleMarketExcelFileChange}
+                  />
+                  <label htmlFor="market-excel-file">
+                    <Button
+                      variant="outlined"
+                      component="span"
+                      fullWidth
+                      startIcon={<AddIcon />}
+                      sx={{ mb: 2 }}
+                    >
+                      {selectedMarketExcelFile
+                        ? selectedMarketExcelFile.name
+                        : t("Select Excel File")}
+                    </Button>
+                  </label>
+                </Grid>
+                <Grid xs={12}>
+                  <Button
+                    variant="outlined"
+                    onClick={() => {
+                      // Create sample data for template
+                      const sampleData = [
+                        ["Name", "Logo", "Address", "Phone", "Description"],
+                        [
+                          "Sample Market",
+                          "logo_url_here",
+                          "Sample Address",
+                          "+1234567890",
+                          "Sample description",
+                        ],
+                      ];
+
+                      // Convert to CSV format
+                      const csvContent = sampleData
+                        .map((row) => row.join(","))
+                        .join("\n");
+
+                      // Create and download file
+                      const blob = new Blob([csvContent], { type: "text/csv" });
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = "market_template.csv";
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      window.URL.revokeObjectURL(url);
+                    }}
+                    fullWidth
+                    startIcon={<CloudUploadIcon />}
+                    sx={{ mb: 2 }}
+                  >
+                    {t("Download Template")}
+                  </Button>
+                </Grid>
+                <Grid xs={12}>
+                  <Button
+                    onClick={handleMarketBulkUpload}
+                    variant="contained"
+                    disabled={
+                      marketBulkUploadLoading || !selectedMarketExcelFile
+                    }
+                    startIcon={
+                      marketBulkUploadLoading ? (
+                        <CircularProgress size={20} />
+                      ) : (
+                        <AddIcon />
+                      )
+                    }
+                    fullWidth
+                  >
+                    {marketBulkUploadLoading
+                      ? t("Uploading...")
+                      : t("Upload Markets")}
+                  </Button>
+                </Grid>
+                <Grid xs={12}>
+                  <Typography variant="body2" sx={{ color: "#B08463", mt: 2 }}>
+                    <strong>{t("Excel Format:")}</strong>
+                    <br />• {t("Column A: Name (required)")}
+                    <br />• {t("Column B: Logo (optional)")}
+                    <br />• {t("Column C: Address (optional)")}
+                    <br />• {t("Column D: Phone (optional)")}
+                    <br />• {t("Column E: Description (optional)")}
+                  </Typography>
                 </Grid>
               </Grid>
             </Box>
@@ -1102,6 +1464,116 @@ const DataEntryForm = () => {
               </Grid>
             </Box>
           )}
+
+          {/* Company Bulk Upload Section */}
+          {activeTab === 1 && (
+            <Box
+              sx={{ mt: 4, p: 3, backgroundColor: "#f8f9fa", borderRadius: 2 }}
+            >
+              <Typography variant="h6" gutterBottom sx={{ color: "#2c3e50" }}>
+                {t("Bulk Upload Companies")}
+              </Typography>
+              <Typography variant="body2" sx={{ color: "#B08463", mb: 2 }}>
+                {t(
+                  "Upload an Excel file (.xlsx) with company data. The file should have columns: Name, Logo, Address, Phone, Description"
+                )}
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid xs={12}>
+                  <input
+                    accept=".xlsx,.xls"
+                    style={{ display: "none" }}
+                    id="company-excel-file"
+                    type="file"
+                    onChange={handleCompanyExcelFileChange}
+                  />
+                  <label htmlFor="company-excel-file">
+                    <Button
+                      variant="outlined"
+                      component="span"
+                      fullWidth
+                      startIcon={<AddIcon />}
+                      sx={{ mb: 2 }}
+                    >
+                      {selectedCompanyExcelFile
+                        ? selectedCompanyExcelFile.name
+                        : t("Select Excel File")}
+                    </Button>
+                  </label>
+                </Grid>
+                <Grid xs={12}>
+                  <Button
+                    variant="outlined"
+                    onClick={() => {
+                      // Create sample data for template
+                      const sampleData = [
+                        ["Name", "Logo", "Address", "Phone", "Description"],
+                        [
+                          "Sample Company",
+                          "logo_url_here",
+                          "Sample Address",
+                          "+1234567890",
+                          "Sample description",
+                        ],
+                      ];
+
+                      // Convert to CSV format
+                      const csvContent = sampleData
+                        .map((row) => row.join(","))
+                        .join("\n");
+
+                      // Create and download file
+                      const blob = new Blob([csvContent], { type: "text/csv" });
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = "company_template.csv";
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      window.URL.revokeObjectURL(url);
+                    }}
+                    fullWidth
+                    startIcon={<CloudUploadIcon />}
+                    sx={{ mb: 2 }}
+                  >
+                    {t("Download Template")}
+                  </Button>
+                </Grid>
+                <Grid xs={12}>
+                  <Button
+                    onClick={handleCompanyBulkUpload}
+                    variant="contained"
+                    disabled={
+                      companyBulkUploadLoading || !selectedCompanyExcelFile
+                    }
+                    startIcon={
+                      companyBulkUploadLoading ? (
+                        <CircularProgress size={20} />
+                      ) : (
+                        <AddIcon />
+                      )
+                    }
+                    fullWidth
+                  >
+                    {companyBulkUploadLoading
+                      ? t("Uploading...")
+                      : t("Upload Companies")}
+                  </Button>
+                </Grid>
+                <Grid xs={12}>
+                  <Typography variant="body2" sx={{ color: "#B08463", mt: 2 }}>
+                    <strong>{t("Excel Format:")}</strong>
+                    <br />• {t("Column A: Name (required)")}
+                    <br />• {t("Column B: Logo (optional)")}
+                    <br />• {t("Column C: Address (optional)")}
+                    <br />• {t("Column D: Phone (optional)")}
+                    <br />• {t("Column E: Description (optional)")}
+                  </Typography>
+                </Grid>
+              </Grid>
+            </Box>
+          )}
           {activeTab === 2 && (
             <Box component="form" onSubmit={handleProductSubmit}>
               <Grid container spacing={2}>
@@ -1121,6 +1593,26 @@ const DataEntryForm = () => {
                         </InputAdornment>
                       ),
                     }}
+                  />
+                </Grid>
+                <Grid xs={12}>
+                  <TextField
+                    fullWidth
+                    label={t("Description")}
+                    name="description"
+                    value={productForm.description}
+                    onChange={handleProductFormChange}
+                    multiline
+                    rows={3}
+                  />
+                </Grid>
+                <Grid xs={12}>
+                  <TextField
+                    fullWidth
+                    label={t("Barcode")}
+                    name="barcode"
+                    value={productForm.barcode}
+                    onChange={handleProductFormChange}
                   />
                 </Grid>
                 <Grid xs={12} sm={6}>
@@ -1163,6 +1655,43 @@ const DataEntryForm = () => {
                       ),
                     }}
                   />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("Weight")}
+                    name="weight"
+                    value={productForm.weight}
+                    onChange={handleProductFormChange}
+                    placeholder="e.g., 500g, 1kg, 2.5kg"
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <InventoryIcon />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <FormControlLabel
+                      control={
+                        <input
+                          type="checkbox"
+                          name="isDiscount"
+                          checked={productForm.isDiscount}
+                          onChange={(e) =>
+                            setProductForm({
+                              ...productForm,
+                              isDiscount: e.target.checked,
+                            })
+                          }
+                        />
+                      }
+                      label={t("Is Discount Product")}
+                    />
+                  </FormControl>
                 </Grid>
                 <Grid xs={12} sm={6}>
                   <FormControl fullWidth required>
@@ -1286,7 +1815,7 @@ const DataEntryForm = () => {
                   </Typography>
                   <Typography variant="body2" sx={{ color: "#B08463", mb: 2 }}>
                     {t(
-                      "Upload an Excel file (.xlsx) with product data. The file should have columns: Name, Type, Previous Price, New Price, Company ID, Expire Date (YYYY-MM-DD)"
+                      "Upload an Excel file (.xlsx) with product data. The file should have columns: Barcode, Name, Type, Previous Price, New Price, Is Discount, Company ID, Market ID, Description, Expire Date, Weight"
                     )}
                   </Typography>
                 </Grid>
@@ -1314,6 +1843,63 @@ const DataEntryForm = () => {
                 </Grid>
                 <Grid xs={12}>
                   <Button
+                    variant="outlined"
+                    onClick={() => {
+                      // Create sample data for template
+                      const sampleData = [
+                        [
+                          "Barcode",
+                          "Name",
+                          "Type",
+                          "Previous Price",
+                          "New Price",
+                          "Is Discount",
+                          "Company ID",
+                          "Market ID",
+                          "Description",
+                          "Expire Date",
+                          "Weight",
+                        ],
+                        [
+                          "123456789",
+                          "Sample Product",
+                          "Electronics",
+                          "100",
+                          "80",
+                          "true",
+                          "company_id_here",
+                          "market_id_here",
+                          "Sample description",
+                          "2024-12-31",
+                          "500g",
+                        ],
+                      ];
+
+                      // Convert to CSV format
+                      const csvContent = sampleData
+                        .map((row) => row.join(","))
+                        .join("\n");
+
+                      // Create and download file
+                      const blob = new Blob([csvContent], { type: "text/csv" });
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = "product_template.csv";
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      window.URL.revokeObjectURL(url);
+                    }}
+                    fullWidth
+                    startIcon={<CloudUploadIcon />}
+                    sx={{ mb: 2 }}
+                  >
+                    {t("Download Template")}
+                  </Button>
+                </Grid>
+                <Grid xs={12}>
+                  <Button
                     type="submit"
                     variant="contained"
                     disabled={bulkUploadLoading || !selectedExcelFile}
@@ -1334,13 +1920,18 @@ const DataEntryForm = () => {
                 <Grid xs={12}>
                   <Typography variant="body2" sx={{ color: "#B08463", mt: 2 }}>
                     <strong>{t("Excel Format:")}</strong>
-                    <br />• {t("Column A: Product Name (required)")}
-                    <br />• {t("Column B: Product Type (required)")}
-                    <br />• {t("Column C: Previous Price (optional)")}
-                    <br />• {t("Column D: New Price (required)")}
-                    <br />• {t("Column E: Company ID (required)")}
+                    <br />• {t("Column A: Barcode (optional)")}
+                    <br />• {t("Column B: Name (required)")}
+                    <br />• {t("Column C: Type (required)")}
+                    <br />• {t("Column D: Previous Price (optional)")}
+                    <br />• {t("Column E: New Price (optional)")}
+                    <br />• {t("Column F: Is Discount (required)")}
+                    <br />• {t("Column G: Company ID (optional)")}
+                    <br />• {t("Column H: Market ID (required)")}
+                    <br />• {t("Column I: Description (optional)")}
                     <br />•{" "}
-                    {t("Column F: Expire Date (optional, YYYY-MM-DD format)")}
+                    {t("Column J: Expire Date (optional, YYYY-MM-DD format)")}
+                    <br />• {t("Column K: Weight (optional)")}
                   </Typography>
                 </Grid>
               </Grid>
@@ -1388,283 +1979,349 @@ const DataEntryForm = () => {
             />
           </Tabs>
 
-          {/* Company List Panel */}
+          {/* Market List Panel */}
           {activeListTab === 0 && (
-            <TableContainer component={Paper}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell
-                      sx={{
-                        fontWeight: "bold",
-                        backgroundColor: "primary.light",
-                        color: "primary.contrastText",
-                      }}
-                    >
-                      {t("No.")}
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        fontWeight: "bold",
-                        backgroundColor: "primary.light",
-                        color: "primary.contrastText",
-                      }}
-                    >
-                      {t("Name")}
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        fontWeight: "bold",
-                        backgroundColor: "primary.light",
-                        color: "primary.contrastText",
-                      }}
-                    >
-                      {t("Logo")}
-                    </TableCell>
-                    {/* <TableCell
-                      sx={{
-                        fontWeight: "bold",
-                        backgroundColor: "primary.light",
-                        color: "primary.contrastText",
-                      }}
-                    >
-                      {t("Address")}
-                    </TableCell> */}
-                    <TableCell
-                      sx={{
-                        fontWeight: "bold",
-                        backgroundColor: "primary.light",
-                        color: "primary.contrastText",
-                      }}
-                    >
-                      {t("Phone")}
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        fontWeight: "bold",
-                        backgroundColor: "primary.light",
-                        color: "primary.contrastText",
-                      }}
-                    >
-                      {t("Description")}
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        fontWeight: "bold",
-                        backgroundColor: "primary.light",
-                        color: "primary.contrastText",
-                      }}
-                    >
-                      {t("Actions")}
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {markets.map((market, idx) => (
-                    <TableRow key={market._id}>
-                      <TableCell>{idx + 1}</TableCell>
+            <Box>
+              <TableContainer component={Paper}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
                       <TableCell
-                        width={200}
-                        sx={{ fontSize: "18px", fontWeight: "bold" }}
-                      >
-                        {market.name}
-                      </TableCell>
-                      <TableCell>
-                        {market.logo && (
-                          <img
-                            src={
-                              market.logo.startsWith("http")
-                                ? market.logo
-                                : `${API_URL}${market.logo}`
-                            }
-                            alt={market.name}
-                            width={80}
-                            height={80}
-                            style={{
-                              objectFit: "cover",
-                              borderRadius: "4px",
-                            }}
-                          />
-                        )}
-                      </TableCell>
-                      {/* <TableCell>{market.address}</TableCell> */}
-                      <TableCell>{market.phone}</TableCell>
-                      <TableCell
-                        width="100px"
-                        height="100px"
                         sx={{
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
                         }}
                       >
-                        {market.description}
+                        {t("No.")}
                       </TableCell>
-                      <TableCell>
-                        <IconButton
-                          color="primary"
-                          onClick={() => handleEditOpen("market", market)}
-                        >
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton
-                          color="error"
-                          onClick={() =>
-                            setDeleteDialog({
-                              open: true,
-                              type: "market",
-                              data: market,
-                            })
-                          }
-                        >
-                          <DeleteIcon />
-                        </IconButton>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Name")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Logo")}
+                      </TableCell>
+                      {/* <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Address")}
+                      </TableCell> */}
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Phone")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Description")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Actions")}
                       </TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                  </TableHead>
+                  <TableBody>
+                    {markets
+                      .slice(
+                        marketsPage * rowsPerPage,
+                        marketsPage * rowsPerPage + rowsPerPage
+                      )
+                      .map((market, idx) => (
+                        <TableRow key={market._id}>
+                          <TableCell>
+                            {marketsPage * rowsPerPage + idx + 1}
+                          </TableCell>
+                          <TableCell
+                            width={200}
+                            sx={{ fontSize: "18px", fontWeight: "bold" }}
+                          >
+                            {market.name}
+                          </TableCell>
+                          <TableCell>
+                            {market.logo && (
+                              <img
+                                src={
+                                  market.logo.startsWith("http")
+                                    ? market.logo
+                                    : `${API_URL}${market.logo}`
+                                }
+                                alt={market.name}
+                                width={80}
+                                height={80}
+                                style={{
+                                  objectFit: "cover",
+                                  borderRadius: "4px",
+                                }}
+                              />
+                            )}
+                          </TableCell>
+                          {/* <TableCell>{market.address}</TableCell> */}
+                          <TableCell>{market.phone}</TableCell>
+                          <TableCell
+                            width="100px"
+                            height="100px"
+                            sx={{
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
+                          >
+                            {market.description}
+                          </TableCell>
+                          <TableCell>
+                            <IconButton
+                              color="primary"
+                              onClick={() => handleEditOpen("market", market)}
+                            >
+                              <EditIcon />
+                            </IconButton>
+                            <IconButton
+                              color="error"
+                              onClick={() =>
+                                setDeleteDialog({
+                                  open: true,
+                                  type: "market",
+                                  data: market,
+                                })
+                              }
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              <TablePagination
+                component="div"
+                count={markets.length}
+                page={marketsPage}
+                onPageChange={handleMarketsPageChange}
+                rowsPerPage={rowsPerPage}
+                rowsPerPageOptions={[10]}
+                labelDisplayedRows={({ from, to, count }) =>
+                  `${from}-${to} of ${count !== -1 ? count : `more than ${to}`}`
+                }
+              />
+            </Box>
           )}
 
           {/* Company List Panel */}
           {activeListTab === 1 && (
-            <TableContainer component={Paper}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell
-                      sx={{
-                        fontWeight: "bold",
-                        backgroundColor: "primary.light",
-                        color: "primary.contrastText",
-                      }}
-                    >
-                      {t("No.")}
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        fontWeight: "bold",
-                        backgroundColor: "primary.light",
-                        color: "primary.contrastText",
-                      }}
-                    >
-                      {t("Name")}
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        fontWeight: "bold",
-                        backgroundColor: "primary.light",
-                        color: "primary.contrastText",
-                      }}
-                    >
-                      {t("Logo")}
-                    </TableCell>
-                    {/* <TableCell
-                      sx={{
-                        fontWeight: "bold",
-                        backgroundColor: "primary.light",
-                        color: "primary.contrastText",
-                      }}
-                    >
-                      {t("Address")}
-                    </TableCell> */}
-                    <TableCell
-                      sx={{
-                        fontWeight: "bold",
-                        backgroundColor: "primary.light",
-                        color: "primary.contrastText",
-                      }}
-                    >
-                      {t("Phone")}
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        fontWeight: "bold",
-                        backgroundColor: "primary.light",
-                        color: "primary.contrastText",
-                      }}
-                    >
-                      {t("Description")}
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        fontWeight: "bold",
-                        backgroundColor: "primary.light",
-                        color: "primary.contrastText",
-                      }}
-                    >
-                      {t("Actions")}
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {companies.map((company, idx) => (
-                    <TableRow key={company._id}>
-                      <TableCell>{idx + 1}</TableCell>
+            <Box>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  mb: 2,
+                }}
+              >
+                <Typography variant="h6" sx={{ color: "#2c3e50" }}>
+                  {t("Total Companies: {{count}}", { count: companies.length })}
+                </Typography>
+                <Button
+                  variant="contained"
+                  startIcon={<DownloadIcon />}
+                  onClick={exportCompaniesToExcel}
+                  sx={{
+                    backgroundColor: "#52b788",
+                    "&:hover": {
+                      backgroundColor: "#40916c",
+                    },
+                  }}
+                >
+                  {t("Export to Excel")}
+                </Button>
+              </Box>
+              <TableContainer component={Paper}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
                       <TableCell
-                        width={200}
-                        sx={{ fontSize: "18px", fontWeight: "bold" }}
-                      >
-                        {company.name}
-                      </TableCell>
-                      <TableCell>
-                        {company.logo && (
-                          <img
-                            src={
-                              company.logo.startsWith("http")
-                                ? company.logo
-                                : `${API_URL}${company.logo}`
-                            }
-                            alt={company.name}
-                            width={80}
-                            height={80}
-                            style={{
-                              objectFit: "cover",
-                              borderRadius: "4px",
-                            }}
-                          />
-                        )}
-                      </TableCell>
-                      {/* <TableCell>{market.address}</TableCell> */}
-                      <TableCell>{company.phone}</TableCell>
-                      <TableCell
-                        width="100px"
-                        height="100px"
                         sx={{
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
                         }}
                       >
-                        {company.description}
+                        {t("No.")}
                       </TableCell>
-                      <TableCell>
-                        <IconButton
-                          color="primary"
-                          onClick={() => handleEditOpen("company", company)}
-                        >
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton
-                          color="error"
-                          onClick={() =>
-                            setDeleteDialog({
-                              open: true,
-                              type: "company",
-                              data: company,
-                            })
-                          }
-                        >
-                          <DeleteIcon />
-                        </IconButton>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Name")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Logo")}
+                      </TableCell>
+                      {/* <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Address")}
+                      </TableCell> */}
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Phone")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Description")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Actions")}
                       </TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                  </TableHead>
+                  <TableBody>
+                    {companies
+                      .slice(
+                        companiesPage * rowsPerPage,
+                        companiesPage * rowsPerPage + rowsPerPage
+                      )
+                      .map((company, idx) => (
+                        <TableRow key={company._id}>
+                          <TableCell>
+                            {companiesPage * rowsPerPage + idx + 1}
+                          </TableCell>
+                          <TableCell
+                            width={200}
+                            sx={{ fontSize: "18px", fontWeight: "bold" }}
+                          >
+                            {company.name}
+                          </TableCell>
+                          <TableCell>
+                            {company.logo && (
+                              <img
+                                src={
+                                  company.logo.startsWith("http")
+                                    ? company.logo
+                                    : `${API_URL}${company.logo}`
+                                }
+                                alt={company.name}
+                                width={80}
+                                height={80}
+                                style={{
+                                  objectFit: "cover",
+                                  borderRadius: "4px",
+                                }}
+                              />
+                            )}
+                          </TableCell>
+                          {/* <TableCell>{company.address}</TableCell> */}
+                          <TableCell>{company.phone}</TableCell>
+                          <TableCell
+                            width="100px"
+                            height="100px"
+                            sx={{
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
+                          >
+                            {company.description}
+                          </TableCell>
+                          <TableCell>
+                            <IconButton
+                              color="primary"
+                              onClick={() => handleEditOpen("company", company)}
+                            >
+                              <EditIcon />
+                            </IconButton>
+                            <IconButton
+                              color="error"
+                              onClick={() =>
+                                setDeleteDialog({
+                                  open: true,
+                                  type: "company",
+                                  data: company,
+                                })
+                              }
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              <TablePagination
+                component="div"
+                count={companies.length}
+                page={companiesPage}
+                onPageChange={handleCompaniesPageChange}
+                rowsPerPage={rowsPerPage}
+                rowsPerPageOptions={[10]}
+                labelDisplayedRows={({ from, to, count }) =>
+                  `${from}-${to} of ${count !== -1 ? count : `more than ${to}`}`
+                }
+              />
+            </Box>
           )}
+
           {/* Product List Panel */}
           {activeListTab === 2 && (
             <Box>
@@ -1760,6 +2417,24 @@ const DataEntryForm = () => {
                           color: "primary.contrastText",
                         }}
                       >
+                        {t("Weight")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Discount")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
                         {t("Market")}
                       </TableCell>
                       <TableCell
@@ -1783,70 +2458,108 @@ const DataEntryForm = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {products.map((product, idx) => (
-                      <TableRow key={product._id}>
-                        <TableCell>{idx + 1}</TableCell>
-                        <TableCell>{product.name}</TableCell>
-                        <TableCell>
-                          {product.image && (
-                            <img
-                              src={
-                                product.image.startsWith("http")
-                                  ? product.image
-                                  : `${API_URL}${product.image}`
+                    {products
+                      .slice(
+                        productsPage * rowsPerPage,
+                        productsPage * rowsPerPage + rowsPerPage
+                      )
+                      .map((product, idx) => (
+                        <TableRow key={product._id}>
+                          <TableCell>
+                            {productsPage * rowsPerPage + idx + 1}
+                          </TableCell>
+                          <TableCell>{product.name}</TableCell>
+                          <TableCell>
+                            {product.image && (
+                              <img
+                                src={
+                                  product.image.startsWith("http")
+                                    ? product.image
+                                    : `${API_URL}${product.image}`
+                                }
+                                alt={product.name}
+                                style={{
+                                  width: 48,
+                                  height: 48,
+                                  objectFit: "cover",
+                                  borderRadius: 4,
+                                }}
+                              />
+                            )}
+                          </TableCell>
+                          <TableCell>{product.type}</TableCell>
+                          <TableCell>
+                            {product.previousPrice
+                              ? `${t("ID")} ${product.previousPrice.toFixed(2)}`
+                              : ""}
+                          </TableCell>
+                          <TableCell>
+                            {product.newPrice
+                              ? `${t("ID")} ${product.newPrice.toFixed(2)}`
+                              : ""}
+                          </TableCell>
+                          <TableCell>{product.weight || ""}</TableCell>
+                          <TableCell>
+                            {product.isDiscount ? (
+                              <Chip
+                                label={t("Yes")}
+                                color="success"
+                                size="small"
+                                variant="outlined"
+                              />
+                            ) : (
+                              <Chip
+                                label={t("No")}
+                                color="default"
+                                size="small"
+                                variant="outlined"
+                              />
+                            )}
+                          </TableCell>
+                          <TableCell>{product.marketId?.name || ""}</TableCell>
+                          <TableCell>
+                            {product.expireDate
+                              ? new Date(
+                                  product.expireDate
+                                ).toLocaleDateString()
+                              : ""}
+                          </TableCell>
+                          <TableCell>
+                            <IconButton
+                              color="primary"
+                              onClick={() => handleEditOpen("product", product)}
+                            >
+                              <EditIcon />
+                            </IconButton>
+                            <IconButton
+                              color="error"
+                              onClick={() =>
+                                setDeleteDialog({
+                                  open: true,
+                                  type: "product",
+                                  data: product,
+                                })
                               }
-                              alt={product.name}
-                              style={{
-                                width: 48,
-                                height: 48,
-                                objectFit: "cover",
-                                borderRadius: 4,
-                              }}
-                            />
-                          )}
-                        </TableCell>
-                        <TableCell>{product.type}</TableCell>
-                        <TableCell>
-                          {product.previousPrice
-                            ? `${t("ID")} ${product.previousPrice.toFixed(2)}`
-                            : ""}
-                        </TableCell>
-                        <TableCell>
-                          {product.newPrice
-                            ? `${t("ID")} ${product.newPrice.toFixed(2)}`
-                            : ""}
-                        </TableCell>
-                        <TableCell>{product.marketId?.name || ""}</TableCell>
-                        <TableCell>
-                          {product.expireDate
-                            ? new Date(product.expireDate).toLocaleDateString()
-                            : ""}
-                        </TableCell>
-                        <TableCell>
-                          <IconButton
-                            color="primary"
-                            onClick={() => handleEditOpen("product", product)}
-                          >
-                            <EditIcon />
-                          </IconButton>
-                          <IconButton
-                            color="error"
-                            onClick={() =>
-                              setDeleteDialog({
-                                open: true,
-                                type: "product",
-                                data: product,
-                              })
-                            }
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      ))}
                   </TableBody>
                 </Table>
               </TableContainer>
+              <TablePagination
+                component="div"
+                count={products.length}
+                page={productsPage}
+                onPageChange={handleProductsPageChange}
+                rowsPerPage={rowsPerPage}
+                rowsPerPageOptions={[10]}
+                labelDisplayedRows={({ from, to, count }) =>
+                  `${from}-${to} of ${count !== -1 ? count : `more than ${to}`}`
+                }
+              />
             </Box>
           )}
         </CardContent>
@@ -1877,14 +2590,48 @@ const DataEntryForm = () => {
                 value={editForm.name}
                 onChange={handleEditFormChange}
               />
-              <TextField
-                margin="normal"
-                fullWidth
-                label={t("Logo URL")}
-                name="logo"
-                value={editForm.logo}
-                onChange={handleEditFormChange}
-              />
+              {/* Image Upload */}
+              <Box sx={{ mt: 2, mb: 2 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  {t("Upload New Logo:")}
+                </Typography>
+                <input
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  id="edit-company-logo-upload"
+                  type="file"
+                  onChange={handleEditImageChange}
+                />
+                <label htmlFor="edit-company-logo-upload">
+                  <Button
+                    variant="outlined"
+                    component="span"
+                    startIcon={<CloudUploadIcon />}
+                    sx={{ mb: 1 }}
+                  >
+                    {t("Choose Image")}
+                  </Button>
+                </label>
+                {selectedEditImage && (
+                  <Box sx={{ mt: 1 }}>
+                    <Typography variant="caption" display="block">
+                      {t("Selected:")} {selectedEditImage.name}
+                    </Typography>
+                    <img
+                      src={URL.createObjectURL(selectedEditImage)}
+                      alt={t("Preview")}
+                      style={{
+                        width: "100px",
+                        height: "100px",
+                        objectFit: "cover",
+                        borderRadius: "8px",
+                        border: "1px solid #ddd",
+                        marginTop: "8px",
+                      }}
+                    />
+                  </Box>
+                )}
+              </Box>
               <TextField
                 margin="normal"
                 fullWidth
@@ -1920,14 +2667,49 @@ const DataEntryForm = () => {
                 value={editForm.name}
                 onChange={handleEditFormChange}
               />
-              <TextField
-                margin="normal"
-                fullWidth
-                label={t("Logo URL")}
-                name="logo"
-                value={editForm.logo}
-                onChange={handleEditFormChange}
-              />
+              {/* Image Upload */}
+              <Box sx={{ mt: 2, mb: 2 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  {t("Upload New Logo:")}
+                </Typography>
+                <input
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  id="edit-product-image-upload"
+                  type="file"
+                  onChange={handleEditImageChange}
+                />
+                <label htmlFor="edit-product-image-upload">
+                  <Button
+                    variant="outlined"
+                    component="span"
+                    startIcon={<CloudUploadIcon />}
+                    sx={{ mb: 1 }}
+                  >
+                    {t("Choose Image")}
+                  </Button>
+                </label>
+                {selectedEditImage && (
+                  <Box sx={{ mt: 1 }}>
+                    <Typography variant="caption" display="block">
+                      {t("Selected:")} {selectedEditImage.name}
+                    </Typography>
+                    <img
+                      src={URL.createObjectURL(selectedEditImage)}
+                      alt={t("Preview")}
+                      style={{
+                        width: "100px",
+                        height: "100px",
+                        objectFit: "cover",
+                        borderRadius: "8px",
+                        border: "1px solid #ddd",
+                        marginTop: "8px",
+                      }}
+                    />
+                  </Box>
+                )}
+              </Box>
+
               <TextField
                 margin="normal"
                 fullWidth
@@ -2057,6 +2839,33 @@ const DataEntryForm = () => {
                 value={editForm.newPrice}
                 onChange={handleEditFormChange}
               />
+              <TextField
+                margin="normal"
+                fullWidth
+                label={t("Weight")}
+                name="weight"
+                value={editForm.weight}
+                onChange={handleEditFormChange}
+                placeholder="e.g., 500g, 1kg, 2.5kg"
+              />
+              <FormControl fullWidth margin="normal">
+                <FormControlLabel
+                  control={
+                    <input
+                      type="checkbox"
+                      name="isDiscount"
+                      checked={editForm.isDiscount}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          isDiscount: e.target.checked,
+                        })
+                      }
+                    />
+                  }
+                  label={t("Is Discount Product")}
+                />
+              </FormControl>
               <FormControl fullWidth margin="normal">
                 <InputLabel>{t("Market")}</InputLabel>
                 <Select
@@ -2140,8 +2949,8 @@ const DataEntryForm = () => {
             color="error"
             onClick={() =>
               deleteDialog.type === "company"
-                ? handleDeleteCompanyConfirm
-                : handleDeleteMarketConfirm
+                ? handleDeleteCompanyConfirm()
+                : handleDeleteMarketConfirm()
             }
             disabled={deleteLoading}
           >

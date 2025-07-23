@@ -19,11 +19,10 @@ import { productAPI } from "../services/api";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import BusinessIcon from "@mui/icons-material/Business";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
-
+import DescriptionIcon from "@mui/icons-material/Description";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import PhoneIcon from "@mui/icons-material/Phone";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
-import DescriptionIcon from "@mui/icons-material/Description";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import { useTranslation } from "react-i18next";
 import { Link as RouterLink } from "react-router-dom";
@@ -54,11 +53,11 @@ const ProductDetail = () => {
   };
 
   const formatPrice = (price) => {
-    if (typeof price !== "number") return "ID 0";
-    return `ID ${price.toLocaleString(undefined, {
+    if (typeof price !== "number") return `0 ${t("ID")}`;
+    return ` ${price.toLocaleString(undefined, {
       minimumFractionDigits: 0,
       maximumFractionDigits: 2,
-    })}`;
+    })} ${t("ID")}`;
   };
 
   const calculateDiscount = (previousPrice, newPrice) => {
@@ -179,8 +178,42 @@ const ProductDetail = () => {
                   <BusinessIcon
                     sx={{ fontSize: 20, mr: 1, color: "text.secondary" }}
                   />
-                  <Typography variant="h6" color="text.secondary">
-                    {t("By")}: {product.companyId.name}
+                  <Typography
+                    variant="h6"
+                    onClick={() =>
+                      navigate(`/companies/${product.companyId._id}`)
+                    }
+                    color="text.secondary"
+                    sx={{
+                      cursor: "pointer",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {t("Company")}:{" "}
+                    <span style={{ color: "black", fontWeight: "bold" }}>
+                      {product.companyId.name}
+                    </span>
+                  </Typography>
+                </Box>
+              )}
+              {product.marketId && (
+                <Box display="flex" alignItems="center" mb={2}>
+                  <StorefrontIcon
+                    sx={{ fontSize: 20, mr: 1, color: "text.secondary" }}
+                  />
+                  <Typography
+                    variant="h6"
+                    onClick={() => navigate(`/markets/${product.marketId._id}`)}
+                    color="text.secondary"
+                    sx={{
+                      cursor: "pointer",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {t("Market")}:{" "}
+                    <span style={{ color: "black", fontWeight: "bold" }}>
+                      {product.marketId.name}
+                    </span>
                   </Typography>
                 </Box>
               )}
@@ -261,6 +294,7 @@ const ProductDetail = () => {
               <Box sx={{ mb: 3 }}>
                 <Box display="flex" alignItems="center" mb={2}>
                   <Typography variant="h4" color="primary" gutterBottom>
+                    <span style={{ color: "black" }}>{t("Price")}:</span>{" "}
                     {formatPrice(product.newPrice)}
                   </Typography>
                 </Box>
@@ -295,94 +329,54 @@ const ProductDetail = () => {
                   )}
               </Box>
 
-              {/* Company Information */}
-              {product.companyId && (
-                <Card sx={{ mb: 3, bgcolor: "grey.50" }}>
-                  <CardContent>
-                    <Box display="flex" alignItems="center" mb={2}>
-                      <BusinessIcon
-                        sx={{ fontSize: 24, mr: 1, color: "primary.main" }}
-                      />
-                      <Typography variant="h6" gutterBottom>
-                        {t("Company Information")}
-                      </Typography>
-                    </Box>
-                    <Box display="flex" alignItems="center" mb={1}>
-                      <BusinessIcon
-                        sx={{ fontSize: 16, mr: 1, color: "text.secondary" }}
-                      />
-                      <Typography variant="body1" gutterBottom>
-                        <strong>{t("name")}:</strong> {product.companyId.name}
-                      </Typography>
-                    </Box>
-                    {product.companyId.address && (
-                      <Box display="flex" alignItems="center" mb={1}>
-                        <LocationOnIcon
-                          sx={{ fontSize: 16, mr: 1, color: "text.secondary" }}
-                        />
-                        <Typography variant="body1" gutterBottom>
-                          <strong>{t("address")}:</strong>{" "}
-                          {product.companyId.address}
-                        </Typography>
-                      </Box>
-                    )}
-                    {product.companyId.phone && (
-                      <Box display="flex" alignItems="center" mb={1}>
-                        <PhoneIcon
-                          sx={{ fontSize: 16, mr: 1, color: "text.secondary" }}
-                        />
-                        <Typography variant="body1" gutterBottom>
-                          <strong>{t("Phone")}:</strong>{" "}
-                          {product.companyId.phone}
-                        </Typography>
-                      </Box>
-                    )}
-                    {product.companyId.description && (
-                      <Box display="flex" alignItems="flex-start" mb={1}>
-                        <DescriptionIcon
-                          sx={{
-                            fontSize: 16,
-                            mr: 1,
-                            mt: 0.5,
-                            color: "text.secondary",
-                          }}
-                        />
-                        <Typography variant="body1">
-                          <strong>{t("Description")}:</strong>{" "}
-                          {product.companyId.description}
-                        </Typography>
-                      </Box>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
+              {/* Product Details Section */}
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
+                  {t("Product Details")}
+                </Typography>
+                {/* Description */}
+
+                {/* Barcode */}
+                {product.barcode && (
+                  <Box display="flex" alignItems="center" mb={1}>
+                    <Typography variant="body1">
+                      <strong>{t("Barcode")}:</strong> {product.barcode}
+                    </Typography>
+                  </Box>
+                )}
+
+                {/* Weight */}
+                {product.weight && (
+                  <Box display="flex" alignItems="center" mb={1}>
+                    <Typography variant="body1">
+                      <strong>{t("Weight")}:</strong> {product.weight}
+                    </Typography>
+                  </Box>
+                )}
+                {product.description && (
+                  <Box display="flex" alignItems="center" mb={1}>
+                    <DescriptionIcon
+                      sx={{ fontSize: 16, mr: 1, color: "text.secondary" }}
+                    />
+                    <Typography variant="body1">
+                      <strong>{t("Description")}:</strong> {product.description}
+                    </Typography>
+                  </Box>
+                )}
+
+                {/* Discount Status */}
+                <Box display="flex" alignItems="center" mb={1}>
+                  <LocalOfferIcon
+                    sx={{ fontSize: 16, mr: 1, color: "text.secondary" }}
+                  />
+                </Box>
+              </Box>
 
               {/* Action Buttons */}
               <Box sx={{ mt: 4 }}>
                 <Button variant="contained" size="large" sx={{ mr: 2 }}>
                   {t("Contact Seller")}
                 </Button>
-                {product.marketId && product.marketId._id && (
-                  <Button
-                    variant="outlined"
-                    size="large"
-                    onClick={() => navigate(`/markets/${product.marketId._id}`)}
-                    sx={{ mr: 2 }}
-                  >
-                    {t("View Market")}
-                  </Button>
-                )}
-                {product.companyId && product.companyId._id && (
-                  <Button
-                    variant="outlined"
-                    size="large"
-                    onClick={() =>
-                      navigate(`/companies/${product.companyId._id}`)
-                    }
-                  >
-                    {t("View Company")}
-                  </Button>
-                )}
               </Box>
             </Box>
           </Grid>

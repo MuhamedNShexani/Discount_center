@@ -41,6 +41,7 @@ export const productAPI = {
   getByMarket: (marketId) => api.get(`/products/market/${marketId}`),
   getByCategory: (category) => api.get(`/products/category/${category}`),
   getCategories: () => api.get("/products/categories"),
+  bulkUpload: (data) => api.post("/products/bulk-upload", data),
 };
 
 export default api;

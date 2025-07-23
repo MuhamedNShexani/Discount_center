@@ -61,7 +61,7 @@ const deleteMarket = async (req, res) => {
     const marketId = req.params.id;
 
     // Check if there are any products associated with this market
-    const productCount = await Product.countDocuments({ companyId: marketId });
+    const productCount = await Product.countDocuments({ marketId: marketId });
 
     if (productCount > 0) {
       return res.status(400).json({

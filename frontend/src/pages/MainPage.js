@@ -46,6 +46,7 @@ const MainPage = () => {
   const [search, setSearch] = useState("");
   const [type, setType] = useState("");
   const [priceRange, setPriceRange] = useState([0, 1000000]);
+  const [showOnlyDiscount, setShowOnlyDiscount] = useState(true); // Default to showing only discounted products
   const [allTypes, setAllTypes] = useState([]);
 
   const bannerImages = [
@@ -92,11 +93,24 @@ const MainPage = () => {
       const marketsData = marketsResponse.data;
       setMarkets(marketsData);
 
-      // Fetch products for each market (limit to 10 per market)
+      // Fetch products for each market (prioritize discounted products)
       const productsMap = {};
       for (const market of marketsData) {
         const productsResponse = await productAPI.getByMarket(market._id);
-        productsMap[market._id] = productsResponse.data.slice(0, 12); // Limit to 12 products
+        const allProducts = productsResponse.data;
+
+        // Sort products: discounted first, then by name
+        const sortedProducts = allProducts.sort((a, b) => {
+          // First priority: discounted products
+          if (a.isDiscount && !b.isDiscount) return -1;
+          if (!a.isDiscount && b.isDiscount) return 1;
+          // Second priority: alphabetical by name
+          return (a.name || "").localeCompare(b.name || "");
+        });
+
+        // Take first 12 products (prioritizing discounted ones)
+        const products = sortedProducts.slice(0, 12);
+        productsMap[market._id] = products;
       }
       setProductsByMarket(productsMap);
     } catch (err) {
@@ -124,7 +138,6 @@ const MainPage = () => {
     return Math.round(((previousPrice - newPrice) / previousPrice) * 100);
   };
 
-  // Filtering logic
   const filteredMarkets = markets.filter((market) => {
     // If market name matches search or any of its products match search/filters
     const marketNameMatch = market.name
@@ -140,9 +153,26 @@ const MainPage = () => {
           typeof product.newPrice === "number" &&
           product.newPrice >= priceRange[0] &&
           product.newPrice <= priceRange[1];
-        return (nameMatch || marketNameMatch) && typeMatch && priceMatch;
+        // Auto-detect discount based on price difference
+        const hasPriceDiscount =
+          product.previousPrice &&
+          product.newPrice &&
+          product.previousPrice > product.newPrice;
+        const discountMatch =
+          !showOnlyDiscount ||
+          product.isDiscount === true ||
+          product.isDiscount === "true" ||
+          hasPriceDiscount === true;
+
+        return (
+          (nameMatch || marketNameMatch) &&
+          typeMatch &&
+          priceMatch &&
+          discountMatch
+        );
       }
     );
+
     return filteredProducts.length > 0;
   });
 
@@ -201,7 +231,9 @@ const MainPage = () => {
           }}
           gutterBottom
         >
-          {t("Discover products from various markets")}
+          {showOnlyDiscount
+            ? t("Discover Discount Products from Various Markets")
+            : t("Discover All Products from Various Markets")}
         </Typography>
       </Box>
 
@@ -227,7 +259,7 @@ const MainPage = () => {
         >
           <TextField
             variant="outlined"
-            placeholder={t("Search for items...")}
+            placeholder={t("Search for discount products...")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             sx={{
@@ -505,6 +537,38 @@ const MainPage = () => {
             </FormControl>
           )}
 
+          {/* Discount Toggle Button */}
+          <Button
+            variant={showOnlyDiscount ? "contained" : "outlined"}
+            onClick={() => setShowOnlyDiscount(!showOnlyDiscount)}
+            sx={{
+              backgroundColor: showOnlyDiscount
+                ? theme.palette.mode === "dark"
+                  ? "#34495e"
+                  : "#40916c"
+                : "transparent",
+              color: "white",
+              border: "1px solid rgba(255,255,255,0.3)",
+              borderRadius: 2,
+              px: { xs: 1.5, md: 2 },
+              py: 0.5,
+              fontSize: { xs: "0.75rem", md: "0.875rem" },
+              textTransform: "none",
+              minHeight: "32px",
+              "&:hover": {
+                backgroundColor: showOnlyDiscount
+                  ? theme.palette.mode === "dark"
+                    ? "#34495e"
+                    : "#40916c"
+                  : "rgba(255,255,255,0.1)",
+                borderColor: "rgba(255,255,255,0.5)",
+              },
+            }}
+            startIcon={<LocalOfferIcon sx={{ fontSize: "16px" }} />}
+          >
+            {showOnlyDiscount ? t("Discount Only") : t("All Products")}
+          </Button>
+
           {/* Reset Filters Button */}
           <Button
             variant="outlined"
@@ -512,6 +576,7 @@ const MainPage = () => {
               setSearch("");
               setType("");
               setPriceRange([0, 1000000]);
+              setShowOnlyDiscount(true); // Reset to discount only
             }}
             sx={{
               color: "white",
@@ -549,7 +614,22 @@ const MainPage = () => {
               typeof product.newPrice === "number" &&
               product.newPrice >= priceRange[0] &&
               product.newPrice <= priceRange[1];
-            return (nameMatch || marketNameMatch) && typeMatch && priceMatch;
+            // Auto-detect discount based on price difference
+            const hasPriceDiscount =
+              product.previousPrice &&
+              product.newPrice &&
+              product.previousPrice > product.newPrice;
+            const discountMatch =
+              !showOnlyDiscount ||
+              product.isDiscount === true ||
+              product.isDiscount === "true" ||
+              hasPriceDiscount === true;
+            return (
+              (nameMatch || marketNameMatch) &&
+              typeMatch &&
+              priceMatch &&
+              discountMatch
+            );
           }
         );
         return (
@@ -827,9 +907,11 @@ const MainPage = () => {
                         )}
 
                         {/* Discount Badge */}
-                        {discount > 0 && (
+                        {(discount > 0 || product.isDiscount) && (
                           <Chip
-                            label={`-${discount}%`}
+                            label={
+                              discount > 0 ? `-${discount}%` : t("Discount")
+                            }
                             sx={{
                               position: "absolute",
                               top: 12,
@@ -885,6 +967,21 @@ const MainPage = () => {
                             backdropFilter: "blur(10px)",
                           }}
                         />
+                        {/* Weight Badge */}
+                        {/* {product.weight && (
+                          <Chip
+                            label={product.weight}
+                            sx={{
+                              width: "fit-content",
+                              marginBottom: 1,
+                              backgroundColor: "rgba(108, 117, 125, 0.9)",
+                              color: "white",
+                              fontSize: "0.7rem",
+                              fontWeight: 500,
+                              backdropFilter: "blur(10px)",
+                            }}
+                          />
+                        )} */}
                         <Box display="flex" flexDirection="column">
                           <Box
                             display="contents"

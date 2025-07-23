@@ -17,6 +17,14 @@ import {
   DialogContent,
   DialogActions,
   Paper,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  InputAdornment,
+  FormControlLabel,
+  Checkbox,
 } from "@mui/material";
 import { Link } from "react-router-dom";
 import { productAPI } from "../services/api";
@@ -25,6 +33,9 @@ import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import BusinessIcon from "@mui/icons-material/Business";
+import StorefrontIcon from "@mui/icons-material/Storefront";
+import SearchIcon from "@mui/icons-material/Search";
+import FilterListIcon from "@mui/icons-material/FilterList";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@mui/material/styles";
 import { useLocation } from "react-router-dom";
@@ -34,6 +45,7 @@ const ProductCategory = () => {
   const location = useLocation();
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -41,9 +53,22 @@ const ProductCategory = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const { t } = useTranslation();
 
+  // Filter states
+  const [filters, setFilters] = useState({
+    name: "",
+    company: "",
+    market: "",
+    barcode: "",
+    discount: false,
+  });
+
   useEffect(() => {
     fetchCategories();
   }, []);
+
+  useEffect(() => {
+    applyFilters();
+  }, [products, filters]);
 
   const fetchCategories = async () => {
     try {
@@ -88,6 +113,76 @@ const ProductCategory = () => {
     setDialogOpen(true);
   };
 
+  // Apply filters to products
+  const applyFilters = () => {
+    let filtered = [...products];
+
+    // Filter by name
+    if (filters.name) {
+      filtered = filtered.filter((product) =>
+        product.name?.toLowerCase().includes(filters.name.toLowerCase())
+      );
+    }
+
+    // Filter by company
+    if (filters.company) {
+      filtered = filtered.filter((product) =>
+        product.companyId?.name
+          ?.toLowerCase()
+          .includes(filters.company.toLowerCase())
+      );
+    }
+
+    // Filter by market
+    if (filters.market) {
+      filtered = filtered.filter((product) =>
+        product.marketId?.name
+          ?.toLowerCase()
+          .includes(filters.market.toLowerCase())
+      );
+    }
+
+    // Filter by barcode
+    if (filters.barcode) {
+      filtered = filtered.filter((product) =>
+        product.barcode?.toLowerCase().includes(filters.barcode.toLowerCase())
+      );
+    }
+
+    // Filter by discount
+    if (filters.discount) {
+      filtered = filtered.filter((product) => product.isDiscount);
+    }
+
+    setFilteredProducts(filtered);
+  };
+
+  // Handle filter changes
+  const handleFilterChange = (field, value) => {
+    setFilters((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  // Get unique companies for filter dropdown
+  const getCompanies = () => {
+    const companies = products
+      .map((product) => product.companyId?.name)
+      .filter((name) => name)
+      .map((name) => name);
+    return [...new Set(companies)].sort();
+  };
+
+  // Get unique markets for filter dropdown
+  const getMarkets = () => {
+    const markets = products
+      .map((product) => product.marketId?.name)
+      .filter((name) => name)
+      .map((name) => name);
+    return [...new Set(markets)].sort();
+  };
+
   const formatPrice = (price) => {
     if (typeof price !== "number") return "ID 0";
     return `ID ${price.toLocaleString(undefined, {
@@ -100,6 +195,155 @@ const ProductCategory = () => {
     if (!previousPrice || !newPrice) return 0;
     return Math.round(((previousPrice - newPrice) / previousPrice) * 100);
   };
+
+  // Render filter section
+  const renderFilters = () => (
+    <Paper
+      elevation={0}
+      sx={{
+        p: 3,
+        mb: 4,
+        borderRadius: 3,
+        background:
+          theme.palette.mode === "dark"
+            ? "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)"
+            : "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
+        border: `1px solid ${
+          theme.palette.mode === "dark" ? "#34495e" : "#e9ecef"
+        }`,
+      }}
+    >
+      <Typography
+        variant="h6"
+        sx={{
+          mb: 3,
+          display: "flex",
+          alignItems: "center",
+          gap: 1,
+          color: theme.palette.text.primary,
+        }}
+      >
+        <FilterListIcon sx={{ color: "#52b788" }} />
+        {t("Filters")}
+      </Typography>
+
+      <Grid container spacing={2}>
+        <Grid item xs={12} sm={6} md={2}>
+          <TextField
+            fullWidth
+            label={t("Search By Name")}
+            value={filters.name}
+            onChange={(e) => handleFilterChange("name", e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={2}>
+          <FormControl sx={{ width: "200px" }} fullWidth>
+            <InputLabel>{t("Company")}</InputLabel>
+            <Select
+              value={filters.company}
+              onChange={(e) => handleFilterChange("company", e.target.value)}
+              label={t("Company")}
+            >
+              <MenuItem value="" sx={{ width: "250px" }}>
+                {t("All Companies")}
+              </MenuItem>
+              {getCompanies().map((company) => (
+                <MenuItem key={company} value={company}>
+                  {company}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+        <Grid item xs={12} sm={6} md={2}>
+          <FormControl sx={{ width: "200px" }} fullWidth>
+            <InputLabel>{t("Market")}</InputLabel>
+            <Select
+              value={filters.market}
+              onChange={(e) => handleFilterChange("market", e.target.value)}
+              label={t("Market")}
+            >
+              <MenuItem value="" sx={{ width: "250px" }}>
+                {t("All Markets")}
+              </MenuItem>
+              {getMarkets().map((market) => (
+                <MenuItem key={market} value={market}>
+                  {market}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+        <Grid item xs={12} sm={6} md={2}>
+          <TextField
+            fullWidth
+            label={t("Search By Barcode")}
+            value={filters.barcode}
+            onChange={(e) => handleFilterChange("barcode", e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={2}>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={filters.discount}
+                onChange={(e) =>
+                  handleFilterChange("discount", e.target.checked)
+                }
+                color="primary"
+              />
+            }
+            label={t("Discount Only")}
+            sx={{
+              mt: 1,
+              "& .MuiFormControlLabel-label": {
+                fontSize: "0.875rem",
+                color: theme.palette.text.primary,
+              },
+            }}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={2}>
+          <Button
+            variant="outlined"
+            onClick={() =>
+              setFilters({
+                name: "",
+                company: "",
+                market: "",
+                barcode: "",
+                discount: false,
+              })
+            }
+            sx={{
+              borderColor: "#52b788",
+              color: "#52b788",
+              "&:hover": {
+                borderColor: "#40916c",
+                backgroundColor: "rgba(82, 183, 136, 0.1)",
+              },
+            }}
+          >
+            {t("Clear Filters")}
+          </Button>
+        </Grid>
+      </Grid>
+    </Paper>
+  );
 
   if (loading) {
     return (
@@ -209,35 +453,40 @@ const ProductCategory = () => {
       )}
 
       {selectedCategory && (
-        <Box display="flex" alignItems="center" mb={2}>
-          <ShoppingCartIcon
-            sx={{ fontSize: 24, mr: 1, color: theme.palette.primary.main }}
-          />
-          <Typography
-            variant="h5"
-            gutterBottom
-            sx={{
-              color:
-                theme.palette.mode === "dark"
-                  ? theme.palette.primary.contrastText
-                  : theme.palette.text.primary,
-              backgroundColor:
-                theme.palette.mode === "dark"
-                  ? theme.palette.primary.main
-                  : "transparent",
-              px: 2,
-              py: 0.5,
-              borderRadius: 2,
-              display: "inline-block",
-            }}
-          >
-            {selectedCategory} ({products.length})
-          </Typography>
-        </Box>
+        <>
+          <Box display="flex" alignItems="center" mb={2}>
+            <ShoppingCartIcon
+              sx={{ fontSize: 24, mr: 1, color: theme.palette.primary.main }}
+            />
+            <Typography
+              variant="h5"
+              gutterBottom
+              sx={{
+                color:
+                  theme.palette.mode === "dark"
+                    ? theme.palette.primary.contrastText
+                    : theme.palette.text.primary,
+                backgroundColor:
+                  theme.palette.mode === "dark"
+                    ? theme.palette.primary.main
+                    : "transparent",
+                px: 2,
+                py: 0.5,
+                borderRadius: 2,
+                display: "inline-block",
+              }}
+            >
+              {selectedCategory} ({filteredProducts.length})
+            </Typography>
+          </Box>
+
+          {/* Filter Section */}
+          {renderFilters()}
+        </>
       )}
 
       <Grid container alignItems="center" spacing={3}>
-        {products.map((product) => (
+        {filteredProducts.map((product) => (
           <Grid display="flex" key={product._id}>
             <Card
               sx={{
@@ -299,12 +548,52 @@ const ProductCategory = () => {
                       variant="body2"
                       sx={{ color: theme.palette.text.secondary }}
                     >
-                      By: {product.companyId.name}
+                      {t("Company")}: {product.companyId.name}
                     </Typography>
                   </Box>
                 ) : (
                   <Box sx={{ height: 24, mb: 1 }} />
                 )}
+                {product.marketId ? (
+                  <Box display="flex" alignItems="center" mb={1}>
+                    <StorefrontIcon
+                      sx={{
+                        fontSize: 16,
+                        mr: 1,
+                        color: theme.palette.text.secondary,
+                      }}
+                    />
+                    <Typography
+                      variant="body2"
+                      sx={{ color: theme.palette.text.secondary }}
+                    >
+                      {t("Market")}: {product.marketId.name}
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Box sx={{ height: 24, mb: 1 }} />
+                )}
+
+                {/* Weight and Discount Info */}
+                <Box display="flex" alignItems="center" gap={1} mb={1}>
+                  {product.weight && (
+                    <Chip
+                      label={product.weight}
+                      size="small"
+                      variant="outlined"
+                      sx={{ fontSize: "0.7rem" }}
+                    />
+                  )}
+                  {product.isDiscount && (
+                    <Chip
+                      label={t("Discount")}
+                      size="small"
+                      color="success"
+                      variant="outlined"
+                      sx={{ fontSize: "0.7rem" }}
+                    />
+                  )}
+                </Box>
                 <Box
                   display="flex"
                   alignItems="center"
@@ -339,18 +628,24 @@ const ProductCategory = () => {
                       {formatPrice(product.newPrice)}
                     </Typography>
                   </Box>
-                  {product.previousPrice &&
-                    product.previousPrice > product.newPrice && (
-                      <Chip
-                        icon={<LocalOfferIcon />}
-                        label={`-${calculateDiscount(
-                          product.previousPrice,
-                          product.newPrice
-                        )}%`}
-                        color="error"
-                        size="small"
-                      />
-                    )}
+                  {(product.previousPrice &&
+                    product.previousPrice > product.newPrice) ||
+                  product.isDiscount ? (
+                    <Chip
+                      icon={<LocalOfferIcon />}
+                      label={
+                        product.previousPrice &&
+                        product.previousPrice > product.newPrice
+                          ? `-${calculateDiscount(
+                              product.previousPrice,
+                              product.newPrice
+                            )}%`
+                          : t("Discount")
+                      }
+                      color="error"
+                      size="small"
+                    />
+                  ) : null}
                 </Box>
                 <Button
                   variant="outlined"
@@ -366,6 +661,16 @@ const ProductCategory = () => {
           </Grid>
         ))}
       </Grid>
+
+      {filteredProducts.length === 0 &&
+        selectedCategory &&
+        products.length > 0 && (
+          <Alert severity="info">
+            {t(
+              "No products match your current filters. Try adjusting your search criteria."
+            )}
+          </Alert>
+        )}
 
       {products.length === 0 && selectedCategory && (
         <Alert severity="info">

@@ -391,7 +391,7 @@ const resources = {
       "Previous Price": "نرخی پێشوو",
       "New Price": "نرخی نوێ",
       "Expire Date": "کۆتایی داشکاندن ",
-      "Bulk Upload Products": "بارکردنی کاڵاکان بە گشتی",
+      "Bulk Upload Products": "بارکردنی کاڵاکان بە گروپ ",
       "Upload an Excel file (.xlsx) with product data. The file should have columns: Name, Type, Previous Price, New Price, Company ID, Expire Date (YYYY-MM-DD)":
         "فایلی Excel (.xlsx) باربکە کە زانیاری کاڵا تێدایە. پێویستە ستونەکان هەبێت: ناو، جۆر، نرخی پێشوو، نرخی نوێ، ناسنامەی کۆمپانیا، ڕێکەوتى کۆتایی داشکان (YYYY-MM-DD)",
       "Select Excel File": "فایلی Excel هەلبژێرە",
@@ -405,7 +405,27 @@ const resources = {
       "Column F: Expire Date (optional, YYYY-MM-DD format)":
         "ستوونی F: بەسەرچوون (مەرج نییە، فۆرمی YYYY-MM-DD)",
       "All Markets": "هەموو مارکێتەکان",
+      "Discount Only": "تەنها داشکاندنەکان ",
+      Filters: "فلتەرەکان",
+      "Search By Name": "بگەڕێ بە پێی ناو",
+      "Search By Company": "بگەڕێ بە پێی کۆمپانیا",
+      "Discover All Products from Various Markets":
+        "گەڕان بکە بۆ کاڵاکان لە مارکێتە جیاوازەکان",
+      "Search By Barcode": "بگەڕێ بە پێی بارکۆد",
+      Price: "نرخ",
       Name: "ناو",
+      "Clear Filters": "سڕینەوەی فلتەرەکان",
+      Discounts: "داشکاندنەکان",
+      "All Products": "هەموو کاڵاکان",
+      "Search for discount products...": "بگەڕێ بە پێی کاڵا داشکێندراوەکان...",
+      "Search for products...": "بگەڕێ بە پێی کاڵاکان...",
+      "Discover Discount Products from Various Markets":
+        "گەڕان بکە بۆ کاڵا داشکێندراوەکان لە مارکێتە جیاوازەکان",
+      "Discover Products from Various Markets":
+        "گەڕان بکە بۆ کاڵاکان لە مارکێتە جیاوازەکان",
+      "Edit Market": "دەستکاری مارکێت",
+      "Edit Company": "دەستکاری کۆمپانیا",
+      "Edit Product": "دەستکاری کاڵا",
       Logo: "لوگۆ",
       "markets Available": "مارکێت بەردەستە",
       "Number of products that are available in the system":
@@ -416,8 +436,7 @@ const resources = {
       "All Products": "هەموو کاڵاکان",
       Type: "جۆر",
       Image: "وێنە",
-      "Edit Company": "دەستکاری مارکێت",
-      "Edit Product": "دەستکاری کاڵا",
+      Barcode: "بارکۆد",
       "Logo URL": "بەستەری لوگۆ",
       "Current Image:": "وێنەی ئێستا:",
       "Current product": "کاڵای ئێستا",
