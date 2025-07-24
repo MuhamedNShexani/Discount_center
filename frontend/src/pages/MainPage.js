@@ -19,7 +19,7 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
 import { Link } from "react-router-dom";
-import { marketAPI, productAPI } from "../services/api";
+import { marketAPI, productAPI, categoryAPI } from "../services/api";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import BusinessIcon from "@mui/icons-material/Business";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
@@ -44,10 +44,10 @@ const MainPage = () => {
   const [error, setError] = useState("");
   const { t } = useTranslation();
   const [search, setSearch] = useState("");
-  const [type, setType] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const [priceRange, setPriceRange] = useState([0, 1000000]);
   const [showOnlyDiscount, setShowOnlyDiscount] = useState(true); // Default to showing only discounted products
-  const [allTypes, setAllTypes] = useState([]);
+  const [categories, setCategories] = useState([]);
 
   const bannerImages = [
     banner1,
@@ -73,16 +73,19 @@ const MainPage = () => {
     fetchData();
   }, []);
 
-  // Collect all product types for filter dropdown
+  // Fetch categories for filter dropdown
   useEffect(() => {
-    const types = new Set();
-    Object.values(productsByMarket).forEach((products) => {
-      products?.forEach((p) => {
-        if (p.type) types.add(p.type);
-      });
-    });
-    setAllTypes(Array.from(types));
-  }, [productsByMarket]);
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await categoryAPI.getAll();
+      setCategories(response.data);
+    } catch (err) {
+      console.error("Error fetching categories:", err);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -148,7 +151,8 @@ const MainPage = () => {
         const nameMatch = product.name
           ?.toLowerCase()
           .includes(search.toLowerCase());
-        const typeMatch = !type || product.type === type;
+        const categoryMatch =
+          !selectedCategory || product.categoryId === selectedCategory._id;
         const priceMatch =
           typeof product.newPrice === "number" &&
           product.newPrice >= priceRange[0] &&
@@ -166,7 +170,7 @@ const MainPage = () => {
 
         return (
           (nameMatch || marketNameMatch) &&
-          typeMatch &&
+          categoryMatch &&
           priceMatch &&
           discountMatch
         );
@@ -396,11 +400,11 @@ const MainPage = () => {
         >
           {/* Browse All Categories */}
           <Button
-            variant={type === "" ? "contained" : "outlined"}
-            onClick={() => setType("")}
+            variant={selectedCategory === null ? "contained" : "outlined"}
+            onClick={() => setSelectedCategory(null)}
             sx={{
               backgroundColor:
-                type === ""
+                selectedCategory === null
                   ? theme.palette.mode === "dark"
                     ? "#34495e"
                     : "#40916c"
@@ -415,35 +419,17 @@ const MainPage = () => {
               minHeight: "32px",
               "&:hover": {
                 backgroundColor:
-                  theme.palette.mode === "dark" ? "#34495e" : "#40916c",
+                  selectedCategory === null
+                    ? theme.palette.mode === "dark"
+                      ? "#34495e"
+                      : "#40916c"
+                    : "rgba(255,255,255,0.1)",
                 borderColor: "rgba(255,255,255,0.5)",
               },
             }}
             startIcon={<CategoryIcon sx={{ fontSize: "16px" }} />}
           >
-            {t("Browse All Categories")}
-          </Button>
-
-          {/* Latest Button */}
-          <Button
-            variant="outlined"
-            onClick={() => setType("LatesDiscount")}
-            sx={{
-              color: "white",
-              border: "1px solid rgba(255,255,255,0.3)",
-              borderRadius: 2,
-              px: { xs: 1.5, md: 2 },
-              py: 0.5,
-              fontSize: { xs: "0.75rem", md: "0.875rem" },
-              textTransform: "none",
-              minHeight: "32px",
-              "&:hover": {
-                backgroundColor: "rgba(255,255,255,0.1)",
-                borderColor: "rgba(255,255,255,0.5)",
-              },
-            }}
-          >
-            {t("Latest")}
+            {t("All Categories")}
           </Button>
 
           {/* Hot Deals Button */}
@@ -469,14 +455,18 @@ const MainPage = () => {
           </Button>
 
           {/* Category Filter Buttons */}
-          {allTypes.slice(0, 6).map((categoryType) => (
+          {categories.slice(0, 6).map((category) => (
             <Button
-              key={categoryType}
-              variant={type === categoryType ? "contained" : "outlined"}
-              onClick={() => setType(categoryType)}
+              key={category._id}
+              variant={
+                selectedCategory?._id === category._id
+                  ? "contained"
+                  : "outlined"
+              }
+              onClick={() => setSelectedCategory(category)}
               sx={{
                 backgroundColor:
-                  type === categoryType
+                  selectedCategory?._id === category._id
                     ? theme.palette.mode === "dark"
                       ? "#34495e"
                       : "#40916c"
@@ -491,7 +481,7 @@ const MainPage = () => {
                 minHeight: "32px",
                 "&:hover": {
                   backgroundColor:
-                    type === categoryType
+                    selectedCategory?._id === category._id
                       ? theme.palette.mode === "dark"
                         ? "#34495e"
                         : "#40916c"
@@ -500,17 +490,21 @@ const MainPage = () => {
                 },
               }}
             >
-              {t(categoryType)}
+              {t(category.name)}
             </Button>
           ))}
 
           {/* More Categories Dropdown for remaining categories */}
-          {allTypes.length > 6 && (
+          {categories.length > 6 && (
             <FormControl size="small">
               <Select
                 displayEmpty
-                value={allTypes.slice(6).includes(type) ? type : ""}
-                onChange={(e) => setType(e.target.value)}
+                value={selectedCategory?._id || ""}
+                onChange={(e) =>
+                  setSelectedCategory(
+                    categories.find((cat) => cat._id === e.target.value) || null
+                  )
+                }
                 sx={{
                   color: "white",
                   border: "1px solid rgba(255,255,255,0.3)",
@@ -525,12 +519,17 @@ const MainPage = () => {
                   },
                 }}
                 renderValue={(selected) =>
-                  selected ? t(selected) : t("More Categories")
+                  selected
+                    ? t(
+                        categories.find((cat) => cat._id === selected)?.name ||
+                          "More Categories"
+                      )
+                    : t("More Categories")
                 }
               >
-                {allTypes.slice(6).map((categoryType) => (
-                  <MenuItem key={categoryType} value={categoryType}>
-                    {t(categoryType)}
+                {categories.slice(6).map((category) => (
+                  <MenuItem key={category._id} value={category._id}>
+                    {t(category.name)}
                   </MenuItem>
                 ))}
               </Select>
@@ -574,7 +573,7 @@ const MainPage = () => {
             variant="outlined"
             onClick={() => {
               setSearch("");
-              setType("");
+              setSelectedCategory(null);
               setPriceRange([0, 1000000]);
               setShowOnlyDiscount(true); // Reset to discount only
             }}
@@ -609,7 +608,8 @@ const MainPage = () => {
             const marketNameMatch = market.name
               ?.toLowerCase()
               .includes(search.toLowerCase());
-            const typeMatch = !type || product.type === type;
+            const categoryMatch =
+              !selectedCategory || product.categoryId === selectedCategory._id;
             const priceMatch =
               typeof product.newPrice === "number" &&
               product.newPrice >= priceRange[0] &&
@@ -626,7 +626,7 @@ const MainPage = () => {
               hasPriceDiscount === true;
             return (
               (nameMatch || marketNameMatch) &&
-              typeMatch &&
+              categoryMatch &&
               priceMatch &&
               discountMatch
             );

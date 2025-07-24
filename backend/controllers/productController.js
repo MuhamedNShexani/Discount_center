@@ -30,7 +30,7 @@ module.exports = {
   getProducts,
   getProductById,
   createProduct,
-  getProductsByCompany,
+  getProductsByBrand,
   getProductsByMarket,
   getProductsByCategory,
   getCategories,

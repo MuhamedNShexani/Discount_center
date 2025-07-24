@@ -2,36 +2,36 @@ const express = require("express");
 const router = express.Router();
 const XLSX = require("xlsx");
 const {
-  getCompanies,
-  getCompanyById,
-  createCompany,
-  updateCompany,
-  deleteCompany,
-} = require("../controllers/companyController");
+  getBrands,
+  getBrandById,
+  createBrand,
+  updateBrand,
+  deleteBrand,
+} = require("../controllers/brandController");
 const upload = require("../middleware/upload");
 
-// @route   GET /api/companies
-// @desc    Get all companies
-router.get("/", getCompanies);
+// @route   GET /api/brands
+// @desc    Get all brands
+router.get("/", getBrands);
 
-// @route   GET /api/companies/:id
-// @desc    Get company by ID
-router.get("/:id", getCompanyById);
+// @route   GET /api/brands/:id
+// @desc    Get brand by ID
+router.get("/:id", getBrandById);
 
-// @route   POST /api/companies
-// @desc    Add new company
-router.post("/", createCompany);
+// @route   POST /api/brands
+// @desc    Add new brand
+router.post("/", createBrand);
 
-// @route   PUT /api/companies/:id
-// @desc    Update company
-router.put("/:id", updateCompany);
+// @route   PUT /api/brands/:id
+// @desc    Update brand
+router.put("/:id", updateBrand);
 
-// @route   DELETE /api/companies/:id
-// @desc    Delete company
-router.delete("/:id", deleteCompany);
+// @route   DELETE /api/brands/:id
+// @desc    Delete brand
+router.delete("/:id", deleteBrand);
 
-// @route   POST /api/companies/upload-logo
-// @desc    Upload company logo
+// @route   POST /api/brands/upload-logo
+// @desc    Upload brand logo
 router.post("/upload-logo", upload.single("logo"), (req, res) => {
   try {
     if (!req.file) {
@@ -49,8 +49,8 @@ router.post("/upload-logo", upload.single("logo"), (req, res) => {
   }
 });
 
-// @route   POST /api/companies/bulk-upload
-// @desc    Upload Excel file and create multiple companies
+// @route   POST /api/brands/bulk-upload
+// @desc    Upload Excel file and create multiple brands
 router.post("/bulk-upload", upload.single("excelFile"), async (req, res) => {
   try {
     if (!req.file) {
@@ -77,7 +77,7 @@ router.post("/bulk-upload", upload.single("excelFile"), async (req, res) => {
       if (!row || row.length === 0 || !row[0]) continue;
 
       try {
-        const companyData = {
+        const brandData = {
           name: row[0] || "",
           logo: row[1] || "",
           address: row[2] || "",
@@ -86,15 +86,15 @@ router.post("/bulk-upload", upload.single("excelFile"), async (req, res) => {
         };
 
         // Validate required fields
-        if (!companyData.name) {
+        if (!brandData.name) {
           errors.push(`Row ${i + 2}: Missing required field (name)`);
           continue;
         }
 
-        // Create the company
-        const Company = require("../models/Company");
-        const newCompany = new Company(companyData);
-        await newCompany.save();
+        // Create the brand
+        const Brand = require("../models/Brand");
+        const newBrand = new Brand(brandData);
+        await newBrand.save();
         createdCount++;
       } catch (error) {
         errors.push(`Row ${i + 2}: ${error.message}`);

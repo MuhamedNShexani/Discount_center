@@ -12,7 +12,7 @@ import {
   IconButton,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { companyAPI } from "../services/api";
+import { brandAPI } from "../services/api";
 import BusinessIcon from "@mui/icons-material/Business";
 import PhoneIcon from "@mui/icons-material/Phone";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
@@ -21,25 +21,25 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import Loader from "../components/Loader";
 import { useTranslation } from "react-i18next";
 
-const CompanyList = () => {
+const BrandList = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const { t } = useTranslation();
 
-  const [companies, setcompanies] = useState([]);
+  const [Brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetchcompanies();
+    fetchBrands();
   }, []);
 
-  const fetchcompanies = async () => {
+  const fetchBrands = async () => {
     try {
       setLoading(true);
-      const response = await companyAPI.getAll();
+      const response = await brandAPI.getAll();
 
-      setcompanies(response.data);
+      setBrands(response.data);
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -47,17 +47,17 @@ const CompanyList = () => {
           err.message ||
           "Network error. Please check your connection."
       );
-      console.error("Error fetching companies:", err);
+      console.error("Error fetching Brands:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCompanyClick = (company) => {
-    navigate(`/companies/${company._id}`);
+  const handleBrandClick = (brand) => {
+    navigate(`/brands/${brand._id}`);
   };
 
-  if (loading) return <Loader message="Loading companies..." />;
+  if (loading) return <Loader message="Loading Brands..." />;
   if (error) return <Loader message={error} />;
 
   return (
@@ -101,7 +101,7 @@ const CompanyList = () => {
                 textShadow: "0 4px 8px rgba(0,0,0,0.3)",
               }}
             >
-              {t("companies")}
+              {t("Brands")}
             </Typography>
             <Typography
               variant="h5"
@@ -112,10 +112,10 @@ const CompanyList = () => {
                 color: "white",
               }}
             >
-              {t("Browse all companies and their products")}
+              {t("Browse all Brands and their products")}
             </Typography>
             <Chip
-              label={`(${companies.length})${t("companies Available")}`}
+              label={`(${Brands.length})${t("Brands Available")}`}
               sx={{
                 mt: 3,
                 backgroundColor: "rgba(255,255,255,0.2)",
@@ -131,7 +131,7 @@ const CompanyList = () => {
         </Box>
       </Box>
 
-      {/* companies Grid */}
+      {/* Brands Grid */}
       <Box
         sx={{
           alignItems: "center",
@@ -143,11 +143,11 @@ const CompanyList = () => {
           justifyContent: "flex-start",
         }}
       >
-        {companies.map((company, index) => (
-          <Fade in={true} timeout={300 + index * 100} key={company._id}>
+        {Brands.map((brand, index) => (
+          <Fade in={true} timeout={300 + index * 100} key={brand._id}>
             <Card
               sx={{
-                height: "420px", // Increased height for company cards
+                height: "420px", // Increased height for brand cards
                 width: "280px", // Fixed width - no exceptions
                 maxWidth: "280px", // Force exact width
                 minWidth: "280px", // Force exact width
@@ -175,18 +175,18 @@ const CompanyList = () => {
                     theme.palette.mode === "dark"
                       ? "0 24px 48px rgba(0,0,0,0.4)"
                       : "0 24px 48px rgba(0,0,0,0.15)",
-                  "& .company-arrow": {
+                  "& .brand-arrow": {
                     transform: "translateX(8px)",
                     opacity: 1,
                   },
-                  "& .company-image": {
+                  "& .brand-image": {
                     transform: "scale(1.1)",
                   },
                 },
               }}
-              onClick={() => handleCompanyClick(company)}
+              onClick={() => handleBrandClick(brand)}
             >
-              {/* Company Image/Logo */}
+              {/* Brand Image/Logo */}
               <Box
                 sx={{
                   position: "relative",
@@ -199,13 +199,13 @@ const CompanyList = () => {
                       : "linear-gradient(135deg, #52b788 0%, #40916c 100%)",
                 }}
               >
-                {company.logo ? (
+                {brand.logo ? (
                   <CardMedia
                     component="img"
                     height="200"
-                    image={`${process.env.REACT_APP_BACKEND_URL}${company.logo}`}
-                    alt={company.name}
-                    className="company-image"
+                    image={`${process.env.REACT_APP_BACKEND_URL}${brand.logo}`}
+                    alt={brand.name}
+                    className="brand-image"
                     sx={{
                       objectFit: "cover",
                       transition: "transform 0.4s ease",
@@ -243,7 +243,7 @@ const CompanyList = () => {
 
                 {/* Arrow Icon */}
                 <IconButton
-                  className="company-arrow"
+                  className="brand-arrow"
                   sx={{
                     position: "absolute",
                     top: 16,
@@ -262,7 +262,7 @@ const CompanyList = () => {
                 </IconButton>
               </Box>
 
-              {/* Company Content */}
+              {/* Brand Content */}
               <CardContent
                 align="center"
                 sx={{
@@ -291,10 +291,10 @@ const CompanyList = () => {
                     WebkitBoxOrient: "vertical",
                   }}
                 >
-                  {company.name}
+                  {brand.name}
                 </Typography>
 
-                {/* Company Details - Fixed Layout */}
+                {/* Brand Details - Fixed Layout */}
                 <Box sx={{ mb: 2, overflow: "hidden" }}>
                   {/* Address - Always show with fixed height */}
                   <Box
@@ -325,7 +325,7 @@ const CompanyList = () => {
                         WebkitBoxOrient: "vertical",
                       }}
                     >
-                      {company.address || t("address not provided")}
+                      {brand.address || t("address not provided")}
                     </Typography>
                   </Box>
 
@@ -355,7 +355,7 @@ const CompanyList = () => {
                         whiteSpace: "nowrap",
                       }}
                     >
-                      {company.phone || t("phone not provided")}
+                      {brand.phone || t("phone not provided")}
                     </Typography>
                   </Box>
 
@@ -373,7 +373,7 @@ const CompanyList = () => {
                       height: "45px",
                     }}
                   >
-                    {company.description || t("description not provided")}
+                    {brand.description || t("description not provided")}
                   </Typography>
                 </Box>
 
@@ -425,7 +425,7 @@ const CompanyList = () => {
       </Box>
 
       {/* Empty State */}
-      {companies.length === 0 && (
+      {Brands.length === 0 && (
         <Box
           sx={{
             textAlign: "center",
@@ -449,7 +449,7 @@ const CompanyList = () => {
               mb: 2,
             }}
           >
-            {t("No companies found")}
+            {t("No Brands found")}
           </Typography>
           <Typography
             variant="body1"
@@ -460,9 +460,7 @@ const CompanyList = () => {
               lineHeight: 1.6,
             }}
           >
-            {t(
-              "No companies found. Add some companies through the admin panel."
-            )}
+            {t("No Brands found. Add some Brands through the admin panel.")}
           </Typography>
         </Box>
       )}
@@ -470,4 +468,4 @@ const CompanyList = () => {
   );
 };
 
-export default CompanyList;
+export default BrandList;

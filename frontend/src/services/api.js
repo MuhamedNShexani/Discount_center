@@ -20,14 +20,24 @@ export const marketAPI = {
   delete: (id) => api.delete(`/markets/${id}`),
 };
 
-// Company API calls
+// Brand API calls
 
-export const companyAPI = {
-  getAll: () => api.get("/companies"),
-  getById: (id) => api.get(`/companies/${id}`),
-  create: (data) => api.post("/companies", data),
-  update: (id, data) => api.put(`/companies/${id}`, data),
-  delete: (id) => api.delete(`/companies/${id}`),
+export const brandAPI = {
+  getAll: () => api.get("/brands"),
+  getById: (id) => api.get(`/brands/${id}`),
+  create: (data) => api.post("/brands", data),
+  update: (id, data) => api.put(`/brands/${id}`, data),
+  delete: (id) => api.delete(`/brands/${id}`),
+};
+
+// Category API calls
+export const categoryAPI = {
+  getAll: () => api.get("/categories"),
+  getById: (id) => api.get(`/categories/${id}`),
+  create: (data) => api.post("/categories", data),
+  update: (id, data) => api.put(`/categories/${id}`, data),
+  delete: (id) => api.delete(`/categories/${id}`),
+  getTypes: (id) => api.get(`/categories/${id}/types`),
 };
 
 // Product API calls
@@ -37,7 +47,7 @@ export const productAPI = {
   create: (data) => api.post("/products", data),
   update: (id, data) => api.put(`/products/${id}`, data),
   delete: (id) => api.delete(`/products/${id}`),
-  getByCompany: (companyId) => api.get(`/products/company/${companyId}`),
+  getByBrand: (brandId) => api.get(`/products/brand/${brandId}`),
   getByMarket: (marketId) => api.get(`/products/market/${marketId}`),
   getByCategory: (category) => api.get(`/products/category/${category}`),
   getCategories: () => api.get("/products/categories"),

@@ -173,25 +173,23 @@ const ProductDetail = () => {
                 clickable
               />
 
-              {product.companyId && (
+              {product.brandId && (
                 <Box display="flex" alignItems="center" mb={2}>
                   <BusinessIcon
                     sx={{ fontSize: 20, mr: 1, color: "text.secondary" }}
                   />
                   <Typography
                     variant="h6"
-                    onClick={() =>
-                      navigate(`/companies/${product.companyId._id}`)
-                    }
+                    onClick={() => navigate(`/brands/${product.brandId._id}`)}
                     color="text.secondary"
                     sx={{
                       cursor: "pointer",
                       fontWeight: "bold",
                     }}
                   >
-                    {t("Company")}:{" "}
+                    {t("Brand")}:{" "}
                     <span style={{ color: "black", fontWeight: "bold" }}>
-                      {product.companyId.name}
+                      {product.brandId.name}
                     </span>
                   </Typography>
                 </Box>
@@ -374,6 +372,26 @@ const ProductDetail = () => {
 
               {/* Action Buttons */}
               <Box sx={{ mt: 4 }}>
+                {product.marketId && product.marketId._id && (
+                  <Button
+                    variant="outlined"
+                    size="large"
+                    onClick={() => navigate(`/markets/${product.marketId._id}`)}
+                    sx={{ mr: 2 }}
+                  >
+                    {t("View Market")}
+                  </Button>
+                )}
+                {product.brandId && product.brandId._id && (
+                  <Button
+                    variant="outlined"
+                    size="large"
+                    onClick={() => navigate(`/brands/${product.brandId._id}`)}
+                    sx={{ mr: 2 }}
+                  >
+                    {t("View Brand")}
+                  </Button>
+                )}
                 <Button variant="contained" size="large" sx={{ mr: 2 }}>
                   {t("Contact Seller")}
                 </Button>

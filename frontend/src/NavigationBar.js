@@ -63,9 +63,9 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
 
   const navItems = [
     { name: t("Main Page"), path: "/", icon: <HomeIcon /> },
+    { name: t("Products"), path: "/categories", icon: <CategoryIcon /> },
     { name: t("Markets"), path: "/markets", icon: <StoreIcon /> },
-    { name: t("Companies"), path: "/companies", icon: <BusinessIcon /> },
-    { name: t("Categories"), path: "/categories", icon: <CategoryIcon /> },
+    { name: t("Brands"), path: "/brands", icon: <BusinessIcon /> },
     // Only show Admin link when logged in
     ...(user
       ? [

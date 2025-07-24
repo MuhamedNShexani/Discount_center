@@ -2,13 +2,16 @@
 @import url("https://fonts.googleapis.com/css2?family=Noto+Sans+Kurdish:wght@300;400;500;600;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@300;400;500;600;700&display=swap");
 
-/* Rabar_22 Font Face - Uncomment when font file is added to public/fonts/ */
+/* Try to import NRT font from Google Fonts if available */
+@import url("https://fonts.googleapis.com/css2?family=NRT:wght@300;400;500;600;700&display=swap");
+
+/* Alternative: If you have the NRT font file, uncomment this section */
 /*
 @font-face {
-  font-family: "Rabar_22";
-  src: url("/fonts/Rabar_22.ttf") format("truetype"),
-    url("/fonts/Rabar_22.woff") format("woff"),
-    url("/fonts/Rabar_22.woff2") format("woff2");
+  font-family: "NRT reg";
+  src: url("/fonts/NRT-reg.ttf") format("truetype"),
+    url("/fonts/NRT-reg.woff") format("woff"),
+    url("/fonts/NRT-reg.woff2") format("woff2");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -17,20 +20,24 @@
 
 /* Kurdish Font Classes */
 .kurdish-font {
-  font-family: "Noto Sans Kurdish", "Scheherazade New", "Arial", sans-serif !important;
+  font-family: "NRT", "Noto Sans Kurdish", "Scheherazade New", "Arial",
+    sans-serif !important;
 }
 
 .kurdish-font * {
-  font-family: "Noto Sans Kurdish", "Scheherazade New", "Arial", sans-serif !important;
+  font-family: "NRT", "Noto Sans Kurdish", "Scheherazade New", "Arial",
+    sans-serif !important;
 }
 
 /* Apply Kurdish font to specific elements when Kurdish language is active */
 [data-lang="ku"] {
-  font-family: "Noto Sans Kurdish", "Scheherazade New", "Arial", sans-serif !important;
+  font-family: "NRT", "Noto Sans Kurdish", "Scheherazade New", "Arial",
+    sans-serif !important;
 }
 
 [data-lang="ku"] * {
-  font-family: "Noto Sans Kurdish", "Scheherazade New", "Arial", sans-serif !important;
+  font-family: "NRT", "Noto Sans Kurdish", "Scheherazade New", "Arial",
+    sans-serif !important;
 }
 
 /* Kurdish specific typography adjustments */
@@ -40,7 +47,8 @@
 [data-lang="ku"] h4,
 [data-lang="ku"] h5,
 [data-lang="ku"] h6 {
-  font-family: "Noto Sans Kurdish", "Scheherazade New", "Arial", sans-serif !important;
+  font-family: "NRT", "Noto Sans Kurdish", "Scheherazade New", "Arial",
+    sans-serif !important;
   font-weight: 600;
 }
 
@@ -51,5 +59,6 @@
 [data-lang="ku"] input,
 [data-lang="ku"] textarea,
 [data-lang="ku"] label {
-  font-family: "Noto Sans Kurdish", "Scheherazade New", "Arial", sans-serif !important;
+  font-family: "NRT", "Noto Sans Kurdish", "Scheherazade New", "Arial",
+    sans-serif !important;
 }

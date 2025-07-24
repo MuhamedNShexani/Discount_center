@@ -38,7 +38,7 @@ import {
   useTheme,
   TablePagination,
 } from "@mui/material";
-import { marketAPI, productAPI, companyAPI } from "../services/api";
+import { marketAPI, productAPI, brandAPI, categoryAPI } from "../services/api";
 import * as XLSX from "xlsx";
 
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
@@ -63,25 +63,27 @@ const DataEntryForm = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [activeListTab, setActiveListTab] = useState(0); // State for list tabs
   const [markets, setMarkets] = useState([]);
-  const [companies, setCompanies] = useState([]);
+  const [brands, setBrands] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [categoryTypes, setCategoryTypes] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
 
   // Pagination states
   const [marketsPage, setMarketsPage] = useState(0);
-  const [companiesPage, setCompaniesPage] = useState(0);
+  const [brandsPage, setBrandsPage] = useState(0);
   const [productsPage, setProductsPage] = useState(0);
   const [rowsPerPage] = useState(10);
 
   // Refs for file inputs
-  const companyLogoFileRef = useRef(null);
+  const brandLogoFileRef = useRef(null);
   const productImageFileRef = useRef(null);
   const editProductImageFileRef = useRef(null);
   const marketLogoFileRef = useRef(null);
 
-  // Company form state
-  const [companyForm, setCompanyForm] = useState({
+  // Brand form state
+  const [brandForm, setBrandForm] = useState({
     name: "",
     logo: "",
     address: "",
@@ -108,12 +110,15 @@ const DataEntryForm = () => {
     description: "",
     barcode: "",
     weight: "",
+    brandId: "",
+    categoryId: "",
+    categoryTypeId: "",
     marketId: "",
     expireDate: "",
   });
 
   // File upload state
-  const [selectedCompanyLogo, setSelectedCompanyLogo] = useState(null);
+  const [selectedBrandLogo, setSelectedBrandLogo] = useState(null);
   const [selectedProductImage, setSelectedProductImage] = useState(null);
   const [uploadLoading, setUploadLoading] = useState(false);
   const [selectedExcelFile, setSelectedExcelFile] = useState(null);
@@ -121,12 +126,10 @@ const DataEntryForm = () => {
   const [selectedEditImage, setSelectedEditImage] = useState(null);
   const [selectedMarketLogo, setSelectedMarketLogo] = useState(null);
 
-  // Company and Market bulk upload state
-  const [selectedCompanyExcelFile, setSelectedCompanyExcelFile] =
-    useState(null);
+  // Brand and Market bulk upload state
+  const [selectedBrandExcelFile, setSelectedBrandExcelFile] = useState(null);
   const [selectedMarketExcelFile, setSelectedMarketExcelFile] = useState(null);
-  const [companyBulkUploadLoading, setCompanyBulkUploadLoading] =
-    useState(false);
+  const [brandBulkUploadLoading, setBrandBulkUploadLoading] = useState(false);
   const [marketBulkUploadLoading, setMarketBulkUploadLoading] = useState(false);
 
   const [selectedMarketFilter, setSelectedMarketFilter] = useState("");
@@ -148,7 +151,8 @@ const DataEntryForm = () => {
 
   useEffect(() => {
     fetchMarkets();
-    fetchCompanies();
+    fetchBrands();
+    fetchCategories();
   }, []);
 
   useEffect(() => {
@@ -178,12 +182,35 @@ const DataEntryForm = () => {
     }
   };
 
-  const fetchCompanies = async () => {
+  const fetchBrands = async () => {
     try {
-      const response = await companyAPI.getAll();
-      setCompanies(response.data);
+      const response = await brandAPI.getAll();
+      setBrands(response.data);
     } catch (err) {
-      console.error("Error fetching companies:", err);
+      console.error("Error fetching brands:", err);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const response = await categoryAPI.getAll();
+      setCategories(response.data);
+    } catch (err) {
+      console.error("Error fetching categories:", err);
+    }
+  };
+
+  const fetchCategoryTypes = async (categoryId) => {
+    try {
+      if (!categoryId) {
+        setCategoryTypes([]);
+        return;
+      }
+      const response = await categoryAPI.getTypes(categoryId);
+      setCategoryTypes(response.data);
+    } catch (err) {
+      console.error("Error fetching category types:", err);
+      setCategoryTypes([]);
     }
   };
 
@@ -209,17 +236,17 @@ const DataEntryForm = () => {
     setMarketsPage(newPage);
   };
 
-  const handleCompaniesPageChange = (event, newPage) => {
-    setCompaniesPage(newPage);
+  const handleBrandsPageChange = (event, newPage) => {
+    setBrandsPage(newPage);
   };
 
   const handleProductsPageChange = (event, newPage) => {
     setProductsPage(newPage);
   };
 
-  const handleCompanyFormChange = (e) => {
-    setCompanyForm({
-      ...companyForm,
+  const handleBrandFormChange = (e) => {
+    setBrandForm({
+      ...brandForm,
       [e.target.name]: e.target.value,
     });
   };
@@ -229,17 +256,28 @@ const DataEntryForm = () => {
   };
 
   const handleProductFormChange = (e) => {
+    const { name, value } = e.target;
     setProductForm({
       ...productForm,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
+
+    // If category is selected, fetch its types
+    if (name === "categoryId") {
+      fetchCategoryTypes(value);
+      // Reset category type when category changes
+      setProductForm((prev) => ({
+        ...prev,
+        categoryTypeId: "",
+      }));
+    }
   };
 
-  // Handle file selection for company logo
-  const handleCompanyLogoChange = (e) => {
+  // Handle file selection for brand logo
+  const handleBrandLogoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setSelectedCompanyLogo(file);
+      setSelectedBrandLogo(file);
     }
   };
 
@@ -267,13 +305,13 @@ const DataEntryForm = () => {
     }
   };
 
-  // Upload company logo
-  const uploadCompanyLogo = async (file) => {
+  // Upload brand logo
+  const uploadBrandLogo = async (file) => {
     const formData = new FormData();
     formData.append("logo", file);
 
     try {
-      const response = await fetch(`${API_URL}/api/companies/upload-logo`, {
+      const response = await fetch(`${API_URL}/api/brands/upload-logo`, {
         method: "POST",
         body: formData,
       });
@@ -346,11 +384,11 @@ const DataEntryForm = () => {
     }
   };
 
-  // Handle Company Excel file selection
-  const handleCompanyExcelFileChange = (e) => {
+  // Handle Brand Excel file selection
+  const handleBrandExcelFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setSelectedCompanyExcelFile(file);
+      setSelectedBrandExcelFile(file);
     }
   };
 
@@ -420,10 +458,10 @@ const DataEntryForm = () => {
     }
   };
 
-  // Process Excel file and create companies
-  const handleCompanyBulkUpload = async (e) => {
+  // Process Excel file and create brands
+  const handleBrandBulkUpload = async (e) => {
     e.preventDefault();
-    if (!selectedCompanyExcelFile) {
+    if (!selectedBrandExcelFile) {
       setMessage({
         type: "error",
         text: t("Please select an Excel file."),
@@ -431,14 +469,14 @@ const DataEntryForm = () => {
       return;
     }
 
-    setCompanyBulkUploadLoading(true);
+    setBrandBulkUploadLoading(true);
     setMessage({ type: "", text: "" });
 
     try {
       const formData = new FormData();
-      formData.append("excelFile", selectedCompanyExcelFile);
+      formData.append("excelFile", selectedBrandExcelFile);
 
-      const response = await fetch(`${API_URL}/api/companies/bulk-upload`, {
+      const response = await fetch(`${API_URL}/api/brands/bulk-upload`, {
         method: "POST",
         body: formData,
       });
@@ -451,7 +489,7 @@ const DataEntryForm = () => {
       const data = await response.json();
       setMessage({
         type: "success",
-        text: t("Successfully uploaded {{count}} companies", {
+        text: t("Successfully uploaded {{count}} brands", {
           count: data.createdCount,
         }),
       });
@@ -465,16 +503,16 @@ const DataEntryForm = () => {
         });
       }
 
-      fetchCompanies(); // Refresh companies list
-      setSelectedCompanyExcelFile(null); // Clear file input
+      fetchBrands(); // Refresh brands list
+      setSelectedBrandExcelFile(null); // Clear file input
     } catch (err) {
       setMessage({
         type: "error",
-        text: "Failed to upload companies. Please check your Excel file format.",
+        text: "Failed to upload brands. Please check your Excel file format.",
       });
-      console.error("Error uploading companies:", err);
+      console.error("Error uploading brands:", err);
     } finally {
-      setCompanyBulkUploadLoading(false);
+      setBrandBulkUploadLoading(false);
     }
   };
 
@@ -536,23 +574,23 @@ const DataEntryForm = () => {
     }
   };
 
-  // Export companies to Excel
-  const exportCompaniesToExcel = () => {
+  // Export brands to Excel
+  const exportBrandsToExcel = () => {
     try {
       // Prepare data for export
-      const exportData = companies.map((company, index) => ({
+      const exportData = brands.map((brand, index) => ({
         "No.": index + 1,
-        ID: company._id || "",
-        Name: company.name || "",
-        Logo: company.logo || "",
-        Address: company.address || "",
-        Phone: company.phone || "",
-        Description: company.description || "",
-        "Created Date": company.createdAt
-          ? new Date(company.createdAt).toLocaleDateString()
+        ID: brand._id || "",
+        Name: brand.name || "",
+        Logo: brand.logo || "",
+        Address: brand.address || "",
+        Phone: brand.phone || "",
+        Description: brand.description || "",
+        "Created Date": brand.createdAt
+          ? new Date(brand.createdAt).toLocaleDateString()
           : "",
-        "Updated Date": company.updatedAt
-          ? new Date(company.updatedAt).toLocaleDateString()
+        "Updated Date": brand.updatedAt
+          ? new Date(brand.updatedAt).toLocaleDateString()
           : "",
       }));
 
@@ -575,36 +613,36 @@ const DataEntryForm = () => {
       worksheet["!cols"] = columnWidths;
 
       // Add worksheet to workbook
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Companies");
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Brands");
 
       // Generate filename with current date
       const date = new Date().toISOString().split("T")[0];
-      const filename = `companies_export_${date}.xlsx`;
+      const filename = `brands_export_${date}.xlsx`;
 
       // Save file
       XLSX.writeFile(workbook, filename);
 
       setMessage({
         type: "success",
-        text: t("Companies exported successfully to {{filename}}", {
+        text: t("Brands exported successfully to {{filename}}", {
           filename,
         }),
       });
     } catch (error) {
-      console.error("Error exporting companies:", error);
+      console.error("Error exporting brands:", error);
       setMessage({
         type: "error",
-        text: t("Failed to export companies. Please try again."),
+        text: t("Failed to export brands. Please try again."),
       });
     }
   };
 
-  const handleCompanySubmit = async (e) => {
+  const handleBrandSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage({ type: "", text: "" });
 
-    if (!selectedCompanyLogo) {
+    if (!selectedBrandLogo) {
       setMessage({ type: "error", text: t("Please select a logo file.") });
       setLoading(false);
       return;
@@ -612,40 +650,40 @@ const DataEntryForm = () => {
 
     try {
       setUploadLoading(true);
-      const logoUrl = await uploadCompanyLogo(selectedCompanyLogo);
+      const logoUrl = await uploadBrandLogo(selectedBrandLogo);
       console.log("Logo uploaded successfully:", logoUrl);
       setUploadLoading(false);
 
-      const companyData = {
-        ...companyForm,
+      const brandData = {
+        ...brandForm,
         logo: logoUrl,
       };
-      console.log("Company data to be saved:", companyData);
+      console.log("Brand data to be saved:", brandData);
 
-      const result = await companyAPI.create(companyData);
-      console.log("Company created successfully:", result);
-      setMessage({ type: "success", text: t("Company created successfully!") });
-      setCompanyForm({
+      const result = await brandAPI.create(brandData);
+      console.log("Brand created successfully:", result);
+      setMessage({ type: "success", text: t("Brand created successfully!") });
+      setBrandForm({
         name: "",
         logo: "",
         address: "",
         phone: "",
         description: "",
       });
-      setSelectedCompanyLogo(null);
-      if (companyLogoFileRef.current) {
-        companyLogoFileRef.current.value = "";
+      setSelectedBrandLogo(null);
+      if (brandLogoFileRef.current) {
+        brandLogoFileRef.current.value = "";
       }
-      fetchCompanies(); // Refresh companies list
+      fetchBrands(); // Refresh brands list
     } catch (err) {
-      console.error("Error creating company:", err);
+      console.error("Error creating brand:", err);
       console.error("Error response:", err.response?.data);
       setMessage({
         type: "error",
         text:
           err.response?.data?.message ||
           err.message ||
-          t("Failed to create company. Please try again."),
+          t("Failed to create brand. Please try again."),
       });
     } finally {
       setLoading(false);
@@ -723,7 +761,9 @@ const DataEntryForm = () => {
         expireDate: productForm.expireDate
           ? new Date(productForm.expireDate).toISOString()
           : null,
-        companyId: productForm.companyId,
+        brandId: productForm.brandId,
+        categoryId: productForm.categoryId,
+        categoryTypeId: productForm.categoryTypeId,
         marketId: productForm.marketId,
       };
 
@@ -740,6 +780,9 @@ const DataEntryForm = () => {
         barcode: "",
         weight: "",
         marketId: "",
+        brandId: "",
+        categoryId: "",
+        categoryTypeId: "",
         expireDate: "",
       });
       setSelectedProductImage(null);
@@ -761,7 +804,7 @@ const DataEntryForm = () => {
 
   // Open edit dialog and set form data
   const handleEditOpen = (type, data) => {
-    if (type === "company") {
+    if (type === "brand") {
       setEditForm({
         name: data.name,
         logo: data.logo,
@@ -789,7 +832,9 @@ const DataEntryForm = () => {
         barcode: data.barcode || "",
         weight: data.weight || "",
         marketId: data.marketId?._id || data.marketId,
-        companyId: data.companyId?._id || data.companyId,
+        brandId: data.brandId?._id || data.brandId,
+        categoryId: data.categoryId?._id || data.categoryId,
+        categoryTypeId: data.categoryTypeId,
         expireDate: data.expireDate
           ? new Date(data.expireDate).toISOString().split("T")[0]
           : "",
@@ -800,7 +845,18 @@ const DataEntryForm = () => {
   };
 
   const handleEditFormChange = (e) => {
-    setEditForm({ ...editForm, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setEditForm({ ...editForm, [name]: value });
+
+    // If category is selected, fetch its types
+    if (name === "categoryId") {
+      fetchCategoryTypes(value);
+      // Reset category type when category changes
+      setEditForm((prev) => ({
+        ...prev,
+        categoryTypeId: "",
+      }));
+    }
   };
 
   const handleEditSave = async () => {
@@ -808,20 +864,20 @@ const DataEntryForm = () => {
       setEditLoading(true);
       setMessage({ type: "", text: "" });
 
-      if (editDialog.type === "company") {
+      if (editDialog.type === "brand") {
         let logoUrl = editForm.logo;
         if (selectedEditImage) {
-          logoUrl = await uploadCompanyLogo(selectedEditImage);
+          logoUrl = await uploadBrandLogo(selectedEditImage);
         }
-        await companyAPI.update(editDialog.data._id, {
+        await brandAPI.update(editDialog.data._id, {
           ...editForm,
           logo: logoUrl,
         });
         setMessage({
           type: "success",
-          text: t("Company updated successfully!"),
+          text: t("Brand updated successfully!"),
         });
-        fetchCompanies();
+        fetchBrands();
       } else if (editDialog.type === "market") {
         let logoUrl = editForm.logo;
         if (selectedEditImage) {
@@ -855,7 +911,9 @@ const DataEntryForm = () => {
           expireDate: editForm.expireDate
             ? new Date(editForm.expireDate).toISOString()
             : null,
-          companyId: editForm.companyId,
+          brandId: editForm.brandId,
+          categoryId: editForm.categoryId,
+          categoryTypeId: editForm.categoryTypeId,
           marketId: editForm.marketId,
         };
 
@@ -879,16 +937,16 @@ const DataEntryForm = () => {
     }
   };
 
-  const handleDeleteCompanyConfirm = async () => {
+  const handleDeleteBrandConfirm = async () => {
     setDeleteLoading(true);
     try {
-      if (deleteDialog.type === "company") {
-        await companyAPI.delete(deleteDialog.data._id);
+      if (deleteDialog.type === "brand") {
+        await brandAPI.delete(deleteDialog.data._id);
         setMessage({
           type: "success",
-          text: t("Company deleted successfully!"),
+          text: t("Brand deleted successfully!"),
         });
-        fetchCompanies();
+        fetchBrands();
         fetchProducts(selectedMarketFilter); // Refresh products as some might be deleted
       } else if (deleteDialog.type === "product") {
         await productAPI.delete(deleteDialog.data._id);
@@ -905,10 +963,10 @@ const DataEntryForm = () => {
       let errorMsg = t("Failed to delete. Please try again.");
       if (
         err.response?.data?.msg ===
-        "Cannot delete company. It has associated products. Please delete the products first."
+        "Cannot delete brand. It has associated products. Please delete the products first."
       ) {
         errorMsg = t(
-          "Cannot delete company. It has associated products. Please delete the products first."
+          "Cannot delete brand. It has associated products. Please delete the products first."
         );
       }
       setMessage({
@@ -1123,7 +1181,7 @@ const DataEntryForm = () => {
                 sx={{ textTransform: "none" }}
               />
               <Tab
-                label={t("Add Company")}
+                label={t("Add Brand")}
                 icon={<BusinessIcon />}
                 iconPosition="start"
                 sx={{ textTransform: "none" }}
@@ -1166,7 +1224,7 @@ const DataEntryForm = () => {
           {activeTab === 0 && (
             <Box component="form" onSubmit={handleMarketSubmit}>
               <Grid container spacing={2}>
-                {/* Company Form Fields */}
+                {/* Brand Form Fields */}
                 <Grid xs={12} sm={6}>
                   <TextField
                     fullWidth
@@ -1369,16 +1427,16 @@ const DataEntryForm = () => {
             </Box>
           )}
           {activeTab === 1 && (
-            <Box component="form" onSubmit={handleCompanySubmit}>
+            <Box component="form" onSubmit={handleBrandSubmit}>
               <Grid container spacing={2}>
-                {/* Company Form Fields */}
+                {/* Brand Form Fields */}
                 <Grid xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    label={t("Company Name")}
+                    label={t("Brand Name")}
                     name="name"
-                    value={companyForm.name}
-                    onChange={handleCompanyFormChange}
+                    value={brandForm.name}
+                    onChange={handleBrandFormChange}
                     required
                     InputProps={{
                       startAdornment: (
@@ -1394,8 +1452,8 @@ const DataEntryForm = () => {
                     fullWidth
                     label={t("Address")}
                     name="address"
-                    value={companyForm.address}
-                    onChange={handleCompanyFormChange}
+                    value={brandForm.address}
+                    onChange={handleBrandFormChange}
                   />
                 </Grid>
                 <Grid xs={12} sm={6}>
@@ -1403,8 +1461,8 @@ const DataEntryForm = () => {
                     fullWidth
                     label={t("Phone")}
                     name="phone"
-                    value={companyForm.phone}
-                    onChange={handleCompanyFormChange}
+                    value={brandForm.phone}
+                    onChange={handleBrandFormChange}
                   />
                 </Grid>
                 <Grid xs={12}>
@@ -1412,8 +1470,8 @@ const DataEntryForm = () => {
                     fullWidth
                     label={t("Description")}
                     name="description"
-                    value={companyForm.description}
-                    onChange={handleCompanyFormChange}
+                    value={brandForm.description}
+                    onChange={handleBrandFormChange}
                     multiline
                     rows={3}
                   />
@@ -1422,20 +1480,20 @@ const DataEntryForm = () => {
                   <input
                     accept="image/*"
                     style={{ display: "none" }}
-                    id="company-logo-file"
+                    id="brand-logo-file"
                     type="file"
-                    ref={companyLogoFileRef}
-                    onChange={handleCompanyLogoChange}
+                    ref={brandLogoFileRef}
+                    onChange={handleBrandLogoChange}
                   />
-                  <label htmlFor="company-logo-file">
+                  <label htmlFor="brand-logo-file">
                     <Button
                       variant="outlined"
                       component="span"
                       fullWidth
                       startIcon={<AddIcon />}
                     >
-                      {selectedCompanyLogo
-                        ? selectedCompanyLogo.name
+                      {selectedBrandLogo
+                        ? selectedBrandLogo.name
                         : t("Upload Logo")}
                     </Button>
                   </label>
@@ -1458,24 +1516,24 @@ const DataEntryForm = () => {
                       ? t("Creating...")
                       : uploadLoading
                       ? t("Uploading...")
-                      : t("Add Company")}
+                      : t("Add Brand")}
                   </Button>
                 </Grid>
               </Grid>
             </Box>
           )}
 
-          {/* Company Bulk Upload Section */}
+          {/* Brand Bulk Upload Section */}
           {activeTab === 1 && (
             <Box
               sx={{ mt: 4, p: 3, backgroundColor: "#f8f9fa", borderRadius: 2 }}
             >
               <Typography variant="h6" gutterBottom sx={{ color: "#2c3e50" }}>
-                {t("Bulk Upload Companies")}
+                {t("Bulk Upload Brands")}
               </Typography>
               <Typography variant="body2" sx={{ color: "#B08463", mb: 2 }}>
                 {t(
-                  "Upload an Excel file (.xlsx) with company data. The file should have columns: Name, Logo, Address, Phone, Description"
+                  "Upload an Excel file (.xlsx) with brand data. The file should have columns: Name, Logo, Address, Phone, Description"
                 )}
               </Typography>
               <Grid container spacing={2}>
@@ -1483,11 +1541,11 @@ const DataEntryForm = () => {
                   <input
                     accept=".xlsx,.xls"
                     style={{ display: "none" }}
-                    id="company-excel-file"
+                    id="brand-excel-file"
                     type="file"
-                    onChange={handleCompanyExcelFileChange}
+                    onChange={handleBrandExcelFileChange}
                   />
-                  <label htmlFor="company-excel-file">
+                  <label htmlFor="brand-excel-file">
                     <Button
                       variant="outlined"
                       component="span"
@@ -1495,8 +1553,8 @@ const DataEntryForm = () => {
                       startIcon={<AddIcon />}
                       sx={{ mb: 2 }}
                     >
-                      {selectedCompanyExcelFile
-                        ? selectedCompanyExcelFile.name
+                      {selectedBrandExcelFile
+                        ? selectedBrandExcelFile.name
                         : t("Select Excel File")}
                     </Button>
                   </label>
@@ -1509,7 +1567,7 @@ const DataEntryForm = () => {
                       const sampleData = [
                         ["Name", "Logo", "Address", "Phone", "Description"],
                         [
-                          "Sample Company",
+                          "Sample Brand",
                           "logo_url_here",
                           "Sample Address",
                           "+1234567890",
@@ -1527,7 +1585,7 @@ const DataEntryForm = () => {
                       const url = window.URL.createObjectURL(blob);
                       const a = document.createElement("a");
                       a.href = url;
-                      a.download = "company_template.csv";
+                      a.download = "brand_template.csv";
                       document.body.appendChild(a);
                       a.click();
                       document.body.removeChild(a);
@@ -1542,13 +1600,11 @@ const DataEntryForm = () => {
                 </Grid>
                 <Grid xs={12}>
                   <Button
-                    onClick={handleCompanyBulkUpload}
+                    onClick={handleBrandBulkUpload}
                     variant="contained"
-                    disabled={
-                      companyBulkUploadLoading || !selectedCompanyExcelFile
-                    }
+                    disabled={brandBulkUploadLoading || !selectedBrandExcelFile}
                     startIcon={
-                      companyBulkUploadLoading ? (
+                      brandBulkUploadLoading ? (
                         <CircularProgress size={20} />
                       ) : (
                         <AddIcon />
@@ -1556,9 +1612,9 @@ const DataEntryForm = () => {
                     }
                     fullWidth
                   >
-                    {companyBulkUploadLoading
+                    {brandBulkUploadLoading
                       ? t("Uploading...")
-                      : t("Upload Companies")}
+                      : t("Upload Brands")}
                   </Button>
                 </Grid>
                 <Grid xs={12}>
@@ -1717,12 +1773,12 @@ const DataEntryForm = () => {
                 </Grid>
                 <Grid xs={12} sm={6}>
                   <FormControl fullWidth>
-                    <InputLabel shrink>{t("Company")}</InputLabel>
+                    <InputLabel shrink>{t("Brand")}</InputLabel>
                     <Select
-                      name="companyId"
-                      value={productForm.companyId}
+                      name="brandId"
+                      value={productForm.brandId}
                       onChange={handleProductFormChange}
-                      label={t("Company")}
+                      label={t("Brand")}
                       displayEmpty
                       sx={{
                         width: "150px",
@@ -1730,11 +1786,56 @@ const DataEntryForm = () => {
                       labelId="add-product-market-label"
                     >
                       <MenuItem value="">
-                        <em>{t("Select Company")}</em>
+                        <em>{t("Select Brand")}</em>
                       </MenuItem>
-                      {companies.map((company) => (
-                        <MenuItem key={company._id} value={company._id}>
-                          {company.name}
+                      {brands.map((brand) => (
+                        <MenuItem key={brand._id} value={brand._id}>
+                          {brand.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <FormControl fullWidth required>
+                    <InputLabel shrink>{t("Category")}</InputLabel>
+                    <Select
+                      name="categoryId"
+                      value={productForm.categoryId}
+                      onChange={handleProductFormChange}
+                      label={t("Category")}
+                      displayEmpty
+                      labelId="add-product-category-label"
+                    >
+                      <MenuItem value="">
+                        <em>{t("Select Category")}</em>
+                      </MenuItem>
+                      {categories.map((category) => (
+                        <MenuItem key={category._id} value={category._id}>
+                          {category.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <FormControl fullWidth required>
+                    <InputLabel shrink>{t("Category Type")}</InputLabel>
+                    <Select
+                      name="categoryTypeId"
+                      value={productForm.categoryTypeId}
+                      onChange={handleProductFormChange}
+                      label={t("Category Type")}
+                      displayEmpty
+                      disabled={!productForm.categoryId}
+                      labelId="add-product-category-type-label"
+                    >
+                      <MenuItem value="">
+                        <em>{t("Select Category Type")}</em>
+                      </MenuItem>
+                      {categoryTypes.map((type) => (
+                        <MenuItem key={type._id} value={type._id}>
+                          {type.name}
                         </MenuItem>
                       ))}
                     </Select>
@@ -1815,7 +1916,7 @@ const DataEntryForm = () => {
                   </Typography>
                   <Typography variant="body2" sx={{ color: "#B08463", mb: 2 }}>
                     {t(
-                      "Upload an Excel file (.xlsx) with product data. The file should have columns: Barcode, Name, Type, Previous Price, New Price, Is Discount, Company ID, Market ID, Description, Expire Date, Weight"
+                      "Upload an Excel file (.xlsx) with product data. The file should have columns: Barcode, Name, Type, Previous Price, New Price, Is Discount, Brand ID, Market ID, Description, Expire Date, Weight"
                     )}
                   </Typography>
                 </Grid>
@@ -1854,7 +1955,7 @@ const DataEntryForm = () => {
                           "Previous Price",
                           "New Price",
                           "Is Discount",
-                          "Company ID",
+                          "Brand ID",
                           "Market ID",
                           "Description",
                           "Expire Date",
@@ -1867,7 +1968,7 @@ const DataEntryForm = () => {
                           "100",
                           "80",
                           "true",
-                          "company_id_here",
+                          "brand_id_here",
                           "market_id_here",
                           "Sample description",
                           "2024-12-31",
@@ -1926,7 +2027,7 @@ const DataEntryForm = () => {
                     <br />• {t("Column D: Previous Price (optional)")}
                     <br />• {t("Column E: New Price (optional)")}
                     <br />• {t("Column F: Is Discount (required)")}
-                    <br />• {t("Column G: Company ID (optional)")}
+                    <br />• {t("Column G: Brand ID (optional)")}
                     <br />• {t("Column H: Market ID (required)")}
                     <br />• {t("Column I: Description (optional)")}
                     <br />•{" "}
@@ -1968,7 +2069,7 @@ const DataEntryForm = () => {
               iconPosition="start"
             />
             <Tab
-              label={t("Companies")}
+              label={t("Brands")}
               icon={<BusinessIcon />}
               iconPosition="start"
             />
@@ -2138,7 +2239,7 @@ const DataEntryForm = () => {
             </Box>
           )}
 
-          {/* Company List Panel */}
+          {/* Brand List Panel */}
           {activeListTab === 1 && (
             <Box>
               <Box
@@ -2150,12 +2251,12 @@ const DataEntryForm = () => {
                 }}
               >
                 <Typography variant="h6" sx={{ color: "#2c3e50" }}>
-                  {t("Total Companies: {{count}}", { count: companies.length })}
+                  {t("Total Brands: {{count}}", { count: brands.length })}
                 </Typography>
                 <Button
                   variant="contained"
                   startIcon={<DownloadIcon />}
-                  onClick={exportCompaniesToExcel}
+                  onClick={exportBrandsToExcel}
                   sx={{
                     backgroundColor: "#52b788",
                     "&:hover": {
@@ -2236,31 +2337,31 @@ const DataEntryForm = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {companies
+                    {brands
                       .slice(
-                        companiesPage * rowsPerPage,
-                        companiesPage * rowsPerPage + rowsPerPage
+                        brandsPage * rowsPerPage,
+                        brandsPage * rowsPerPage + rowsPerPage
                       )
-                      .map((company, idx) => (
-                        <TableRow key={company._id}>
+                      .map((brand, idx) => (
+                        <TableRow key={brand._id}>
                           <TableCell>
-                            {companiesPage * rowsPerPage + idx + 1}
+                            {brandsPage * rowsPerPage + idx + 1}
                           </TableCell>
                           <TableCell
                             width={200}
                             sx={{ fontSize: "18px", fontWeight: "bold" }}
                           >
-                            {company.name}
+                            {brand.name}
                           </TableCell>
                           <TableCell>
-                            {company.logo && (
+                            {brand.logo && (
                               <img
                                 src={
-                                  company.logo.startsWith("http")
-                                    ? company.logo
-                                    : `${API_URL}${company.logo}`
+                                  brand.logo.startsWith("http")
+                                    ? brand.logo
+                                    : `${API_URL}${brand.logo}`
                                 }
-                                alt={company.name}
+                                alt={brand.name}
                                 width={80}
                                 height={80}
                                 style={{
@@ -2270,8 +2371,8 @@ const DataEntryForm = () => {
                               />
                             )}
                           </TableCell>
-                          {/* <TableCell>{company.address}</TableCell> */}
-                          <TableCell>{company.phone}</TableCell>
+                          {/* <TableCell>{brand.address}</TableCell> */}
+                          <TableCell>{brand.phone}</TableCell>
                           <TableCell
                             width="100px"
                             height="100px"
@@ -2281,12 +2382,12 @@ const DataEntryForm = () => {
                               textOverflow: "ellipsis",
                             }}
                           >
-                            {company.description}
+                            {brand.description}
                           </TableCell>
                           <TableCell>
                             <IconButton
                               color="primary"
-                              onClick={() => handleEditOpen("company", company)}
+                              onClick={() => handleEditOpen("brand", brand)}
                             >
                               <EditIcon />
                             </IconButton>
@@ -2295,8 +2396,8 @@ const DataEntryForm = () => {
                               onClick={() =>
                                 setDeleteDialog({
                                   open: true,
-                                  type: "company",
-                                  data: company,
+                                  type: "brand",
+                                  data: brand,
                                 })
                               }
                             >
@@ -2310,9 +2411,9 @@ const DataEntryForm = () => {
               </TableContainer>
               <TablePagination
                 component="div"
-                count={companies.length}
-                page={companiesPage}
-                onPageChange={handleCompaniesPageChange}
+                count={brands.length}
+                page={brandsPage}
+                onPageChange={handleBrandsPageChange}
                 rowsPerPage={rowsPerPage}
                 rowsPerPageOptions={[10]}
                 labelDisplayedRows={({ from, to, count }) =>
@@ -2391,6 +2492,24 @@ const DataEntryForm = () => {
                         }}
                       >
                         {t("Type")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Category")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Category Type")}
                       </TableCell>
                       <TableCell
                         sx={{
@@ -2489,6 +2608,12 @@ const DataEntryForm = () => {
                           </TableCell>
                           <TableCell>{product.type}</TableCell>
                           <TableCell>
+                            {product.categoryId?.name || "N/A"}
+                          </TableCell>
+                          <TableCell>
+                            {product.categoryTypeId || "N/A"}
+                          </TableCell>
+                          <TableCell>
                             {product.previousPrice
                               ? `${t("ID")} ${product.previousPrice.toFixed(2)}`
                               : ""}
@@ -2572,15 +2697,15 @@ const DataEntryForm = () => {
       >
         <DialogTitle>
           {t(
-            editDialog.type === "company"
-              ? "Edit Company"
+            editDialog.type === "brand"
+              ? "Edit Brand"
               : editDialog.type === "market"
               ? "Edit Market"
               : "Edit Product"
           )}
         </DialogTitle>
         <DialogContent>
-          {editDialog.type === "company" ? (
+          {editDialog.type === "brand" ? (
             <Box component="form" sx={{ mt: 1 }}>
               <TextField
                 margin="normal"
@@ -2598,11 +2723,11 @@ const DataEntryForm = () => {
                 <input
                   accept="image/*"
                   style={{ display: "none" }}
-                  id="edit-company-logo-upload"
+                  id="edit-brand-logo-upload"
                   type="file"
                   onChange={handleEditImageChange}
                 />
-                <label htmlFor="edit-company-logo-upload">
+                <label htmlFor="edit-brand-logo-upload">
                   <Button
                     variant="outlined"
                     component="span"
@@ -2882,16 +3007,47 @@ const DataEntryForm = () => {
                 </Select>
               </FormControl>
               <FormControl fullWidth margin="normal">
-                <InputLabel>{t("Company")}</InputLabel>
+                <InputLabel>{t("Brand")}</InputLabel>
                 <Select
-                  name="companyId"
-                  value={editForm.companyId}
+                  name="brandId"
+                  value={editForm.brandId}
                   onChange={handleEditFormChange}
-                  label={t("Company")}
+                  label={t("Brand")}
                 >
-                  {companies.map((company) => (
-                    <MenuItem key={company._id} value={company._id}>
-                      {company.name}
+                  {brands.map((brand) => (
+                    <MenuItem key={brand._id} value={brand._id}>
+                      {brand.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControl fullWidth margin="normal">
+                <InputLabel>{t("Category")}</InputLabel>
+                <Select
+                  name="categoryId"
+                  value={editForm.categoryId}
+                  onChange={handleEditFormChange}
+                  label={t("Category")}
+                >
+                  {categories.map((category) => (
+                    <MenuItem key={category._id} value={category._id}>
+                      {category.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControl fullWidth margin="normal">
+                <InputLabel>{t("Category Type")}</InputLabel>
+                <Select
+                  name="categoryTypeId"
+                  value={editForm.categoryTypeId}
+                  onChange={handleEditFormChange}
+                  label={t("Category Type")}
+                  disabled={!editForm.categoryId}
+                >
+                  {categoryTypes.map((type) => (
+                    <MenuItem key={type._id} value={type._id}>
+                      {type.name}
                     </MenuItem>
                   ))}
                 </Select>
@@ -2948,8 +3104,8 @@ const DataEntryForm = () => {
             variant="contained"
             color="error"
             onClick={() =>
-              deleteDialog.type === "company"
-                ? handleDeleteCompanyConfirm()
+              deleteDialog.type === "brand"
+                ? handleDeleteBrandConfirm()
                 : handleDeleteMarketConfirm()
             }
             disabled={deleteLoading}

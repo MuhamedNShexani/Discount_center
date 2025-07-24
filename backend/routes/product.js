@@ -4,7 +4,7 @@ const {
   getProducts,
   getProductById,
   createProduct,
-  getProductsByCompany,
+  getProductsByBrand,
   getProductsByMarket,
   getProductsByCategory,
   getCategories,
@@ -20,9 +20,9 @@ router.get("/", getProducts);
 // @desc    Get all product categories
 router.get("/categories", getCategories);
 
-// @route   GET /api/products/company/:companyId
+// @route   GET /api/products/brand/:brandId
 // @desc    Get products by market
-router.get("/company/:companyId", getProductsByCompany);
+router.get("/brand/:brandId", getProductsByBrand);
 
 // @desc    Get products by market
 router.get("/market/:marketId", getProductsByMarket);

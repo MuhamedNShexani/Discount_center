@@ -61,7 +61,7 @@ const MarketProfile = () => {
   // Filter states
   const [filters, setFilters] = useState({
     name: "",
-    company: "",
+    brand: "",
     barcode: "",
     type: "",
   });
@@ -128,13 +128,13 @@ const MarketProfile = () => {
       const matchesName = product.name
         .toLowerCase()
         .includes(filters.name.toLowerCase());
-      const matchesCompany =
-        !filters.company ||
-        (product.companyId &&
-          product.companyId.name &&
-          product.companyId.name
+      const matchesBrand =
+        !filters.brand ||
+        (product.brandId &&
+          product.brandId.name &&
+          product.brandId.name
             .toLowerCase()
-            .includes(filters.company.toLowerCase()));
+            .includes(filters.brand.toLowerCase()));
       const matchesBarcode =
         !filters.barcode ||
         (product.barcode &&
@@ -145,7 +145,7 @@ const MarketProfile = () => {
         !filters.type ||
         product.type.toLowerCase().includes(filters.type.toLowerCase());
 
-      return matchesName && matchesCompany && matchesBarcode && matchesType;
+      return matchesName && matchesBrand && matchesBarcode && matchesType;
     });
   };
 
@@ -177,12 +177,12 @@ const MarketProfile = () => {
   };
 
   // Get unique companies for filter dropdown
-  const getCompanies = () => {
-    const companies = products
-      .map((product) => product.companyId)
-      .filter((company) => company && company.name)
-      .map((company) => company.name);
-    return [...new Set(companies)].sort();
+  const getBrands = () => {
+    const brands = products
+      .map((product) => product.brandId)
+      .filter((brand) => brand && brand.name)
+      .map((brand) => brand.name);
+    return [...new Set(brands)].sort();
   };
 
   // Handle filter changes
@@ -380,8 +380,8 @@ const MarketProfile = () => {
               {product.name}
             </Typography>
 
-            {/* Company name if available */}
-            {product.companyId && product.companyId.name && (
+            {/* Brand name if available */}
+            {product.brandId && product.brandId.name && (
               <Typography
                 variant="body2"
                 sx={{
@@ -391,7 +391,7 @@ const MarketProfile = () => {
                   fontStyle: "italic",
                 }}
               >
-                {product.companyId.name}
+                {product.brandId.name}
               </Typography>
             )}
 
@@ -600,16 +600,16 @@ const MarketProfile = () => {
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <FormControl sx={{ width: "200px" }} fullWidth>
-            <InputLabel>{t("Company")}</InputLabel>
+            <InputLabel>{t("Brand")}</InputLabel>
             <Select
-              value={filters.company}
-              onChange={(e) => handleFilterChange("company", e.target.value)}
-              label={t("Company")}
+              value={filters.brand}
+              onChange={(e) => handleFilterChange("brand", e.target.value)}
+              label={t("Brand")}
             >
-              <MenuItem value="">{t("All Companies")}</MenuItem>
-              {getCompanies().map((company) => (
-                <MenuItem key={company} value={company}>
-                  {company}
+              <MenuItem value="">{t("All Brands")}</MenuItem>
+              {getBrands().map((brand) => (
+                <MenuItem key={brand} value={brand}>
+                  {brand}
                 </MenuItem>
               ))}
             </Select>

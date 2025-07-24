@@ -27,8 +27,9 @@ app.use("/uploads", express.static("uploads"));
 
 // Routes
 app.use("/api/markets", require("./routes/market"));
-app.use("/api/companies", require("./routes/company"));
+app.use("/api/brands", require("./routes/brand"));
 app.use("/api/products", require("./routes/product"));
+app.use("/api/categories", require("./routes/category"));
 
 const PORT = process.env.PORT || 5000;
 // app.listen(PORT, () => console.log(`Server started on port ${PORT}`));

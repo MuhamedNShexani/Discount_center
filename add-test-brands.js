@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const Company = require("./models/Company");
+const Brand = require("./models/Brand");
 require("dotenv").config();
 
 // Connect to MongoDB
@@ -8,7 +8,7 @@ mongoose.connect(process.env.MONGO_URI, {
   useUnifiedTopology: true,
 });
 
-const testCompanies = [
+const testBrands = [
   {
     name: "Tech Solutions Inc.",
     address: "123 Innovation Street, Tech City",
@@ -46,30 +46,30 @@ const testCompanies = [
   },
 ];
 
-async function addTestCompanies() {
+async function addTestBrands() {
   try {
     console.log("Connecting to database...");
     await mongoose.connection.asPromise();
     console.log("Connected to MongoDB");
 
-    // Clear existing companies
-    await Company.deleteMany({});
-    console.log("Cleared existing companies");
+    // Clear existing brands
+    await Brand.deleteMany({});
+    console.log("Cleared existing brands");
 
-    // Add test companies
-    const companies = await Company.insertMany(testCompanies);
-    console.log(`Added ${companies.length} test companies:`);
+    // Add test brands
+    const brands = await Brand.insertMany(testBrands);
+    console.log(`Added ${brands.length} test brands:`);
 
-    companies.forEach((company) => {
-      console.log(`- ${company.name} (ID: ${company._id})`);
+    brands.forEach((brand) => {
+      console.log(`- ${brand.name} (ID: ${brand._id})`);
     });
 
-    console.log("Test companies added successfully!");
+    console.log("Test brands added successfully!");
     process.exit(0);
   } catch (error) {
-    console.error("Error adding test companies:", error);
+    console.error("Error adding test brands:", error);
     process.exit(1);
   }
 }
 
-addTestCompanies();
+addTestBrands();

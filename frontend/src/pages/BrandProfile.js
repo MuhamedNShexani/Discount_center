@@ -36,7 +36,7 @@ import {
   Search,
   FilterList,
 } from "@mui/icons-material";
-import { companyAPI, productAPI } from "../services/api";
+import { brandAPI, productAPI } from "../services/api";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import StorefrontIcon from "@mui/icons-material/Storefront";
@@ -44,13 +44,13 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import { useTranslation } from "react-i18next";
 import Loader from "../components/Loader";
 
-const CompanyProfile = () => {
+const BrandProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const theme = useTheme();
   const { t } = useTranslation();
 
-  const [company, setCompany] = useState(null);
+  const [brand, setBrand] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -72,20 +72,20 @@ const CompanyProfile = () => {
 
   useEffect(() => {
     if (id) {
-      fetchCompanyData();
+      fetchBrandData();
     }
   }, [id]);
 
-  const fetchCompanyData = async () => {
+  const fetchBrandData = async () => {
     try {
       setLoading(true);
 
-      // Fetch company details
-      const companyResponse = await companyAPI.getById(id);
-      setCompany(companyResponse.data);
+      // Fetch brand details
+      const brandResponse = await brandAPI.getById(id);
+      setBrand(brandResponse.data);
 
-      // Fetch products for this company
-      const productsResponse = await productAPI.getByCompany(id);
+      // Fetch products for this brand
+      const productsResponse = await productAPI.getByBrand(id);
       setProducts(productsResponse.data);
     } catch (err) {
       setError(
@@ -94,7 +94,7 @@ const CompanyProfile = () => {
           err.message ||
           "Network error. Please check your connection."
       );
-      console.error("Error fetching company data:", err);
+      console.error("Error fetching brand data:", err);
     } finally {
       setLoading(false);
     }
@@ -651,9 +651,9 @@ const CompanyProfile = () => {
     </Paper>
   );
 
-  if (loading) return <Loader message="Loading company details..." />;
+  if (loading) return <Loader message="Loading brand details..." />;
   if (error) return <Loader message={error} />;
-  if (!company) return <Alert severity="error">Company not found</Alert>;
+  if (!brand) return <Alert severity="error">Brand not found</Alert>;
 
   const discountedProducts = getDiscountedProducts();
   const nonDiscountedProducts = getNonDiscountedProducts();
@@ -686,7 +686,7 @@ const CompanyProfile = () => {
         {t("Back")}
       </Button>
 
-      {/* Enhanced Company Header */}
+      {/* Enhanced Brand Header */}
       <Paper
         elevation={0}
         sx={{
@@ -731,10 +731,10 @@ const CompanyProfile = () => {
           <Box position="relative" zIndex={1}>
             <Grid container spacing={4} alignItems="center">
               <Grid item xs={12} md={3}>
-                {company.logo ? (
+                {brand.logo ? (
                   <Avatar
-                    src={`${process.env.REACT_APP_BACKEND_URL}${company.logo}`}
-                    alt={company.name}
+                    src={`${process.env.REACT_APP_BACKEND_URL}${brand.logo}`}
+                    alt={brand.name}
                     sx={{
                       width: { xs: 120, md: 150 },
                       height: { xs: 120, md: 150 },
@@ -772,11 +772,11 @@ const CompanyProfile = () => {
                     color: "white",
                   }}
                 >
-                  {company.name}
+                  {brand.name}
                 </Typography>
 
                 <Box sx={{ mb: 3 }}>
-                  {company.address && (
+                  {brand.address && (
                     <Box
                       display="flex"
                       alignItems="center"
@@ -795,12 +795,12 @@ const CompanyProfile = () => {
                         }}
                         color="white"
                       >
-                        {company.address}
+                        {brand.address}
                       </Typography>
                     </Box>
                   )}
 
-                  {company.phone && (
+                  {brand.phone && (
                     <Box
                       display="flex"
                       alignItems="center"
@@ -817,13 +817,13 @@ const CompanyProfile = () => {
                           color: "white",
                         }}
                       >
-                        {company.phone}
+                        {brand.phone}
                       </Typography>
                     </Box>
                   )}
                 </Box>
 
-                {company.description && (
+                {brand.description && (
                   <Typography
                     variant="body1"
                     sx={{
@@ -836,7 +836,7 @@ const CompanyProfile = () => {
                       color: "white",
                     }}
                   >
-                    {company.description}
+                    {brand.description}
                   </Typography>
                 )}
 
@@ -862,7 +862,7 @@ const CompanyProfile = () => {
                   />
                   <Chip
                     icon={<ShoppingCartIcon />}
-                    label={t("Premium Company")}
+                    label={t("Premium Brand")}
                     sx={{
                       backgroundColor: "rgba(255,255,255,0.2)",
                       color: "white",
@@ -977,7 +977,7 @@ const CompanyProfile = () => {
                     lineHeight: 1.6,
                   }}
                 >
-                  {t("This company hasn't added any regular products yet.")}
+                  {t("This brand hasn't added any regular products yet.")}
                 </Typography>
               </Box>
             ) : (
@@ -1024,7 +1024,7 @@ const CompanyProfile = () => {
                     lineHeight: 1.6,
                   }}
                 >
-                  {t("This company hasn't added any discount products yet.")}
+                  {t("This brand hasn't added any discount products yet.")}
                 </Typography>
               </Box>
             ) : (
@@ -1037,4 +1037,4 @@ const CompanyProfile = () => {
   );
 };
 
-export default CompanyProfile;
+export default BrandProfile;

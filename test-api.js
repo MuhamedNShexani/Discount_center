@@ -9,8 +9,8 @@ const testMarket = {
   address: "123 Test Street, Test City",
   phone: "+1-234-567-8900",
 };
-const testCompany = {
-  name: "Test Company",
+const testBrand = {
+  name: "Test Brand",
   logo: "https://via.placeholder.com/150",
   address: "123 Test Street, Test City",
   phone: "+1-234-567-8900",
@@ -51,7 +51,7 @@ const testAPI = async () => {
     console.log("✅ Market retrieved:", marketByIdResponse.data.name);
 
     // Prepare test product
-    testProduct.companyId = marketId;
+    testProduct.brandId = marketId;
 
     // Test 4: Create Product
     console.log("\n4. Creating test product...");
@@ -69,7 +69,7 @@ const testAPI = async () => {
     // Test 6: Get Products by Market
     console.log("\n6. Getting products by market...");
     const productsByMarketResponse = await axios.get(
-      `${BASE_URL}/products/company/${marketId}`
+      `${BASE_URL}/products/brand/${marketId}`
     );
     console.log(
       "✅ Products by market found:",

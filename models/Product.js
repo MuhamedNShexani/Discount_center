@@ -4,15 +4,24 @@ const productSchema = new mongoose.Schema({
   name: { type: String, required: true },
   description: { type: String, required: false },
   barcode: { type: String, required: false },
-  type: { type: String, required: true },
+  categoryId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Category",
+    required: true,
+  },
+  categoryTypeId: {
+    type: String, // This will store the type ID within the category
+    required: true,
+  },
+  type: { type: String, required: true }, // Keep for backward compatibility
   image: { type: String },
   previousPrice: { type: Number },
   newPrice: { type: Number },
   isDiscount: { type: Boolean, default: false },
   weight: { type: String },
-  companyId: {
+  brandId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Company",
+    ref: "Brand",
     required: true,
   },
   marketId: {

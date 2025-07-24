@@ -13,8 +13,8 @@ import rtlPlugin from "stylis-plugin-rtl";
 // Import pages
 import MainPage from "./pages/MainPage";
 import MarketList from "./pages/MarketList";
-import CompanyList from "./pages/CompanyList";
-import CompanyProfile from "./pages/CompanyProfile";
+import BrandList from "./pages/BrandList";
+import BrandProfile from "./pages/BrandProfile";
 import ProductCategory from "./pages/ProductCategory";
 import DataEntryForm from "./pages/DataEntryForm";
 import ProductDetail from "./pages/ProductDetail";
@@ -121,48 +121,48 @@ function App() {
         typography: {
           fontFamily:
             i18n.language === "ku"
-              ? "'Noto Sans Kurdish', 'Scheherazade New', 'Arial', sans-serif"
+              ? "'NRT', 'Noto Sans Kurdish', 'Scheherazade New', 'Arial', sans-serif"
               : "'Roboto', 'Helvetica', 'Arial', sans-serif",
           h1: {
             color: darkMode ? "#FFFFFF" : "#2B8264",
             fontFamily:
               i18n.language === "ku"
-                ? "'Noto Sans Kurdish', 'Scheherazade New', 'Arial', sans-serif"
+                ? "'NRT', 'Noto Sans Kurdish', 'Scheherazade New', 'Arial', sans-serif"
                 : "'Roboto', 'Helvetica', 'Arial', sans-serif",
           },
           h2: {
             color: darkMode ? "#FFFFFF" : "#2B8264",
             fontFamily:
               i18n.language === "ku"
-                ? "'Noto Sans Kurdish', 'Scheherazade New', 'Arial', sans-serif"
+                ? "'NRT', 'Noto Sans Kurdish', 'Scheherazade New', 'Arial', sans-serif"
                 : "'Roboto', 'Helvetica', 'Arial', sans-serif",
           },
           h3: {
             color: darkMode ? "#FFFFFF" : "#2B8264",
             fontFamily:
               i18n.language === "ku"
-                ? "'Noto Sans Kurdish', 'Scheherazade New', 'Arial', sans-serif"
+                ? "'NRT', 'Noto Sans Kurdish', 'Scheherazade New', 'Arial', sans-serif"
                 : "'Roboto', 'Helvetica', 'Arial', sans-serif",
           },
           h4: {
             color: darkMode ? "#FFFFFF" : "#2B8264",
             fontFamily:
               i18n.language === "ku"
-                ? "'Noto Sans Kurdish', 'Scheherazade New', 'Arial', sans-serif"
+                ? "'NRT', 'Noto Sans Kurdish', 'Scheherazade New', 'Arial', sans-serif"
                 : "'Roboto', 'Helvetica', 'Arial', sans-serif",
           },
           h5: {
             color: darkMode ? "#FFFFFF" : "#2B8264",
             fontFamily:
               i18n.language === "ku"
-                ? "'Noto Sans Kurdish', 'Scheherazade New', 'Arial', sans-serif"
+                ? "'NRT', 'Noto Sans Kurdish', 'Scheherazade New', 'Arial', sans-serif"
                 : "'Roboto', 'Helvetica', 'Arial', sans-serif",
           },
           h6: {
             color: darkMode ? "#FFFFFF" : "#2B8264",
             fontFamily:
               i18n.language === "ku"
-                ? "'Noto Sans Kurdish', 'Scheherazade New', 'Arial', sans-serif"
+                ? "'NRT', 'Noto Sans Kurdish', 'Scheherazade New', 'Arial', sans-serif"
                 : "'Roboto', 'Helvetica', 'Arial', sans-serif",
           },
         },
@@ -216,8 +216,8 @@ function App() {
             styleOverrides: {
               root: { borderRadius: 16 },
               colorPrimary: {
-                backgroundColor: "#A5D6C2",
-                color: "#1E5F49",
+                backgroundColor: "#2B8264",
+                color: "#FFFFFF",
               },
             },
           },
@@ -265,8 +265,8 @@ function App() {
                 <Route path="/markets" element={<MarketList />} />
                 <Route path="/markets/:id" element={<MarketProfile />} />
                 <Route path="/categories" element={<ProductCategory />} />
-                <Route path="/companies" element={<CompanyList />} />
-                <Route path="/companies/:id" element={<CompanyProfile />} />
+                <Route path="/brands" element={<BrandList />} />
+                <Route path="/brands/:id" element={<BrandProfile />} />
                 <Route
                   path="/admin"
                   element={

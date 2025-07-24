@@ -8,7 +8,7 @@ const {
   createProduct,
   updateProduct,
   deleteProduct,
-  getProductsByCompany,
+  getProductsByBrand,
   getProductsByMarket,
   getProductsByCategory,
   getCategories,
@@ -23,9 +23,9 @@ router.get("/", getProducts);
 // @desc    Get all categories
 router.get("/categories", getCategories);
 
-// @route   GET /api/products/company/:companyId
-// @desc    Get products by company
-router.get("/company/:companyId", getProductsByCompany);
+// @route   GET /api/products/brand/:brandId
+// @desc    Get products by brand
+router.get("/brand/:brandId", getProductsByBrand);
 
 // @route   GET /api/products/market/:marketId
 // @desc    Get products by market
@@ -104,11 +104,13 @@ router.post("/bulk-upload", upload.single("excelFile"), async (req, res) => {
           previousPrice: row[3] ? parseFloat(row[3]) : null,
           newPrice: row[4] ? parseFloat(row[4]) : null,
           isDiscount: row[5] === "true" || row[5] === "1" || row[5] === true,
-          companyId: row[6] || "",
-          marketId: row[7] || "",
-          description: row[8] || "",
-          expireDate: row[9] ? new Date(row[9]).toISOString() : null,
-          weight: row[10] || "",
+          brandId: row[6] || "",
+          categoryId: row[7] || "",
+          categoryTypeId: row[8] || "",
+          marketId: row[9] || "",
+          description: row[10] || "",
+          expireDate: row[11] ? new Date(row[11]).toISOString() : null,
+          weight: row[12] || "",
         };
 
         // Validate required fields
@@ -116,12 +118,13 @@ router.post("/bulk-upload", upload.single("excelFile"), async (req, res) => {
           !productData.name ||
           !productData.type ||
           productData.isDiscount === undefined ||
+          !productData.categoryId ||
           !productData.marketId
         ) {
           errors.push(
             `Row ${
               i + 2
-            }: Missing required fields (name, type, isDiscount, marketId)`
+            }: Missing required fields (name, type, isDiscount, categoryId, marketId)`
           );
           continue;
         }
