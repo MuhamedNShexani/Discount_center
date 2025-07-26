@@ -67,6 +67,23 @@ const MainPage = () => {
     slidesToScroll: 1,
     autoplay: true,
     autoplaySpeed: 3000,
+    responsive: [
+      {
+        breakpoint: 1024,
+        settings: {
+          dots: true,
+          arrows: false,
+        },
+      },
+      {
+        breakpoint: 600,
+        settings: {
+          dots: true,
+          arrows: false,
+          autoplaySpeed: 4000,
+        },
+      },
+    ],
   };
 
   useEffect(() => {
@@ -211,14 +228,14 @@ const MainPage = () => {
   if (error) return <Loader message={error} />;
 
   return (
-    <Box>
+    <Box sx={{ px: { xs: 1, sm: 2, md: 4 } }}>
       {/* Banner Slider Section */}
       <Box sx={{ mb: 4, mt: 10 }}>
         <Box
           sx={{
             width: "100%",
-            height: "300px",
-            borderRadius: 3,
+            height: { xs: "200px", sm: "250px", md: "300px" },
+            borderRadius: { xs: 2, md: 3 },
             overflow: "hidden",
             boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
             mb: 3,
@@ -232,7 +249,7 @@ const MainPage = () => {
                   alt={`Banner ${index + 1}`}
                   style={{
                     width: "100%",
-                    height: "400px",
+                    height: "100%",
                     objectFit: "cover",
                   }}
                 />
@@ -246,7 +263,7 @@ const MainPage = () => {
       <Box display="flex" flexDirection="column" alignItems="center" mb={4}>
         <StorefrontIcon
           sx={{
-            fontSize: "3rem",
+            fontSize: { xs: "2rem", sm: "2.5rem", md: "3rem" },
             color: theme.palette.mode === "dark" ? "contained" : "#40916c",
             mb: 1,
           }}
@@ -255,10 +272,11 @@ const MainPage = () => {
         <Typography
           variant="subtitle1"
           sx={{
-            fontSize: "3rem",
+            fontSize: { xs: "1.5rem", sm: "2rem", md: "3rem" },
             color: theme.palette.mode === "dark" ? "contained" : "#40916c",
             mb: 3,
             textAlign: "center",
+            px: { xs: 1, sm: 2 },
           }}
           gutterBottom
         >
@@ -272,7 +290,7 @@ const MainPage = () => {
       <Box
         sx={{
           backgroundColor: "#2c3e50",
-          borderRadius: 3,
+          borderRadius: { xs: 2, md: 3 },
           p: { xs: 2, md: 3 },
           mb: 4,
           boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
@@ -296,7 +314,7 @@ const MainPage = () => {
             sx={{
               flex: 1,
               width: { xs: "100%", sm: "auto" },
-              maxWidth: 400,
+              maxWidth: { xs: "100%", sm: 400 },
 
               backgroundColor: "white",
               borderRadius: 1,
@@ -337,8 +355,9 @@ const MainPage = () => {
           <Box
             sx={{
               display: "flex",
-              gap: 1,
+              gap: { xs: 0.5, sm: 1 },
               alignItems: "center",
+              flexWrap: { xs: "wrap", sm: "nowrap" },
             }}
           >
             <TextField
@@ -350,7 +369,7 @@ const MainPage = () => {
                 setPriceRange([val, priceRange[1]]);
               }}
               sx={{
-                width: { xs: 80, md: 120 },
+                width: { xs: "45%", sm: 80, md: 120 },
                 backgroundColor: "white",
                 borderRadius: 1,
                 "& .MuiOutlinedInput-root": {
@@ -392,7 +411,7 @@ const MainPage = () => {
               sx={{
                 color: theme.palette.mode === "dark" ? "#2c3e50" : "grey.500",
 
-                width: { xs: 80, md: 120 },
+                width: { xs: "45%", sm: 80, md: 120 },
                 backgroundColor: "white",
                 borderRadius: 1,
                 "& .MuiOutlinedInput-root": {
@@ -419,7 +438,7 @@ const MainPage = () => {
         <Box
           sx={{
             display: "flex",
-            gap: 1,
+            gap: { xs: 0.5, sm: 1 },
             flexWrap: "wrap",
             alignItems: "center",
             justifyContent: { xs: "center", md: "flex-start" },
@@ -664,7 +683,7 @@ const MainPage = () => {
             key={market._id}
             sx={{
               mb: 4,
-              borderRadius: 3,
+              borderRadius: { xs: 2, md: 3 },
               overflow: "hidden",
               background:
                 theme.palette.mode === "dark"
@@ -694,7 +713,7 @@ const MainPage = () => {
                   theme.palette.mode === "dark"
                     ? "linear-gradient(135deg, #52b788 0%, #40916c 100%)"
                     : "linear-gradient(135deg, #52b788 0%, #40916c 100%)",
-                p: 3,
+                p: { xs: 2, md: 3 },
                 color: "white",
                 position: "relative",
                 overflow: "hidden",
@@ -716,18 +735,22 @@ const MainPage = () => {
                 alignItems="center"
                 position="relative"
                 zIndex={1}
+                sx={{
+                  flexDirection: { xs: "column", sm: "row" },
+                  gap: { xs: 2, sm: 0 },
+                }}
               >
                 {market.logo ? (
                   <Box
                     sx={{
-                      width: 80,
-                      height: 80,
+                      width: { xs: 80, sm: 80 },
+                      height: { xs: 80, sm: 80 },
                       borderRadius: 2,
                       overflow: "hidden",
                       border: "3px solid rgba(255,255,255,0.2)",
                       background: "rgba(255,255,255,0.1)",
                       backdropFilter: "blur(10px)",
-                      mr: 3,
+                      mr: { xs: 0, sm: 3 },
                     }}
                   >
                     <CardMedia
@@ -744,8 +767,8 @@ const MainPage = () => {
                 ) : (
                   <Box
                     sx={{
-                      width: 80,
-                      height: 80,
+                      width: { xs: 80, sm: 80 },
+                      height: { xs: 80, sm: 80 },
                       borderRadius: 2,
                       display: "flex",
                       alignItems: "center",
@@ -753,16 +776,22 @@ const MainPage = () => {
                       background: "rgba(255,255,255,0.1)",
                       backdropFilter: "blur(10px)",
                       border: "3px solid rgba(255,255,255,0.2)",
-                      mr: 3,
+                      mr: { xs: 0, sm: 3 },
                     }}
                   >
                     <BusinessIcon
-                      sx={{ fontSize: 40, color: "rgba(255,255,255,0.8)" }}
+                      sx={{
+                        fontSize: { xs: 40, sm: 40 },
+                        color: "rgba(255,255,255,0.8)",
+                      }}
                     />
                   </Box>
                 )}
 
-                <Box flexGrow={1}>
+                <Box
+                  flexGrow={1}
+                  sx={{ textAlign: { xs: "center", sm: "left" } }}
+                >
                   <Typography
                     variant="h4"
                     component={Link}
@@ -771,7 +800,7 @@ const MainPage = () => {
                       textDecoration: "none",
                       color: "white",
                       fontWeight: 700,
-                      fontSize: { xs: "1.5rem", md: "2rem" },
+                      fontSize: { xs: "1.25rem", sm: "1.5rem", md: "2rem" },
                       textShadow: "0 2px 4px rgba(0,0,0,0.3)",
                       transition: "all 0.2s ease",
                       "&:hover": {
@@ -785,13 +814,15 @@ const MainPage = () => {
                   <Typography
                     variant="body1"
                     sx={{
-                      width: "800px",
+                      width: { xs: "100%", md: "800px" },
                       whiteSpace: "nowrap",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       color: "rgba(255,255,255,0.9)",
                       mt: 0.5,
                       textShadow: "0 1px 2px rgba(0,0,0,0.3)",
+                      fontSize: { xs: "0.75rem", sm: "0.875rem", md: "1rem" },
+                      textAlign: { xs: "center", sm: "left" },
                     }}
                   >
                     {market.address}
@@ -806,6 +837,8 @@ const MainPage = () => {
                       color: "white",
                       fontWeight: 600,
                       backdropFilter: "blur(10px)",
+                      fontSize: { xs: "0.7rem", sm: "0.8rem" },
+                      height: { xs: "24px", sm: "28px" },
                     }}
                   />
                 </Box>
@@ -821,10 +854,11 @@ const MainPage = () => {
                     backdropFilter: "blur(10px)",
                     border: "2px solid rgba(255,255,255,0.3)",
                     borderRadius: 2,
-                    px: 3,
+                    px: { xs: 2, md: 3 },
                     py: 1,
                     fontWeight: 600,
                     textTransform: "none",
+                    fontSize: { xs: "0.8rem", sm: "0.875rem", md: "1rem" },
                     transition: "all 0.3s ease",
                     "&:hover": {
                       backgroundColor: "rgba(255,255,255,0.3)",
@@ -839,12 +873,12 @@ const MainPage = () => {
             </Box>
 
             {/* Products Grid */}
-            <Box sx={{ p: 3 }}>
+            <Box sx={{ p: { xs: 2, md: 3 } }}>
               <Box
                 sx={{
                   display: "flex",
                   flexWrap: "wrap",
-                  gap: 2,
+                  gap: { xs: 1, md: 2 },
                   justifyContent: "flex-start",
                 }}
               >
@@ -858,10 +892,10 @@ const MainPage = () => {
                       component={Link}
                       to={`/products/${product._id}`}
                       sx={{
-                        height: "350px", // Fixed height - no exceptions
-                        width: "250px", // Fixed width - no exceptions
-                        maxWidth: "250px", // Force exact width
-                        minWidth: "250px", // Force exact width
+                        height: { xs: "300px", sm: "350px" },
+                        width: { xs: "140px", sm: "200px", md: "250px" },
+                        maxWidth: { xs: "140px", sm: "200px", md: "250px" },
+                        minWidth: { xs: "140px", sm: "200px", md: "250px" },
                         textDecoration: "none",
                         borderRadius: 2,
                         overflow: "hidden",
@@ -889,7 +923,7 @@ const MainPage = () => {
                         sx={{
                           position: "relative",
                           overflow: "hidden",
-                          height: "180px",
+                          height: { xs: "140px", sm: "180px" },
                           flexShrink: 0,
                         }}
                       >
@@ -956,11 +990,11 @@ const MainPage = () => {
                       {/* Product Content */}
                       <CardContent
                         sx={{
-                          p: 2,
+                          p: { xs: 1, md: 2 },
                           flex: 1, // Fill remaining space
                           display: "flex",
                           flexDirection: "column",
-                          minHeight: "120px", // Minimum height for consistent content area
+                          minHeight: { xs: "100px", sm: "120px" }, // Minimum height for consistent content area
                         }}
                       >
                         <Typography
@@ -971,10 +1005,10 @@ const MainPage = () => {
                               theme.palette.mode === "dark"
                                 ? "#ffffff"
                                 : "#000000",
-                            height: "50px",
+                            height: { xs: "35px", sm: "45px" },
                             fontStyle: "bold",
                             fontWeight: 1000,
-                            fontSize: "1.2rem",
+                            fontSize: { xs: "0.75rem", sm: "1rem" },
                             textAlign: "center",
                             mb: 1,
                             overflow: "hidden",
@@ -995,9 +1029,10 @@ const MainPage = () => {
                             marginBottom: 1,
                             backgroundColor: "rgba(82, 183, 136, 0.9)",
                             color: "white",
-                            fontSize: "0.75rem",
+                            fontSize: { xs: "0.6rem", sm: "0.75rem" },
                             fontWeight: 600,
                             backdropFilter: "blur(10px)",
+                            height: { xs: "20px", sm: "24px" },
                           }}
                         />
                         {/* Weight Badge */}
@@ -1028,7 +1063,7 @@ const MainPage = () => {
                                   sx={{
                                     textDecoration: "line-through",
                                     color: "red",
-                                    fontSize: "1rem",
+                                    fontSize: { xs: "0.8rem", sm: "1rem" },
                                   }}
                                 >
                                   {formatPrice(product.previousPrice)}
@@ -1040,7 +1075,7 @@ const MainPage = () => {
                               sx={{
                                 color: "#52b788",
                                 fontWeight: 700,
-                                fontSize: "1.5rem",
+                                fontSize: { xs: "1.2rem", sm: "1.5rem" },
                               }}
                             >
                               {formatPrice(product.newPrice)}

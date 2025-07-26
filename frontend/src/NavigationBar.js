@@ -43,7 +43,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
   const { t, i18n } = useTranslation();
   const { user, logout } = useAuth();
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const isSmUp = useMediaQuery(theme.breakpoints.up("md"));
+  const isSmUp = useMediaQuery(theme.breakpoints.up("sm"));
   const lang = i18n.language;
   const location = useLocation();
 
@@ -100,7 +100,9 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
               : "0 8px 32px rgba(0,0,0,0.1)",
         }}
       >
-        <Toolbar sx={{ justifyContent: "space-between", px: { xs: 2, md: 4 } }}>
+        <Toolbar
+          sx={{ justifyContent: "space-between", px: { xs: 1, sm: 2, md: 4 } }}
+        >
           {/* Logo and Brand */}
           <Box display="flex" alignItems="center">
             <Avatar
@@ -123,7 +125,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                 textDecoration: "none",
                 color: "white",
                 fontWeight: 700,
-                fontSize: { xs: "1.25rem", md: "1.5rem" },
+                fontSize: { xs: "1rem", sm: "1.25rem", md: "1.5rem" },
                 textShadow: "0 2px 4px rgba(0,0,0,0.3)",
                 background: "linear-gradient(45deg, #ffffff, #f0f0f0)",
                 WebkitBackgroundClip: "text",
@@ -197,63 +199,62 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   {item.name}
                 </Button>
               ))}
+              {/* Login/Logout Button */}
+              {user ? (
+                <Button
+                  onClick={logout}
+                  startIcon={<LoginIcon />}
+                  sx={{
+                    color: "white",
+                    textTransform: "none",
+                    fontSize: { xs: "0.8rem", sm: "0.9rem" },
+                    px: { xs: 1, sm: 2 },
+                    py: 0.8,
+                    borderRadius: 2,
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    backdropFilter: "blur(10px)",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      backgroundColor: "rgba(255,255,255,0.2)",
+                      transform: "translateY(-2px)",
+                      boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+                    },
+                  }}
+                >
+                  {t("Logout")}
+                </Button>
+              ) : (
+                <Button
+                  component={Link}
+                  to="/login"
+                  startIcon={<LoginIcon />}
+                  sx={{
+                    color: "white",
+                    textTransform: "none",
+                    fontSize: { xs: "0.8rem", sm: "0.9rem" },
+                    px: { xs: 1, sm: 2 },
+                    py: 0.8,
+                    borderRadius: 2,
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    backdropFilter: "blur(10px)",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      backgroundColor: "rgba(255,255,255,0.2)",
+                      transform: "translateY(-2px)",
+                      boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+                    },
+                  }}
+                >
+                  {t("Login")}
+                </Button>
+              )}
             </Box>
           )}
 
           {/* Controls */}
-          <Box display="flex" alignItems="center" gap={1}>
-            {/* Login/Logout Button */}
-            {user ? (
-              <Button
-                onClick={logout}
-                startIcon={<LoginIcon />}
-                sx={{
-                  color: "white",
-                  textTransform: "none",
-                  fontSize: "0.9rem",
-                  px: 2,
-                  py: 0.8,
-                  borderRadius: 2,
-                  backgroundColor: "rgba(255,255,255,0.1)",
-                  backdropFilter: "blur(10px)",
-                  border: "1px solid rgba(255,255,255,0.2)",
-                  transition: "all 0.3s ease",
-                  "&:hover": {
-                    backgroundColor: "rgba(255,255,255,0.2)",
-                    transform: "translateY(-2px)",
-                    boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
-                  },
-                }}
-              >
-                {t("Logout")}
-              </Button>
-            ) : (
-              <Button
-                component={Link}
-                to="/login"
-                startIcon={<LoginIcon />}
-                sx={{
-                  color: "white",
-                  textTransform: "none",
-                  fontSize: "0.9rem",
-                  px: 2,
-                  py: 0.8,
-                  borderRadius: 2,
-                  backgroundColor: "rgba(255,255,255,0.1)",
-                  backdropFilter: "blur(10px)",
-                  border: "1px solid rgba(255,255,255,0.2)",
-                  transition: "all 0.3s ease",
-                  "&:hover": {
-                    backgroundColor: "rgba(255,255,255,0.2)",
-                    transform: "translateY(-2px)",
-                    boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
-                  },
-                }}
-              >
-                {t("Login")}
-              </Button>
-            )}
-
+          <Box display="flex" alignItems="center" gap={{ xs: 2, sm: 1 }}>
             {/* Language Selector */}
             <Paper
               elevation={0}
@@ -272,13 +273,14 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                 disableUnderline
                 sx={{
                   color: "white",
-                  minWidth: 80,
-                  px: 1,
+                  minWidth: { xs: 60, sm: 80 },
+                  px: { xs: 0.5, sm: 1 },
                   "& .MuiSvgIcon-root": {
                     color: "white",
                   },
                   "& .MuiSelect-select": {
                     py: 0.5,
+                    fontSize: { xs: "0.8rem", sm: "0.9rem" },
                   },
                 }}
               >
@@ -297,6 +299,8 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                 backdropFilter: "blur(10px)",
                 border: "1px solid rgba(255,255,255,0.2)",
                 transition: "all 0.3s ease",
+                width: { xs: 36, sm: 40 },
+                height: { xs: 36, sm: 40 },
                 "&:hover": {
                   backgroundColor: "rgba(255,255,255,0.2)",
                   transform: "scale(1.1) rotate(180deg)",
@@ -319,6 +323,8 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   backdropFilter: "blur(10px)",
                   border: "1px solid rgba(255,255,255,0.2)",
                   transition: "all 0.3s ease",
+                  width: { xs: 36, sm: 40 },
+                  height: { xs: 36, sm: 40 },
                   "&:hover": {
                     backgroundColor: "rgba(255,255,255,0.2)",
                     transform: "scale(1.1)",
@@ -339,7 +345,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
         onClose={toggleDrawer(false)}
         PaperProps={{
           sx: {
-            width: 280,
+            width: { xs: 260, sm: 280 },
             background:
               theme.palette.mode === "dark"
                 ? "linear-gradient(180deg, #2c3e50 0%, #34495e 100%)"
@@ -369,6 +375,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
             <Typography
               variant="h6"
               sx={{
+                color: "white",
                 fontWeight: 700,
                 textShadow: "0 2px 4px rgba(0,0,0,0.3)",
                 mb: 1,
@@ -376,7 +383,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
             >
               {t("Market Products")}
             </Typography>
-            <Chip
+            {/* <Chip
               label={t("Mobile Menu")}
               size="small"
               sx={{
@@ -384,7 +391,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                 color: "white",
                 backdropFilter: "blur(10px)",
               }}
-            />
+            /> */}
           </Box>
 
           {/* Navigation Items */}
@@ -400,6 +407,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   sx={{
                     mb: 1,
                     borderRadius: 2,
+                    color: "white",
                     backgroundColor:
                       location.pathname === item.path
                         ? "rgba(255,255,255,0.2)"

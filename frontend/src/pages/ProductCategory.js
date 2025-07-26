@@ -297,9 +297,9 @@ const ProductCategory = () => {
     <Paper
       elevation={0}
       sx={{
-        p: 3,
+        p: { xs: 2, md: 3 },
         mb: 4,
-        borderRadius: 3,
+        borderRadius: { xs: 2, md: 3 },
         background:
           theme.palette.mode === "dark"
             ? "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)"
@@ -323,8 +323,8 @@ const ProductCategory = () => {
         {t("Filters")}
       </Typography>
 
-      <Grid container spacing={2}>
-        <Grid item xs={12} sm={6} md={2}>
+      <Grid container spacing={{ xs: 1, md: 2 }}>
+        <Grid item xs={12} sm={6} md={3}>
           <TextField
             fullWidth
             label={t("Search By Name")}
@@ -339,8 +339,8 @@ const ProductCategory = () => {
             }}
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={2}>
-          <FormControl sx={{ width: "200px" }} fullWidth>
+        <Grid item xs={12} sm={6} md={3}>
+          <FormControl sx={{ width: { xs: "125px", md: "300px" } }} fullWidth>
             <InputLabel>{t("Brand")}</InputLabel>
             <Select
               value={filters.brand}
@@ -358,8 +358,8 @@ const ProductCategory = () => {
             </Select>
           </FormControl>
         </Grid>
-        <Grid item xs={12} sm={6} md={2}>
-          <FormControl sx={{ width: "200px" }} fullWidth>
+        <Grid item xs={12} sm={6} md={3}>
+          <FormControl sx={{ width: { xs: "125px", md: "300px" } }} fullWidth>
             <InputLabel>{t("Market")}</InputLabel>
             <Select
               value={filters.market}
@@ -377,7 +377,7 @@ const ProductCategory = () => {
             </Select>
           </FormControl>
         </Grid>
-        <Grid item xs={12} sm={6} md={2}>
+        <Grid item xs={12} sm={6} md={3}>
           <TextField
             fullWidth
             label={t("Search By Barcode")}
@@ -392,7 +392,7 @@ const ProductCategory = () => {
             }}
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={2}>
+        <Grid item xs={12} sm={6} md={3}>
           <FormControlLabel
             control={
               <Checkbox
@@ -413,7 +413,7 @@ const ProductCategory = () => {
             }}
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={2}>
+        <Grid item xs={12} sm={6} md={3}>
           <Button
             variant="outlined"
             onClick={() =>
@@ -463,12 +463,12 @@ const ProductCategory = () => {
   }
 
   return (
-    <Box sx={{ py: 8 }}>
+    <Box sx={{ py: 8, px: { xs: 1, sm: 2, md: 4 } }}>
       <Box display="flex" alignItems="center" mb={3}>
         <CategoryIcon
           sx={{
-            fontSize: 40,
-            mr: 2,
+            fontSize: { xs: 32, sm: 36, md: 40 },
+            mr: { xs: 1, sm: 2 },
             color: theme.palette.mode === "dark" ? "contained" : "#primary",
           }}
         />
@@ -479,6 +479,7 @@ const ProductCategory = () => {
             gutterBottom
             sx={{
               color: theme.palette.mode === "dark" ? "contained" : "#primary",
+              fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" },
             }}
           >
             {t("Products")}
@@ -487,6 +488,7 @@ const ProductCategory = () => {
             variant="subtitle1"
             sx={{
               color: theme.palette.mode === "dark" ? "contained" : "#primary",
+              fontSize: { xs: "0.875rem", sm: "1rem" },
             }}
             gutterBottom
           >
@@ -501,7 +503,7 @@ const ProductCategory = () => {
           elevation={0}
           sx={{
             mb: 3,
-            borderRadius: 3,
+            borderRadius: { xs: 2, md: 3 },
             background:
               theme.palette.mode === "dark"
                 ? "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)"
@@ -511,7 +513,7 @@ const ProductCategory = () => {
             }`,
           }}
         >
-          <Box sx={{ p: 3 }}>
+          <Box sx={{ p: { xs: 2, md: 3 } }}>
             <Typography
               variant="h6"
               sx={{
@@ -520,6 +522,7 @@ const ProductCategory = () => {
                 alignItems: "center",
                 gap: 1,
                 color: theme.palette.text.primary,
+                fontSize: { xs: "1rem", md: "1.25rem" },
               }}
             >
               <CategoryIcon sx={{ color: "#52b788" }} />
@@ -545,11 +548,11 @@ const ProductCategory = () => {
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       <Avatar
                         sx={{
-                          width: 24,
-                          height: 24,
+                          width: { xs: 20, md: 24 },
+                          height: { xs: 20, md: 24 },
                           bgcolor: "#52b788",
                           color: "#fff",
-                          fontSize: "0.75rem",
+                          fontSize: { xs: "0.6rem", md: "0.75rem" },
                         }}
                       >
                         {category.icon || category.name.charAt(0)}
@@ -560,6 +563,7 @@ const ProductCategory = () => {
                           fontWeight:
                             selectedCategory?._id === category._id ? 600 : 400,
                           color: theme.palette.text.primary,
+                          fontSize: { xs: "0.75rem", md: "0.875rem" },
                         }}
                       >
                         {category.name}
@@ -568,11 +572,11 @@ const ProductCategory = () => {
                   }
                   value={category}
                   sx={{
-                    minHeight: 56,
-                    px: 2,
+                    minHeight: { xs: 48, md: 56 },
+                    px: { xs: 1, md: 2 },
                     py: 1,
                     borderRadius: 2,
-                    mx: 0.5,
+                    mx: { xs: 0.25, md: 0.5 },
                     "&.Mui-selected": {
                       backgroundColor: "rgba(82, 183, 136, 0.1)",
                       color: "#52b788",
@@ -594,7 +598,7 @@ const ProductCategory = () => {
           elevation={0}
           sx={{
             mb: 3,
-            borderRadius: 3,
+            borderRadius: { xs: 2, md: 3 },
             background:
               theme.palette.mode === "dark"
                 ? "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)"
@@ -604,7 +608,7 @@ const ProductCategory = () => {
             }`,
           }}
         >
-          <Box sx={{ p: 3 }}>
+          <Box sx={{ p: { xs: 2, md: 3 } }}>
             <Typography
               variant="h6"
               sx={{
@@ -613,6 +617,7 @@ const ProductCategory = () => {
                 alignItems: "center",
                 gap: 1,
                 color: theme.palette.text.primary,
+                fontSize: { xs: "1rem", md: "1.25rem" },
               }}
             >
               <ExpandMoreIcon sx={{ color: "#52b788" }} />
@@ -651,7 +656,7 @@ const ProductCategory = () => {
                   />
                 }
                 value={null}
-                sx={{ minHeight: 40, px: 1 }}
+                sx={{ minHeight: { xs: 32, md: 40 }, px: { xs: 0.5, md: 1 } }}
               />
               {categoryTypes.map((type) => (
                 <Tab
@@ -681,7 +686,7 @@ const ProductCategory = () => {
                     />
                   }
                   value={type}
-                  sx={{ minHeight: 40, px: 1 }}
+                  sx={{ minHeight: { xs: 32, md: 40 }, px: { xs: 0.5, md: 1 } }}
                 />
               ))}
             </Tabs>
@@ -724,15 +729,23 @@ const ProductCategory = () => {
         </>
       )}
 
-      <Grid container alignItems="center" spacing={3}>
+      <Grid container spacing={{ xs: 1, md: 3 }}>
         {filteredProducts
           .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
           .map((product) => (
-            <Grid display="flex" key={product._id}>
+            <Grid
+              item
+              textAlign="center"
+              xs={6}
+              sm={4}
+              md={3}
+              lg={2}
+              key={product._id}
+            >
               <Card
                 sx={{
-                  width: "250px",
-                  height: "100%",
+                  width: { xs: "150px", md: "100%" },
+                  height: { xs: "100%", md: "100%" },
                   transition: "transform 0.2s",
                   "&:hover": { transform: "scale(1.02)" },
                 }}
@@ -748,24 +761,29 @@ const ProductCategory = () => {
                 ) : (
                   <Box
                     sx={{
-                      height: 200,
+                      height: { xs: 160, sm: 180, md: 200 },
                       display: "flex",
-                      alignItems: "center",
                       justifyContent: "center",
                       backgroundColor: theme.palette.grey[200],
                     }}
                   >
                     <ShoppingCartIcon
-                      sx={{ fontSize: 60, color: theme.palette.grey[400] }}
+                      sx={{
+                        fontSize: { xs: 40, sm: 50, md: 60 },
+                        color: theme.palette.grey[400],
+                      }}
                     />
                   </Box>
                 )}
-                <CardContent>
+                <CardContent sx={{ p: { xs: 1, md: 2 } }}>
                   <Typography
                     variant="h6"
                     component="div"
                     gutterBottom
-                    sx={{ minHeight: 28 }}
+                    sx={{
+                      minHeight: { xs: 24, md: 28 },
+                      fontSize: { xs: "0.875rem", sm: "1rem", md: "1.25rem" },
+                    }}
                   >
                     {product.name || "\u00A0"}
                   </Typography>
@@ -779,26 +797,30 @@ const ProductCategory = () => {
                       size="small"
                       variant="outlined"
                       sx={{
-                        fontSize: "0.7rem",
+                        fontSize: { xs: "0.6rem", sm: "0.7rem" },
                         mb: 1,
                         borderColor: "#52b788",
                         color: "#52b788",
                         backgroundColor: "rgba(82, 183, 136, 0.05)",
+                        height: { xs: "20px", sm: "24px" },
                       }}
                     />
                   )}
                   {product.brandId ? (
-                    <Box display="flex" alignItems="center" mb={1}>
+                    <Box display="flex" mb={1}>
                       <BusinessIcon
                         sx={{
-                          fontSize: 16,
-                          mr: 1,
+                          fontSize: { xs: 14, md: 16 },
+                          mr: { xs: 0.5, md: 1 },
                           color: theme.palette.text.secondary,
                         }}
                       />
                       <Typography
                         variant="body2"
-                        sx={{ color: theme.palette.text.secondary }}
+                        sx={{
+                          color: theme.palette.text.secondary,
+                          fontSize: { xs: "0.65rem", sm: "0.75rem" },
+                        }}
                       >
                         {t("Brand")}: {product.brandId.name}
                       </Typography>
@@ -807,17 +829,20 @@ const ProductCategory = () => {
                     <Box sx={{ height: 24, mb: 1 }} />
                   )}
                   {product.marketId ? (
-                    <Box display="flex" alignItems="center" mb={1}>
+                    <Box display="flex" mb={1}>
                       <StorefrontIcon
                         sx={{
-                          fontSize: 16,
-                          mr: 1,
+                          fontSize: { xs: 14, md: 16 },
+                          mr: { xs: 0.5, md: 1 },
                           color: theme.palette.text.secondary,
                         }}
                       />
                       <Typography
                         variant="body2"
-                        sx={{ color: theme.palette.text.secondary }}
+                        sx={{
+                          color: theme.palette.text.secondary,
+                          fontSize: { xs: "0.65rem", sm: "0.75rem" },
+                        }}
                       >
                         {t("Market")}: {product.marketId.name}
                       </Typography>
@@ -827,23 +852,50 @@ const ProductCategory = () => {
                   )}
 
                   {/* Weight and Discount Info */}
-                  <Box display="flex" alignItems="center" gap={1} mb={1}>
-                    {product.weight && (
+                  <Box display="flex" gap={1} mb={1}>
+                    {/* {product.weight && (
                       <Chip
                         label={product.weight}
                         size="small"
                         variant="outlined"
                         sx={{ fontSize: "0.7rem" }}
                       />
-                    )}
+                    )} */}
                     {product.isDiscount && (
-                      <Chip
-                        label={t("Discount")}
-                        size="small"
-                        color="success"
-                        variant="outlined"
-                        sx={{ fontSize: "0.7rem" }}
-                      />
+                      <>
+                        {/* <Chip
+                          label={t("Discount")}
+                          size="small"
+                          color="success"
+                          variant="outlined"
+                          sx={{ fontSize: "0.7rem" }}
+                        /> */}
+                        <Typography
+                          variant="body2"
+                          sx={{ fontSize: { xs: "0.8rem", md: "0.7rem" } }}
+                          color="text.secondary"
+                        >
+                          {" "}
+                          {t("Expires")}:{" "}
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          color="#2c3e50"
+                          sx={{
+                            minHeight: 20,
+                            fontSize: { xs: "0.6rem", md: "0.7rem" },
+                          }}
+                        >
+                          {new Date(product.expireDate).toLocaleDateString(
+                            "ar-SY",
+                            {
+                              year: "numeric",
+                              month: "numeric",
+                              day: "numeric",
+                            }
+                          )}
+                        </Typography>
+                      </>
                     )}
                   </Box>
                   <Box
