@@ -15,7 +15,7 @@ import {
   Divider,
 } from "@mui/material";
 import { ArrowBack } from "@mui/icons-material";
-import { productAPI } from "../services/api";
+import { productAPI, categoryAPI } from "../services/api";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import BusinessIcon from "@mui/icons-material/Business";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
@@ -24,6 +24,7 @@ import StorefrontIcon from "@mui/icons-material/Storefront";
 import PhoneIcon from "@mui/icons-material/Phone";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import CategoryIcon from "@mui/icons-material/Category";
 import { useTranslation } from "react-i18next";
 import { Link as RouterLink } from "react-router-dom";
 
@@ -33,10 +34,12 @@ const ProductDetail = () => {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [categories, setCategories] = useState([]);
   const { t } = useTranslation();
 
   useEffect(() => {
     fetchProduct();
+    fetchCategories();
   }, [id]);
 
   const fetchProduct = async () => {
@@ -50,6 +53,42 @@ const ProductDetail = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const response = await categoryAPI.getAll();
+      setCategories(response.data);
+    } catch (err) {
+      console.error("Error fetching categories:", err);
+    }
+  };
+
+  // Helper function to get category type name from categoryTypeId
+  const getCategoryTypeName = (categoryTypeId, categoryId) => {
+    // If categoryTypeId is available, try to find the type name
+    if (categoryTypeId && categoryId) {
+      const category = categories.find((cat) => cat._id === categoryId);
+
+      if (category && category.types) {
+        // First try to find by ID (converting ObjectId to string)
+        let type = category.types.find(
+          (t) => t._id.toString() === categoryTypeId
+        );
+
+        // If not found by ID, try to find by name directly
+        if (!type) {
+          type = category.types.find((t) => t.name === categoryTypeId);
+        }
+
+        if (type) {
+          return type.name;
+        }
+      }
+    }
+
+    // Return N/A if no valid category type found
+    return "N/A";
   };
 
   const formatPrice = (price) => {
@@ -162,16 +201,47 @@ const ProductDetail = () => {
                 </Typography>
               </Box>
 
+              {/* Category Type Badge */}
               <Chip
-                label={product.type}
+                label={getCategoryTypeName(
+                  product.categoryTypeId,
+                  product.categoryId?._id || product.categoryId
+                )}
                 color="primary"
                 sx={{ mb: 2 }}
-                icon={<StorefrontIcon />}
+                icon={<CategoryIcon />}
                 component={RouterLink}
                 to="/categories"
-                state={{ category: product.type }}
+                state={{
+                  category: product.categoryId?.name || "All Categories",
+                  categoryType: getCategoryTypeName(
+                    product.categoryTypeId,
+                    product.categoryId?._id || product.categoryId
+                  ),
+                }}
                 clickable
               />
+
+              {/* Category Details */}
+              {product.categoryId && (
+                <Box display="flex" alignItems="center" mb={2}>
+                  <CategoryIcon
+                    sx={{ fontSize: 20, mr: 1, color: "text.secondary" }}
+                  />
+                  <Typography
+                    variant="h6"
+                    color="text.secondary"
+                    sx={{
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {t("Category")}:{" "}
+                    <span style={{ color: "black", fontWeight: "bold" }}>
+                      {product.categoryId.name || "N/A"}
+                    </span>
+                  </Typography>
+                </Box>
+              )}
 
               {product.brandId && (
                 <Box display="flex" alignItems="center" mb={2}>

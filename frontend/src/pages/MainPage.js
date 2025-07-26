@@ -87,6 +87,33 @@ const MainPage = () => {
     }
   };
 
+  // Helper function to get category type name from categoryTypeId
+  const getCategoryTypeName = (categoryTypeId, categoryId) => {
+    // If categoryTypeId is available, try to find the type name
+    if (categoryTypeId && categoryId) {
+      const category = categories.find((cat) => cat._id === categoryId);
+
+      if (category && category.types) {
+        // First try to find by ID (converting ObjectId to string)
+        let type = category.types.find(
+          (t) => t._id.toString() === categoryTypeId
+        );
+
+        // If not found by ID, try to find by name directly
+        if (!type) {
+          type = category.types.find((t) => t.name === categoryTypeId);
+        }
+
+        if (type) {
+          return type.name;
+        }
+      }
+    }
+
+    // Return N/A if no valid category type found
+    return "N/A";
+  };
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -940,11 +967,14 @@ const MainPage = () => {
                           variant="h5"
                           align="center"
                           sx={{
-                            backgroundColor: "yellow",
+                            color:
+                              theme.palette.mode === "dark"
+                                ? "#ffffff"
+                                : "#000000",
                             height: "50px",
+                            fontStyle: "bold",
                             fontWeight: 1000,
                             fontSize: "1.2rem",
-                            color: "black",
                             textAlign: "center",
                             mb: 1,
                             overflow: "hidden",
@@ -954,9 +984,12 @@ const MainPage = () => {
                         >
                           {product.name}
                         </Typography>
-                        {/* Product Type Badge */}
+                        {/* Category Type Badge */}
                         <Chip
-                          label={t(product.type)}
+                          label={getCategoryTypeName(
+                            product.categoryTypeId,
+                            product.categoryId?._id || product.categoryId
+                          )}
                           sx={{
                             width: "fit-content",
                             marginBottom: 1,

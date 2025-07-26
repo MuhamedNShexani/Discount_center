@@ -13,7 +13,6 @@ const productSchema = new mongoose.Schema({
     type: String, // This will store the type ID within the category
     required: true,
   },
-  type: { type: String, required: true }, // Keep for backward compatibility
   image: { type: String },
   previousPrice: { type: Number },
   newPrice: { type: Number },

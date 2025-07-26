@@ -155,6 +155,7 @@ const getProductsByBrand = async (req, res) => {
     const products = await Product.find({ brandId: req.params.brandId })
       .populate("brandId", "name logo")
       .populate("marketId", "name logo")
+      .populate("categoryId", "name types")
       .sort({ name: 1 });
 
     res.json(products);
@@ -172,6 +173,7 @@ const getProductsByMarket = async (req, res) => {
     const products = await Product.find({ marketId: req.params.marketId })
       .populate("brandId", "name logo")
       .populate("marketId", "name logo")
+      .populate("categoryId", "name types")
       .sort({ name: 1 });
 
     res.json(products);

@@ -100,31 +100,30 @@ router.post("/bulk-upload", upload.single("excelFile"), async (req, res) => {
         const productData = {
           barcode: row[0] || "",
           name: row[1] || "",
-          type: row[2] || "",
-          previousPrice: row[3] ? parseFloat(row[3]) : null,
-          newPrice: row[4] ? parseFloat(row[4]) : null,
-          isDiscount: row[5] === "true" || row[5] === "1" || row[5] === true,
-          brandId: row[6] || "",
-          categoryId: row[7] || "",
-          categoryTypeId: row[8] || "",
-          marketId: row[9] || "",
-          description: row[10] || "",
-          expireDate: row[11] ? new Date(row[11]).toISOString() : null,
-          weight: row[12] || "",
+          categoryId: row[2] || "",
+          categoryTypeId: row[3] || "",
+          previousPrice: row[4] ? parseFloat(row[4]) : null,
+          newPrice: row[5] ? parseFloat(row[5]) : null,
+          isDiscount: row[6] === "true" || row[6] === "1" || row[6] === true,
+          brandId: row[7] || "",
+          marketId: row[8] || "",
+          description: row[9] || "",
+          expireDate: row[10] ? new Date(row[10]).toISOString() : null,
+          weight: row[11] || "",
         };
 
         // Validate required fields
         if (
           !productData.name ||
-          !productData.type ||
           productData.isDiscount === undefined ||
           !productData.categoryId ||
+          !productData.categoryTypeId ||
           !productData.marketId
         ) {
           errors.push(
             `Row ${
               i + 2
-            }: Missing required fields (name, type, isDiscount, categoryId, marketId)`
+            }: Missing required fields (name, isDiscount, categoryId, categoryTypeId, marketId)`
           );
           continue;
         }

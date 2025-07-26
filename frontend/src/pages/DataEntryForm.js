@@ -102,7 +102,6 @@ const DataEntryForm = () => {
   // Product form state
   const [productForm, setProductForm] = useState({
     name: "",
-    type: "",
     image: "",
     previousPrice: "",
     newPrice: "",
@@ -212,6 +211,33 @@ const DataEntryForm = () => {
       console.error("Error fetching category types:", err);
       setCategoryTypes([]);
     }
+  };
+
+  // Helper function to get category type name from categoryTypeId
+  const getCategoryTypeName = (categoryTypeId, categoryId) => {
+    // If categoryTypeId is available, try to find the type name
+    if (categoryTypeId && categoryId) {
+      const category = categories.find((cat) => cat._id === categoryId);
+
+      if (category && category.types) {
+        // First try to find by ID (converting ObjectId to string)
+        let type = category.types.find(
+          (t) => t._id.toString() === categoryTypeId
+        );
+
+        // If not found by ID, try to find by name directly
+        if (!type) {
+          type = category.types.find((t) => t.name === categoryTypeId);
+        }
+
+        if (type) {
+          return type.name;
+        }
+      }
+    }
+
+    // Return N/A if no valid category type found
+    return "N/A";
   };
 
   const handleTabChange = (event, newValue) => {
@@ -771,7 +797,6 @@ const DataEntryForm = () => {
       setMessage({ type: "success", text: t("Product created successfully!") });
       setProductForm({
         name: "",
-        type: "",
         image: "",
         previousPrice: "",
         newPrice: "",
@@ -823,7 +848,6 @@ const DataEntryForm = () => {
     } else if (type === "product") {
       setEditForm({
         name: data.name,
-        type: data.type,
         image: data.image,
         previousPrice: data.previousPrice,
         newPrice: data.newPrice,
@@ -1671,16 +1695,7 @@ const DataEntryForm = () => {
                     onChange={handleProductFormChange}
                   />
                 </Grid>
-                <Grid xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label={t("Product Type")}
-                    name="type"
-                    value={productForm.type}
-                    onChange={handleProductFormChange}
-                    required
-                  />
-                </Grid>
+
                 <Grid xs={12} sm={6}>
                   <TextField
                     fullWidth
@@ -2023,16 +2038,17 @@ const DataEntryForm = () => {
                     <strong>{t("Excel Format:")}</strong>
                     <br />• {t("Column A: Barcode (optional)")}
                     <br />• {t("Column B: Name (required)")}
-                    <br />• {t("Column C: Type (required)")}
-                    <br />• {t("Column D: Previous Price (optional)")}
-                    <br />• {t("Column E: New Price (optional)")}
-                    <br />• {t("Column F: Is Discount (required)")}
-                    <br />• {t("Column G: Brand ID (optional)")}
-                    <br />• {t("Column H: Market ID (required)")}
-                    <br />• {t("Column I: Description (optional)")}
+                    <br />• {t("Column C: Category ID (required)")}
+                    <br />• {t("Column D: Category Type ID (required)")}
+                    <br />• {t("Column E: Previous Price (optional)")}
+                    <br />• {t("Column F: New Price (optional)")}
+                    <br />• {t("Column G: Is Discount (required)")}
+                    <br />• {t("Column H: Brand ID (optional)")}
+                    <br />• {t("Column I: Market ID (required)")}
+                    <br />• {t("Column J: Description (optional)")}
                     <br />•{" "}
-                    {t("Column J: Expire Date (optional, YYYY-MM-DD format)")}
-                    <br />• {t("Column K: Weight (optional)")}
+                    {t("Column K: Expire Date (optional, YYYY-MM-DD format)")}
+                    <br />• {t("Column L: Weight (optional)")}
                   </Typography>
                 </Grid>
               </Grid>
@@ -2115,14 +2131,14 @@ const DataEntryForm = () => {
                         {t("Logo")}
                       </TableCell>
                       {/* <TableCell
-                        sx={{
-                          fontWeight: "bold",
-                          backgroundColor: "primary.light",
-                          color: "primary.contrastText",
-                        }}
-                      >
-                        {t("Address")}
-                      </TableCell> */}
+                      sx={{
+                        fontWeight: "bold",
+                        backgroundColor: "primary.light",
+                        color: "primary.contrastText",
+                      }}
+                    >
+                      {t("Address")}
+                    </TableCell> */}
                       <TableCell
                         sx={{
                           fontWeight: "bold",
@@ -2251,7 +2267,7 @@ const DataEntryForm = () => {
                 }}
               >
                 <Typography variant="h6" sx={{ color: "#2c3e50" }}>
-                  {t("Total Brands: {{count}}", { count: brands.length })}
+                  {t("Total Brands")}: {brands.length}
                 </Typography>
                 <Button
                   variant="contained"
@@ -2299,14 +2315,14 @@ const DataEntryForm = () => {
                         {t("Logo")}
                       </TableCell>
                       {/* <TableCell
-                        sx={{
-                          fontWeight: "bold",
-                          backgroundColor: "primary.light",
-                          color: "primary.contrastText",
-                        }}
-                      >
-                        {t("Address")}
-                      </TableCell> */}
+                      sx={{
+                        fontWeight: "bold",
+                        backgroundColor: "primary.light",
+                        color: "primary.contrastText",
+                      }}
+                    >
+                      {t("Address")}
+                    </TableCell> */}
                       <TableCell
                         sx={{
                           fontWeight: "bold",
@@ -2435,11 +2451,11 @@ const DataEntryForm = () => {
                 }}
               >
                 <FormControl sx={{ minWidth: 240 }}>
-                  <InputLabel>{t("Filter by Market")}</InputLabel>
+                  <InputLabel>{t("Search by Market")}</InputLabel>
                   <Select
                     value={selectedMarketFilter}
                     onChange={handleFilterChange}
-                    label={t("Filter by Market")}
+                    label={t("Search by Market")}
                   >
                     <MenuItem value="">
                       <em>{t("All Markets")}</em>
@@ -2484,15 +2500,7 @@ const DataEntryForm = () => {
                       >
                         {t("Image")}
                       </TableCell>
-                      <TableCell
-                        sx={{
-                          fontWeight: "bold",
-                          backgroundColor: "primary.light",
-                          color: "primary.contrastText",
-                        }}
-                      >
-                        {t("Type")}
-                      </TableCell>
+
                       <TableCell
                         sx={{
                           fontWeight: "bold",
@@ -2606,12 +2614,18 @@ const DataEntryForm = () => {
                               />
                             )}
                           </TableCell>
-                          <TableCell>{product.type}</TableCell>
+
                           <TableCell>
-                            {product.categoryId?.name || "N/A"}
+                            {product.categoryId &&
+                            typeof product.categoryId === "object"
+                              ? product.categoryId.name
+                              : "N/A"}
                           </TableCell>
                           <TableCell>
-                            {product.categoryTypeId || "N/A"}
+                            {getCategoryTypeName(
+                              product.categoryTypeId,
+                              product.categoryId?._id || product.categoryId
+                            )}
                           </TableCell>
                           <TableCell>
                             {product.previousPrice
@@ -2868,14 +2882,6 @@ const DataEntryForm = () => {
                 label={t("Name")}
                 name="name"
                 value={editForm.name}
-                onChange={handleEditFormChange}
-              />
-              <TextField
-                margin="normal"
-                fullWidth
-                label={t("Type")}
-                name="type"
-                value={editForm.type}
                 onChange={handleEditFormChange}
               />
 

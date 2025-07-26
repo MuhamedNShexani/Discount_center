@@ -104,6 +104,7 @@ const ProductCategory = () => {
 
       if (allCategories.length > 0) {
         const incomingCategory = location.state?.category;
+        const incomingCategoryType = location.state?.categoryType;
         const categoryToSelect =
           incomingCategory &&
           allCategories.find((cat) => cat.name === incomingCategory)
@@ -112,6 +113,20 @@ const ProductCategory = () => {
         setSelectedCategory(categoryToSelect);
         await fetchCategoryTypes(categoryToSelect._id);
         await fetchProductsByCategory(categoryToSelect._id);
+
+        // If category type is provided, set it after category types are loaded
+        if (incomingCategoryType) {
+          const categoryTypesResponse = await categoryAPI.getTypes(
+            categoryToSelect._id
+          );
+          const categoryTypes = categoryTypesResponse.data;
+          const categoryTypeToSelect = categoryTypes.find(
+            (type) => type.name === incomingCategoryType
+          );
+          if (categoryTypeToSelect) {
+            setSelectedCategoryType(categoryTypeToSelect);
+          }
+        }
       }
     } catch (err) {
       setError("Failed to load categories. Please try again.");
@@ -248,6 +263,33 @@ const ProductCategory = () => {
   const calculateDiscount = (previousPrice, newPrice) => {
     if (!previousPrice || !newPrice) return 0;
     return Math.round(((previousPrice - newPrice) / previousPrice) * 100);
+  };
+
+  // Helper function to get category type name from categoryTypeId
+  const getCategoryTypeName = (categoryTypeId, categoryId) => {
+    // If categoryTypeId is available, try to find the type name
+    if (categoryTypeId && categoryId) {
+      const category = categories.find((cat) => cat._id === categoryId);
+
+      if (category && category.types) {
+        // First try to find by ID (converting ObjectId to string)
+        let type = category.types.find(
+          (t) => t._id.toString() === categoryTypeId
+        );
+
+        // If not found by ID, try to find by name directly
+        if (!type) {
+          type = category.types.find((t) => t.name === categoryTypeId);
+        }
+
+        if (type) {
+          return type.name;
+        }
+      }
+    }
+
+    // Return N/A if no valid category type found
+    return "N/A";
   };
 
   // Render filter section
@@ -727,16 +769,13 @@ const ProductCategory = () => {
                   >
                     {product.name || "\u00A0"}
                   </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{ color: theme.palette.text.secondary, minHeight: 20 }}
-                    gutterBottom
-                  >
-                    {product.type || "\u00A0"}
-                  </Typography>
+
                   {product.categoryTypeId && (
                     <Chip
-                      label={product.categoryTypeId}
+                      label={getCategoryTypeName(
+                        product.categoryTypeId,
+                        product.categoryId
+                      )}
                       size="small"
                       variant="outlined"
                       sx={{
@@ -967,15 +1006,18 @@ const ProductCategory = () => {
                 <Box display="flex" alignItems="center" gap={1}>
                   <CategoryIcon fontSize="small" color="action" />
                   <Typography variant="body2" color="text.secondary">
-                    {t("Category")}:{" "}
-                    {selectedProduct.categoryId?.name || selectedProduct.type}
+                    {t("Category")}: {selectedProduct.categoryId?.name || "N/A"}
                   </Typography>
                 </Box>
                 {selectedProduct.categoryTypeId && (
                   <Box display="flex" alignItems="center" gap={1}>
                     <ExpandMoreIcon fontSize="small" color="action" />
                     <Typography variant="body2" color="text.secondary">
-                      {t("Type")}: {selectedProduct.categoryTypeId}
+                      {t("Type")}:{" "}
+                      {getCategoryTypeName(
+                        selectedProduct.categoryTypeId,
+                        selectedProduct.categoryId
+                      )}
                     </Typography>
                   </Box>
                 )}
