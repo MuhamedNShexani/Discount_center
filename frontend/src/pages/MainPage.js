@@ -877,21 +877,36 @@ const MainPage = () => {
               sx={{ p: { xs: 2, md: 3 }, width: { xs: "100%", md: "100%" } }}
             >
               <Box
-                alignItems={"center"}
                 sx={{
                   display: "flex",
-                  flexWrap: "wrap",
-                  gap: { xs: 3, md: 2 },
-                  justifyContent: "left",
+                  overflowX: "auto",
+                  gap: { xs: 2, md: 3 },
+                  pb: 2,
+                  "&::-webkit-scrollbar": {
+                    height: 8,
+                  },
+                  "&::-webkit-scrollbar-track": {
+                    backgroundColor:
+                      theme.palette.mode === "dark" ? "#4a5568" : "#f1f1f1",
+                    borderRadius: 4,
+                  },
+                  "&::-webkit-scrollbar-thumb": {
+                    backgroundColor: "#52b788",
+                    borderRadius: 4,
+                    "&:hover": {
+                      backgroundColor: "#45a049",
+                    },
+                  },
                 }}
               >
-                {filteredProducts.slice(0, 8).map((product) => {
+                {filteredProducts.map((product) => {
                   const discount = calculateDiscount(
                     product.previousPrice,
                     product.newPrice
                   );
                   return (
                     <Card
+                      key={product._id}
                       component={Link}
                       to={`/products/${product._id}`}
                       sx={{
@@ -904,6 +919,7 @@ const MainPage = () => {
                         overflow: "hidden",
                         display: "flex",
                         flexDirection: "column",
+                        flexShrink: 0,
                         background:
                           theme.palette.mode === "dark"
                             ? "linear-gradient(135deg, #34495e 0%, #2c3e50 100%)"
@@ -1089,70 +1105,6 @@ const MainPage = () => {
                     </Card>
                   );
                 })}
-
-                {/* More Products Card */}
-                {filteredProducts.length > 8 && (
-                  <Card
-                    component={Link}
-                    to={`/markets/${market._id}`}
-                    sx={{
-                      height: "350px", // Fixed height - no exceptions
-                      width: "280px", // Fixed width - no exceptions
-                      maxWidth: "280px", // Force exact width
-                      minWidth: "280px", // Force exact width
-                      textDecoration: "none",
-                      borderRadius: 2,
-                      border: `2px dashed ${
-                        theme.palette.mode === "dark" ? "#4a5568" : "#cbd5e0"
-                      }`,
-                      backgroundColor:
-                        theme.palette.mode === "dark"
-                          ? "rgba(52, 73, 94, 0.3)"
-                          : "rgba(247, 250, 252, 0.8)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexDirection: "column",
-                      transition: "all 0.3s ease",
-                      "&:hover": {
-                        borderColor: "#52b788",
-                        backgroundColor:
-                          theme.palette.mode === "dark"
-                            ? "rgba(82, 183, 136, 0.1)"
-                            : "rgba(82, 183, 136, 0.05)",
-                        transform: "scale(1.02)",
-                      },
-                    }}
-                  >
-                    <Box textAlign="center">
-                      <ShoppingCartIcon
-                        sx={{
-                          fontSize: 48,
-                          color: "#52b788",
-                          mb: 2,
-                        }}
-                      />
-                      <Typography
-                        variant="h6"
-                        sx={{
-                          color: "#52b788",
-                          fontWeight: 600,
-                          mb: 1,
-                        }}
-                      >
-                        +{filteredProducts.length - 8} {t("More Products")}
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: theme.palette.text.secondary,
-                        }}
-                      >
-                        {t("View all products")}
-                      </Typography>
-                    </Box>
-                  </Card>
-                )}
               </Box>
             </Box>
           </Card>
