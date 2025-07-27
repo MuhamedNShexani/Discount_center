@@ -680,7 +680,10 @@ const MainPage = () => {
         );
         return (
           <Card
+            component={Link}
+            to={`/markets/${market._id}`}
             key={market._id}
+            style={{ textDecoration: "none" }}
             sx={{
               mb: 4,
               borderRadius: { xs: 2, md: 3 },
@@ -736,21 +739,21 @@ const MainPage = () => {
                 position="relative"
                 zIndex={1}
                 sx={{
-                  flexDirection: { xs: "column", sm: "row" },
-                  gap: { xs: 2, sm: 0 },
+                  flexDirection: "row",
+                  gap: { xs: 2, sm: 3 },
                 }}
               >
                 {market.logo ? (
                   <Box
                     sx={{
-                      width: { xs: 80, sm: 80 },
-                      height: { xs: 80, sm: 80 },
+                      width: { xs: 60, sm: 80 },
+                      height: { xs: 60, sm: 80 },
                       borderRadius: 2,
                       overflow: "hidden",
                       border: "3px solid rgba(255,255,255,0.2)",
                       background: "rgba(255,255,255,0.1)",
                       backdropFilter: "blur(10px)",
-                      mr: { xs: 0, sm: 3 },
+                      flexShrink: 0,
                     }}
                   >
                     <CardMedia
@@ -767,8 +770,8 @@ const MainPage = () => {
                 ) : (
                   <Box
                     sx={{
-                      width: { xs: 80, sm: 80 },
-                      height: { xs: 80, sm: 80 },
+                      width: { xs: 60, sm: 80 },
+                      height: { xs: 60, sm: 80 },
                       borderRadius: 2,
                       display: "flex",
                       alignItems: "center",
@@ -776,31 +779,26 @@ const MainPage = () => {
                       background: "rgba(255,255,255,0.1)",
                       backdropFilter: "blur(10px)",
                       border: "3px solid rgba(255,255,255,0.2)",
-                      mr: { xs: 0, sm: 3 },
+                      flexShrink: 0,
                     }}
                   >
                     <BusinessIcon
                       sx={{
-                        fontSize: { xs: 40, sm: 40 },
+                        fontSize: { xs: 30, sm: 40 },
                         color: "rgba(255,255,255,0.8)",
                       }}
                     />
                   </Box>
                 )}
 
-                <Box
-                  flexGrow={1}
-                  sx={{ textAlign: { xs: "center", sm: "left" } }}
-                >
+                <Box flexGrow={1} sx={{ textAlign: "left" }}>
                   <Typography
                     variant="h4"
-                    component={Link}
-                    to={`/markets/${market._id}`}
                     sx={{
                       textDecoration: "none",
                       color: "white",
                       fontWeight: 700,
-                      fontSize: { xs: "1.25rem", sm: "1.5rem", md: "2rem" },
+                      fontSize: { xs: "1.1rem", sm: "1.5rem", md: "2rem" },
                       textShadow: "0 2px 4px rgba(0,0,0,0.3)",
                       transition: "all 0.2s ease",
                       "&:hover": {
@@ -814,15 +812,15 @@ const MainPage = () => {
                   <Typography
                     variant="body1"
                     sx={{
-                      width: { xs: "100%", md: "800px" },
+                      width: { xs: "400px", md: "800px" },
                       whiteSpace: "nowrap",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       color: "rgba(255,255,255,0.9)",
                       mt: 0.5,
                       textShadow: "0 1px 2px rgba(0,0,0,0.3)",
-                      fontSize: { xs: "0.75rem", sm: "0.875rem", md: "1rem" },
-                      textAlign: { xs: "center", sm: "left" },
+                      fontSize: { xs: "0.7rem", sm: "0.875rem", md: "1rem" },
+                      textAlign: "left",
                     }}
                   >
                     {market.address}
@@ -837,13 +835,13 @@ const MainPage = () => {
                       color: "white",
                       fontWeight: 600,
                       backdropFilter: "blur(10px)",
-                      fontSize: { xs: "0.7rem", sm: "0.8rem" },
-                      height: { xs: "24px", sm: "28px" },
+                      fontSize: { xs: "0.65rem", sm: "0.8rem" },
+                      height: { xs: "22px", sm: "28px" },
                     }}
                   />
                 </Box>
 
-                <Button
+                {/* <Button
                   variant="contained"
                   component={Link}
                   to={`/markets/${market._id}`}
@@ -868,7 +866,7 @@ const MainPage = () => {
                   }}
                 >
                   {t("View Profile")}
-                </Button>
+                </Button> */}
               </Box>
             </Box>
 
