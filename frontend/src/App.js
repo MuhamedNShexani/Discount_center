@@ -19,6 +19,7 @@ import ProductCategory from "./pages/ProductCategory";
 import DataEntryForm from "./pages/DataEntryForm";
 import ProductDetail from "./pages/ProductDetail";
 import MarketProfile from "./pages/MarketProfile";
+import Gifts from "./pages/Gifts";
 import NavigationBar from "./NavigationBar"; // Make sure this path is correct
 import { AuthProvider } from "./context/AuthContext";
 import LoginPage from "./pages/LoginPage";
@@ -267,6 +268,7 @@ function App() {
                 <Route path="/categories" element={<ProductCategory />} />
                 <Route path="/brands" element={<BrandList />} />
                 <Route path="/brands/:id" element={<BrandProfile />} />
+                <Route path="/gifts" element={<Gifts />} />
                 <Route
                   path="/admin"
                   element={

@@ -27,6 +27,7 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import CategoryIcon from "@mui/icons-material/Category";
 import { useTranslation } from "react-i18next";
 import { Link as RouterLink } from "react-router-dom";
+import { useTheme } from "@mui/material/styles";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -35,7 +36,10 @@ const ProductDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [categories, setCategories] = useState([]);
+  const [relatedProducts, setRelatedProducts] = useState([]);
+  const [relatedLoading, setRelatedLoading] = useState(false);
   const { t } = useTranslation();
+  const theme = useTheme();
 
   useEffect(() => {
     fetchProduct();
@@ -47,6 +51,8 @@ const ProductDetail = () => {
       setLoading(true);
       const response = await productAPI.getById(id);
       setProduct(response.data);
+      // Fetch related products after getting the current product
+      fetchRelatedProducts(response.data);
     } catch (err) {
       setError("Failed to load product details. Please try again.");
       console.error("Error fetching product:", err);
@@ -61,6 +67,59 @@ const ProductDetail = () => {
       setCategories(response.data);
     } catch (err) {
       console.error("Error fetching categories:", err);
+    }
+  };
+
+  const fetchRelatedProducts = async (currentProduct) => {
+    try {
+      setRelatedLoading(true);
+      // Get all products and filter for related ones
+      const response = await productAPI.getAll();
+      const allProducts = response.data;
+
+      // Filter products by same category (excluding current product)
+      const sameCategoryProducts = allProducts
+        .filter((p) => p._id !== currentProduct._id)
+        .filter((p) => {
+          if (
+            currentProduct.categoryId &&
+            p.categoryId &&
+            currentProduct.categoryId._id === p.categoryId._id
+          ) {
+            return true;
+          }
+          return false;
+        })
+        .slice(0, 5); // Limit to 5 products
+
+      // Filter products by same market (excluding current product and already selected category products)
+      const sameMarketProducts = allProducts
+        .filter((p) => p._id !== currentProduct._id)
+        .filter((p) => {
+          // Exclude products already in sameCategoryProducts
+          const isAlreadyInCategory = sameCategoryProducts.some(
+            (catProduct) => catProduct._id === p._id
+          );
+          if (isAlreadyInCategory) return false;
+
+          if (
+            currentProduct.marketId &&
+            p.marketId &&
+            currentProduct.marketId._id === p.marketId._id
+          ) {
+            return true;
+          }
+          return false;
+        })
+        .slice(0, 5); // Limit to 5 products
+
+      // Combine both arrays
+      const related = [...sameCategoryProducts, ...sameMarketProducts];
+      setRelatedProducts(related);
+    } catch (err) {
+      console.error("Error fetching related products:", err);
+    } finally {
+      setRelatedLoading(false);
     }
   };
 
@@ -149,17 +208,17 @@ const ProductDetail = () => {
   }
 
   return (
-    <Box>
+    <Box sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
       <Button
         startIcon={<ArrowBack />}
         onClick={() => navigate(-1)}
-        sx={{ mb: 3 }}
+        sx={{ mb: { xs: 2, md: 3 } }}
       >
         {t("Back")}
       </Button>
 
-      <Paper elevation={3} sx={{ p: 4 }}>
-        <Grid container spacing={4}>
+      <Paper elevation={3} sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
+        <Grid container spacing={{ xs: 2, sm: 3, md: 4 }}>
           {/* Product Image */}
           <Grid xs={12} md={6}>
             {product.image ? (
@@ -168,15 +227,18 @@ const ProductDetail = () => {
                 image={`${process.env.REACT_APP_BACKEND_URL}${product.image}`}
                 alt={product.name}
                 sx={{
-                  height: 400,
-                  objectFit: "cover",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: { xs: 250, sm: 350, md: 400 },
+                  objectFit: "contain",
                   borderRadius: 2,
                 }}
               />
             ) : (
               <Box
                 sx={{
-                  height: 400,
+                  height: { xs: 250, sm: 350, md: 400 },
                   bgcolor: "grey.100",
                   display: "flex",
                   alignItems: "center",
@@ -184,7 +246,12 @@ const ProductDetail = () => {
                   borderRadius: 2,
                 }}
               >
-                <ShoppingCartIcon sx={{ fontSize: 80, color: "grey.400" }} />
+                <ShoppingCartIcon
+                  sx={{
+                    fontSize: { xs: 60, sm: 70, md: 80 },
+                    color: "grey.400",
+                  }}
+                />
               </Box>
             )}
           </Grid>
@@ -194,9 +261,21 @@ const ProductDetail = () => {
             <Box>
               <Box display="flex" alignItems="center" mb={2}>
                 <ShoppingCartIcon
-                  sx={{ fontSize: 32, mr: 2, color: "primary.main" }}
+                  sx={{
+                    fontSize: { xs: 24, sm: 28, md: 32 },
+                    mr: { xs: 1, md: 2 },
+                    color: "primary.main",
+                  }}
                 />
-                <Typography variant="h3" component="h1" gutterBottom>
+                <Typography
+                  variant="h3"
+                  component="h1"
+                  gutterBottom
+                  sx={{
+                    fontSize: { xs: "1.5rem", sm: "2rem", md: "3rem" },
+                    lineHeight: { xs: 1.2, md: 1.3 },
+                  }}
+                >
                   {product.name}
                 </Typography>
               </Box>
@@ -208,8 +287,12 @@ const ProductDetail = () => {
                   product.categoryId?._id || product.categoryId
                 )}
                 color="primary"
-                sx={{ mb: 2 }}
-                icon={<CategoryIcon />}
+                sx={{
+                  mb: 2,
+                  fontSize: { xs: "0.7rem", sm: "0.875rem" },
+                  height: { xs: "28px", sm: "32px" },
+                }}
+                icon={<CategoryIcon sx={{ fontSize: { xs: 16, sm: 20 } }} />}
                 component={RouterLink}
                 to="/categories"
                 state={{
@@ -226,13 +309,18 @@ const ProductDetail = () => {
               {product.categoryId && (
                 <Box display="flex" alignItems="center" mb={2}>
                   <CategoryIcon
-                    sx={{ fontSize: 20, mr: 1, color: "text.secondary" }}
+                    sx={{
+                      fontSize: { xs: 16, sm: 18, md: 20 },
+                      mr: { xs: 0.5, md: 1 },
+                      color: "text.secondary",
+                    }}
                   />
                   <Typography
                     variant="h6"
                     color="text.secondary"
                     sx={{
                       fontWeight: "bold",
+                      fontSize: { xs: "0.875rem", sm: "1rem", md: "1.25rem" },
                     }}
                   >
                     {t("Category")}:{" "}
@@ -246,7 +334,11 @@ const ProductDetail = () => {
               {product.brandId && (
                 <Box display="flex" alignItems="center" mb={2}>
                   <BusinessIcon
-                    sx={{ fontSize: 20, mr: 1, color: "text.secondary" }}
+                    sx={{
+                      fontSize: { xs: 16, sm: 18, md: 20 },
+                      mr: { xs: 0.5, md: 1 },
+                      color: "text.secondary",
+                    }}
                   />
                   <Typography
                     variant="h6"
@@ -255,6 +347,7 @@ const ProductDetail = () => {
                     sx={{
                       cursor: "pointer",
                       fontWeight: "bold",
+                      fontSize: { xs: "0.875rem", sm: "1rem", md: "1.25rem" },
                     }}
                   >
                     {t("Brand")}:{" "}
@@ -267,7 +360,11 @@ const ProductDetail = () => {
               {product.marketId && (
                 <Box display="flex" alignItems="center" mb={2}>
                   <StorefrontIcon
-                    sx={{ fontSize: 20, mr: 1, color: "text.secondary" }}
+                    sx={{
+                      fontSize: { xs: 16, sm: 18, md: 20 },
+                      mr: { xs: 0.5, md: 1 },
+                      color: "text.secondary",
+                    }}
                   />
                   <Typography
                     variant="h6"
@@ -276,6 +373,7 @@ const ProductDetail = () => {
                     sx={{
                       cursor: "pointer",
                       fontWeight: "bold",
+                      fontSize: { xs: "0.875rem", sm: "1rem", md: "1.25rem" },
                     }}
                   >
                     {t("Market")}:{" "}
@@ -299,15 +397,22 @@ const ProductDetail = () => {
                           <Box display="flex" alignItems="center">
                             <AccessTimeIcon
                               sx={{
-                                fontSize: 20,
-                                mr: 1,
+                                fontSize: { xs: 16, sm: 18, md: 20 },
+                                mr: { xs: 0.5, md: 1 },
                                 color: "success.main",
                               }}
                             />
                             <Typography
                               variant="h6"
                               color="success.main"
-                              sx={{ fontWeight: "bold" }}
+                              sx={{
+                                fontWeight: "bold",
+                                fontSize: {
+                                  xs: "0.875rem",
+                                  sm: "1rem",
+                                  md: "1.25rem",
+                                },
+                              }}
                             >
                               {remainingDays} {t("days remaining")}
                             </Typography>
@@ -318,15 +423,22 @@ const ProductDetail = () => {
                           <Box display="flex" alignItems="center">
                             <AccessTimeIcon
                               sx={{
-                                fontSize: 20,
-                                mr: 1,
+                                fontSize: { xs: 16, sm: 18, md: 20 },
+                                mr: { xs: 0.5, md: 1 },
                                 color: "warning.main",
                               }}
                             />
                             <Typography
                               variant="h6"
                               color="warning.main"
-                              sx={{ fontWeight: "bold" }}
+                              sx={{
+                                fontWeight: "bold",
+                                fontSize: {
+                                  xs: "0.875rem",
+                                  sm: "1rem",
+                                  md: "1.25rem",
+                                },
+                              }}
                             >
                               Expires today!
                             </Typography>
@@ -336,12 +448,23 @@ const ProductDetail = () => {
                         return (
                           <Box display="flex" alignItems="center">
                             <AccessTimeIcon
-                              sx={{ fontSize: 20, mr: 1, color: "error.main" }}
+                              sx={{
+                                fontSize: { xs: 16, sm: 18, md: 20 },
+                                mr: { xs: 0.5, md: 1 },
+                                color: "error.main",
+                              }}
                             />
                             <Typography
                               variant="h6"
                               color="error.main"
-                              sx={{ fontWeight: "bold" }}
+                              sx={{
+                                fontWeight: "bold",
+                                fontSize: {
+                                  xs: "0.875rem",
+                                  sm: "1rem",
+                                  md: "1.25rem",
+                                },
+                              }}
                             >
                               {t("Expired")} {Math.abs(remainingDays)}{" "}
                               {t("day")}
@@ -356,12 +479,19 @@ const ProductDetail = () => {
                 </Box>
               )}
 
-              <Divider sx={{ my: 3 }} />
+              <Divider sx={{ my: { xs: 2, md: 3 } }} />
 
               {/* Pricing Section */}
-              <Box sx={{ mb: 3 }}>
+              <Box sx={{ mb: { xs: 2, md: 3 } }}>
                 <Box display="flex" alignItems="center" mb={2}>
-                  <Typography variant="h4" color="primary" gutterBottom>
+                  <Typography
+                    variant="h4"
+                    color="primary"
+                    gutterBottom
+                    sx={{
+                      fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" },
+                    }}
+                  >
                     <span style={{ color: "black" }}>{t("Price")}:</span>{" "}
                     {formatPrice(product.newPrice)}
                   </Typography>
@@ -373,33 +503,55 @@ const ProductDetail = () => {
                       sx={{
                         display: "flex",
                         alignItems: "center",
-                        gap: 2,
+                        gap: { xs: 1, md: 2 },
                         mb: 2,
                       }}
                     >
                       <Typography
                         variant="h6"
                         color="text.secondary"
-                        sx={{ textDecoration: "line-through" }}
+                        sx={{
+                          textDecoration: "line-through",
+                          fontSize: {
+                            xs: "1rem",
+                            sm: "1.25rem",
+                            md: "1.25rem",
+                          },
+                        }}
                       >
                         {formatPrice(product.previousPrice)}
                       </Typography>
                       <Chip
-                        icon={<LocalOfferIcon />}
+                        icon={
+                          <LocalOfferIcon
+                            sx={{ fontSize: { xs: 16, sm: 20 } }}
+                          />
+                        }
                         label={`-${calculateDiscount(
                           product.previousPrice,
                           product.newPrice
                         )}% OFF`}
                         color="error"
                         size="large"
+                        sx={{
+                          fontSize: { xs: "0.7rem", sm: "0.875rem" },
+                          height: { xs: "32px", sm: "40px" },
+                        }}
                       />
                     </Box>
                   )}
               </Box>
 
               {/* Product Details Section */}
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
+              <Box sx={{ mb: { xs: 2, md: 3 } }}>
+                <Typography
+                  variant="h6"
+                  gutterBottom
+                  sx={{
+                    mb: 2,
+                    fontSize: { xs: "1rem", sm: "1.25rem", md: "1.25rem" },
+                  }}
+                >
                   {t("Product Details")}
                 </Typography>
                 {/* Description */}
@@ -407,7 +559,10 @@ const ProductDetail = () => {
                 {/* Barcode */}
                 {product.barcode && (
                   <Box display="flex" alignItems="center" mb={1}>
-                    <Typography variant="body1">
+                    <Typography
+                      variant="body1"
+                      sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
+                    >
                       <strong>{t("Barcode")}:</strong> {product.barcode}
                     </Typography>
                   </Box>
@@ -416,7 +571,10 @@ const ProductDetail = () => {
                 {/* Weight */}
                 {product.weight && (
                   <Box display="flex" alignItems="center" mb={1}>
-                    <Typography variant="body1">
+                    <Typography
+                      variant="body1"
+                      sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
+                    >
                       <strong>{t("Weight")}:</strong> {product.weight}
                     </Typography>
                   </Box>
@@ -424,9 +582,16 @@ const ProductDetail = () => {
                 {product.description && (
                   <Box display="flex" alignItems="center" mb={1}>
                     <DescriptionIcon
-                      sx={{ fontSize: 16, mr: 1, color: "text.secondary" }}
+                      sx={{
+                        fontSize: { xs: 14, sm: 16 },
+                        mr: { xs: 0.5, md: 1 },
+                        color: "text.secondary",
+                      }}
                     />
-                    <Typography variant="body1">
+                    <Typography
+                      variant="body1"
+                      sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
+                    >
                       <strong>{t("Description")}:</strong> {product.description}
                     </Typography>
                   </Box>
@@ -435,13 +600,24 @@ const ProductDetail = () => {
                 {/* Discount Status */}
                 <Box display="flex" alignItems="center" mb={1}>
                   <LocalOfferIcon
-                    sx={{ fontSize: 16, mr: 1, color: "text.secondary" }}
+                    sx={{
+                      fontSize: { xs: 14, sm: 16 },
+                      mr: { xs: 0.5, md: 1 },
+                      color: "text.secondary",
+                    }}
                   />
+                  <Typography
+                    variant="body1"
+                    sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
+                  >
+                    <strong>{t("Discount Status")}:</strong>{" "}
+                    {product.isDiscount ? t("Discounted") : t("Regular Price")}
+                  </Typography>
                 </Box>
               </Box>
 
               {/* Action Buttons */}
-              <Box sx={{ mt: 4 }}>
+              {/* <Box sx={{ mt: 4 }}>
                 {product.marketId && product.marketId._id && (
                   <Button
                     variant="outlined"
@@ -465,11 +641,284 @@ const ProductDetail = () => {
                 <Button variant="contained" size="large" sx={{ mr: 2 }}>
                   {t("Contact Seller")}
                 </Button>
-              </Box>
+              </Box> */}
             </Box>
           </Grid>
         </Grid>
       </Paper>
+
+      {/* Related Products Section */}
+      {relatedProducts.length > 0 && (
+        <Paper
+          elevation={2}
+          sx={{
+            mt: { xs: 3, md: 4 },
+            p: { xs: 2, sm: 3, md: 3 },
+            borderRadius: 2,
+            background:
+              theme.palette.mode === "dark"
+                ? "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)"
+                : "linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%)",
+          }}
+        >
+          <Typography
+            variant="h5"
+            gutterBottom
+            sx={{
+              mb: { xs: 2, md: 3 },
+              fontWeight: 600,
+              color: theme.palette.text.primary,
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              fontSize: { xs: "1.25rem", sm: "1.5rem", md: "1.5rem" },
+            }}
+          >
+            <ShoppingCartIcon
+              sx={{ fontSize: { xs: 20, sm: 24, md: 28 }, color: "#52b788" }}
+            />
+            {t("Related Products")}
+          </Typography>
+
+          {relatedLoading ? (
+            <Box display="flex" justifyContent="center" py={4}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <Box
+              sx={{
+                display: "flex",
+                overflowX: "auto",
+                gap: { xs: 1.5, sm: 2 },
+                pb: 2,
+                "&::-webkit-scrollbar": {
+                  height: 8,
+                },
+                "&::-webkit-scrollbar-track": {
+                  backgroundColor:
+                    theme.palette.mode === "dark" ? "#4a5568" : "#f1f1f1",
+                  borderRadius: 4,
+                },
+                "&::-webkit-scrollbar-thumb": {
+                  backgroundColor: "#52b788",
+                  borderRadius: 4,
+                  "&:hover": {
+                    backgroundColor: "#45a049",
+                  },
+                },
+              }}
+            >
+              {relatedProducts.map((relatedProduct) => (
+                <Card
+                  key={relatedProduct._id}
+                  component={RouterLink}
+                  to={`/products/${relatedProduct._id}`}
+                  sx={{
+                    minWidth: { xs: "180px", sm: "220px", md: "250px" },
+                    height: { xs: "250px", sm: "280px", md: "320px" },
+                    textDecoration: "none",
+                    display: "flex",
+                    flexDirection: "column",
+                    borderRadius: { xs: 2, sm: 3, md: 3 },
+                    background:
+                      theme.palette.mode === "dark"
+                        ? "linear-gradient(135deg, #34495e 0%, #2c3e50 100%)"
+                        : "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
+                    border: `1px solid ${
+                      theme.palette.mode === "dark" ? "#4a5568" : "#e2e8f0"
+                    }`,
+                    boxShadow:
+                      theme.palette.mode === "dark"
+                        ? "0 4px 16px rgba(0,0,0,0.3)"
+                        : "0 4px 16px rgba(0,0,0,0.1)",
+                    transition: "all 0.3s ease",
+                    flexShrink: 0,
+                    "&:hover": {
+                      transform: "translateY(-4px)",
+                      boxShadow:
+                        theme.palette.mode === "dark"
+                          ? "0 8px 24px rgba(0,0,0,0.4)"
+                          : "0 8px 24px rgba(0,0,0,0.15)",
+                    },
+                  }}
+                >
+                  {/* Product Image */}
+                  <CardMedia
+                    component="img"
+                    image={`${process.env.REACT_APP_BACKEND_URL}${relatedProduct.image}`}
+                    alt={relatedProduct.name}
+                    sx={{
+                      height: { xs: "120px", sm: "140px", md: "160px" },
+                      objectFit: "contain",
+                      borderTopLeftRadius: { xs: 8, sm: 12, md: 12 },
+                      borderTopRightRadius: { xs: 8, sm: 12, md: 12 },
+                    }}
+                  />
+                  <CardContent
+                    sx={{
+                      p: { xs: 1, sm: 1.5, md: 2 },
+                      flexGrow: 1,
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <Box>
+                      <Typography
+                        variant="h6"
+                        component="div"
+                        sx={{
+                          fontSize: {
+                            xs: "0.875rem",
+                            sm: "1rem",
+                            md: "1.125rem",
+                          },
+                          fontWeight: 600,
+                          mb: 1,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {relatedProduct.name}
+                      </Typography>
+
+                      {relatedProduct.categoryTypeId && (
+                        <Chip
+                          label={getCategoryTypeName(
+                            relatedProduct.categoryTypeId,
+                            relatedProduct.categoryId
+                          )}
+                          size="small"
+                          variant="outlined"
+                          sx={{
+                            fontSize: { xs: "0.6rem", sm: "0.7rem" },
+                            mb: 1,
+                            borderColor: "#52b788",
+                            color: "#52b788",
+                            backgroundColor: "rgba(82, 183, 136, 0.05)",
+                            height: { xs: "20px", sm: "24px" },
+                          }}
+                        />
+                      )}
+
+                      {relatedProduct.brandId && (
+                        <Box display="flex" alignItems="center" mb={0.5}>
+                          <BusinessIcon
+                            sx={{
+                              fontSize: { xs: 12, sm: 14, md: 16 },
+                              mr: 0.5,
+                              color: "text.secondary",
+                            }}
+                          />
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              color: "text.secondary",
+                              fontSize: { xs: "0.7rem", sm: "0.75rem" },
+                            }}
+                          >
+                            {relatedProduct.brandId.name}
+                          </Typography>
+                        </Box>
+                      )}
+
+                      {relatedProduct.marketId && (
+                        <Box display="flex" alignItems="center" mb={1}>
+                          <StorefrontIcon
+                            sx={{
+                              fontSize: { xs: 12, sm: 14, md: 16 },
+                              mr: 0.5,
+                              color: "text.secondary",
+                            }}
+                          />
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              color: "text.secondary",
+                              fontSize: { xs: "0.7rem", sm: "0.75rem" },
+                            }}
+                          >
+                            {relatedProduct.marketId.name}
+                          </Typography>
+                        </Box>
+                      )}
+                    </Box>
+
+                    <Box>
+                      <Box
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="space-between"
+                        mb={1}
+                      >
+                        <Box>
+                          {relatedProduct.previousPrice &&
+                          relatedProduct.previousPrice >
+                            relatedProduct.newPrice ? (
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              sx={{
+                                textDecoration: "line-through",
+                                fontSize: { xs: "0.7rem", sm: "0.75rem" },
+                              }}
+                            >
+                              {formatPrice(relatedProduct.previousPrice)}
+                            </Typography>
+                          ) : null}
+                          <Typography
+                            variant="h6"
+                            sx={{
+                              color: "primary.main",
+                              fontWeight: 700,
+                              fontSize: {
+                                xs: "0.875rem",
+                                sm: "1rem",
+                                md: "1.125rem",
+                              },
+                            }}
+                          >
+                            {formatPrice(relatedProduct.newPrice)}
+                          </Typography>
+                        </Box>
+                        {(relatedProduct.previousPrice &&
+                          relatedProduct.previousPrice >
+                            relatedProduct.newPrice) ||
+                        relatedProduct.isDiscount ? (
+                          <Chip
+                            icon={
+                              <LocalOfferIcon
+                                sx={{ fontSize: { xs: 12, sm: 14 } }}
+                              />
+                            }
+                            label={
+                              relatedProduct.previousPrice &&
+                              relatedProduct.previousPrice >
+                                relatedProduct.newPrice
+                                ? `-${calculateDiscount(
+                                    relatedProduct.previousPrice,
+                                    relatedProduct.newPrice
+                                  )}%`
+                                : t("Discount")
+                            }
+                            color="error"
+                            size="small"
+                            sx={{
+                              fontSize: { xs: "0.6rem", sm: "0.7rem" },
+                              height: { xs: "18px", sm: "20px" },
+                            }}
+                          />
+                        ) : null}
+                      </Box>
+                    </Box>
+                  </CardContent>
+                </Card>
+              ))}
+            </Box>
+          )}
+        </Paper>
+      )}
     </Box>
   );
 };

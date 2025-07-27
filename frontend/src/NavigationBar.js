@@ -33,6 +33,7 @@ import {
   Language as LanguageIcon,
   Store as StoreIcon,
   Login as LoginIcon,
+  CardGiftcard as CardGiftcardIcon,
 } from "@mui/icons-material";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -66,6 +67,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
     { name: t("Products"), path: "/categories", icon: <CategoryIcon /> },
     { name: t("Markets"), path: "/markets", icon: <StoreIcon /> },
     { name: t("Brands"), path: "/brands", icon: <BusinessIcon /> },
+    { name: t("Gifts"), path: "/gifts", icon: <CardGiftcardIcon /> },
     // Only show Admin link when logged in
     ...(user
       ? [

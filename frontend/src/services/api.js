@@ -54,4 +54,15 @@ export const productAPI = {
   bulkUpload: (data) => api.post("/products/bulk-upload", data),
 };
 
+// Gift API calls
+export const giftAPI = {
+  getAll: () => api.get("/gifts"),
+  getById: (id) => api.get(`/gifts/${id}`),
+  create: (data) => api.post("/gifts", data),
+  update: (id, data) => api.put(`/gifts/${id}`, data),
+  delete: (id) => api.delete(`/gifts/${id}`),
+  getByMarket: (marketId) => api.get(`/gifts/market/${marketId}`),
+  getByBrand: (brandId) => api.get(`/gifts/brand/${brandId}`),
+};
+
 export default api;

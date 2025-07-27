@@ -62,7 +62,7 @@ const MarketList = () => {
   if (error) return <Loader message={error} />;
 
   return (
-    <Container maxWidth="xl" sx={{ py: 10 }}>
+    <Box sx={{ py: 10, px: { xs: 0.5, sm: 1.5, md: 3 } }}>
       {/* Enhanced Header */}
       <Box sx={{ mb: 6, textAlign: "center" }}>
         <Box
@@ -90,7 +90,9 @@ const MarketList = () => {
           }}
         >
           <Box position="relative" zIndex={1}>
-            <BusinessIcon sx={{ fontSize: 80, mb: 2, opacity: 0.9 }} />
+            <BusinessIcon
+              sx={{ fontSize: { xs: 60, sm: 70, md: 80 }, mb: 2, opacity: 0.9 }}
+            />
             <Typography
               variant="h2"
               component="h1"
@@ -98,7 +100,7 @@ const MarketList = () => {
               color="white"
               sx={{
                 fontWeight: 700,
-                fontSize: { xs: "2.5rem", md: "3.5rem" },
+                fontSize: { xs: "2rem", sm: "2.5rem", md: "3.5rem" },
                 textShadow: "0 4px 8px rgba(0,0,0,0.3)",
               }}
             >
@@ -111,6 +113,7 @@ const MarketList = () => {
                 fontWeight: 300,
                 textShadow: "0 2px 4px rgba(0,0,0,0.3)",
                 color: "white",
+                fontSize: { xs: "1rem", sm: "1.25rem", md: "1.5rem" },
               }}
             >
               {t("Browse all markets and their products")}
@@ -135,27 +138,29 @@ const MarketList = () => {
       {/* Markets Grid */}
       <Box
         sx={{
-          alignItems: "center",
-          justifyContent: "center",
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-          flexWrap: "wrap",
-          gap: 4,
-          justifyContent: "flex-start",
+          gridTemplateColumns: {
+            xs: "repeat(2, 1fr)",
+            sm: "repeat(auto-fill, minmax(280px, 1fr))",
+            md: "repeat(auto-fill, minmax(280px, 1fr))",
+          },
+          gap: { xs: 2, sm: 3, md: 4 },
+          justifyContent: "center",
+          alignItems: "center",
         }}
       >
         {markets.map((market, index) => (
           <Fade in={true} timeout={300 + index * 100} key={market._id}>
             <Card
               sx={{
-                height: "420px", // Increased height for market cards
-                width: "280px", // Fixed width - no exceptions
-                maxWidth: "280px", // Force exact width
-                minWidth: "280px", // Force exact width
+                height: { xs: "200px", sm: "400px", md: "420px" },
+                width: { xs: "100%", sm: "280px", md: "280px" },
+                maxWidth: { xs: "100%", sm: "280px", md: "280px" },
+                minWidth: { xs: "auto", sm: "280px", md: "280px" },
                 cursor: "pointer",
                 display: "flex",
                 flexDirection: "column",
-                borderRadius: 3,
+                borderRadius: { xs: 2, sm: 3, md: 3 },
                 overflow: "hidden",
                 background:
                   theme.palette.mode === "dark"
@@ -191,7 +196,7 @@ const MarketList = () => {
               <Box
                 sx={{
                   position: "relative",
-                  height: "200px",
+                  height: { xs: "140px", sm: "200px", md: "200px" },
                   flexShrink: 0,
                   overflow: "hidden",
                   background:
@@ -208,10 +213,11 @@ const MarketList = () => {
                     alt={market.name}
                     className="market-image"
                     sx={{
-                      objectFit: "cover",
+                      objectFit: "contain",
                       transition: "transform 0.4s ease",
                       width: "100%",
                       height: "100%",
+                      p: { xs: 1, sm: 0, md: 0 },
                     }}
                   />
                 ) : (
@@ -242,7 +248,7 @@ const MarketList = () => {
                   }}
                 />
 
-                {/* Arrow Icon */}
+                {/* Arrow Icon - Hidden on mobile */}
                 <IconButton
                   className="market-arrow"
                   sx={{
@@ -254,6 +260,7 @@ const MarketList = () => {
                     opacity: 0,
                     transition: "all 0.3s ease",
                     backdropFilter: "blur(10px)",
+                    display: { xs: "none", sm: "flex" },
                     "&:hover": {
                       backgroundColor: "rgba(255,255,255,0.3)",
                     },
@@ -267,11 +274,12 @@ const MarketList = () => {
               <CardContent
                 align="center"
                 sx={{
-                  p: 3,
+                  p: { xs: 0.5, sm: 3, md: 3 },
                   flex: 1,
                   display: "flex",
                   flexDirection: "column",
-                  height: "200px", // Increased height for content area
+                  justifyContent: "center",
+                  height: { xs: "30px", sm: "200px", md: "200px" },
                   overflow: "hidden",
                 }}
               >
@@ -281,22 +289,28 @@ const MarketList = () => {
                   sx={{
                     fontWeight: 700,
                     color: theme.palette.text.primary,
-                    fontSize: "1.3rem",
-                    lineHeight: 1.3,
-                    mb: 1,
-                    height: "100px", // Fixed height for title
+                    fontSize: { xs: "0.8rem", sm: "1.3rem", md: "1.3rem" },
+                    lineHeight: 1.2,
+                    mb: { xs: 0, sm: 1, md: 1 },
+                    height: { xs: "auto", sm: "100px", md: "100px" },
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     display: "-webkit-box",
-                    WebkitLineClamp: 1,
+                    WebkitLineClamp: { xs: 2, sm: 1, md: 1 },
                     WebkitBoxOrient: "vertical",
+                    textAlign: "center",
                   }}
                 >
                   {market.name}
                 </Typography>
-
-                {/* Market Details - Fixed Layout */}
-                <Box sx={{ mb: 2, overflow: "hidden" }}>
+                {/* Market Details - Hidden on mobile */}
+                <Box
+                  sx={{
+                    mb: 2,
+                    overflow: "hidden",
+                    display: { xs: "none", sm: "block" },
+                  }}
+                >
                   {/* Address - Always show with fixed height */}
                   <Box display="flex" alignItems="flex-start" mb={1}>
                     <LocationOnIcon
@@ -372,13 +386,12 @@ const MarketList = () => {
                     {market.description || t("description not provided")}
                   </Typography>
                 </Box>
-
-                {/* Action Area - Fixed Height */}
+                {/* Action Area - Hidden on mobile */}
                 <Box
                   sx={{
                     mt: "auto",
                     height: "60px",
-                    display: "flex",
+                    display: { xs: "none", sm: "flex" },
                     alignItems: "center",
                   }}
                 >
@@ -460,7 +473,7 @@ const MarketList = () => {
           </Typography>
         </Box>
       )}
-    </Container>
+    </Box>
   );
 };
 

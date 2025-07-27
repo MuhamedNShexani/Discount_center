@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import {
+  useParams,
+  useNavigate,
+  Link,
+  useSearchParams,
+} from "react-router-dom";
 import {
   Box,
   Typography,
@@ -35,28 +40,38 @@ import {
   Store,
   Search,
   FilterList,
+  ExpandMore,
+  ExpandLess,
 } from "@mui/icons-material";
-import { marketAPI, productAPI } from "../services/api";
+import { marketAPI, productAPI, giftAPI } from "../services/api";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import CardGiftcardIcon from "@mui/icons-material/CardGiftcard";
 import { useTranslation } from "react-i18next";
 import Loader from "../components/Loader";
 
 const MarketProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const theme = useTheme();
   const { t } = useTranslation();
 
   const [market, setMarket] = useState(null);
   const [products, setProducts] = useState([]);
+  const [gifts, setGifts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam === "gifts") return 1;
+    return 0;
+  });
   const [expandedTypes, setExpandedTypes] = useState({});
   const [displayCounts, setDisplayCounts] = useState({});
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Filter states
   const [filters, setFilters] = useState({
@@ -87,6 +102,10 @@ const MarketProfile = () => {
       // Fetch products for this market
       const productsResponse = await productAPI.getByMarket(id);
       setProducts(productsResponse.data);
+
+      // Fetch gifts for this market
+      const giftsResponse = await giftAPI.getByMarket(id);
+      setGifts(giftsResponse.data.data || []);
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -193,6 +212,11 @@ const MarketProfile = () => {
     }));
   };
 
+  // Toggle filters visibility
+  const toggleFilters = () => {
+    setFiltersOpen(!filtersOpen);
+  };
+
   // Handle tab change
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
@@ -222,6 +246,158 @@ const MarketProfile = () => {
     }));
   };
 
+  // Render gift card
+  const renderGiftCard = (gift) => {
+    const remainingDays = getRemainingDays(gift.expireDate);
+
+    return (
+      <Card
+        key={gift._id}
+        sx={{
+          display: "flex",
+          height: { xs: "150px", sm: "250px", md: "280px" },
+          width: "100%",
+          borderRadius: 2,
+          overflow: "hidden",
+          background:
+            theme.palette.mode === "dark"
+              ? "linear-gradient(135deg, #34495e 0%, #2c3e50 100%)"
+              : "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
+          border: `1px solid ${
+            theme.palette.mode === "dark" ? "#4a5568" : "#e2e8f0"
+          }`,
+          boxShadow:
+            theme.palette.mode === "dark"
+              ? "0 4px 16px rgba(0,0,0,0.3)"
+              : "0 4px 16px rgba(0,0,0,0.1)",
+          transition: "all 0.3s ease",
+          "&:hover": {
+            transform: "translateY(-2px)",
+            boxShadow:
+              theme.palette.mode === "dark"
+                ? "0 8px 24px rgba(0,0,0,0.4)"
+                : "0 8px 24px rgba(0,0,0,0.15)",
+          },
+        }}
+      >
+        {/* Gift Image */}
+        <Box
+          sx={{
+            width: { xs: "100px", sm: "150px", md: "400px" },
+            height: "100%",
+            flexShrink: 0,
+            position: "relative",
+          }}
+        >
+          <CardMedia
+            component="img"
+            image={`${process.env.REACT_APP_BACKEND_URL}${gift.image}`}
+            alt={gift.description}
+            sx={{
+              width: "100%",
+              height: "100%",
+              objectFit: "fill",
+            }}
+          />
+        </Box>
+
+        {/* Gift Content */}
+        <CardContent
+          sx={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            p: { xs: 2, sm: 2.5, md: 3 },
+            minHeight: 0,
+          }}
+        >
+          {/* Main Description */}
+          <Typography
+            variant="body1"
+            sx={{
+              alignItems: "center",
+              fontSize: { xs: ".75rem", sm: "0.9rem", md: "1.5rem" },
+              lineHeight: 1.4,
+              mb: 2,
+              color: theme.palette.text.primary,
+              fontFamily: "NRT reg, Arial, sans-serif",
+              overflow: { xs: "none", sm: "hidden", md: "hidden" },
+              display: "-webkit-box",
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: "vertical",
+            }}
+          >
+            {gift.description}
+          </Typography>
+
+          {/* Brand Info */}
+          <Box sx={{ mb: 2, flexShrink: 0 }}>
+            {gift.brandId && (
+              <Box
+                sx={{ display: "flex", alignItems: "center", mb: 1 }}
+                onClick={() => {
+                  navigate(`/brands/${gift.brandId._id}?tab=gifts`);
+                }}
+              >
+                <Business
+                  sx={{
+                    fontSize: { xs: 12, sm: 16, md: 16 },
+                    mr: 1,
+                    color: "#52b788",
+                    flexShrink: 0,
+                  }}
+                />
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontSize: { xs: "0.5rem", sm: "0.75rem", md: "0.75rem" },
+                    color: theme.palette.text.secondary,
+                    fontFamily: "NRT reg, Arial, sans-serif",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    cursor: "pointer",
+                    "&:hover": {
+                      textDecoration: "underline",
+                    },
+                  }}
+                >
+                  {t("Brand")}: {gift.brandId.name}
+                </Typography>
+              </Box>
+            )}
+          </Box>
+
+          {/* Expire Date */}
+          <Box sx={{ flexShrink: 0 }}>
+            {remainingDays !== null ? (
+              <Chip
+                label={`${t("Expires")}: ${remainingDays} ${t("days")}`}
+                size="small"
+                sx={{
+                  bgcolor: remainingDays <= 7 ? "#ff6b6b" : "#52b788",
+                  color: "white",
+                  fontSize: { xs: "0.5rem", sm: "0.75rem", md: "0.75rem" },
+                }}
+              />
+            ) : (
+              <Chip
+                label={t("No expiry")}
+                size="small"
+                sx={{
+                  bgcolor: "#6c757d",
+                  color: "white",
+                  fontSize: { xs: "0.5rem", sm: "0.75rem", md: "0.75rem" },
+                }}
+              />
+            )}
+          </Box>
+        </CardContent>
+      </Card>
+    );
+  };
+
   // Render product card
   const renderProductCard = (product, index) => {
     const discount = calculateDiscount(product.previousPrice, product.newPrice);
@@ -233,14 +409,14 @@ const MarketProfile = () => {
           component={Link}
           to={`/products/${product._id}`}
           sx={{
-            height: "350px",
-            width: "280px",
-            maxWidth: "280px",
-            minWidth: "280px",
+            height: { xs: "280px", sm: "320px", md: "350px" },
+            width: { xs: "100%", sm: "280px", md: "280px" },
+            maxWidth: { xs: "100%", sm: "280px", md: "280px" },
+            minWidth: { xs: "auto", sm: "280px", md: "280px" },
             textDecoration: "none",
             display: "flex",
             flexDirection: "column",
-            borderRadius: 3,
+            borderRadius: { xs: 2, sm: 3, md: 3 },
             overflow: "hidden",
             background:
               theme.palette.mode === "dark"
@@ -271,7 +447,7 @@ const MarketProfile = () => {
             sx={{
               position: "relative",
               overflow: "hidden",
-              height: "180px",
+              height: { xs: "140px", sm: "160px", md: "180px" },
               flexShrink: 0,
             }}
           >
@@ -287,6 +463,7 @@ const MarketProfile = () => {
                   width: "100%",
                   height: "100%",
                   transition: "transform 0.4s ease",
+                  p: { xs: 1, sm: 0, md: 0 },
                 }}
               />
             ) : (
@@ -369,7 +546,7 @@ const MarketProfile = () => {
               sx={{
                 fontWeight: 600,
                 color: theme.palette.text.primary,
-                fontSize: "1rem",
+                fontSize: { xs: "0.7rem", sm: "1rem", md: "1rem" },
                 lineHeight: 1.3,
                 mb: 1,
                 overflow: "hidden",
@@ -404,18 +581,18 @@ const MarketProfile = () => {
                   <Typography
                     variant="caption"
                     sx={{
-                      color:
-                        remainingDays > 7
-                          ? "#52b788"
-                          : remainingDays > 0
-                          ? "#f59e0b"
-                          : "#ef4444",
+                      fontSize: { xs: "0.7rem", sm: "1rem", md: "1rem" },
+                      color: "red",
                       fontWeight: 600,
                     }}
                   >
-                    {remainingDays > 0
-                      ? `${remainingDays} ${t("days remaining")}`
-                      : t("Expired")}
+                    {`${t("Expire Date")}: ${new Date(
+                      product.expireDate
+                    ).toLocaleDateString("ar-SY", {
+                      year: "numeric",
+                      month: "numeric",
+                      day: "numeric",
+                    })}`}
                   </Typography>
                 </Box>
               )}
@@ -497,10 +674,14 @@ const MarketProfile = () => {
 
           <Box
             sx={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 3,
-              justifyContent: "flex-start",
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "repeat(2, 1fr)",
+                sm: "repeat(auto-fill, minmax(280px, 1fr))",
+                md: "repeat(auto-fill, minmax(280px, 1fr))",
+              },
+              gap: { xs: 2, sm: 3, md: 3 },
+              justifyContent: "center",
               mb: 2,
             }}
           >
@@ -554,10 +735,11 @@ const MarketProfile = () => {
   // Render filter section
   const renderFilters = () => (
     <Paper
+      onClick={toggleFilters}
       elevation={0}
       sx={{
-        p: 3,
-        mb: 4,
+        p: 1,
+        mb: 1,
         borderRadius: 3,
         background:
           theme.palette.mode === "dark"
@@ -568,11 +750,35 @@ const MarketProfile = () => {
         }`,
       }}
     >
+      {/* Mobile Filter Toggle */}
+      <Box
+        sx={{
+          display: { xs: "flex", md: "none" },
+          mb: 2,
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <Typography
+          variant="h6"
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            color: theme.palette.text.primary,
+          }}
+        >
+          <FilterList sx={{ color: "#52b788" }} />
+          {t("Filters")}
+        </Typography>
+      </Box>
+
+      {/* Desktop Filter Header */}
       <Typography
         variant="h6"
         sx={{
           mb: 3,
-          display: "flex",
+          display: { xs: "none", md: "flex" },
           alignItems: "center",
           gap: 1,
           color: theme.palette.text.primary,
@@ -582,72 +788,76 @@ const MarketProfile = () => {
         {t("Filters")}
       </Typography>
 
-      <Grid container spacing={2}>
-        <Grid item xs={12} sm={6} md={3}>
-          <TextField
-            fullWidth
-            label={t("Search by Name")}
-            value={filters.name}
-            onChange={(e) => handleFilterChange("name", e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search />
-                </InputAdornment>
-              ),
-            }}
-          />
+      <Box
+        sx={{ display: { xs: filtersOpen ? "block" : "none", md: "block" } }}
+      >
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6} md={3}>
+            <TextField
+              fullWidth
+              label={t("Search by Name")}
+              value={filters.name}
+              onChange={(e) => handleFilterChange("name", e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <FormControl sx={{ width: "200px" }} fullWidth>
+              <InputLabel>{t("Brand")}</InputLabel>
+              <Select
+                value={filters.brand}
+                onChange={(e) => handleFilterChange("brand", e.target.value)}
+                label={t("Brand")}
+              >
+                <MenuItem value="">{t("All Brands")}</MenuItem>
+                {getBrands().map((brand) => (
+                  <MenuItem key={brand} value={brand}>
+                    {brand}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <TextField
+              fullWidth
+              label={t("Search by Barcode")}
+              value={filters.barcode}
+              onChange={(e) => handleFilterChange("barcode", e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <FormControl sx={{ width: "200px" }} fullWidth>
+              <InputLabel>{t("Product Type")}</InputLabel>
+              <Select
+                value={filters.type}
+                onChange={(e) => handleFilterChange("type", e.target.value)}
+                label={t("Product Type")}
+              >
+                <MenuItem value="">{t("All Types")}</MenuItem>
+                {getProductTypes().map((type) => (
+                  <MenuItem key={type} value={type}>
+                    {t(type)}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <FormControl sx={{ width: "200px" }} fullWidth>
-            <InputLabel>{t("Brand")}</InputLabel>
-            <Select
-              value={filters.brand}
-              onChange={(e) => handleFilterChange("brand", e.target.value)}
-              label={t("Brand")}
-            >
-              <MenuItem value="">{t("All Brands")}</MenuItem>
-              {getBrands().map((brand) => (
-                <MenuItem key={brand} value={brand}>
-                  {brand}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <TextField
-            fullWidth
-            label={t("Search by Barcode")}
-            value={filters.barcode}
-            onChange={(e) => handleFilterChange("barcode", e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search />
-                </InputAdornment>
-              ),
-            }}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <FormControl sx={{ width: "200px" }} fullWidth>
-            <InputLabel>{t("Product Type")}</InputLabel>
-            <Select
-              value={filters.type}
-              onChange={(e) => handleFilterChange("type", e.target.value)}
-              label={t("Product Type")}
-            >
-              <MenuItem value="">{t("All Types")}</MenuItem>
-              {getProductTypes().map((type) => (
-                <MenuItem key={type} value={type}>
-                  {t(type)}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Grid>
-      </Grid>
+      </Box>
     </Paper>
   );
 
@@ -659,7 +869,7 @@ const MarketProfile = () => {
   const nonDiscountedProducts = getNonDiscountedProducts();
 
   return (
-    <Container maxWidth="xl" sx={{ py: 8 }}>
+    <Box sx={{ py: 8, px: { xs: 0.5, sm: 1.5, md: 3 } }}>
       {/* Enhanced Back Button */}
       <Button
         position="fixed"
@@ -713,7 +923,7 @@ const MarketProfile = () => {
               theme.palette.mode === "dark"
                 ? "linear-gradient(135deg, #52b788 0%, #40916c 100%)"
                 : "linear-gradient(135deg, #52b788 0%, #40916c 100%)",
-            p: 4,
+            p: { xs: 2, sm: 3, md: 4 },
             color: "white",
             position: "relative",
             "&::before": {
@@ -729,15 +939,70 @@ const MarketProfile = () => {
           }}
         >
           <Box position="relative" zIndex={1}>
-            <Grid container spacing={4} alignItems="center">
+            {/* Mobile Layout - Logo and Name on same row */}
+            <Box
+              alignItems="center"
+              sx={{
+                display: { xs: "flex", md: "none" },
+                gap: 2,
+                mb: 2,
+              }}
+            >
+              {market.logo ? (
+                <Avatar
+                  src={`${process.env.REACT_APP_BACKEND_URL}${market.logo}`}
+                  alt={market.name}
+                  sx={{
+                    width: 60,
+                    height: 60,
+                    border: "3px solid rgba(255,255,255,0.2)",
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
+                    flexShrink: 0,
+                  }}
+                />
+              ) : (
+                <Avatar
+                  sx={{
+                    width: 60,
+                    height: 60,
+                    bgcolor: "rgba(255,255,255,0.2)",
+                    border: "3px solid rgba(255,255,255,0.2)",
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
+                    flexShrink: 0,
+                  }}
+                >
+                  <Business sx={{ fontSize: 30 }} />
+                </Avatar>
+              )}
+              <Typography
+                variant="h2"
+                sx={{
+                  fontWeight: 700,
+                  fontSize: "1.2rem",
+                  textShadow: "0 2px 4px rgba(0,0,0,0.3)",
+                  color: "white",
+                  flex: 1,
+                }}
+              >
+                {market.name}
+              </Typography>
+            </Box>
+
+            {/* Desktop Layout - Original Grid */}
+            <Grid
+              container
+              spacing={{ xs: 2, sm: 3, md: 4 }}
+              alignItems="center"
+              sx={{ display: { xs: "none", md: "flex" } }}
+            >
               <Grid item xs={12} md={3}>
                 {market.logo ? (
                   <Avatar
                     src={`${process.env.REACT_APP_BACKEND_URL}${market.logo}`}
                     alt={market.name}
                     sx={{
-                      width: { xs: 120, md: 150 },
-                      height: { xs: 120, md: 150 },
+                      width: { xs: 80, sm: 100, md: 150 },
+                      height: { xs: 80, sm: 100, md: 150 },
                       border: "4px solid rgba(255,255,255,0.2)",
                       boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
                       mx: { xs: "auto", md: 0 },
@@ -746,15 +1011,15 @@ const MarketProfile = () => {
                 ) : (
                   <Avatar
                     sx={{
-                      width: { xs: 120, md: 150 },
-                      height: { xs: 120, md: 150 },
+                      width: { xs: 80, sm: 100, md: 150 },
+                      height: { xs: 80, sm: 100, md: 150 },
                       bgcolor: "rgba(255,255,255,0.2)",
                       border: "4px solid rgba(255,255,255,0.2)",
                       boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
                       mx: { xs: "auto", md: 0 },
                     }}
                   >
-                    <Business sx={{ fontSize: { xs: 60, md: 80 } }} />
+                    <Business sx={{ fontSize: { xs: 40, sm: 50, md: 80 } }} />
                   </Avatar>
                 )}
               </Grid>
@@ -765,7 +1030,7 @@ const MarketProfile = () => {
                   gutterBottom
                   sx={{
                     fontWeight: 700,
-                    fontSize: { xs: "2rem", md: "3rem" },
+                    fontSize: { xs: "1.2rem", sm: "2rem", md: "3rem" },
                     textShadow: "0 4px 8px rgba(0,0,0,0.3)",
                     textAlign: { xs: "center", md: "left" },
                     mb: 2,
@@ -774,7 +1039,6 @@ const MarketProfile = () => {
                 >
                   {market.name}
                 </Typography>
-
                 <Box sx={{ mb: 3 }}>
                   {market.address && (
                     <Box
@@ -875,6 +1139,94 @@ const MarketProfile = () => {
                 </Box>
               </Grid>
             </Grid>
+
+            {/* Mobile Content - Address, Phone, Description */}
+            <Box sx={{ display: { xs: "block", md: "none" } }}>
+              <Box sx={{ mb: 2 }}>
+                {market.address && (
+                  <Box display="flex" mb={1} color="white">
+                    <LocationOn sx={{ mr: 1, fontSize: 18, opacity: 0.9 }} />
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontSize: "0.875rem",
+                        textShadow: "0 1px 2px rgba(0,0,0,0.3)",
+                      }}
+                      color="white"
+                    >
+                      {market.address}
+                    </Typography>
+                  </Box>
+                )}
+
+                {market.phone && (
+                  <Box display="flex" mb={1}>
+                    <Phone sx={{ mr: 1, fontSize: 18, opacity: 0.9 }} />
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontSize: "0.875rem",
+                        fontFamily: "monospace",
+                        textShadow: "0 1px 2px rgba(0,0,0,0.3)",
+                        color: "white",
+                      }}
+                    >
+                      {market.phone}
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+
+              {market.description && (
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontSize: "0.875rem",
+                    opacity: 0.9,
+                    lineHeight: 1.4,
+                    textShadow: "0 1px 2px rgba(0,0,0,0.3)",
+                    textAlign: "center",
+                    color: "white",
+                    mb: 2,
+                  }}
+                >
+                  {market.description}
+                </Typography>
+              )}
+
+              <Box
+                sx={{
+                  display: "flex",
+                  gap: 1,
+                  justifyContent: "center",
+                }}
+              >
+                <Chip
+                  icon={<Store />}
+                  label={`${products.length} ${t("Products")}`}
+                  sx={{
+                    backgroundColor: "rgba(255,255,255,0.2)",
+                    color: "white",
+                    fontWeight: 600,
+                    fontSize: "0.75rem",
+                    px: 1,
+                    backdropFilter: "blur(10px)",
+                  }}
+                />
+                <Chip
+                  icon={<ShoppingCartIcon />}
+                  label={t("Premium Market")}
+                  sx={{
+                    backgroundColor: "rgba(255,255,255,0.2)",
+                    color: "white",
+                    fontWeight: 600,
+                    fontSize: "0.75rem",
+                    px: 1,
+                    backdropFilter: "blur(10px)",
+                  }}
+                />
+              </Box>
+            </Box>
           </Box>
         </Box>
       </Paper>
@@ -928,6 +1280,8 @@ const MarketProfile = () => {
           <Tabs
             value={activeTab}
             onChange={handleTabChange}
+            variant="scrollable"
+            scrollButtons="auto"
             sx={{
               p: 1,
               "& .MuiTab-root": {
@@ -935,6 +1289,8 @@ const MarketProfile = () => {
                 mx: 0.5,
                 transition: "all 0.3s ease",
                 fontWeight: 600,
+                width: { xs: "125px", sm: "100px", md: "100%" },
+                fontSize: { xs: "0.875rem", sm: "1rem" },
                 "&.Mui-selected": {
                   backgroundColor:
                     theme.palette.mode === "dark" ? "#52b788" : "#52b788",
@@ -948,22 +1304,84 @@ const MarketProfile = () => {
             }}
           >
             <Tab
-              label={`${t("All Products")} (${nonDiscountedProducts.length})`}
-              icon={<StorefrontIcon />}
-              iconPosition="start"
-              sx={{ textTransform: "none" }}
-            />
-            <Tab
               label={`${t("Discounts")} (${discountedProducts.length})`}
               icon={<LocalOfferIcon />}
               iconPosition="start"
-              sx={{ textTransform: "none" }}
+              sx={{
+                textTransform: "none",
+                width: { xs: "100px", sm: "100px", md: "100%" },
+              }}
+            />
+            <Tab
+              label={`${t("Gifts")} (${gifts.length})`}
+              icon={<CardGiftcardIcon />}
+              iconPosition="start"
+              sx={{
+                textTransform: "none",
+                width: { xs: "100px", sm: "100px", md: "100%" },
+              }}
+            />
+            <Tab
+              label={`${t("All Products")} (${nonDiscountedProducts.length})`}
+              icon={<StorefrontIcon />}
+              iconPosition="start"
+              sx={{
+                textTransform: "none",
+                width: { xs: "100px", sm: "100px", md: "100%" },
+              }}
             />
           </Tabs>
         </Paper>
 
         {/* Tab Content */}
         {activeTab === 0 && (
+          <Box>
+            {discountedProducts.length === 0 ? (
+              <Box
+                sx={{
+                  textAlign: "center",
+                  py: 8,
+                  px: 4,
+                }}
+              >
+                <StorefrontIcon
+                  sx={{
+                    fontSize: 120,
+                    color:
+                      theme.palette.mode === "dark" ? "#4a5568" : "#cbd5e0",
+                    mb: 3,
+                  }}
+                />
+                <Typography
+                  variant="h4"
+                  gutterBottom
+                  sx={{
+                    color: theme.palette.text.secondary,
+                    fontWeight: 600,
+                    mb: 2,
+                  }}
+                >
+                  {t("No discount products available")}
+                </Typography>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    color: theme.palette.text.secondary,
+                    maxWidth: 500,
+                    mx: "auto",
+                    lineHeight: 1.6,
+                  }}
+                >
+                  {t("This market hasn't added any discount products yet.")}
+                </Typography>
+              </Box>
+            ) : (
+              renderProductsByType(discountedProducts)
+            )}
+          </Box>
+        )}
+
+        {activeTab === 2 && (
           <Box>
             {nonDiscountedProducts.length === 0 ? (
               <Box
@@ -973,7 +1391,7 @@ const MarketProfile = () => {
                   px: 4,
                 }}
               >
-                <StorefrontIcon
+                <LocalOfferIcon
                   sx={{
                     fontSize: 120,
                     color:
@@ -1012,7 +1430,7 @@ const MarketProfile = () => {
 
         {activeTab === 1 && (
           <Box>
-            {discountedProducts.length === 0 ? (
+            {gifts.length === 0 ? (
               <Box
                 sx={{
                   textAlign: "center",
@@ -1020,7 +1438,7 @@ const MarketProfile = () => {
                   px: 4,
                 }}
               >
-                <LocalOfferIcon
+                <CardGiftcardIcon
                   sx={{
                     fontSize: 120,
                     color:
@@ -1037,7 +1455,7 @@ const MarketProfile = () => {
                     mb: 2,
                   }}
                 >
-                  {t("No discount products available")}
+                  {t("No gifts available")}
                 </Typography>
                 <Typography
                   variant="body1"
@@ -1048,16 +1466,29 @@ const MarketProfile = () => {
                     lineHeight: 1.6,
                   }}
                 >
-                  {t("This market hasn't added any discount products yet.")}
+                  {t("This market hasn't added any gifts yet.")}
                 </Typography>
               </Box>
             ) : (
-              renderProductsByType(discountedProducts)
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: { xs: "1fr", md: "1fr" },
+                  gap: 3,
+                  width: "100%",
+                }}
+              >
+                {gifts.map((gift) => (
+                  <Box key={gift._id} sx={{ display: "flex" }}>
+                    {renderGiftCard(gift)}
+                  </Box>
+                ))}
+              </Box>
             )}
           </Box>
         )}
       </Box>
-    </Container>
+    </Box>
   );
 };
 

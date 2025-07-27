@@ -38,7 +38,13 @@ import {
   useTheme,
   TablePagination,
 } from "@mui/material";
-import { marketAPI, productAPI, brandAPI, categoryAPI } from "../services/api";
+import {
+  marketAPI,
+  productAPI,
+  brandAPI,
+  categoryAPI,
+  giftAPI,
+} from "../services/api";
 import * as XLSX from "xlsx";
 
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
@@ -53,6 +59,7 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import InventoryIcon from "@mui/icons-material/Inventory";
 import StoreIcon from "@mui/icons-material/Store";
 import DownloadIcon from "@mui/icons-material/Download";
+import CardGiftcardIcon from "@mui/icons-material/CardGiftcard";
 import { useTranslation } from "react-i18next";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
@@ -67,6 +74,7 @@ const DataEntryForm = () => {
   const [categories, setCategories] = useState([]);
   const [categoryTypes, setCategoryTypes] = useState([]);
   const [products, setProducts] = useState([]);
+  const [gifts, setGifts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
 
@@ -74,6 +82,7 @@ const DataEntryForm = () => {
   const [marketsPage, setMarketsPage] = useState(0);
   const [brandsPage, setBrandsPage] = useState(0);
   const [productsPage, setProductsPage] = useState(0);
+  const [giftsPage, setGiftsPage] = useState(0);
   const [rowsPerPage] = useState(10);
 
   // Refs for file inputs
@@ -81,6 +90,8 @@ const DataEntryForm = () => {
   const productImageFileRef = useRef(null);
   const editProductImageFileRef = useRef(null);
   const marketLogoFileRef = useRef(null);
+  const giftImageFileRef = useRef(null);
+  const editGiftImageFileRef = useRef(null);
 
   // Brand form state
   const [brandForm, setBrandForm] = useState({
@@ -116,6 +127,16 @@ const DataEntryForm = () => {
     expireDate: "",
   });
 
+  // Gift form state
+  const [giftForm, setGiftForm] = useState({
+    image: "",
+    description: "",
+    marketId: [],
+    brandId: "",
+    productId: "",
+    expireDate: "",
+  });
+
   // File upload state
   const [selectedBrandLogo, setSelectedBrandLogo] = useState(null);
   const [selectedProductImage, setSelectedProductImage] = useState(null);
@@ -124,6 +145,8 @@ const DataEntryForm = () => {
   const [bulkUploadLoading, setBulkUploadLoading] = useState(false);
   const [selectedEditImage, setSelectedEditImage] = useState(null);
   const [selectedMarketLogo, setSelectedMarketLogo] = useState(null);
+  const [selectedGiftImage, setSelectedGiftImage] = useState(null);
+  const [selectedEditGiftImage, setSelectedEditGiftImage] = useState(null);
 
   // Brand and Market bulk upload state
   const [selectedBrandExcelFile, setSelectedBrandExcelFile] = useState(null);
@@ -152,6 +175,7 @@ const DataEntryForm = () => {
     fetchMarkets();
     fetchBrands();
     fetchCategories();
+    fetchGifts();
   }, []);
 
   useEffect(() => {
@@ -196,6 +220,18 @@ const DataEntryForm = () => {
       setCategories(response.data);
     } catch (err) {
       console.error("Error fetching categories:", err);
+    }
+  };
+
+  const fetchGifts = async () => {
+    try {
+      const response = await giftAPI.getAll();
+      console.log("Gifts API response:", response);
+      console.log("Gifts data:", response.data);
+      setGifts(response.data.data || []);
+    } catch (err) {
+      console.error("Error fetching gifts:", err);
+      setGifts([]);
     }
   };
 
@@ -270,6 +306,10 @@ const DataEntryForm = () => {
     setProductsPage(newPage);
   };
 
+  const handleGiftsPageChange = (event, newPage) => {
+    setGiftsPage(newPage);
+  };
+
   const handleBrandFormChange = (e) => {
     setBrandForm({
       ...brandForm,
@@ -297,6 +337,23 @@ const DataEntryForm = () => {
         categoryTypeId: "",
       }));
     }
+  };
+
+  const handleGiftFormChange = (e) => {
+    const { name, value } = e.target;
+    setGiftForm({
+      ...giftForm,
+      [name]: value,
+    });
+  };
+
+  // Handle gift form change for multi-select fields
+  const handleGiftFormMultiChange = (e) => {
+    const { name, value } = e.target;
+    setGiftForm({
+      ...giftForm,
+      [name]: value,
+    });
   };
 
   // Handle file selection for brand logo
@@ -328,6 +385,22 @@ const DataEntryForm = () => {
     const file = e.target.files[0];
     if (file) {
       setSelectedEditImage(file);
+    }
+  };
+
+  // Handle file selection for gift image
+  const handleGiftImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedGiftImage(file);
+    }
+  };
+
+  // Handle file selection for edit gift image
+  const handleEditGiftImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedEditGiftImage(file);
     }
   };
 
@@ -398,6 +471,30 @@ const DataEntryForm = () => {
       return data.imageUrl;
     } catch (error) {
       console.error("Error uploading image:", error);
+      throw error;
+    }
+  };
+
+  // Upload gift image
+  const uploadGiftImage = async (file) => {
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+      const response = await fetch(`${API_URL}/api/gifts/upload-image`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Upload failed");
+      }
+
+      const data = await response.json();
+      return data.imageUrl;
+    } catch (error) {
+      console.error("Error uploading gift image:", error);
       throw error;
     }
   };
@@ -827,6 +924,83 @@ const DataEntryForm = () => {
     }
   };
 
+  const handleGiftSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage({ type: "", text: "" });
+
+    if (!selectedGiftImage) {
+      setMessage({
+        type: "error",
+        text: t("Please select an image file."),
+      });
+      setLoading(false);
+      return;
+    }
+
+    if (!giftForm.description.trim()) {
+      setMessage({
+        type: "error",
+        text: t("Please enter a description."),
+      });
+      setLoading(false);
+      return;
+    }
+
+    if (!giftForm.marketId || giftForm.marketId.length === 0) {
+      setMessage({
+        type: "error",
+        text: t("Please select at least one market."),
+      });
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setUploadLoading(true);
+      const imageUrl = await uploadGiftImage(selectedGiftImage);
+      setUploadLoading(false);
+
+      const giftData = {
+        ...giftForm,
+        image: imageUrl,
+        marketId: giftForm.marketId,
+        brandId: giftForm.brandId || null,
+        productId: giftForm.productId || null,
+        expireDate: giftForm.expireDate
+          ? new Date(giftForm.expireDate).toISOString()
+          : null,
+      };
+
+      console.log("Gift data being sent:", giftData);
+      const response = await giftAPI.create(giftData);
+      console.log("Gift creation response:", response);
+      setMessage({ type: "success", text: t("Gift created successfully!") });
+      setGiftForm({
+        image: "",
+        description: "",
+        marketId: [],
+        brandId: "",
+        productId: "",
+        expireDate: "",
+      });
+      setSelectedGiftImage(null);
+      if (giftImageFileRef.current) {
+        giftImageFileRef.current.value = "";
+      }
+      fetchGifts();
+    } catch (err) {
+      setMessage({
+        type: "error",
+        text: t("Failed to create gift. Please try again."),
+      });
+      console.error("Error creating gift:", err);
+    } finally {
+      setLoading(false);
+      setUploadLoading(false);
+    }
+  };
+
   // Open edit dialog and set form data
   const handleEditOpen = (type, data) => {
     if (type === "brand") {
@@ -859,6 +1033,17 @@ const DataEntryForm = () => {
         brandId: data.brandId?._id || data.brandId,
         categoryId: data.categoryId?._id || data.categoryId,
         categoryTypeId: data.categoryTypeId,
+        expireDate: data.expireDate
+          ? new Date(data.expireDate).toISOString().split("T")[0]
+          : "",
+      });
+    } else if (type === "gift") {
+      setEditForm({
+        image: data.image,
+        description: data.description || "",
+        marketId: data.marketId?.map((m) => m._id) || data.marketId || [],
+        brandId: data.brandId?._id || data.brandId || "",
+        productId: data.productId || "",
         expireDate: data.expireDate
           ? new Date(data.expireDate).toISOString().split("T")[0]
           : "",
@@ -947,6 +1132,29 @@ const DataEntryForm = () => {
           text: t("Product updated successfully!"),
         });
         fetchProducts(selectedMarketFilter);
+      } else if (editDialog.type === "gift") {
+        let imageUrl = editForm.image;
+        if (selectedEditGiftImage) {
+          imageUrl = await uploadGiftImage(selectedEditGiftImage);
+        }
+
+        const giftUpdateData = {
+          ...editForm,
+          image: imageUrl,
+          marketId: editForm.marketId,
+          brandId: editForm.brandId || null,
+          productId: editForm.productId || null,
+          expireDate: editForm.expireDate
+            ? new Date(editForm.expireDate).toISOString()
+            : null,
+        };
+
+        await giftAPI.update(editDialog.data._id, giftUpdateData);
+        setMessage({
+          type: "success",
+          text: t("Gift updated successfully!"),
+        });
+        fetchGifts();
       }
     } catch (err) {
       setMessage({
@@ -979,6 +1187,13 @@ const DataEntryForm = () => {
           text: t("Product deleted successfully!"),
         });
         fetchProducts(selectedMarketFilter);
+      } else if (deleteDialog.type === "gift") {
+        await giftAPI.delete(deleteDialog.data._id);
+        setMessage({
+          type: "success",
+          text: t("Gift deleted successfully!"),
+        });
+        fetchGifts();
       }
       setDeleteDialog({ open: false, type: "", data: null });
     } catch (err) {
@@ -1020,6 +1235,13 @@ const DataEntryForm = () => {
           text: t("Product deleted successfully!"),
         });
         fetchProducts(selectedMarketFilter);
+      } else if (deleteDialog.type === "gift") {
+        await giftAPI.delete(deleteDialog.data._id);
+        setMessage({
+          type: "success",
+          text: t("Gift deleted successfully!"),
+        });
+        fetchGifts();
       }
       setDeleteDialog({ open: false, type: "", data: null });
     } catch (err) {
@@ -1045,7 +1267,7 @@ const DataEntryForm = () => {
   };
 
   return (
-    <Container maxWidth="xl" sx={{ py: 10 }}>
+    <Box sx={{ py: 10, px: { xs: 0.5, sm: 1.5, md: 3 } }}>
       {/* Enhanced Admin Header */}
       <Paper
         elevation={0}
@@ -1213,6 +1435,12 @@ const DataEntryForm = () => {
               <Tab
                 label={t("Add Product")}
                 icon={<ShoppingCartIcon />}
+                iconPosition="start"
+                sx={{ textTransform: "none" }}
+              />
+              <Tab
+                label={t("Add Gift")}
+                icon={<CardGiftcardIcon />}
                 iconPosition="start"
                 sx={{ textTransform: "none" }}
               />
@@ -1918,6 +2146,194 @@ const DataEntryForm = () => {
           )}
 
           {activeTab === 3 && (
+            <Box component="form" onSubmit={handleGiftSubmit}>
+              <Grid container spacing={2}>
+                {/* Gift Form Fields */}
+                <Grid xs={12}>
+                  <Typography
+                    variant="h6"
+                    gutterBottom
+                    sx={{ color: "#714329" }}
+                  >
+                    {t("Add New Gift")}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: "#B08463", mb: 2 }}>
+                    {t(
+                      "Create a new gift with image, description, and associations"
+                    )}
+                  </Typography>
+                </Grid>
+                <Grid xs={12}>
+                  <input
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    id="gift-image"
+                    type="file"
+                    onChange={handleGiftImageChange}
+                    ref={giftImageFileRef}
+                  />
+                  <label htmlFor="gift-image">
+                    <Button
+                      variant="outlined"
+                      component="span"
+                      fullWidth
+                      startIcon={<AddIcon />}
+                      sx={{ mb: 2 }}
+                    >
+                      {selectedGiftImage
+                        ? selectedGiftImage.name
+                        : t("Select Gift Image")}
+                    </Button>
+                  </label>
+                </Grid>
+                <Grid xs={12}>
+                  <TextField
+                    fullWidth
+                    label={t("Description")}
+                    name="description"
+                    value={giftForm.description}
+                    onChange={handleGiftFormChange}
+                    required
+                    multiline
+                    rows={3}
+                    InputProps={{
+                      style: {
+                        backgroundColor:
+                          theme.palette.mode === "dark"
+                            ? "rgba(255,255,255,0.05)"
+                            : "rgba(255,255,255,0.8)",
+                      },
+                    }}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>{t("Markets")}</InputLabel>
+                    <Select
+                      multiple
+                      name="marketId"
+                      value={giftForm.marketId}
+                      onChange={handleGiftFormMultiChange}
+                      label={t("Markets")}
+                      renderValue={(selected) => (
+                        <Box
+                          sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}
+                        >
+                          {selected.map((value) => {
+                            const market = markets.find((m) => m._id === value);
+                            return (
+                              <Chip
+                                key={value}
+                                label={market ? market.name : value}
+                                size="small"
+                              />
+                            );
+                          })}
+                        </Box>
+                      )}
+                    >
+                      {markets.map((market) => (
+                        <MenuItem key={market._id} value={market._id}>
+                          {market.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>{t("Brand")}</InputLabel>
+                    <Select
+                      name="brandId"
+                      value={giftForm.brandId}
+                      onChange={handleGiftFormChange}
+                      label={t("Brand")}
+                    >
+                      <MenuItem value="">
+                        <em>{t("None")}</em>
+                      </MenuItem>
+                      {brands.map((brand) => (
+                        <MenuItem key={brand._id} value={brand._id}>
+                          {brand.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("Product ID (Barcode)")}
+                    name="productId"
+                    value={giftForm.productId}
+                    onChange={handleGiftFormChange}
+                    InputProps={{
+                      style: {
+                        backgroundColor:
+                          theme.palette.mode === "dark"
+                            ? "rgba(255,255,255,0.05)"
+                            : "rgba(255,255,255,0.8)",
+                      },
+                    }}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("Expire Date")}
+                    name="expireDate"
+                    type="date"
+                    value={giftForm.expireDate}
+                    onChange={handleGiftFormChange}
+                    InputLabelProps={{ shrink: true }}
+                    InputProps={{
+                      style: {
+                        backgroundColor:
+                          theme.palette.mode === "dark"
+                            ? "rgba(255,255,255,0.05)"
+                            : "rgba(255,255,255,0.8)",
+                      },
+                    }}
+                  />
+                </Grid>
+                <Grid xs={12}>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    fullWidth
+                    disabled={loading || uploadLoading}
+                    startIcon={
+                      loading || uploadLoading ? (
+                        <CircularProgress size={20} />
+                      ) : (
+                        <SaveIcon />
+                      )
+                    }
+                    sx={{
+                      mt: 2,
+                      background:
+                        theme.palette.mode === "dark"
+                          ? "linear-gradient(135deg, #52b788 0%, #40916c 100%)"
+                          : "linear-gradient(135deg, #52b788 0%, #40916c 100%)",
+                      color: "white",
+                      "&:hover": {
+                        background:
+                          theme.palette.mode === "dark"
+                            ? "linear-gradient(135deg, #40916c 0%, #2d6a4f 100%)"
+                            : "linear-gradient(135deg, #40916c 0%, #2d6a4f 100%)",
+                      },
+                    }}
+                  >
+                    {loading || uploadLoading
+                      ? t("Creating...")
+                      : t("Create Gift")}
+                  </Button>
+                </Grid>
+              </Grid>
+            </Box>
+          )}
+
+          {activeTab === 4 && (
             <Box component="form" onSubmit={handleBulkUpload}>
               <Grid container spacing={2}>
                 {/* Bulk Upload Fields */}
@@ -2092,6 +2508,11 @@ const DataEntryForm = () => {
             <Tab
               label={t("Products")}
               icon={<ShoppingCartIcon />}
+              iconPosition="start"
+            />
+            <Tab
+              label={t("Gifts")}
+              icon={<CardGiftcardIcon />}
               iconPosition="start"
             />
           </Tabs>
@@ -2701,6 +3122,226 @@ const DataEntryForm = () => {
               />
             </Box>
           )}
+
+          {/* Gift List Panel */}
+          {activeListTab === 3 && (
+            <Box>
+              <TableContainer component={Paper}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("No.")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Image")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Description")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Markets")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Brand")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Product ID")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Expire Date")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Actions")}
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {(gifts || [])
+                      .slice(
+                        giftsPage * rowsPerPage,
+                        giftsPage * rowsPerPage + rowsPerPage
+                      )
+                      .map((gift, index) => (
+                        <TableRow key={gift._id}>
+                          <TableCell>
+                            {giftsPage * rowsPerPage + index + 1}
+                          </TableCell>
+                          <TableCell>
+                            <img
+                              src={gift.image}
+                              alt={gift.description}
+                              style={{
+                                width: "60px",
+                                height: "60px",
+                                objectFit: "cover",
+                                borderRadius: "8px",
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                maxWidth: "200px",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {gift.description}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                flexWrap: "wrap",
+                                gap: 0.5,
+                              }}
+                            >
+                              {gift.marketId?.map((market) => (
+                                <Chip
+                                  key={market._id || market}
+                                  label={market.name || market}
+                                  size="small"
+                                  variant="outlined"
+                                />
+                              ))}
+                            </Box>
+                          </TableCell>
+                          <TableCell>
+                            {gift.brandId ? (
+                              <Chip
+                                label={gift.brandId.name || gift.brandId}
+                                size="small"
+                                variant="outlined"
+                              />
+                            ) : (
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                {t("None")}
+                              </Typography>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {gift.productId ? (
+                              <Typography variant="body2">
+                                {gift.productId}
+                              </Typography>
+                            ) : (
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                {t("None")}
+                              </Typography>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {gift.expireDate ? (
+                              <Typography variant="body2">
+                                {new Date(gift.expireDate).toLocaleDateString()}
+                              </Typography>
+                            ) : (
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                {t("No expiry")}
+                              </Typography>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <IconButton
+                              onClick={() => handleEditOpen("gift", gift)}
+                              size="small"
+                              sx={{ color: "primary.main" }}
+                            >
+                              <EditIcon />
+                            </IconButton>
+                            <IconButton
+                              onClick={() =>
+                                setDeleteDialog({
+                                  open: true,
+                                  type: "gift",
+                                  data: gift,
+                                })
+                              }
+                              size="small"
+                              sx={{ color: "error.main" }}
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              <TablePagination
+                component="div"
+                count={gifts.length}
+                page={giftsPage}
+                onPageChange={handleGiftsPageChange}
+                rowsPerPage={rowsPerPage}
+                rowsPerPageOptions={[10]}
+                labelDisplayedRows={({ from, to, count }) =>
+                  `${from}-${to} of ${count !== -1 ? count : `more than ${to}`}`
+                }
+              />
+            </Box>
+          )}
         </CardContent>
       </Card>
 
@@ -2715,6 +3356,8 @@ const DataEntryForm = () => {
               ? "Edit Brand"
               : editDialog.type === "market"
               ? "Edit Market"
+              : editDialog.type === "gift"
+              ? "Edit Gift"
               : "Edit Product"
           )}
         </DialogTitle>
@@ -2872,6 +3515,132 @@ const DataEntryForm = () => {
                 name="description"
                 value={editForm.description}
                 onChange={handleEditFormChange}
+              />
+            </Box>
+          ) : editDialog.type === "gift" ? (
+            <Box component="form" sx={{ mt: 1 }}>
+              <TextField
+                margin="normal"
+                fullWidth
+                label={t("Description")}
+                name="description"
+                value={editForm.description}
+                onChange={handleEditFormChange}
+                multiline
+                rows={3}
+              />
+
+              {/* Image Upload */}
+              <Box sx={{ mt: 2, mb: 2 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  {t("Upload New Image:")}
+                </Typography>
+                <input
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  id="edit-gift-image-upload"
+                  type="file"
+                  onChange={handleEditGiftImageChange}
+                />
+                <label htmlFor="edit-gift-image-upload">
+                  <Button
+                    variant="outlined"
+                    component="span"
+                    startIcon={<CloudUploadIcon />}
+                    sx={{ mb: 1 }}
+                  >
+                    {t("Choose Image")}
+                  </Button>
+                </label>
+                {selectedEditGiftImage && (
+                  <Box sx={{ mt: 1 }}>
+                    <Typography variant="caption" display="block">
+                      {t("Selected:")} {selectedEditGiftImage.name}
+                    </Typography>
+                    <img
+                      src={URL.createObjectURL(selectedEditGiftImage)}
+                      alt={t("Preview")}
+                      style={{
+                        width: "100px",
+                        height: "100px",
+                        objectFit: "cover",
+                        borderRadius: "8px",
+                        border: "1px solid #ddd",
+                        marginTop: "8px",
+                      }}
+                    />
+                  </Box>
+                )}
+              </Box>
+
+              <FormControl fullWidth margin="normal">
+                <InputLabel>{t("Markets")}</InputLabel>
+                <Select
+                  multiple
+                  name="marketId"
+                  value={editForm.marketId}
+                  onChange={handleEditFormChange}
+                  label={t("Markets")}
+                  renderValue={(selected) => (
+                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                      {selected.map((value) => {
+                        const market = markets.find((m) => m._id === value);
+                        return (
+                          <Chip
+                            key={value}
+                            label={market ? market.name : value}
+                            size="small"
+                          />
+                        );
+                      })}
+                    </Box>
+                  )}
+                >
+                  {markets.map((market) => (
+                    <MenuItem key={market._id} value={market._id}>
+                      {market.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <FormControl fullWidth margin="normal">
+                <InputLabel>{t("Brand")}</InputLabel>
+                <Select
+                  name="brandId"
+                  value={editForm.brandId}
+                  onChange={handleEditFormChange}
+                  label={t("Brand")}
+                >
+                  <MenuItem value="">
+                    <em>{t("None")}</em>
+                  </MenuItem>
+                  {brands.map((brand) => (
+                    <MenuItem key={brand._id} value={brand._id}>
+                      {brand.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <TextField
+                margin="normal"
+                fullWidth
+                label={t("Product ID (Barcode)")}
+                name="productId"
+                value={editForm.productId}
+                onChange={handleEditFormChange}
+              />
+
+              <TextField
+                margin="normal"
+                fullWidth
+                label={t("Expire Date")}
+                name="expireDate"
+                type="date"
+                value={editForm.expireDate}
+                onChange={handleEditFormChange}
+                InputLabelProps={{ shrink: true }}
               />
             </Box>
           ) : (
@@ -3112,6 +3881,8 @@ const DataEntryForm = () => {
             onClick={() =>
               deleteDialog.type === "brand"
                 ? handleDeleteBrandConfirm()
+                : deleteDialog.type === "gift"
+                ? handleDeleteBrandConfirm()
                 : handleDeleteMarketConfirm()
             }
             disabled={deleteLoading}
@@ -3120,7 +3891,7 @@ const DataEntryForm = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Container>
+    </Box>
   );
 };
 

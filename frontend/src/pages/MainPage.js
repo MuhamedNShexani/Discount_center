@@ -228,7 +228,7 @@ const MainPage = () => {
   if (error) return <Loader message={error} />;
 
   return (
-    <Box sx={{ px: { xs: 1, sm: 2, md: 4 } }}>
+    <Box sx={{ px: { xs: 0.5, sm: 1.5, md: 3 } }}>
       {/* Banner Slider Section */}
       <Box sx={{ mb: 4, mt: 10 }}>
         <Box
@@ -873,13 +873,16 @@ const MainPage = () => {
             </Box>
 
             {/* Products Grid */}
-            <Box sx={{ p: { xs: 2, md: 3 } }}>
+            <Box
+              sx={{ p: { xs: 2, md: 3 }, width: { xs: "100%", md: "100%" } }}
+            >
               <Box
+                alignItems={"center"}
                 sx={{
                   display: "flex",
                   flexWrap: "wrap",
-                  gap: { xs: 1, md: 2 },
-                  justifyContent: "flex-start",
+                  gap: { xs: 3, md: 2 },
+                  justifyContent: "left",
                 }}
               >
                 {filteredProducts.slice(0, 8).map((product) => {

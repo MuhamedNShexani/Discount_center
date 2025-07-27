@@ -43,6 +43,7 @@ const resources = {
       Kurdish: "Kurdish",
       Back: "Back",
       Products: "Products",
+      "Related Products": "Related Products",
       "Product Categories": "Product Categories",
       "Browse products by category": "Browse products by category",
       "View details": "View details",
@@ -98,6 +99,17 @@ const resources = {
       "Current product": "Current product",
       "Upload New Image:": "Upload New Image:",
       "Choose Image": "Choose Image",
+      "Add Gift": "Add Gift",
+      "Create a new gift with image, description, and associations":
+        "Create a new gift with image, description, and associations",
+      "Select Gift Image": "Select Gift Image",
+      Markets: "Markets",
+      "Product ID (Barcode)": "Product ID (Barcode)",
+      "Create Gift": "Create Gift",
+      Gifts: "Gifts",
+      "Edit Gift": "Edit Gift",
+      "Product ID": "Product ID",
+      "No expiry": "No expiry",
       "Selected:": "Selected:",
       Preview: "Preview",
       "Saving...": "Saving...",
@@ -153,6 +165,11 @@ const resources = {
       Login: "Login",
       "Cannot delete brand. It has associated products. Please delete the products first.":
         "Cannot delete brand. It has associated products. Please delete the products first.",
+      "No gifts available": "No gifts available",
+      "This brand hasn't added any gifts yet.":
+        "This brand hasn't added any gifts yet.",
+      "This market hasn't added any gifts yet.":
+        "This market hasn't added any gifts yet.",
     },
   },
   ar: {
@@ -194,6 +211,7 @@ const resources = {
       Kurdish: "الكردية",
       Back: "رجوع",
       Products: "المنتجات",
+      "Related Products": "المنتجات ذات الصلة",
       "Product Categories": "فئات المنتجات",
       "Browse products by category": "تصفح المنتجات حسب الفئة",
       "View details": "عرض التفاصيل",
@@ -247,6 +265,17 @@ const resources = {
       "Current product": "المنتج الحالي",
       "Upload New Image:": "رفع صورة جديدة:",
       "Choose Image": "اختر صورة",
+      "Add Gift": "إضافة هدية",
+      "Create a new gift with image, description, and associations":
+        "إنشاء هدية جديدة مع صورة ووصف وارتباطات",
+      "Select Gift Image": "اختر صورة الهدية",
+      Markets: "الأسواق",
+      "Product ID (Barcode)": "معرف المنتج (الباركود)",
+      "Create Gift": "إنشاء هدية",
+      Gifts: "الهدايا",
+      "Edit Gift": "تعديل الهدية",
+      "Product ID": "معرف المنتج",
+      "No expiry": "لا يوجد تاريخ انتهاء",
       "Selected:": "المحدد:",
       Preview: "معاينة",
       "Saving...": "جاري الحفظ...",
@@ -271,6 +300,15 @@ const resources = {
       "View Brand": "عرض الشركة",
       Search: "بحث",
       "All Types": "كل الأنواع",
+      "All Brands": "جميع الشركات",
+      "All Products": "جميع المنتجات",
+      "All Categories": "جميع الفئات",
+      "All Types": "جميع الأنواع",
+      "All Brands": "جميع الشركات",
+      "All Products": "جميع المنتجات",
+      "All Categories": "جميع الفئات",
+      "All Types": "جميع الأنواع",
+      "No discount products available": "لا يوجد منتجات مخفضة",
       "Min Price": "السعر الأدنى",
       "Max Price": "السعر الأعلى",
       to: "إلى",
@@ -303,6 +341,11 @@ const resources = {
       Login: "تسجيل الدخول",
       "Cannot delete brand. It has associated products. Please delete the products first.":
         "لا يمكن حذف الشركة. لديها منتجات مرتبطة. يرجى حذف المنتجات أولاً.",
+      "No gifts available": "لا توجد هدايا متاحة",
+      "This brand hasn't added any gifts yet.":
+        "لم تقم هذه الشركة بإضافة أي هدايا بعد.",
+      "This market hasn't added any gifts yet.":
+        "لم يقم هذا السوق بإضافة أي هدايا بعد.",
     },
   },
   ku: {
@@ -325,13 +368,22 @@ const resources = {
       "Click to explore products": "بەردەستکردنی کاڵاکان",
       "No markets found": "هیچ مارکێتێک نەدۆزرایەوە",
       "Premium Market": "مارکێت",
+      "No discount products available": "هیچ کاڵایەک نەدۆزرایەوە",
+      "This brand hasn't added any regular products yet.":
+        "ئەم بڕاندە لە ئێستادا هیچ کاڵایەکى بەردەست نییە ",
       "Discover amazing products from this market": "  کاڵاى دڵخوازت  بدۆزەوە",
       "No products available": "هیچ کاڵایەک نەدۆزرایەوە",
       "This market hasn't added any products yet. Check back later!":
         "مارکێتەکە نەتوانرێت بەردەست بکەوە چونکە کاڵای هەیە. لە پاشەیەکی زیاتر بەردەست بکەوە.",
       "Mobile Menu": "لیستی مۆبایل",
+      gift: "دیارى",
       "Discover amazing products from this brand": "بدۆزەوە لە بڕاندی دڵخوازت",
+      "This brand hasn't added any discount products yet.":
+        "ئەم بڕاندە لە ئێستادا هیچ کاڵایەکى داشکاندنى بەردەست نییە",
       "address not provided": "ناونیشان نەدۆزرایەوە",
+      "This market hasn't added any discount products yet.":
+        "مارکێتەکە لە ئێستادا هیچ کاڵایەکى داشکاندنى بەردەست نییە",
+      "Discount Expired": "داشکاندەکە کۆتایی هاتووە",
       "phone not provided": "تەلەفون نەدۆزرایەوە",
       "description not provided": "وەسف نەدۆزرایەوە",
       "Premium Brand": "بڕاندی دڵخوازت",
@@ -339,6 +391,15 @@ const resources = {
       "This brand hasn't added any products yet. Check back later!":
         "ئەم بڕاندیە لە ئێستادا هیچ کاڵایەکى بەردەست نییە لە ئێستادا ",
       "Light Mode": "ڕۆشنایی",
+      Gifts: "خەڵات و دیاریەکان",
+      "Discover amazing gifts from markets and brands":
+        "سوود مەند ببە لە ئۆفەرە تایبەتەکان",
+      "All Gifts": "هەموو خەڵات و دیاریەکان",
+      "Brand Gifts": "خەڵاتى بڕاندەکان",
+      "Market Gifts": "خەڵاتى مارکێتەکان",
+      "No gifts available": "هیچ خەڵات و دیاریەک نەدۆزرایەوە",
+      Discounted: "داشکێندراوەکان",
+      items: "کاڵا",
       "Admin Dashboard": "ڕێکخستنی بەڕێوەبەری",
       "Manage markets and products efficiently":
         "بەڕێوەبردنی مارکێت و کاڵاکان بە شێوازێکی باش",
@@ -357,6 +418,7 @@ const resources = {
         "هەموو بڕاندەکان و کاڵاکانیان بگەڕێ",
       Back: "گەڕانەوە",
       Products: "کاڵاکان",
+      "Related Products": "کاڵاکانی پەیوەندیدار",
       "Product Categories": "جۆری کاڵاکان",
       "Browse products by category": "کاڵاکان بە جۆر بگەڕێ",
       "View details": "وردەکاری ببینە",
@@ -468,6 +530,17 @@ const resources = {
       "Current product": "کاڵای ئێستا",
       "Upload New Image:": "وێنەی نوێ باربکە:",
       "Choose Image": "وێنە هەلبژێرە",
+      "Add Gift": "زیادکردنی دیاری",
+      "Create a new gift with image, description, and associations":
+        "دیارییەکی نوێ دروست بکە لەگەڵ وێنە و وەسف و پەیوەندییەکان",
+      "Select Gift Image": "وێنەی دیاری هەلبژێرە",
+      Markets: "مارکێتەکان",
+      "Product ID (Barcode)": "ناسنامەی کاڵا (بارکۆد)",
+      "Create Gift": "دروستکردنی دیاری",
+      Gifts: "دیارییەکان",
+      "Edit Gift": "دەستکاری دیاری",
+      "Product ID": "ناسنامەی کاڵا",
+      "No expiry": "هیچ بەسەرچوونێک نییە",
       "Selected:": "هەلبژێردراو:",
       Preview: "پێشبینین",
       "Saving...": "لە پاشەکەوتکردن...",
@@ -522,6 +595,11 @@ const resources = {
       Login: "چوونەژوورەوە",
       "Cannot delete brand. It has associated products. Please delete the products first.":
         "بڕاندکە ناتوانرێت بسڕێتەوە چونکە کاڵای پەیوەستداری هەیە. تکایە سەرەتا کاڵاکان بسڕەوە.",
+      "No gifts available": "هیچ خەڵات و دیاریەک نەدۆزرایەوە",
+      "This brand hasn't added any gifts yet.":
+        "ئەم بڕاندە لە ئێستادا هیچ خەڵات و دیاریەک زیاد نەکردووە.",
+      "This market hasn't added any gifts yet.":
+        "ئەم مارکێتە لە ئێستادا هیچ خەڵات و دیاریەک زیاد نەکردووە.",
       Discount: "داشکاندن",
       ID: "دینار",
       "View Products": "بینینی کاڵاکان",
