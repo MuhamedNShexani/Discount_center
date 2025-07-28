@@ -868,7 +868,7 @@ const MarketProfile = () => {
     </Paper>
   );
 
-  if (loading) return <Loader message="Loading market details..." />;
+  if (loading) return <Loader message="Loading..." />;
   if (error) return <Loader message={error} />;
   if (!market) return <Alert severity="error">Market not found</Alert>;
 
@@ -1223,10 +1223,12 @@ const MarketProfile = () => {
                   }}
                 />
                 <Chip
-                  icon={<ShoppingCartIcon />}
-                  label={t("Premium Market")}
+                  icon={market.isVip ? "" : <ShoppingCartIcon />}
+                  label={market.isVip ? t("VIP Market") : t("Premium Market")}
                   sx={{
-                    backgroundColor: "rgba(255,255,255,0.2)",
+                    backgroundColor: market.isVip
+                      ? "red"
+                      : "rgba(255,255,255,0.2)",
                     color: "white",
                     fontWeight: 600,
                     fontSize: "0.75rem",

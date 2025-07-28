@@ -1138,6 +1138,20 @@ const BrandProfile = () => {
                   },
                 }}
               />
+              <Chip
+                icon={brand.isVip ? "" : <ShoppingCartIcon />}
+                label={brand.isVip ? t("VIP Brand") : t("Premium Brand")}
+                sx={{
+                  backgroundColor: brand.isVip
+                    ? "red"
+                    : "rgba(255,255,255,0.2)",
+                  color: "white",
+                  fontWeight: 500,
+                  fontSize: "0.75rem",
+                  px: 1,
+                  backdropFilter: "blur(10px)",
+                }}
+              />
             </Box>
           </Box>
 

@@ -774,8 +774,8 @@ const Gifts = () => {
               {selectedGift.image && (
                 <Box display="flex" justifyContent="center" mb={2}>
                   <img
-                    src={selectedGift.image}
-                    alt={selectedGift.name}
+                    src={`${process.env.REACT_APP_BACKEND_URL}${selectedGift.image}`}
+                    alt={selectedGift.name || "Gift image"}
                     style={{
                       maxWidth: 220,
                       maxHeight: 220,
