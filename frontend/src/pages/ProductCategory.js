@@ -1111,8 +1111,8 @@ const ProductCategory = () => {
               {selectedProduct.image && (
                 <Box display="flex" justifyContent="center" mb={2}>
                   <img
-                    src={selectedProduct.image}
-                    alt={selectedProduct.name}
+                    src={`${process.env.REACT_APP_BACKEND_URL}${selectedProduct.image}`}
+                    alt={selectedProduct.name || "Product image"}
                     style={{
                       maxWidth: 220,
                       maxHeight: 220,
