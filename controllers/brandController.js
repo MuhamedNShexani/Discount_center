@@ -5,7 +5,7 @@ const Product = require("../models/Product");
 // @route   GET /api/brands
 const getBrands = async (req, res) => {
   try {
-    const brands = await Brand.find();
+    const brands = await Brand.find().sort({ isVip: -1, name: 1 });
     res.json(brands);
   } catch (err) {
     console.error(err.message);

@@ -6,31 +6,20 @@ import {
   Button,
   Box,
   IconButton,
-  Drawer,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
   useMediaQuery,
   useTheme,
-  FormControlLabel,
   Select,
   MenuItem,
   Avatar,
-  Fade,
-  Slide,
   Paper,
-  Chip,
 } from "@mui/material";
 import {
-  Menu as MenuIcon,
   Home as HomeIcon,
   Business as BusinessIcon,
   Category as CategoryIcon,
   AdminPanelSettings as AdminPanelSettingsIcon,
   Brightness4 as Brightness4Icon,
   Brightness7 as Brightness7Icon,
-  Language as LanguageIcon,
   Store as StoreIcon,
   Login as LoginIcon,
   CardGiftcard as CardGiftcardIcon,
@@ -43,23 +32,12 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
   const theme = useTheme();
   const { t, i18n } = useTranslation();
   const { user, logout } = useAuth();
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const isSmUp = useMediaQuery(theme.breakpoints.up("sm"));
   const lang = i18n.language;
   const location = useLocation();
 
   const handleLangChange = (event) => {
     i18n.changeLanguage(event.target.value);
-  };
-
-  const toggleDrawer = (open) => (event) => {
-    if (
-      event.type === "keydown" &&
-      (event.key === "Tab" || event.key === "Shift")
-    ) {
-      return;
-    }
-    setDrawerOpen(open);
   };
 
   const navItems = [
@@ -311,219 +289,9 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
             >
               {darkMode ? <Brightness7Icon /> : <Brightness4Icon />}
             </IconButton>
-
-            {/* Mobile Menu Toggle */}
-            {!isSmUp && (
-              <IconButton
-                edge="start"
-                color="inherit"
-                aria-label="menu"
-                onClick={toggleDrawer(true)}
-                sx={{
-                  color: "white",
-                  backgroundColor: "rgba(255,255,255,0.1)",
-                  backdropFilter: "blur(10px)",
-                  border: "1px solid rgba(255,255,255,0.2)",
-                  transition: "all 0.3s ease",
-                  width: { xs: 36, sm: 40 },
-                  height: { xs: 36, sm: 40 },
-                  "&:hover": {
-                    backgroundColor: "rgba(255,255,255,0.2)",
-                    transform: "scale(1.1)",
-                  },
-                }}
-              >
-                <MenuIcon />
-              </IconButton>
-            )}
           </Box>
         </Toolbar>
       </AppBar>
-
-      {/* Enhanced Mobile Drawer */}
-      <Drawer
-        anchor="right"
-        open={drawerOpen}
-        onClose={toggleDrawer(false)}
-        PaperProps={{
-          sx: {
-            width: { xs: 260, sm: 280 },
-            background:
-              theme.palette.mode === "dark"
-                ? "linear-gradient(180deg, #2c3e50 0%, #34495e 100%)"
-                : "linear-gradient(180deg, #52b788 0%, #40916c 100%)",
-            color: "white",
-            backdropFilter: "blur(20px)",
-            border: "none",
-          },
-        }}
-      >
-        <Box sx={{ p: 3 }}>
-          {/* Drawer Header */}
-          <Box sx={{ mb: 3, textAlign: "center" }}>
-            <Avatar
-              sx={{
-                mx: "auto",
-                mb: 2,
-                width: 60,
-                height: 60,
-                background: "linear-gradient(135deg, #ffffff20, #ffffff40)",
-                backdropFilter: "blur(10px)",
-                border: "2px solid rgba(255,255,255,0.3)",
-              }}
-            >
-              <StoreIcon sx={{ color: "white", fontSize: 32 }} />
-            </Avatar>
-            <Typography
-              variant="h6"
-              sx={{
-                color: "white",
-                fontWeight: 700,
-                textShadow: "0 2px 4px rgba(0,0,0,0.3)",
-                mb: 1,
-              }}
-            >
-              {t("Market Products")}
-            </Typography>
-            {/* <Chip
-              label={t("Mobile Menu")}
-              size="small"
-              sx={{
-                backgroundColor: "rgba(255,255,255,0.2)",
-                color: "white",
-                backdropFilter: "blur(10px)",
-              }}
-            /> */}
-          </Box>
-
-          {/* Navigation Items */}
-          <List sx={{ p: 0 }}>
-            {navItems.map((item, index) => (
-              <Fade in={true} timeout={300 + index * 100} key={item.path}>
-                <ListItem
-                  button
-                  component={Link}
-                  to={item.path}
-                  onClick={toggleDrawer(false)}
-                  selected={location.pathname === item.path}
-                  sx={{
-                    mb: 1,
-                    borderRadius: 2,
-                    color: "white",
-                    backgroundColor:
-                      location.pathname === item.path
-                        ? "rgba(255,255,255,0.2)"
-                        : "transparent",
-                    backdropFilter:
-                      location.pathname === item.path ? "blur(10px)" : "none",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    transition: "all 0.3s ease",
-                    "&:hover": {
-                      backgroundColor: "rgba(255,255,255,0.15)",
-                      backdropFilter: "blur(10px)",
-                      transform: "translateX(8px)",
-                    },
-                    "&.Mui-selected": {
-                      backgroundColor: "rgba(255,255,255,0.2)",
-                    },
-                  }}
-                >
-                  <ListItemIcon
-                    sx={{
-                      color: "white",
-                      minWidth: 40,
-                      "& .MuiSvgIcon-root": {
-                        fontSize: 24,
-                      },
-                    }}
-                  >
-                    {item.icon}
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={item.name}
-                    sx={{
-                      "& .MuiTypography-root": {
-                        fontWeight: location.pathname === item.path ? 700 : 500,
-                        fontSize: "1rem",
-                      },
-                    }}
-                  />
-                </ListItem>
-              </Fade>
-            ))}
-          </List>
-
-          {/* Drawer Controls */}
-          <Box
-            sx={{ mt: 4, pt: 3, borderTop: "1px solid rgba(255,255,255,0.2)" }}
-          >
-            {/* Language Selector */}
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="body2" sx={{ mb: 1, opacity: 0.8 }}>
-                {t("Language")}
-              </Typography>
-              <Paper
-                elevation={0}
-                sx={{
-                  backgroundColor: "rgba(255,255,255,0.1)",
-                  backdropFilter: "blur(10px)",
-                  border: "1px solid rgba(255,255,255,0.2)",
-                  borderRadius: 2,
-                }}
-              >
-                <Select
-                  value={lang}
-                  onChange={handleLangChange}
-                  fullWidth
-                  size="small"
-                  variant="standard"
-                  disableUnderline
-                  sx={{
-                    color: "white",
-                    px: 2,
-                    py: 1,
-                    "& .MuiSvgIcon-root": {
-                      color: "white",
-                    },
-                  }}
-                >
-                  <MenuItem value="en">🇺🇸 {t("English")}</MenuItem>
-                  <MenuItem value="ar">🇸🇦 {t("Arabic")}</MenuItem>
-                  <MenuItem value="ku">🏳️ {t("Kurdish")}</MenuItem>
-                </Select>
-              </Paper>
-            </Box>
-
-            {/* Dark Mode Toggle */}
-            <Box>
-              <Typography variant="body2" sx={{ mb: 1, opacity: 0.8 }}>
-                {t("Theme")}
-              </Typography>
-              <Button
-                fullWidth
-                variant="outlined"
-                startIcon={darkMode ? <Brightness7Icon /> : <Brightness4Icon />}
-                onClick={() => setDarkMode(!darkMode)}
-                sx={{
-                  color: "white",
-                  borderColor: "rgba(255,255,255,0.3)",
-                  backgroundColor: "rgba(255,255,255,0.1)",
-                  backdropFilter: "blur(10px)",
-                  textTransform: "none",
-                  borderRadius: 2,
-                  py: 1,
-                  "&:hover": {
-                    borderColor: "rgba(255,255,255,0.5)",
-                    backgroundColor: "rgba(255,255,255,0.2)",
-                  },
-                }}
-              >
-                {darkMode ? t("Light Mode") : t("Dark Mode")}
-              </Button>
-            </Box>
-          </Box>
-        </Box>
-      </Drawer>
     </>
   );
 };

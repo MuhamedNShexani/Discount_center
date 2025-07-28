@@ -6,6 +6,7 @@ const brandSchema = new mongoose.Schema({
   address: { type: String },
   phone: { type: String },
   description: { type: String },
+  isVip: { type: Boolean, default: false },
 });
 
 module.exports = mongoose.model("Brand", brandSchema);

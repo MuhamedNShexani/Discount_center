@@ -224,7 +224,7 @@ const MainPage = () => {
     return filteredProducts.length > 0;
   });
 
-  if (loading) return <Loader message="Loading ..." />;
+  if (loading) return <Loader message={t("Loading...")} />;
   if (error) return <Loader message={error} />;
 
   return (
@@ -583,7 +583,7 @@ const MainPage = () => {
           )}
 
           {/* Discount Toggle Button */}
-          <Button
+          {/* <Button
             variant={showOnlyDiscount ? "contained" : "outlined"}
             onClick={() => setShowOnlyDiscount(!showOnlyDiscount)}
             sx={{
@@ -612,7 +612,7 @@ const MainPage = () => {
             startIcon={<LocalOfferIcon sx={{ fontSize: "16px" }} />}
           >
             {showOnlyDiscount ? t("Discount Only") : t("All Products")}
-          </Button>
+          </Button> */}
 
           {/* Reset Filters Button */}
           <Button
@@ -716,7 +716,7 @@ const MainPage = () => {
                   theme.palette.mode === "dark"
                     ? "linear-gradient(135deg, #52b788 0%, #40916c 100%)"
                     : "linear-gradient(135deg, #52b788 0%, #40916c 100%)",
-                p: { xs: 2, md: 3 },
+                p: { xs: 2, md: 3, lg: 1 },
                 color: "white",
                 position: "relative",
                 overflow: "hidden",
@@ -746,8 +746,8 @@ const MainPage = () => {
                 {market.logo ? (
                   <Box
                     sx={{
-                      width: { xs: 60, sm: 80 },
-                      height: { xs: 60, sm: 80 },
+                      width: { xs: 60, sm: 80, md: 150 },
+                      height: { xs: 60, sm: 80, md: 150 },
                       borderRadius: 2,
                       overflow: "hidden",
                       border: "3px solid rgba(255,255,255,0.2)",
@@ -792,27 +792,59 @@ const MainPage = () => {
                 )}
 
                 <Box flexGrow={1} sx={{ textAlign: "left" }}>
-                  <Typography
-                    variant="h4"
+                  <Box
                     sx={{
-                      textDecoration: "none",
-                      color: "white",
-                      fontWeight: 700,
-                      fontSize: { xs: "1.1rem", sm: "1.5rem", md: "2rem" },
-                      textShadow: "0 2px 4px rgba(0,0,0,0.3)",
-                      transition: "all 0.2s ease",
-                      "&:hover": {
-                        textShadow: "0 4px 8px rgba(0,0,0,0.4)",
-                        transform: "translateX(4px)",
-                      },
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      flexWrap: "wrap",
                     }}
                   >
-                    {market.name}
-                  </Typography>
+                    <Typography
+                      variant="h4"
+                      sx={{
+                        textDecoration: "none",
+                        color: "white",
+                        fontWeight: 700,
+                        fontSize: { xs: "1.1rem", sm: "1.5rem", md: "2rem" },
+                        textShadow: "0 2px 4px rgba(0,0,0,0.3)",
+                        transition: "all 0.2s ease",
+                        "&:hover": {
+                          textShadow: "0 4px 8px rgba(0,0,0,0.4)",
+                          transform: "translateX(4px)",
+                        },
+                      }}
+                    >
+                      {market.name}
+                    </Typography>
+                    {market.isVip && (
+                      <Box
+                        alt={t("sponsor")}
+                        sx={{
+                          position: "absolute",
+                          top: { xs: 2, md: 2 },
+                          left: { xs: -2, md: -2 },
+                          zIndex: { xs: 2, md: 2 },
+                          backgroundColor: "white",
+                          borderRadius: "50%",
+                          width: { xs: 20, sm: 40 },
+                          height: { xs: 20, sm: 40 },
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+                          "&::before": {
+                            content: '"👑"',
+                            fontSize: { xs: "16px", sm: "25px" },
+                          },
+                        }}
+                      />
+                    )}
+                  </Box>
                   <Typography
                     variant="body1"
                     sx={{
-                      width: { xs: "400px", md: "800px" },
+                      width: { xs: "250px", md: "800px" },
                       whiteSpace: "nowrap",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
@@ -940,7 +972,7 @@ const MainPage = () => {
                         sx={{
                           position: "relative",
                           overflow: "hidden",
-                          height: { xs: "140px", sm: "180px" },
+                          height: { xs: "100px", sm: "180px" },
                           flexShrink: 0,
                         }}
                       >
@@ -1025,10 +1057,13 @@ const MainPage = () => {
                             height: { xs: "35px", sm: "45px" },
                             fontStyle: "bold",
                             fontWeight: 1000,
-                            fontSize: { xs: "0.75rem", sm: "1rem" },
+                            fontSize: {
+                              xs: "0.75rem",
+                              sm: "1rem",
+                              md: "0.8rem",
+                            },
                             textAlign: "center",
                             mb: 1,
-                            overflow: "hidden",
                             textOverflow: "ellipsis",
                             whiteSpace: "nowrap",
                           }}
@@ -1096,6 +1131,45 @@ const MainPage = () => {
                               }}
                             >
                               {formatPrice(product.newPrice)}
+                            </Typography>
+                          </Box>
+                        </Box>
+                        <Box
+                          display="flex"
+                          borderTop="1px solid rgb(159, 196, 245)"
+                          flexDirection="column"
+                        >
+                          <Box
+                            display="contents"
+                            flexDirection="column"
+                            alignItems="center"
+                          >
+                            <Typography
+                              variant="h6"
+                              align="center"
+                              paddingTop={1}
+                              sx={{
+                                color:
+                                  theme.palette.mode === "dark"
+                                    ? "white"
+                                    : "red",
+                                fontWeight: 500,
+                                fontSize: {
+                                  xs: ".7rem",
+                                  sm: "1rem",
+                                  md: "0.7rem",
+                                },
+                              }}
+                            >
+                              {t("Expire Date")}:{" "}
+                              {new Date(product.expireDate).toLocaleDateString(
+                                "ar-SY",
+                                {
+                                  year: "numeric",
+                                  month: "numeric",
+                                  day: "numeric",
+                                }
+                              )}
                             </Typography>
                           </Box>
                         </Box>

@@ -399,7 +399,7 @@ const MarketProfile = () => {
   };
 
   // Render product card
-  const renderProductCard = (product, index) => {
+  const renderProductCard = (product, index, showPrice = true) => {
     const discount = calculateDiscount(product.previousPrice, product.newPrice);
     const remainingDays = getRemainingDays(product.expireDate);
 
@@ -615,16 +615,18 @@ const MarketProfile = () => {
                       {formatPrice(product.previousPrice)}
                     </Typography>
                   )}
-                <Typography
-                  variant="h6"
-                  sx={{
-                    color: "#52b788",
-                    fontWeight: 700,
-                    fontSize: "1.125rem",
-                  }}
-                >
-                  {formatPrice(product.newPrice)}
-                </Typography>
+                {showPrice && (
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      color: "#52b788",
+                      fontWeight: 700,
+                      fontSize: "1.125rem",
+                    }}
+                  >
+                    {formatPrice(product.newPrice)}
+                  </Typography>
+                )}
               </Box>
             </Box>
           </CardContent>
@@ -634,7 +636,7 @@ const MarketProfile = () => {
   };
 
   // Render products grouped by type
-  const renderProductsByType = (productList) => {
+  const renderProductsByType = (productList, showPrice = true) => {
     const groupedProducts = groupProductsByType(productList);
 
     return Object.entries(groupedProducts).map(([type, typeProducts]) => {
@@ -686,7 +688,7 @@ const MarketProfile = () => {
             }}
           >
             {displayProducts.map((product, index) =>
-              renderProductCard(product, index)
+              renderProductCard(product, index, showPrice)
             )}
           </Box>
 
@@ -735,7 +737,6 @@ const MarketProfile = () => {
   // Render filter section
   const renderFilters = () => (
     <Paper
-      onClick={toggleFilters}
       elevation={0}
       sx={{
         p: 1,
@@ -752,11 +753,13 @@ const MarketProfile = () => {
     >
       {/* Mobile Filter Toggle */}
       <Box
+        onClick={toggleFilters}
         sx={{
           display: { xs: "flex", md: "none" },
           mb: 2,
           justifyContent: "space-between",
           alignItems: "center",
+          cursor: "pointer",
         }}
       >
         <Typography
@@ -798,6 +801,7 @@ const MarketProfile = () => {
               label={t("Search by Name")}
               value={filters.name}
               onChange={(e) => handleFilterChange("name", e.target.value)}
+              onClick={(e) => e.stopPropagation()}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -813,6 +817,7 @@ const MarketProfile = () => {
               <Select
                 value={filters.brand}
                 onChange={(e) => handleFilterChange("brand", e.target.value)}
+                onClick={(e) => e.stopPropagation()}
                 label={t("Brand")}
               >
                 <MenuItem value="">{t("All Brands")}</MenuItem>
@@ -830,6 +835,7 @@ const MarketProfile = () => {
               label={t("Search by Barcode")}
               value={filters.barcode}
               onChange={(e) => handleFilterChange("barcode", e.target.value)}
+              onClick={(e) => e.stopPropagation()}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -845,6 +851,7 @@ const MarketProfile = () => {
               <Select
                 value={filters.type}
                 onChange={(e) => handleFilterChange("type", e.target.value)}
+                onClick={(e) => e.stopPropagation()}
                 label={t("Product Type")}
               >
                 <MenuItem value="">{t("All Types")}</MenuItem>
@@ -1125,10 +1132,12 @@ const MarketProfile = () => {
                     }}
                   />
                   <Chip
-                    icon={<ShoppingCartIcon />}
-                    label={t("Premium Market")}
+                    icon={market.isVip ? "" : <ShoppingCartIcon />}
+                    label={market.isVip ? t("VIP Market") : t("Premium Market")}
                     sx={{
-                      backgroundColor: "rgba(255,255,255,0.2)",
+                      backgroundColor: market.isVip
+                        ? "red"
+                        : "rgba(255,255,255,0.2)",
                       color: "white",
                       fontWeight: 600,
                       fontSize: "1rem",
@@ -1321,15 +1330,17 @@ const MarketProfile = () => {
                 width: { xs: "100px", sm: "100px", md: "100%" },
               }}
             />
-            <Tab
-              label={`${t("All Products")} (${nonDiscountedProducts.length})`}
-              icon={<StorefrontIcon />}
-              iconPosition="start"
-              sx={{
-                textTransform: "none",
-                width: { xs: "100px", sm: "100px", md: "100%" },
-              }}
-            />
+            {market?.isVip && (
+              <Tab
+                label={`${t("All Products")} (${nonDiscountedProducts.length})`}
+                icon={<StorefrontIcon />}
+                iconPosition="start"
+                sx={{
+                  textTransform: "none",
+                  width: { xs: "100px", sm: "100px", md: "100%" },
+                }}
+              />
+            )}
           </Tabs>
         </Paper>
 
@@ -1377,53 +1388,6 @@ const MarketProfile = () => {
               </Box>
             ) : (
               renderProductsByType(discountedProducts)
-            )}
-          </Box>
-        )}
-
-        {activeTab === 2 && (
-          <Box>
-            {nonDiscountedProducts.length === 0 ? (
-              <Box
-                sx={{
-                  textAlign: "center",
-                  py: 8,
-                  px: 4,
-                }}
-              >
-                <LocalOfferIcon
-                  sx={{
-                    fontSize: 120,
-                    color:
-                      theme.palette.mode === "dark" ? "#4a5568" : "#cbd5e0",
-                    mb: 3,
-                  }}
-                />
-                <Typography
-                  variant="h4"
-                  gutterBottom
-                  sx={{
-                    color: theme.palette.text.secondary,
-                    fontWeight: 600,
-                    mb: 2,
-                  }}
-                >
-                  {t("No regular products available")}
-                </Typography>
-                <Typography
-                  variant="body1"
-                  sx={{
-                    color: theme.palette.text.secondary,
-                    maxWidth: 500,
-                    mx: "auto",
-                    lineHeight: 1.6,
-                  }}
-                >
-                  {t("This market hasn't added any regular products yet.")}
-                </Typography>
-              </Box>
-            ) : (
-              renderProductsByType(nonDiscountedProducts)
             )}
           </Box>
         )}
@@ -1484,6 +1448,53 @@ const MarketProfile = () => {
                   </Box>
                 ))}
               </Box>
+            )}
+          </Box>
+        )}
+
+        {market?.isVip && activeTab === 2 && (
+          <Box>
+            {nonDiscountedProducts.length === 0 ? (
+              <Box
+                sx={{
+                  textAlign: "center",
+                  py: 8,
+                  px: 4,
+                }}
+              >
+                <StorefrontIcon
+                  sx={{
+                    fontSize: 120,
+                    color:
+                      theme.palette.mode === "dark" ? "#4a5568" : "#cbd5e0",
+                    mb: 3,
+                  }}
+                />
+                <Typography
+                  variant="h4"
+                  gutterBottom
+                  sx={{
+                    color: theme.palette.text.secondary,
+                    fontWeight: 600,
+                    mb: 2,
+                  }}
+                >
+                  {t("No regular products available")}
+                </Typography>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    color: theme.palette.text.secondary,
+                    maxWidth: 500,
+                    mx: "auto",
+                    lineHeight: 1.6,
+                  }}
+                >
+                  {t("This market hasn't added any regular products yet.")}
+                </Typography>
+              </Box>
+            ) : (
+              renderProductsByType(nonDiscountedProducts, false)
             )}
           </Box>
         )}

@@ -5,7 +5,7 @@ const Product = require("../models/Product");
 // @route   GET /api/markets
 const getMarkets = async (req, res) => {
   try {
-    const markets = await Market.find();
+    const markets = await Market.find().sort({ isVip: -1, name: 1 });
     res.json(markets);
   } catch (err) {
     console.error(err.message);

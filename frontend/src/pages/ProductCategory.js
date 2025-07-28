@@ -302,7 +302,6 @@ const ProductCategory = () => {
   // Render filter section
   const renderFilters = () => (
     <Paper
-      onClick={toggleFilters}
       elevation={0}
       sx={{
         p: 1,
@@ -319,11 +318,13 @@ const ProductCategory = () => {
     >
       {/* Mobile Filter Toggle */}
       <Box
+        onClick={toggleFilters}
         sx={{
           display: { xs: "flex", md: "none" },
           mb: 2,
           justifyContent: "space-between",
           alignItems: "center",
+          cursor: "pointer",
         }}
       >
         <Typography
@@ -365,6 +366,7 @@ const ProductCategory = () => {
               label={t("Search By Name")}
               value={filters.name}
               onChange={(e) => handleFilterChange("name", e.target.value)}
+              onClick={(e) => e.stopPropagation()}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -380,6 +382,7 @@ const ProductCategory = () => {
               <Select
                 value={filters.brand}
                 onChange={(e) => handleFilterChange("brand", e.target.value)}
+                onClick={(e) => e.stopPropagation()}
                 label={t("Brand")}
               >
                 <MenuItem value="" sx={{ width: "250px" }}>
@@ -399,6 +402,7 @@ const ProductCategory = () => {
               <Select
                 value={filters.market}
                 onChange={(e) => handleFilterChange("market", e.target.value)}
+                onClick={(e) => e.stopPropagation()}
                 label={t("Market")}
               >
                 <MenuItem value="" sx={{ width: "250px" }}>
@@ -418,6 +422,7 @@ const ProductCategory = () => {
               label={t("Search By Barcode")}
               value={filters.barcode}
               onChange={(e) => handleFilterChange("barcode", e.target.value)}
+              onClick={(e) => e.stopPropagation()}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -435,6 +440,7 @@ const ProductCategory = () => {
                   onChange={(e) =>
                     handleFilterChange("discount", e.target.checked)
                   }
+                  onClick={(e) => e.stopPropagation()}
                   color="primary"
                 />
               }
@@ -451,15 +457,16 @@ const ProductCategory = () => {
           <Grid item xs={12} sm={6} md={3}>
             <Button
               variant="outlined"
-              onClick={() =>
+              onClick={(e) => {
+                e.stopPropagation();
                 setFilters({
                   name: "",
                   brand: "",
                   market: "",
                   barcode: "",
                   discount: false,
-                })
-              }
+                });
+              }}
               sx={{
                 borderColor: "#52b788",
                 color: "#52b788",
@@ -779,7 +786,7 @@ const ProductCategory = () => {
                 >
                   <Card
                     sx={{
-                      width: { xs: "100%", md: "220px" },
+                      width: { xs: "150px", md: "220px" },
                       height: { xs: "auto", md: "100%" },
                       minHeight: { xs: "220px", md: "auto" },
                       transition: "transform 0.2s",
@@ -1151,14 +1158,35 @@ const ProductCategory = () => {
                     </Typography>
                   </Box>
                 )}
+                {selectedProduct.marketId && (
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <StorefrontIcon fontSize="small" color="action" />
+                    <Typography variant="body2" color="text.secondary">
+                      {t("Market")}: {selectedProduct.marketId.name}
+                    </Typography>
+                  </Box>
+                )}
+                {selectedProduct.barcode && (
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <Typography variant="body2" color="text.secondary">
+                      {t("Barcode")}: {selectedProduct.barcode}
+                    </Typography>
+                  </Box>
+                )}
+
                 {selectedProduct.expireDate && (
                   <Box display="flex" alignItems="center" gap={1}>
                     <LocalOfferIcon fontSize="small" color="action" />
                     <Typography variant="body2" color="text.secondary">
                       {t("Expires")}:{" "}
-                      {new Date(
-                        selectedProduct.expireDate
-                      ).toLocaleDateString()}
+                      {new Date(selectedProduct.expireDate).toLocaleDateString(
+                        "ar-SY",
+                        {
+                          year: "numeric",
+                          month: "numeric",
+                          day: "numeric",
+                        }
+                      )}
                     </Typography>
                   </Box>
                 )}

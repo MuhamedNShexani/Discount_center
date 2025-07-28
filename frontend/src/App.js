@@ -4,7 +4,13 @@ import React, { useState, useMemo, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
-import { Container, Typography, Box } from "@mui/material";
+import {
+  Container,
+  Typography,
+  Box,
+  useMediaQuery,
+  useTheme,
+} from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { CacheProvider } from "@emotion/react";
 import createCache from "@emotion/cache";
@@ -20,7 +26,8 @@ import DataEntryForm from "./pages/DataEntryForm";
 import ProductDetail from "./pages/ProductDetail";
 import MarketProfile from "./pages/MarketProfile";
 import Gifts from "./pages/Gifts";
-import NavigationBar from "./NavigationBar"; // Make sure this path is correct
+import NavigationBar from "./NavigationBar";
+import BottomNavigationBar from "./components/BottomNavigation";
 import { AuthProvider } from "./context/AuthContext";
 import LoginPage from "./pages/LoginPage";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -53,6 +60,8 @@ function App() {
   const [darkMode, setDarkMode] = useState(false);
   const { t, i18n } = useTranslation();
   const [lang, setLang] = useState(i18n.language || "en");
+  const muiTheme = useTheme();
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down("sm"));
 
   // RTL/LTR direction effect and language data attribute
   useEffect(() => {
@@ -257,6 +266,7 @@ function App() {
             sx={{
               flexGrow: 1, // Allows this Box to expand and push the footer down
               py: 3,
+              pb: isMobile ? 10 : 3, // Add bottom padding for mobile to account for bottom navigation
               backgroundColor: (theme) => theme.palette.background.default,
             }}
           >
@@ -283,6 +293,7 @@ function App() {
             </Container>
           </Box>
           <Footer />
+          <BottomNavigationBar />
         </Box>
       </ThemeProvider>
     </CacheProvider>

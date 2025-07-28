@@ -434,7 +434,7 @@ const BrandProfile = () => {
   };
 
   // Render product card
-  const renderProductCard = (product, index) => {
+  const renderProductCard = (product, index, showPrice = true) => {
     const discount = calculateDiscount(product.previousPrice, product.newPrice);
     const remainingDays = getRemainingDays(product.expireDate);
 
@@ -638,7 +638,8 @@ const BrandProfile = () => {
                 justifyContent="space-between"
               >
                 {product.previousPrice &&
-                  product.previousPrice > product.newPrice && (
+                  product.previousPrice > product.newPrice &&
+                  showPrice && (
                     <Typography
                       variant="body2"
                       sx={{
@@ -650,16 +651,18 @@ const BrandProfile = () => {
                       {formatPrice(product.previousPrice)}
                     </Typography>
                   )}
-                <Typography
-                  variant="h6"
-                  sx={{
-                    color: "#52b788",
-                    fontWeight: 700,
-                    fontSize: "1.125rem",
-                  }}
-                >
-                  {formatPrice(product.newPrice)}
-                </Typography>
+                {showPrice && (
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      color: "#52b788",
+                      fontWeight: 700,
+                      fontSize: "1.125rem",
+                    }}
+                  >
+                    {formatPrice(product.newPrice)}
+                  </Typography>
+                )}
               </Box>
             </Box>
           </CardContent>
@@ -669,7 +672,7 @@ const BrandProfile = () => {
   };
 
   // Render products grouped by type
-  const renderProductsByType = (productList) => {
+  const renderProductsByType = (productList, showPrice = true) => {
     const groupedProducts = groupProductsByType(productList);
 
     return Object.entries(groupedProducts).map(([type, typeProducts]) => {
@@ -721,7 +724,7 @@ const BrandProfile = () => {
             }}
           >
             {displayProducts.map((product, index) =>
-              renderProductCard(product, index)
+              renderProductCard(product, index, showPrice)
             )}
           </Box>
 
@@ -770,7 +773,6 @@ const BrandProfile = () => {
   // Render filter section
   const renderFilters = () => (
     <Paper
-      onClick={toggleFilters}
       elevation={0}
       sx={{
         p: 1,
@@ -787,11 +789,13 @@ const BrandProfile = () => {
     >
       {/* Mobile Filter Toggle */}
       <Box
+        onClick={toggleFilters}
         sx={{
           display: { xs: "flex", md: "none" },
           mb: 2,
           justifyContent: "space-between",
           alignItems: "center",
+          cursor: "pointer",
         }}
       >
         <Typography
@@ -833,6 +837,7 @@ const BrandProfile = () => {
               label={t("Search by Name")}
               value={filters.name}
               onChange={(e) => handleFilterChange("name", e.target.value)}
+              onClick={(e) => e.stopPropagation()}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -848,6 +853,7 @@ const BrandProfile = () => {
               <Select
                 value={filters.market}
                 onChange={(e) => handleFilterChange("market", e.target.value)}
+                onClick={(e) => e.stopPropagation()}
                 label={t("Market")}
               >
                 <MenuItem value="">{t("All Markets")}</MenuItem>
@@ -865,6 +871,7 @@ const BrandProfile = () => {
               label={t("Search by Barcode")}
               value={filters.barcode}
               onChange={(e) => handleFilterChange("barcode", e.target.value)}
+              onClick={(e) => e.stopPropagation()}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -880,6 +887,7 @@ const BrandProfile = () => {
               <Select
                 value={filters.type}
                 onChange={(e) => handleFilterChange("type", e.target.value)}
+                onClick={(e) => e.stopPropagation()}
                 label={t("Product Type")}
               >
                 <MenuItem value="">{t("All Types")}</MenuItem>
@@ -896,7 +904,7 @@ const BrandProfile = () => {
     </Paper>
   );
 
-  if (loading) return <Loader message="Loading brand details..." />;
+  if (loading) return <Loader message={t("Loading...")} />;
   if (error) return <Loader message={error} />;
   if (!brand) return <Alert severity="error">Brand not found</Alert>;
 
@@ -1013,9 +1021,32 @@ const BrandProfile = () => {
                 fontSize: "1.2rem",
                 textShadow: "0 2px 4px rgba(0,0,0,0.3)",
                 color: "white",
+                position: "relative",
               }}
             >
               {brand.name}
+              {/* {brand.isVip && (
+                <Box
+                  sx={{
+                    position: "absolute",
+                    top: 5,
+                    left: -4,
+                    zIndex: 2,
+                    backgroundColor: "white",
+                    borderRadius: "50%",
+                    width: 24,
+                    height: 24,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+                    "&::before": {
+                      content: '"👑"',
+                      fontSize: "12px",
+                    },
+                  }}
+                />
+              )} */}
             </Typography>
           </Box>
 
@@ -1161,9 +1192,32 @@ const BrandProfile = () => {
                     textAlign: { xs: "center", md: "left" },
                     mb: 2,
                     color: "white",
+                    position: "relative",
                   }}
                 >
                   {brand.name}
+                  {/* {brand.isVip && (
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        top: -8,
+                        left: -8,
+                        zIndex: 2,
+                        backgroundColor: "white",
+                        borderRadius: "50%",
+                        width: { xs: 32, sm: 40 },
+                        height: { xs: 32, sm: 40 },
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+                        "&::before": {
+                          content: '"👑"',
+                          fontSize: { xs: "16px", sm: "20px" },
+                        },
+                      }}
+                    />
+                  )} */}
                 </Typography>
 
                 <Box sx={{ mb: 3 }}>
@@ -1252,10 +1306,12 @@ const BrandProfile = () => {
                     }}
                   />
                   <Chip
-                    icon={<ShoppingCartIcon />}
-                    label={t("Premium Brand")}
+                    icon={brand.isVip ? "" : <ShoppingCartIcon />}
+                    label={brand.isVip ? t("VIP Brand") : t("Premium Brand")}
                     sx={{
-                      backgroundColor: "rgba(255,255,255,0.2)",
+                      backgroundColor: brand.isVip
+                        ? "red"
+                        : "rgba(255,255,255,0.2)",
                       color: "white",
                       fontWeight: 600,
                       fontSize: "1rem",
@@ -1336,15 +1392,17 @@ const BrandProfile = () => {
                 width: { xs: "100px", sm: "100px", md: "100%" },
               }}
             />
-            <Tab
-              label={`${t("All Products")} (${nonDiscountedProducts.length})`}
-              icon={<StorefrontIcon />}
-              iconPosition="start"
-              sx={{
-                textTransform: "none",
-                width: { xs: "100px", sm: "100px", md: "100%" },
-              }}
-            />
+            {brand?.isVip && (
+              <Tab
+                label={`${t("All Products")} (${nonDiscountedProducts.length})`}
+                icon={<StorefrontIcon />}
+                iconPosition="start"
+                sx={{
+                  textTransform: "none",
+                  width: { xs: "100px", sm: "100px", md: "100%" },
+                }}
+              />
+            )}
           </Tabs>
         </Paper>
 
@@ -1456,7 +1514,7 @@ const BrandProfile = () => {
           </Box>
         )}
 
-        {activeTab === 2 && (
+        {brand?.isVip && activeTab === 2 && (
           <Box>
             {nonDiscountedProducts.length === 0 ? (
               <Box
@@ -1466,7 +1524,7 @@ const BrandProfile = () => {
                   px: 4,
                 }}
               >
-                <LocalOfferIcon
+                <StorefrontIcon
                   sx={{
                     fontSize: 120,
                     color:
@@ -1498,7 +1556,7 @@ const BrandProfile = () => {
                 </Typography>
               </Box>
             ) : (
-              renderProductsByType(nonDiscountedProducts)
+              renderProductsByType(nonDiscountedProducts, false)
             )}
           </Box>
         )}

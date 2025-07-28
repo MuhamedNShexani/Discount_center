@@ -220,7 +220,7 @@ const ProductDetail = () => {
       <Paper elevation={3} sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
         <Grid container spacing={{ xs: 2, sm: 3, md: 4 }}>
           {/* Product Image */}
-          <Grid xs={12} md={6}>
+          <Grid xs={6} md={6} alignContent="center" marginLeft={{ xs: 10 }}>
             {product.image ? (
               <CardMedia
                 component="img"
@@ -230,7 +230,7 @@ const ProductDetail = () => {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  height: { xs: 250, sm: 350, md: 400 },
+                  height: { xs: 150, sm: 350, md: 400 },
                   objectFit: "contain",
                   borderRadius: 2,
                 }}
@@ -238,7 +238,7 @@ const ProductDetail = () => {
             ) : (
               <Box
                 sx={{
-                  height: { xs: 250, sm: 350, md: 400 },
+                  height: { xs: 150, sm: 350, md: 400 },
                   bgcolor: "grey.100",
                   display: "flex",
                   alignItems: "center",
@@ -248,7 +248,8 @@ const ProductDetail = () => {
               >
                 <ShoppingCartIcon
                   sx={{
-                    fontSize: { xs: 60, sm: 70, md: 80 },
+                    marginLeft: { xs: 10 },
+                    fontSize: { xs: 50, sm: 70, md: 80 },
                     color: "grey.400",
                   }}
                 />
@@ -257,9 +258,14 @@ const ProductDetail = () => {
           </Grid>
 
           {/* Product Details */}
-          <Grid xs={12} md={6}>
+          <Grid xs={6} md={6}>
             <Box>
-              <Box display="flex" alignItems="center" mb={2}>
+              <Box
+                display="flex"
+                alignItems="center"
+                mb={2}
+                marginLeft={{ xs: 5 }}
+              >
                 <ShoppingCartIcon
                   sx={{
                     fontSize: { xs: 24, sm: 28, md: 32 },
@@ -272,7 +278,7 @@ const ProductDetail = () => {
                   component="h1"
                   gutterBottom
                   sx={{
-                    fontSize: { xs: "1.5rem", sm: "2rem", md: "3rem" },
+                    fontSize: { xs: "1rem", sm: "2rem", md: "3rem" },
                     lineHeight: { xs: 1.2, md: 1.3 },
                   }}
                 >
@@ -598,7 +604,7 @@ const ProductDetail = () => {
                 )}
 
                 {/* Discount Status */}
-                <Box display="flex" alignItems="center" mb={1}>
+                {/* <Box display="flex" alignItems="center" mb={1}>
                   <LocalOfferIcon
                     sx={{
                       fontSize: { xs: 14, sm: 16 },
@@ -613,7 +619,7 @@ const ProductDetail = () => {
                     <strong>{t("Discount Status")}:</strong>{" "}
                     {product.isDiscount ? t("Discounted") : t("Regular Price")}
                   </Typography>
-                </Box>
+                </Box> */}
               </Box>
 
               {/* Action Buttons */}

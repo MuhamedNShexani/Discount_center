@@ -100,6 +100,7 @@ const DataEntryForm = () => {
     address: "",
     phone: "",
     description: "",
+    isVip: false,
   });
   // Market form state
   const [marketForm, setMarketForm] = useState({
@@ -108,6 +109,7 @@ const DataEntryForm = () => {
     address: "",
     phone: "",
     description: "",
+    isVip: false,
   });
 
   // Product form state
@@ -880,6 +882,7 @@ const DataEntryForm = () => {
         previousPrice: parseFloat(productForm.previousPrice) || null,
         newPrice: parseFloat(productForm.newPrice) || null,
         isDiscount: productForm.isDiscount,
+        barcode: productForm.barcode,
         weight: productForm.weight,
         expireDate: productForm.expireDate
           ? new Date(productForm.expireDate).toISOString()
@@ -1545,6 +1548,24 @@ const DataEntryForm = () => {
                   </label>
                 </Grid>
                 <Grid xs={12}>
+                  <FormControlLabel
+                    control={
+                      <input
+                        type="checkbox"
+                        name="isVip"
+                        checked={marketForm.isVip}
+                        onChange={(e) =>
+                          setMarketForm({
+                            ...marketForm,
+                            isVip: e.target.checked,
+                          })
+                        }
+                      />
+                    }
+                    label={t("VIP Market")}
+                  />
+                </Grid>
+                <Grid xs={12}>
                   <Button
                     type="submit"
                     variant="contained"
@@ -1749,6 +1770,24 @@ const DataEntryForm = () => {
                         : t("Upload Logo")}
                     </Button>
                   </label>
+                </Grid>
+                <Grid xs={12}>
+                  <FormControlLabel
+                    control={
+                      <input
+                        type="checkbox"
+                        name="isVip"
+                        checked={brandForm.isVip}
+                        onChange={(e) =>
+                          setBrandForm({
+                            ...brandForm,
+                            isVip: e.target.checked,
+                          })
+                        }
+                      />
+                    }
+                    label={t("VIP Brand")}
+                  />
                 </Grid>
                 <Grid xs={12}>
                   <Button
@@ -2465,6 +2504,8 @@ const DataEntryForm = () => {
                     <br />•{" "}
                     {t("Column K: Expire Date (optional, YYYY-MM-DD format)")}
                     <br />• {t("Column L: Weight (optional)")}
+                    <br />• {t("Column M: Barcode (optional)")}
+                    <br />• {t("Column N: Discount (optional)")}
                   </Typography>
                 </Grid>
               </Grid>
@@ -2585,6 +2626,15 @@ const DataEntryForm = () => {
                           color: "primary.contrastText",
                         }}
                       >
+                        VIP
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
                         {t("Actions")}
                       </TableCell>
                     </TableRow>
@@ -2636,6 +2686,27 @@ const DataEntryForm = () => {
                             }}
                           >
                             {market.description}
+                          </TableCell>
+                          <TableCell>
+                            {market.isVip && (
+                              <Box
+                                sx={{
+                                  backgroundColor: "#FFD700",
+                                  borderRadius: "50%",
+                                  width: 32,
+                                  height: 32,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+                                  border: "2px solid #FFF",
+                                  "&::before": {
+                                    content: '"👑"',
+                                    fontSize: "16px",
+                                  },
+                                }}
+                              />
+                            )}
                           </TableCell>
                           <TableCell>
                             <IconButton
@@ -2769,6 +2840,15 @@ const DataEntryForm = () => {
                           color: "primary.contrastText",
                         }}
                       >
+                        VIP
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
                         {t("Actions")}
                       </TableCell>
                     </TableRow>
@@ -2820,6 +2900,27 @@ const DataEntryForm = () => {
                             }}
                           >
                             {brand.description}
+                          </TableCell>
+                          <TableCell>
+                            {brand.isVip && (
+                              <Box
+                                sx={{
+                                  backgroundColor: "#FFD700",
+                                  borderRadius: "50%",
+                                  width: 32,
+                                  height: 32,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+                                  border: "2px solid #FFF",
+                                  "&::before": {
+                                    content: '"👑"',
+                                    fontSize: "16px",
+                                  },
+                                }}
+                              />
+                            )}
                           </TableCell>
                           <TableCell>
                             <IconButton
@@ -2974,6 +3075,15 @@ const DataEntryForm = () => {
                           color: "primary.contrastText",
                         }}
                       >
+                        {t("Barcode")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
                         {t("Discount")}
                       </TableCell>
                       <TableCell
@@ -3059,6 +3169,7 @@ const DataEntryForm = () => {
                               : ""}
                           </TableCell>
                           <TableCell>{product.weight || ""}</TableCell>
+                          <TableCell>{product.barcode || ""}</TableCell>
                           <TableCell>
                             {product.isDiscount ? (
                               <Chip
@@ -3438,6 +3549,24 @@ const DataEntryForm = () => {
                 value={editForm.description}
                 onChange={handleEditFormChange}
               />
+              <Box sx={{ mt: 2 }}>
+                <FormControlLabel
+                  control={
+                    <input
+                      type="checkbox"
+                      name="isVip"
+                      checked={editForm.isVip || false}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          isVip: e.target.checked,
+                        })
+                      }
+                    />
+                  }
+                  label={t("VIP Brand")}
+                />
+              </Box>
             </Box>
           ) : editDialog.type === "market" ? (
             <Box component="form" sx={{ mt: 1 }}>
@@ -3516,6 +3645,24 @@ const DataEntryForm = () => {
                 value={editForm.description}
                 onChange={handleEditFormChange}
               />
+              <Box sx={{ mt: 2 }}>
+                <FormControlLabel
+                  control={
+                    <input
+                      type="checkbox"
+                      name="isVip"
+                      checked={editForm.isVip || false}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          isVip: e.target.checked,
+                        })
+                      }
+                    />
+                  }
+                  label={t("VIP Market")}
+                />
+              </Box>
             </Box>
           ) : editDialog.type === "gift" ? (
             <Box component="form" sx={{ mt: 1 }}>
@@ -3747,6 +3894,15 @@ const DataEntryForm = () => {
                 value={editForm.weight}
                 onChange={handleEditFormChange}
                 placeholder="e.g., 500g, 1kg, 2.5kg"
+              />
+              <TextField
+                margin="normal"
+                fullWidth
+                label={t("Barcode")}
+                name="barcode"
+                value={editForm.barcode}
+                onChange={handleEditFormChange}
+                placeholder="Enter product barcode"
               />
               <FormControl fullWidth margin="normal">
                 <FormControlLabel

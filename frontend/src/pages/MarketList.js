@@ -46,7 +46,7 @@ const MarketList = () => {
         err.response?.data?.message ||
           err.response?.data?.msg ||
           err.message ||
-          "Network error. Please check your connection."
+          t("Network error. Please check your connection.")
       );
       console.error("Error fetching markets:", err);
     } finally {
@@ -58,7 +58,7 @@ const MarketList = () => {
     navigate(`/markets/${market._id}`);
   };
 
-  if (loading) return <Loader message="Loading markets..." />;
+  if (loading) return <Loader message={t("Loading...")} />;
   if (error) return <Loader message={error} />;
 
   return (
@@ -283,26 +283,58 @@ const MarketList = () => {
                   overflow: "hidden",
                 }}
               >
-                <Typography
-                  variant="h6"
-                  component="h2"
+                <Box
                   sx={{
-                    fontWeight: 700,
-                    color: theme.palette.text.primary,
-                    fontSize: { xs: "0.8rem", sm: "1.3rem", md: "1.3rem" },
-                    lineHeight: 1.2,
-                    mb: { xs: 0, sm: 1, md: 1 },
-                    height: { xs: "auto", sm: "100px", md: "100px" },
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    display: "-webkit-box",
-                    WebkitLineClamp: { xs: 2, sm: 1, md: 1 },
-                    WebkitBoxOrient: "vertical",
-                    textAlign: "center",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 1,
                   }}
                 >
-                  {market.name}
-                </Typography>
+                  <Typography
+                    variant="h6"
+                    component="h2"
+                    sx={{
+                      fontWeight: 700,
+                      color: theme.palette.text.primary,
+                      fontSize: { xs: "0.8rem", sm: "1.3rem", md: "1.3rem" },
+                      lineHeight: 1.2,
+                      mb: { xs: 0, sm: 1, md: 1 },
+
+                      height: { xs: "auto", sm: "50px", md: "50px" },
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      display: "-webkit-box",
+                      WebkitLineClamp: { xs: 2, sm: 1, md: 1 },
+                      WebkitBoxOrient: "vertical",
+                      textAlign: "center",
+                    }}
+                  >
+                    {market.name}
+                  </Typography>
+                  {market.isVip && (
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        top: 8,
+                        left: 8,
+                        zIndex: 2,
+                        backgroundColor: "white",
+                        borderRadius: "50%",
+                        width: { xs: 30, sm: 36 },
+                        height: { xs: 30, sm: 36 },
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+                        "&::before": {
+                          content: '"👑"',
+                          fontSize: { xs: "14px", sm: "25px" },
+                        },
+                      }}
+                    />
+                  )}
+                </Box>
                 {/* Market Details - Hidden on mobile */}
                 <Box
                   sx={{

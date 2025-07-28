@@ -19,26 +19,30 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Dialog,
+  DialogTitle,
+  CardgHeader,
+  DialogContent,
+  DialogActions,
+  Button,
 } from "@mui/material";
-import {
-  Search,
-  FilterList,
-  ExpandMore,
-  ExpandLess,
-  CardGiftcard,
-  Store,
-  Business,
-} from "@mui/icons-material";
+import { Search, FilterList, Store, Business } from "@mui/icons-material";
+import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
+import LocalOfferIcon from "@mui/icons-material/LocalOffer";
+import CardGiftcard from "@mui/icons-material/CardGiftcard";
 import { giftAPI, marketAPI, brandAPI } from "../services/api";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const Gifts = () => {
   const theme = useTheme();
+  const [dialogOpen, setDialogOpen] = useState(false);
+
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [gifts, setGifts] = useState([]);
   const [filteredGifts, setFilteredGifts] = useState([]);
+  const [selectedGift, setSelectedGift] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
@@ -74,9 +78,21 @@ const Gifts = () => {
       console.log("Gifts response:", giftsResponse);
       console.log("Markets response:", marketsResponse);
       console.log("Brands response:", brandsResponse);
-      setGifts(giftsResponse.data.data || []);
-      setMarkets(marketsResponse.data.data || []);
-      setBrands(brandsResponse.data.data || []);
+
+      // Handle the API response structure: { success: true, data: gifts }
+      const giftsData = Array.isArray(giftsResponse.data?.data)
+        ? giftsResponse.data.data
+        : [];
+      const marketsData = Array.isArray(marketsResponse.data)
+        ? marketsResponse.data
+        : [];
+      const brandsData = Array.isArray(brandsResponse.data)
+        ? brandsResponse.data
+        : [];
+
+      setGifts(giftsData);
+      setMarkets(marketsData);
+      setBrands(brandsData);
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -85,12 +101,22 @@ const Gifts = () => {
           "Network error. Please check your connection."
       );
       console.error("Error fetching gifts data:", err);
+      // Set empty arrays on error to prevent "not iterable" errors
+      setGifts([]);
+      setMarkets([]);
+      setBrands([]);
     } finally {
       setLoading(false);
     }
   };
 
   const applyFilters = () => {
+    // Ensure gifts is always an array
+    if (!Array.isArray(gifts)) {
+      setFilteredGifts([]);
+      return;
+    }
+
     let filtered = [...gifts];
 
     // Search filter
@@ -102,8 +128,11 @@ const Gifts = () => {
 
     // Market filter
     if (filters.market) {
-      filtered = filtered.filter((gift) =>
-        gift.marketId.some((market) => market._id === filters.market)
+      filtered = filtered.filter(
+        (gift) =>
+          gift.marketId &&
+          Array.isArray(gift.marketId) &&
+          gift.marketId.some((market) => market._id === filters.market)
       );
     }
 
@@ -141,7 +170,6 @@ const Gifts = () => {
 
   const renderFilters = () => (
     <Paper
-      onClick={toggleFilters}
       elevation={0}
       sx={{
         p: 1,
@@ -158,11 +186,13 @@ const Gifts = () => {
     >
       {/* Mobile Filter Toggle */}
       <Box
+        onClick={toggleFilters}
         sx={{
           display: { xs: "flex", md: "none" },
           mb: 2,
           justifyContent: "space-between",
           alignItems: "center",
+          cursor: "pointer",
         }}
       >
         <Typography
@@ -205,6 +235,7 @@ const Gifts = () => {
               label={t("Search Gifts")}
               value={filters.search}
               onChange={(e) => handleFilterChange("search", e.target.value)}
+              onClick={(e) => e.stopPropagation()}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -220,6 +251,7 @@ const Gifts = () => {
               <Select
                 value={filters.market}
                 onChange={(e) => handleFilterChange("market", e.target.value)}
+                onClick={(e) => e.stopPropagation()}
                 label={t("Market")}
               >
                 <MenuItem value="">{t("All Markets")}</MenuItem>
@@ -237,6 +269,7 @@ const Gifts = () => {
               <Select
                 value={filters.brand}
                 onChange={(e) => handleFilterChange("brand", e.target.value)}
+                onClick={(e) => e.stopPropagation()}
                 label={t("Brand")}
               >
                 <MenuItem value="">{t("All Brands")}</MenuItem>
@@ -254,17 +287,27 @@ const Gifts = () => {
   );
 
   const renderGiftCard = (gift) => {
+    // Safety check to ensure gift is a valid object
+    if (!gift || typeof gift !== "object") {
+      return null;
+    }
+
     const remainingDays = getRemainingDays(gift.expireDate);
 
     return (
       <Card
         key={gift._id}
+        onClick={() => {
+          setSelectedGift(gift);
+          setDialogOpen(true);
+        }}
         sx={{
           display: "flex",
           height: { xs: "150px", sm: "250px", md: "280px" },
           width: "100%",
           borderRadius: 2,
           overflow: "hidden",
+          cursor: "pointer",
           background:
             theme.palette.mode === "dark"
               ? "linear-gradient(135deg, #34495e 0%, #2c3e50 100%)"
@@ -373,7 +416,8 @@ const Gifts = () => {
                     <Typography
                       key={market._id}
                       variant="body2"
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         navigate(`/markets/${market._id}?tab=gifts`);
                       }}
                       sx={{
@@ -426,7 +470,8 @@ const Gifts = () => {
                     textDecoration: "underline",
                   },
                 }}
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   navigate(`/brands/${gift.brandId._id}?tab=gifts`);
                 }}
               >
@@ -492,11 +537,18 @@ const Gifts = () => {
     );
   }
 
-  const allGifts = filteredGifts;
-  const marketGifts = filteredGifts.filter(
-    (gift) => gift.marketId && gift.marketId.length > 0
-  );
-  const brandGifts = filteredGifts.filter((gift) => gift.brandId);
+  const allGifts = Array.isArray(filteredGifts) ? filteredGifts : [];
+  const marketGifts = Array.isArray(filteredGifts)
+    ? filteredGifts.filter(
+        (gift) =>
+          gift.marketId &&
+          Array.isArray(gift.marketId) &&
+          gift.marketId.length > 0
+      )
+    : [];
+  const brandGifts = Array.isArray(filteredGifts)
+    ? filteredGifts.filter((gift) => gift.brandId)
+    : [];
 
   return (
     <Box sx={{ py: 8, px: { xs: 0.5, sm: 1.5, md: 3 } }}>
@@ -609,7 +661,7 @@ const Gifts = () => {
               <Box
                 sx={{
                   display: "grid",
-                  gridTemplateColumns: { xs: "1fr", md: "1fr" },
+                  gridTemplateColumns: { xs: "1fr", md: "12fr" },
                   gap: 3,
                   width: "100%",
                 }}
@@ -698,6 +750,84 @@ const Gifts = () => {
           </Box>
         )}
       </Box>
+      {/* Gift Details Dialog */}
+      <Dialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box display="flex" alignItems="center" gap={1}>
+            <ShoppingCartIcon color="primary" />
+            <Typography variant="h6" component="span">
+              {t("Gift Information")}
+            </Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          {selectedGift && (
+            <Paper
+              elevation={2}
+              sx={{ p: 3, borderRadius: 3, bgcolor: "background.default" }}
+            >
+              {selectedGift.image && (
+                <Box display="flex" justifyContent="center" mb={2}>
+                  <img
+                    src={selectedGift.image}
+                    alt={selectedGift.name}
+                    style={{
+                      maxWidth: 220,
+                      maxHeight: 220,
+                      borderRadius: 16,
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                      objectFit: "cover",
+                    }}
+                  />
+                </Box>
+              )}
+              <Box display="flex" flexDirection="column" gap={1}>
+                <Typography
+                  variant="h6"
+                  color="primary"
+                  align="center"
+                  gutterBottom
+                >
+                  {selectedGift.description}
+                </Typography>
+
+                {selectedGift.brandId && (
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <Business fontSize="small" color="action" />
+                    <Typography variant="body2" color="text.secondary">
+                      {t("Brand")}: {selectedGift.brandId.name}
+                    </Typography>
+                  </Box>
+                )}
+
+                {selectedGift.expireDate && (
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <LocalOfferIcon fontSize="small" color="action" />
+                    <Typography variant="body2" color="text.secondary">
+                      {t("Expires")}:{" "}
+                      {new Date(selectedGift.expireDate).toLocaleDateString()}
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+            </Paper>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setDialogOpen(false)}
+            variant="contained"
+            color="primary"
+          >
+            {t("Close")}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
