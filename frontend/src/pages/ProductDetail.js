@@ -220,7 +220,7 @@ const ProductDetail = () => {
       <Paper elevation={3} sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
         <Grid container spacing={{ xs: 2, sm: 3, md: 4 }}>
           {/* Product Image */}
-          <Grid xs={6} md={6} alignContent="center" marginLeft={{ xs: 10 }}>
+          <Grid xs={6} md={6} alignContent="center">
             {product.image ? (
               <CardMedia
                 component="img"
@@ -248,7 +248,6 @@ const ProductDetail = () => {
               >
                 <ShoppingCartIcon
                   sx={{
-                    marginLeft: { xs: 10 },
                     fontSize: { xs: 50, sm: 70, md: 80 },
                     color: "grey.400",
                   }}
@@ -260,12 +259,7 @@ const ProductDetail = () => {
           {/* Product Details */}
           <Grid xs={6} md={6}>
             <Box>
-              <Box
-                display="flex"
-                alignItems="center"
-                mb={2}
-                marginLeft={{ xs: 5 }}
-              >
+              <Box display="flex" alignItems="center" mb={2}>
                 <ShoppingCartIcon
                   sx={{
                     fontSize: { xs: 24, sm: 28, md: 32 },
@@ -323,14 +317,24 @@ const ProductDetail = () => {
                   />
                   <Typography
                     variant="h6"
-                    color="text.secondary"
+                    color={
+                      theme.palette.mode === "dark" ? "white" : "text.secondary"
+                    }
                     sx={{
                       fontWeight: "bold",
                       fontSize: { xs: "0.875rem", sm: "1rem", md: "1.25rem" },
                     }}
                   >
                     {t("Category")}:{" "}
-                    <span style={{ color: "black", fontWeight: "bold" }}>
+                    <span
+                      style={{
+                        color:
+                          theme.palette.mode === "dark"
+                            ? "white"
+                            : "text.secondary",
+                        fontWeight: "bold",
+                      }}
+                    >
                       {product.categoryId.name || "N/A"}
                     </span>
                   </Typography>
@@ -357,7 +361,15 @@ const ProductDetail = () => {
                     }}
                   >
                     {t("Brand")}:{" "}
-                    <span style={{ color: "black", fontWeight: "bold" }}>
+                    <span
+                      style={{
+                        color:
+                          theme.palette.mode === "dark"
+                            ? "white"
+                            : "text.secondary",
+                        fontWeight: "bold",
+                      }}
+                    >
                       {product.brandId.name}
                     </span>
                   </Typography>
@@ -383,7 +395,15 @@ const ProductDetail = () => {
                     }}
                   >
                     {t("Market")}:{" "}
-                    <span style={{ color: "black", fontWeight: "bold" }}>
+                    <span
+                      style={{
+                        color:
+                          theme.palette.mode === "dark"
+                            ? "white"
+                            : "text.secondary",
+                        fontWeight: "bold",
+                      }}
+                    >
                       {product.marketId.name}
                     </span>
                   </Typography>
@@ -498,8 +518,24 @@ const ProductDetail = () => {
                       fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" },
                     }}
                   >
-                    <span style={{ color: "black" }}>{t("Price")}:</span>{" "}
-                    {formatPrice(product.newPrice)}
+                    <span
+                      style={{
+                        color:
+                          theme.palette.mode === "dark" ? "white" : "black",
+                      }}
+                    >
+                      {t("Price")}:
+                    </span>{" "}
+                    <span
+                      style={{
+                        color:
+                          theme.palette.mode === "dark"
+                            ? "text.main"
+                            : "text.primary",
+                      }}
+                    >
+                      {formatPrice(product.newPrice)}
+                    </span>
                   </Typography>
                 </Box>
 

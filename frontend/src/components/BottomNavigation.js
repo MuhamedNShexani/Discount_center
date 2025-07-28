@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   Paper,
   BottomNavigation,
@@ -26,6 +26,28 @@ const BottomNavigationBar = () => {
   const location = useLocation();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
+  // Function to determine the active navigation item
+  const getActiveValue = () => {
+    const pathname = location.pathname;
+
+    // Check for exact matches first
+    if (pathname === "/") return "/";
+    if (pathname === "/categories") return "/categories";
+    if (pathname === "/gifts") return "/gifts";
+
+    // Check for markets (including nested routes)
+    if (pathname.startsWith("/markets")) return "/markets";
+
+    // Check for brands (including nested routes)
+    if (pathname.startsWith("/brands")) return "/brands";
+
+    // Default to home if no match
+    return "/";
+  };
+
+  // Memoize the active value to prevent unnecessary re-renders
+  const activeValue = useMemo(() => getActiveValue(), [location.pathname]);
+
   const navItems = [
     { name: t("Home"), path: "/", icon: <HomeIcon /> },
     { name: t("Categories"), path: "/categories", icon: <CategoryIcon /> },
@@ -46,7 +68,7 @@ const BottomNavigationBar = () => {
         left: 0,
         right: 0,
         zIndex: 1000,
-        pb: 1, // Add padding bottom for safe area
+        pb: 0,
       }}
     >
       <Paper
@@ -64,56 +86,86 @@ const BottomNavigationBar = () => {
               : "rgba(255,255,255,0.2)"
           }`,
           borderBottom: "none",
+          overflow: "hidden",
+          minHeight: "64px", // Ensure minimum height for visibility
+          display: "flex",
+          flexDirection: "column",
         }}
       >
         <BottomNavigation
-          value={location.pathname}
+          value={activeValue}
           showLabels
           sx={{
-            background: "transparent",
+            background: "transparent !important",
+            minHeight: "64px",
             "& .MuiBottomNavigationAction-root": {
-              color: "rgba(255,255,255,0.7)",
-              minWidth: "auto",
-              padding: "6px 8px",
+              color: "rgba(255,255,255,0.8) !important",
               "&.Mui-selected": {
-                color: "white",
-                "& .MuiBottomNavigationAction-label": {
-                  fontSize: "0.75rem",
-                  fontWeight: 600,
-                },
+                color: "white !important",
+                backgroundColor: "rgba(255,255,255,0.15) !important",
               },
-              "& .MuiBottomNavigationAction-label": {
-                fontSize: "0.7rem",
-                fontWeight: 500,
-                marginTop: "4px",
-                transition: "all 0.3s ease",
-              },
-              "& .MuiSvgIcon-root": {
-                fontSize: "1.5rem",
-                transition: "all 0.3s ease",
-              },
-            },
-            "& .MuiBottomNavigationAction-root.Mui-selected .MuiSvgIcon-root": {
-              transform: "scale(1.1)",
             },
           }}
         >
-          {navItems.map((item) => (
-            <BottomNavigationAction
-              key={item.path}
-              label={item.name}
-              value={item.path}
-              icon={item.icon}
-              component={Link}
-              to={item.path}
-              sx={{
-                "&:hover": {
-                  backgroundColor: "rgba(255,255,255,0.1)",
-                  borderRadius: 1,
-                },
-              }}
-            />
-          ))}
+          {navItems.map((item) => {
+            const isActive = activeValue === item.path;
+
+            return (
+              <BottomNavigationAction
+                key={item.path}
+                label={item.name}
+                value={item.path}
+                icon={item.icon}
+                component={Link}
+                to={item.path}
+                sx={{
+                  color: isActive
+                    ? "white !important"
+                    : "rgba(255,255,255,0.8) !important",
+                  backgroundColor: isActive
+                    ? "rgba(255,255,255,0.15) !important"
+                    : "transparent !important",
+                  borderRadius: isActive ? 1 : 0,
+                  minWidth: "auto",
+                  padding: "6px 8px",
+                  transition: "all 0.3s ease",
+                  "&.Mui-selected": {
+                    color: "white !important",
+                    backgroundColor: "rgba(255,255,255,0.15) !important",
+                  },
+                  "&.MuiBottomNavigationAction-root": {
+                    color: isActive
+                      ? "white !important"
+                      : "rgba(255,255,255,0.8) !important",
+                    backgroundColor: isActive
+                      ? "rgba(255,255,255,0.15) !important"
+                      : "transparent !important",
+                  },
+                  "& .MuiBottomNavigationAction-label": {
+                    fontSize: isActive ? "0.75rem" : "0.7rem",
+                    fontWeight: isActive ? 600 : 500,
+                    marginTop: "4px",
+                    transition: "all 0.3s ease",
+                    color: isActive
+                      ? "white !important"
+                      : "rgba(255,255,255,0.8) !important",
+                  },
+                  "& .MuiSvgIcon-root": {
+                    fontSize: "1.5rem",
+                    transform: isActive ? "scale(1.1)" : "scale(1)",
+                    transition: "all 0.3s ease",
+                    color: isActive
+                      ? "white !important"
+                      : "rgba(255,255,255,0.8) !important",
+                  },
+                  "&:hover": {
+                    backgroundColor: "rgba(255,255,255,0.1) !important",
+                    borderRadius: 1,
+                  },
+                }}
+              />
+            );
+          })}
         </BottomNavigation>
       </Paper>
     </Box>

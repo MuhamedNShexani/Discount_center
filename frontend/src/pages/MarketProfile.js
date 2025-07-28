@@ -11,6 +11,10 @@ import {
   Card,
   CardMedia,
   CardContent,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
   Button,
   Grid,
   Avatar,
@@ -72,7 +76,8 @@ const MarketProfile = () => {
   const [expandedTypes, setExpandedTypes] = useState({});
   const [displayCounts, setDisplayCounts] = useState({});
   const [filtersOpen, setFiltersOpen] = useState(false);
-
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedGift, setSelectedGift] = useState(null);
   // Filter states
   const [filters, setFilters] = useState({
     name: "",
@@ -253,6 +258,10 @@ const MarketProfile = () => {
     return (
       <Card
         key={gift._id}
+        onClick={() => {
+          setSelectedGift(gift);
+          setDialogOpen(true);
+        }}
         sx={{
           display: "flex",
           height: { xs: "150px", sm: "250px", md: "280px" },
@@ -1501,6 +1510,91 @@ const MarketProfile = () => {
           </Box>
         )}
       </Box>
+      {/* Gift Details Dialog */}
+      <Dialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box display="flex" alignItems="center" gap={1}>
+            <ShoppingCartIcon color="primary" />
+            <Typography variant="h6" component="span">
+              {t("Gift Information")}
+            </Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          {selectedGift && (
+            <Paper
+              elevation={2}
+              sx={{ p: 3, borderRadius: 3, bgcolor: "background.default" }}
+            >
+              {selectedGift.image && (
+                <Box display="flex" justifyContent="center" mb={2}>
+                  <img
+                    src={`${process.env.REACT_APP_BACKEND_URL}${selectedGift.image}`}
+                    alt={selectedGift.name || "Gift image"}
+                    style={{
+                      maxWidth: 220,
+                      maxHeight: 220,
+                      borderRadius: 16,
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                      objectFit: "cover",
+                    }}
+                  />
+                </Box>
+              )}
+              <Box display="flex" flexDirection="column" gap={1}>
+                <Typography
+                  variant="h6"
+                  color="primary"
+                  align="center"
+                  gutterBottom
+                >
+                  {selectedGift.description}
+                </Typography>
+
+                {selectedGift.brandId && (
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <Business fontSize="small" color="action" />
+                    <Typography variant="body2" color="text.secondary">
+                      {t("Brand")}: {selectedGift.brandId.name}
+                    </Typography>
+                  </Box>
+                )}
+
+                {selectedGift.expireDate && (
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <LocalOfferIcon fontSize="small" color="action" />
+                    <Typography variant="body2" color="text.secondary">
+                      {t("Expires")}:{" "}
+                      {new Date(selectedGift.expireDate).toLocaleDateString(
+                        "ar-EG",
+                        {
+                          year: "numeric",
+                          month: "numeric",
+                          day: "numeric",
+                        }
+                      )}
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+            </Paper>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setDialogOpen(false)}
+            variant="contained"
+            color="primary"
+          >
+            {t("Close")}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
