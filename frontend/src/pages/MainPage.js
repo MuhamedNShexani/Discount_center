@@ -63,6 +63,12 @@ const MainPage = () => {
   // Notification dialog state
   const [loginNotificationOpen, setLoginNotificationOpen] = useState(false);
 
+  // Markets pagination state
+  const [displayedMarkets, setDisplayedMarkets] = useState([]);
+  const [marketsPage, setMarketsPage] = useState(1);
+  const [marketsPerPage] = useState(8);
+  const [hasMoreMarkets, setHasMoreMarkets] = useState(true);
+
   // User tracking hook
   const { toggleLike, recordView, isProductLiked, isAuthenticated } =
     useUserTracking();
@@ -254,6 +260,11 @@ const MainPage = () => {
       const marketsData = marketsResponse.data;
       setMarkets(marketsData);
 
+      // Initialize displayed markets (first 8)
+      const initialDisplayed = marketsData.slice(0, marketsPerPage);
+      setDisplayedMarkets(initialDisplayed);
+      setHasMoreMarkets(marketsData.length > marketsPerPage);
+
       // Fetch products for each market (prioritize discounted products)
       const productsMap = {};
       const initialLikeCounts = {};
@@ -298,6 +309,18 @@ const MainPage = () => {
     }
   };
 
+  // Load more markets function
+  const loadMoreMarkets = () => {
+    const nextPage = marketsPage + 1;
+    const startIndex = (nextPage - 1) * marketsPerPage;
+    const endIndex = startIndex + marketsPerPage;
+    const newMarkets = markets.slice(startIndex, endIndex);
+
+    setDisplayedMarkets((prev) => [...prev, ...newMarkets]);
+    setMarketsPage(nextPage);
+    setHasMoreMarkets(endIndex < markets.length);
+  };
+
   const formatPrice = (price) => {
     if (typeof price !== "number") return `${t("ID")} 0`;
     return ` ${price.toLocaleString(undefined, {
@@ -311,7 +334,7 @@ const MainPage = () => {
     return Math.round(((previousPrice - newPrice) / previousPrice) * 100);
   };
 
-  const filteredMarkets = markets.filter((market) => {
+  const filteredMarkets = displayedMarkets.filter((market) => {
     // If market name matches search or any of its products match search/filters
     const marketNameMatch = market.name
       ?.toLowerCase()
@@ -338,16 +361,12 @@ const MainPage = () => {
           product.isDiscount === "true" ||
           hasPriceDiscount === true;
 
-        return (
-          (nameMatch || marketNameMatch) &&
-          categoryMatch &&
-          priceMatch &&
-          discountMatch
-        );
+        return nameMatch && categoryMatch && priceMatch && discountMatch;
       }
     );
 
-    return filteredProducts.length > 0;
+    // Show market if name matches or if it has products that match filters
+    return marketNameMatch || filteredProducts.length > 0;
   });
 
   if (loading) return <Loader message={t("Loading...")} />;
@@ -1325,6 +1344,41 @@ const MainPage = () => {
           </Card>
         );
       })}
+
+      {/* Load More Markets Button */}
+      {hasMoreMarkets && filteredMarkets.length > 0 && (
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            mt: 4,
+            mb: 2,
+          }}
+        >
+          <Button
+            onClick={loadMoreMarkets}
+            variant="outlined"
+            size="large"
+            sx={{
+              borderRadius: 3,
+              px: 4,
+              py: 1.5,
+              fontSize: "1.1rem",
+              fontWeight: 600,
+              textTransform: "none",
+              borderWidth: 2,
+              "&:hover": {
+                borderWidth: 2,
+                transform: "translateY(-2px)",
+                boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+              },
+              transition: "all 0.3s ease",
+            }}
+          >
+            {t("Load More")}
+          </Button>
+        </Box>
+      )}
 
       {markets.length === 0 && (
         <Alert

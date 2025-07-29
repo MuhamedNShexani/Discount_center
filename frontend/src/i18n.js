@@ -271,6 +271,7 @@ const resources = {
         "You must login to like products. Do you want to login?",
       Yes: "Yes",
       No: "No",
+      "Load More Markets": "Load More Markets",
     },
   },
   ar: {
@@ -548,6 +549,7 @@ const resources = {
         "هل تريد تسجيل الدخول للإعجاب بالمنتجات؟",
       Yes: "نعم",
       No: "لا",
+      "Load More Markets": "تحميل المزيد من الأسواق",
     },
   },
   ku: {
@@ -919,6 +921,7 @@ const resources = {
         "دەتەوێت بچیتە ژوورەوە ؟",
       Yes: "بەڵێ",
       No: "نەخێر",
+      "Load More": "بینینى زیاتر",
     },
   },
 };
