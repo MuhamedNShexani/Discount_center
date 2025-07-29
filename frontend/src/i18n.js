@@ -272,6 +272,9 @@ const resources = {
       Yes: "Yes",
       No: "No",
       "Load More Markets": "Load More Markets",
+      "Load More": "Load More",
+      "Guest User": "Guest User",
+      "Not logged in": "Not logged in",
     },
   },
   ar: {
@@ -550,6 +553,9 @@ const resources = {
       Yes: "نعم",
       No: "لا",
       "Load More Markets": "تحميل المزيد من الأسواق",
+      "Load More": "تحميل المزيد",
+      "Guest User": "مستخدم زائر",
+      "Not logged in": "لم تسجيل الدخول",
     },
   },
   ku: {
@@ -921,7 +927,10 @@ const resources = {
         "دەتەوێت بچیتە ژوورەوە ؟",
       Yes: "بەڵێ",
       No: "نەخێر",
-      "Load More": "بینینى زیاتر",
+      "Load More": "زیاتر بینین",
+      "Load More": "تحميل المزيد",
+      "Guest User": "بەکارهێنەری میوان",
+      "Not logged in": "چوونەژوورەوە نەکراوە",
     },
   },
 };

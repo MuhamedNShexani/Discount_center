@@ -407,29 +407,87 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
         anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
       >
         {/* User Info */}
-        {user && (
-          <>
-            <Box
-              sx={{
-                px: 2,
-                py: 1.5,
-                borderBottom: `1px solid ${theme.palette.divider}`,
-              }}
-            >
-              <Typography
-                variant="subtitle2"
-                color="text.primary"
-                fontWeight={600}
+        <Box
+          sx={{
+            px: 2,
+            py: 2,
+            borderBottom: `1px solid ${theme.palette.divider}`,
+            backgroundColor:
+              theme.palette.mode === "dark"
+                ? "rgba(255,255,255,0.05)"
+                : "rgba(0,0,0,0.02)",
+          }}
+        >
+          {user ? (
+            <>
+              <Box display="flex" alignItems="center" gap={1.5} mb={1}>
+                <Avatar
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    backgroundColor:
+                      theme.palette.mode === "dark" ? "#52b788" : "#40916c",
+                    fontSize: "1rem",
+                    fontWeight: 600,
+                  }}
+                >
+                  {user.firstName
+                    ? user.firstName.charAt(0).toUpperCase()
+                    : "U"}
+                </Avatar>
+                <Box>
+                  <Typography
+                    variant="subtitle1"
+                    color="text.primary"
+                    fontWeight={600}
+                    sx={{ fontSize: "1rem" }}
+                  >
+                    {user.firstName} {user.lastName}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontSize: "0.8rem" }}
+                  >
+                    {user.email}
+                  </Typography>
+                </Box>
+              </Box>
+            </>
+          ) : (
+            <Box display="flex" alignItems="center" gap={1.5}>
+              <Avatar
+                sx={{
+                  width: 40,
+                  height: 40,
+                  backgroundColor:
+                    theme.palette.mode === "dark" ? "#6c757d" : "#adb5bd",
+                  fontSize: "1rem",
+                  fontWeight: 600,
+                }}
               >
-                {user.firstName} {user.lastName}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {user.email}
-              </Typography>
+                G
+              </Avatar>
+              <Box>
+                <Typography
+                  variant="subtitle1"
+                  color="text.primary"
+                  fontWeight={600}
+                  sx={{ fontSize: "1rem" }}
+                >
+                  {t("Guest User")}
+                </Typography>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ fontSize: "0.8rem" }}
+                >
+                  {t("Not logged in")}
+                </Typography>
+              </Box>
             </Box>
-            <Divider />
-          </>
-        )}
+          )}
+        </Box>
 
         {/* Theme Toggle */}
         <MenuItem
