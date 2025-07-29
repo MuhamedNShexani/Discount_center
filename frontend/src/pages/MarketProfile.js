@@ -89,6 +89,9 @@ const MarketProfile = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedGift, setSelectedGift] = useState(null);
 
+  // Notification dialog state
+  const [loginNotificationOpen, setLoginNotificationOpen] = useState(false);
+
   // Like functionality states
   const [likeCounts, setLikeCounts] = useState({});
   const [likeStates, setLikeStates] = useState({});
@@ -287,7 +290,8 @@ const MarketProfile = () => {
     e.stopPropagation();
 
     if (!isAuthenticated) {
-      // Show login prompt or redirect to login
+      // Show login notification dialog
+      setLoginNotificationOpen(true);
       return;
     }
 
@@ -1702,6 +1706,46 @@ const MarketProfile = () => {
             color="primary"
           >
             {t("Close")}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Login Notification Dialog */}
+      <Dialog
+        open={loginNotificationOpen}
+        onClose={() => setLoginNotificationOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box display="flex" alignItems="center" gap={1}>
+            <Typography variant="h6" component="span">
+              {t("Login Required")}
+            </Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            {t("You must login to like products. Do you want to login?")}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setLoginNotificationOpen(false)}
+            variant="outlined"
+            color="primary"
+          >
+            {t("No")}
+          </Button>
+          <Button
+            onClick={() => {
+              setLoginNotificationOpen(false);
+              navigate("/login");
+            }}
+            variant="contained"
+            color="primary"
+          >
+            {t("Yes")}
           </Button>
         </DialogActions>
       </Dialog>

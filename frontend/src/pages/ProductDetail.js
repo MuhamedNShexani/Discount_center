@@ -63,10 +63,14 @@ const ProductDetail = () => {
   const [likeLoading, setLikeLoading] = useState(false);
   const viewRecordedRef = useRef(false); // Use ref to track if view has been recorded for this product
 
+  // Notification dialog state
+  const [loginNotificationOpen, setLoginNotificationOpen] = useState(false);
+
   // Handle like button click
   const handleLikeClick = async () => {
     if (!isAuthenticated) {
-      alert(t("Please log in to like products."));
+      // Show login notification dialog
+      setLoginNotificationOpen(true);
       return;
     }
 
@@ -1326,6 +1330,46 @@ const ProductDetail = () => {
             disabled={submittingReview || reviewRating === 0}
           >
             {submittingReview ? t("Submitting...") : t("Submit Review")}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Login Notification Dialog */}
+      <Dialog
+        open={loginNotificationOpen}
+        onClose={() => setLoginNotificationOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box display="flex" alignItems="center" gap={1}>
+            <Typography variant="h6" component="span">
+              {t("Login Required")}
+            </Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            {t("You must login to like products. Do you want to login?")}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setLoginNotificationOpen(false)}
+            variant="outlined"
+            color="primary"
+          >
+            {t("No")}
+          </Button>
+          <Button
+            onClick={() => {
+              setLoginNotificationOpen(false);
+              navigate("/login");
+            }}
+            variant="contained"
+            color="primary"
+          >
+            {t("Yes")}
           </Button>
         </DialogActions>
       </Dialog>

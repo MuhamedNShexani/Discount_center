@@ -75,6 +75,9 @@ const BrandProfile = () => {
 
   const [dialogOpen, setDialogOpen] = useState(false);
 
+  // Notification dialog state
+  const [loginNotificationOpen, setLoginNotificationOpen] = useState(false);
+
   const [brand, setBrand] = useState(null);
   const [products, setProducts] = useState([]);
   const [gifts, setGifts] = useState([]);
@@ -288,7 +291,8 @@ const BrandProfile = () => {
     e.stopPropagation();
 
     if (!isAuthenticated) {
-      // Show login prompt or redirect to login
+      // Show login notification dialog
+      setLoginNotificationOpen(true);
       return;
     }
 
@@ -1769,6 +1773,46 @@ const BrandProfile = () => {
             color="primary"
           >
             {t("Close")}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Login Notification Dialog */}
+      <Dialog
+        open={loginNotificationOpen}
+        onClose={() => setLoginNotificationOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box display="flex" alignItems="center" gap={1}>
+            <Typography variant="h6" component="span">
+              {t("Login Required")}
+            </Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            {t("You must login to like products. Do you want to login?")}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setLoginNotificationOpen(false)}
+            variant="outlined"
+            color="primary"
+          >
+            {t("No")}
+          </Button>
+          <Button
+            onClick={() => {
+              setLoginNotificationOpen(false);
+              navigate("/login");
+            }}
+            variant="contained"
+            color="primary"
+          >
+            {t("Yes")}
           </Button>
         </DialogActions>
       </Dialog>

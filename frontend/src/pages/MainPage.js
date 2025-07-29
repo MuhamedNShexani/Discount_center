@@ -14,12 +14,16 @@ import {
   FormControl,
   Select,
   IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { marketAPI, productAPI, categoryAPI } from "../services/api";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import BusinessIcon from "@mui/icons-material/Business";
@@ -43,6 +47,7 @@ import banner7 from "./assests/7.png";
 import banner6 from "./assests/6.png";
 const MainPage = () => {
   const theme = useTheme();
+  const navigate = useNavigate();
   const [markets, setMarkets] = useState([]);
   const [productsByMarket, setProductsByMarket] = useState({});
   const [loading, setLoading] = useState(true);
@@ -53,6 +58,10 @@ const MainPage = () => {
   const [priceRange, setPriceRange] = useState([0, 1000000]);
   const [showOnlyDiscount, setShowOnlyDiscount] = useState(true); // Default to showing only discounted products
   const [categories, setCategories] = useState([]);
+  const [loginDialogOpen, setLoginDialogOpen] = useState(false);
+
+  // Notification dialog state
+  const [loginNotificationOpen, setLoginNotificationOpen] = useState(false);
 
   // User tracking hook
   const { toggleLike, recordView, isProductLiked, isAuthenticated } =
@@ -69,7 +78,7 @@ const MainPage = () => {
     e.stopPropagation();
 
     if (!isAuthenticated) {
-      alert(t("Please log in to like products."));
+      setLoginNotificationOpen(true);
       return;
     }
 
@@ -1332,6 +1341,46 @@ const MainPage = () => {
           No markets found. Add some markets through the admin panel.
         </Alert>
       )}
+
+      {/* Login Notification Dialog */}
+      <Dialog
+        open={loginNotificationOpen}
+        onClose={() => setLoginNotificationOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box display="flex" alignItems="center" gap={1}>
+            <Typography variant="h6" component="span">
+              {t("Login Required")}
+            </Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            {t("You must login to like products. Do you want to login?")}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setLoginNotificationOpen(false)}
+            variant="outlined"
+            color="primary"
+          >
+            {t("No")}
+          </Button>
+          <Button
+            onClick={() => {
+              setLoginNotificationOpen(false);
+              navigate("/login");
+            }}
+            variant="contained"
+            color="primary"
+          >
+            {t("Yes")}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

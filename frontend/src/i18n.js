@@ -266,6 +266,11 @@ const resources = {
       "Dark Mode": "Dark Mode",
       Login: "Login",
       Logout: "Logout",
+      "Login Required": "Login Required",
+      "You must login to like products. Do you want to login?":
+        "You must login to like products. Do you want to login?",
+      Yes: "Yes",
+      No: "No",
     },
   },
   ar: {
@@ -538,6 +543,11 @@ const resources = {
       "Light Mode": "الوضع الفاتح",
       Login: "تسجيل الدخول",
       Logout: "تسجيل الخروج",
+      "Login Required": "تسجيل الدخول مطلوب",
+      "You must login to like products. Do you want to login?":
+        "هل تريد تسجيل الدخول للإعجاب بالمنتجات؟",
+      Yes: "نعم",
+      No: "لا",
     },
   },
   ku: {
@@ -904,6 +914,11 @@ const resources = {
         "تکایە بچۆرە ژوورەوە بۆ بەجێهێنانی هەڵسەنگاندن",
       Login: "چوونەژوورەوە",
       Logout: "چوونە دەرەوە",
+      "Login Required": "چوونەژوورەوە پێویستە",
+      "You must login to like products. Do you want to login?":
+        "دەتەوێت بچیتە ژوورەوە ؟",
+      Yes: "بەڵێ",
+      No: "نەخێر",
     },
   },
 };

@@ -33,7 +33,7 @@ import {
   Rating,
   Tooltip,
 } from "@mui/material";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { productAPI, categoryAPI } from "../services/api";
 import CategoryIcon from "@mui/icons-material/Category";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
@@ -50,13 +50,13 @@ import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import StarIcon from "@mui/icons-material/Star";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@mui/material/styles";
-import { useLocation } from "react-router-dom";
 import { useUserTracking } from "../hooks/useUserTracking";
 import { useAuth } from "../context/AuthContext";
 
 const ProductCategory = () => {
   const theme = useTheme();
   const location = useLocation();
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const { isAuthenticated } = useAuth();
   const { toggleLike, isProductLiked, recordView } = useUserTracking();
@@ -71,6 +71,9 @@ const ProductCategory = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  // Notification dialog state
+  const [loginNotificationOpen, setLoginNotificationOpen] = useState(false);
 
   // Like functionality states
   const [likeCounts, setLikeCounts] = useState({});
@@ -214,7 +217,8 @@ const ProductCategory = () => {
     e.stopPropagation();
 
     if (!isAuthenticated) {
-      // Show login prompt or redirect to login
+      // Show login notification dialog
+      setLoginNotificationOpen(true);
       return;
     }
 
@@ -1411,6 +1415,46 @@ const ProductCategory = () => {
             color="primary"
           >
             {t("Close")}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Login Notification Dialog */}
+      <Dialog
+        open={loginNotificationOpen}
+        onClose={() => setLoginNotificationOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box display="flex" alignItems="center" gap={1}>
+            <Typography variant="h6" component="span">
+              {t("Login Required")}
+            </Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            {t("You must login to like products. Do you want to login?")}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setLoginNotificationOpen(false)}
+            variant="outlined"
+            color="primary"
+          >
+            {t("No")}
+          </Button>
+          <Button
+            onClick={() => {
+              setLoginNotificationOpen(false);
+              navigate("/login");
+            }}
+            variant="contained"
+            color="primary"
+          >
+            {t("Yes")}
           </Button>
         </DialogActions>
       </Dialog>
