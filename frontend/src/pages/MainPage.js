@@ -13,6 +13,7 @@ import {
   MenuItem,
   FormControl,
   Select,
+  IconButton,
 } from "@mui/material";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
@@ -26,9 +27,13 @@ import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import CategoryIcon from "@mui/icons-material/Category";
 import SearchIcon from "@mui/icons-material/Search";
+import FavoriteIcon from "@mui/icons-material/Favorite";
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import Loader from "../components/Loader";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@mui/material/styles";
+import { useUserTracking } from "../hooks/useUserTracking";
 import banner1 from "./assests/1.png";
 import banner2 from "./assests/2.png";
 import banner3 from "./assests/3.png";
@@ -48,6 +53,93 @@ const MainPage = () => {
   const [priceRange, setPriceRange] = useState([0, 1000000]);
   const [showOnlyDiscount, setShowOnlyDiscount] = useState(true); // Default to showing only discounted products
   const [categories, setCategories] = useState([]);
+
+  // User tracking hook
+  const { toggleLike, recordView, isProductLiked, isAuthenticated } =
+    useUserTracking();
+
+  // State for tracking like counts locally
+  const [likeCounts, setLikeCounts] = useState({});
+  const [likeStates, setLikeStates] = useState({}); // Track like state per product
+  const [likeLoading, setLikeLoading] = useState({}); // Track loading state per product
+
+  // Handle like button click
+  const handleLikeClick = async (productId, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!isAuthenticated) {
+      alert(t("Please log in to like products."));
+      return;
+    }
+
+    // Prevent multiple rapid clicks
+    if (likeLoading[productId]) {
+      return;
+    }
+
+    // Get current state
+    const currentLikeCount = likeCounts[productId] || 0;
+    const isCurrentlyLiked = likeStates[productId] || isProductLiked(productId);
+
+    // Set loading state
+    setLikeLoading((prev) => ({ ...prev, [productId]: true }));
+
+    try {
+      // Optimistically update the UI
+      if (isCurrentlyLiked) {
+        // Currently liked, so unlike
+        setLikeCounts((prev) => ({
+          ...prev,
+          [productId]: Math.max(0, currentLikeCount - 1),
+        }));
+        setLikeStates((prev) => ({
+          ...prev,
+          [productId]: false,
+        }));
+      } else {
+        // Currently not liked, so like
+        setLikeCounts((prev) => ({
+          ...prev,
+          [productId]: currentLikeCount + 1,
+        }));
+        setLikeStates((prev) => ({
+          ...prev,
+          [productId]: true,
+        }));
+      }
+
+      // Make the API call
+      const result = await toggleLike(productId);
+
+      if (!result.success) {
+        // Revert the optimistic update if the API call failed
+        setLikeCounts((prev) => ({
+          ...prev,
+          [productId]: currentLikeCount,
+        }));
+        setLikeStates((prev) => ({
+          ...prev,
+          [productId]: isCurrentlyLiked,
+        }));
+        alert(result.message || "Failed to update like");
+      }
+    } catch (error) {
+      // Revert on error
+      setLikeCounts((prev) => ({
+        ...prev,
+        [productId]: currentLikeCount,
+      }));
+      setLikeStates((prev) => ({
+        ...prev,
+        [productId]: isCurrentlyLiked,
+      }));
+      alert("Failed to update like");
+    } finally {
+      // Clear loading state
+      setLikeLoading((prev) => ({ ...prev, [productId]: false }));
+    }
+  };
 
   const bannerImages = [
     banner1,
@@ -89,6 +181,19 @@ const MainPage = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Update like states when user data changes
+  useEffect(() => {
+    if (isAuthenticated && Object.keys(productsByMarket).length > 0) {
+      const updatedLikeStates = {};
+      Object.values(productsByMarket)
+        .flat()
+        .forEach((product) => {
+          updatedLikeStates[product._id] = isProductLiked(product._id);
+        });
+      setLikeStates(updatedLikeStates);
+    }
+  }, [isAuthenticated, productsByMarket, isProductLiked]);
 
   // Fetch categories for filter dropdown
   useEffect(() => {
@@ -142,6 +247,9 @@ const MainPage = () => {
 
       // Fetch products for each market (prioritize discounted products)
       const productsMap = {};
+      const initialLikeCounts = {};
+      const initialLikeStates = {};
+
       for (const market of marketsData) {
         const productsResponse = await productAPI.getByMarket(market._id);
         const allProducts = productsResponse.data;
@@ -158,8 +266,17 @@ const MainPage = () => {
         // Take first 12 products (prioritizing discounted ones)
         const products = sortedProducts.slice(0, 12);
         productsMap[market._id] = products;
+
+        // Initialize like counts and states for these products
+        products.forEach((product) => {
+          initialLikeCounts[product._id] = product.likeCount || 0;
+          initialLikeStates[product._id] = false; // Will be updated by isProductLiked
+        });
       }
+
       setProductsByMarket(productsMap);
+      setLikeCounts(initialLikeCounts);
+      setLikeStates(initialLikeStates);
     } catch (err) {
       setError(
         err.response
@@ -940,30 +1057,22 @@ const MainPage = () => {
                       component={Link}
                       to={`/products/${product._id}`}
                       sx={{
-                        height: { xs: "300px", sm: "350px" },
-                        width: { xs: "140px", sm: "200px", md: "250px" },
-                        maxWidth: { xs: "140px", sm: "200px", md: "250px" },
-                        minWidth: { xs: "140px", sm: "200px", md: "250px" },
+                        height: { xs: "320px", sm: "380px" },
+                        width: { xs: "160px", sm: "220px", md: "280px" },
+                        maxWidth: { xs: "160px", sm: "220px", md: "280px" },
+                        minWidth: { xs: "160px", sm: "220px", md: "280px" },
                         textDecoration: "none",
                         borderRadius: 2,
                         overflow: "hidden",
                         display: "flex",
                         flexDirection: "column",
                         flexShrink: 0,
-                        background:
-                          theme.palette.mode === "dark"
-                            ? "linear-gradient(135deg, #34495e 0%, #2c3e50 100%)"
-                            : "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
-                        border: `1px solid ${
-                          theme.palette.mode === "dark" ? "#4a5568" : "#e2e8f0"
-                        }`,
+                        background: "white",
+                        border: "1px solid #e2e8f0",
                         transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                         "&:hover": {
-                          transform: "translateY(-8px) scale(1.02)",
-                          boxShadow:
-                            theme.palette.mode === "dark"
-                              ? "0 20px 40px rgba(0,0,0,0.4)"
-                              : "0 20px 40px rgba(0,0,0,0.1)",
+                          transform: "translateY(-4px)",
+                          boxShadow: "0 12px 24px rgba(0,0,0,0.15)",
                         },
                       }}
                     >
@@ -972,8 +1081,9 @@ const MainPage = () => {
                         sx={{
                           position: "relative",
                           overflow: "hidden",
-                          height: { xs: "100px", sm: "180px" },
+                          height: { xs: "120px", sm: "180px" },
                           flexShrink: 0,
+                          backgroundColor: "#f8f9fa",
                         }}
                       >
                         {product.image ? (
@@ -987,7 +1097,7 @@ const MainPage = () => {
                               width: "100%",
                               height: "100%",
                               transition: "transform 0.3s ease",
-                              "&:hover": { transform: "scale(1.1)" },
+                              "&:hover": { transform: "scale(1.05)" },
                             }}
                           />
                         ) : (
@@ -998,181 +1108,205 @@ const MainPage = () => {
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
-                              background:
-                                theme.palette.mode === "dark"
-                                  ? "linear-gradient(135deg, #4a5568 0%, #2d3748 100%)"
-                                  : "linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)",
+                              background: "#f8f9fa",
                             }}
                           >
                             <StorefrontIcon
                               sx={{
                                 fontSize: 60,
-                                color:
-                                  theme.palette.mode === "dark"
-                                    ? "#718096"
-                                    : "#a0aec0",
+                                color: "#a0aec0",
                               }}
                             />
                           </Box>
                         )}
 
-                        {/* Discount Badge */}
-                        {(discount > 0 || product.isDiscount) && (
-                          <Chip
-                            label={
-                              discount > 0 ? `-${discount}%` : t("Discount")
-                            }
+                        {/* View Count Badge - Top Right */}
+                        {product.viewCount > 0 && (
+                          <Box
                             sx={{
                               position: "absolute",
-                              top: 12,
-                              right: 12,
-                              backgroundColor: "#e53e3e",
+                              top: 8,
+                              right: 8,
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 0.5,
+                              backgroundColor: "rgba(0, 0, 0, 0.7)",
                               color: "white",
-                              fontWeight: 700,
-                              fontSize: "0.75rem",
-                              boxShadow: "0 4px 12px rgba(229, 62, 62, 0.4)",
+                              px: 1,
+                              py: 0.5,
+                              borderRadius: 1,
+                              fontSize: "0.7rem",
                             }}
-                          />
+                          >
+                            <VisibilityIcon sx={{ fontSize: "0.8rem" }} />
+                            {product.viewCount}
+                          </Box>
                         )}
                       </Box>
 
                       {/* Product Content */}
                       <CardContent
                         sx={{
-                          p: { xs: 1, md: 2 },
-                          flex: 1, // Fill remaining space
+                          p: { xs: 1.5, md: 2 },
+                          flex: 1,
                           display: "flex",
                           flexDirection: "column",
-                          minHeight: { xs: "100px", sm: "120px" }, // Minimum height for consistent content area
+                          position: "relative",
                         }}
                       >
+                        {/* Product Name */}
                         <Typography
-                          variant="h5"
-                          align="center"
+                          variant="h6"
                           sx={{
-                            color:
-                              theme.palette.mode === "dark"
-                                ? "#ffffff"
-                                : "#000000",
-                            height: { xs: "35px", sm: "45px" },
-                            fontStyle: "bold",
-                            fontWeight: 1000,
-                            fontSize: {
-                              xs: "0.75rem",
-                              sm: "1rem",
-                              md: "0.8rem",
-                            },
+                            color: "#000000",
+                            fontWeight: 600,
+                            fontSize: { xs: "0.9rem", sm: "1rem" },
                             textAlign: "center",
                             mb: 1,
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
+                            lineHeight: 1.3,
+                            minHeight: "2.6em",
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
                           }}
                         >
                           {product.name}
                         </Typography>
-                        {/* Category Type Badge */}
-                        <Chip
-                          label={getCategoryTypeName(
-                            product.categoryTypeId,
-                            product.categoryId?._id || product.categoryId
-                          )}
+
+                        {/* Pricing Section */}
+                        <Box
                           sx={{
-                            width: "fit-content",
-                            marginBottom: 1,
-                            backgroundColor: "rgba(82, 183, 136, 0.9)",
-                            color: "white",
-                            fontSize: { xs: "0.6rem", sm: "0.75rem" },
-                            fontWeight: 600,
-                            backdropFilter: "blur(10px)",
-                            height: { xs: "20px", sm: "24px" },
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            mb: 1,
                           }}
-                        />
-                        {/* Weight Badge */}
-                        {/* {product.weight && (
-                          <Chip
-                            label={product.weight}
+                        >
+                          {product.previousPrice &&
+                            product.previousPrice > product.newPrice && (
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  textDecoration: "line-through",
+                                  color: "red",
+                                  fontSize: { xs: "0.8rem", sm: "0.9rem" },
+                                  fontWeight: 500,
+                                }}
+                              >
+                                {formatPrice(product.previousPrice)}
+                              </Typography>
+                            )}
+                          <Typography
+                            variant="h6"
                             sx={{
-                              width: "fit-content",
-                              marginBottom: 1,
-                              backgroundColor: "rgba(108, 117, 125, 0.9)",
-                              color: "white",
-                              fontSize: "0.7rem",
-                              fontWeight: 500,
-                              backdropFilter: "blur(10px)",
+                              color: "#52b788",
+                              fontWeight: 700,
+                              fontSize: { xs: "1.1rem", sm: "1.3rem" },
                             }}
-                          />
-                        )} */}
-                        <Box display="flex" flexDirection="column">
-                          <Box
-                            display="contents"
-                            flexDirection="column"
-                            alignItems="center"
                           >
-                            {product.previousPrice &&
-                              product.previousPrice > product.newPrice && (
-                                <Typography
-                                  variant="h6"
-                                  sx={{
-                                    textDecoration: "line-through",
-                                    color: "red",
-                                    fontSize: { xs: "0.8rem", sm: "1rem" },
-                                  }}
-                                >
-                                  {formatPrice(product.previousPrice)}
-                                </Typography>
-                              )}
-                            <Typography
-                              variant="h6"
-                              align="center"
+                            {formatPrice(product.newPrice)}
+                          </Typography>
+                        </Box>
+
+                        {/* Bottom Section with Discount Badge and Like Button */}
+                        <Box
+                          sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "flex-end",
+                            mt: "auto",
+                          }}
+                        >
+                          {/* Discount Badge - Bottom Left */}
+                          {(discount > 0 || product.isDiscount) && (
+                            <Chip
+                              label={
+                                discount > 0 ? `-${discount}%` : t("Discount")
+                              }
                               sx={{
-                                color: "#52b788",
+                                backgroundColor: "#e53e3e",
+                                color: "white",
                                 fontWeight: 700,
-                                fontSize: { xs: "1.2rem", sm: "1.5rem" },
+                                fontSize: "0.75rem",
+                                height: "24px",
+                              }}
+                            />
+                          )}
+
+                          {/* Like Button and Count - Bottom Right */}
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 0.5,
+                            }}
+                          >
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: "#666",
+                                fontSize: "0.8rem",
+                                fontWeight: 500,
                               }}
                             >
-                              {formatPrice(product.newPrice)}
+                              {likeCounts[product._id] ||
+                                product.likeCount ||
+                                0}
                             </Typography>
-                          </Box>
-                        </Box>
-                        <Box
-                          display="flex"
-                          borderTop="1px solid rgb(159, 196, 245)"
-                          flexDirection="column"
-                        >
-                          <Box
-                            display="contents"
-                            flexDirection="column"
-                            alignItems="center"
-                          >
-                            <Typography
-                              variant="h6"
-                              align="center"
-                              paddingTop={1}
+                            <IconButton
+                              onClick={(e) => handleLikeClick(product._id, e)}
+                              disabled={likeLoading[product._id]}
                               sx={{
                                 color:
-                                  theme.palette.mode === "dark"
-                                    ? "white"
-                                    : "red",
-                                fontWeight: 500,
-                                fontSize: {
-                                  xs: ".7rem",
-                                  sm: "1rem",
-                                  md: "0.7rem",
+                                  likeStates[product._id] ||
+                                  isProductLiked(product._id)
+                                    ? "#e53e3e"
+                                    : "#666",
+                                "&:hover": {
+                                  color: "#e53e3e",
+                                  transform: "scale(1.1)",
                                 },
+                                transition: "all 0.2s ease",
+                                p: 0.5,
                               }}
+                              size="small"
                             >
-                              {t("Expire Date")}:{" "}
-                              {new Date(product.expireDate).toLocaleDateString(
-                                "ar-SY",
-                                {
-                                  year: "numeric",
-                                  month: "numeric",
-                                  day: "numeric",
-                                }
+                              {likeStates[product._id] ||
+                              isProductLiked(product._id) ? (
+                                <FavoriteIcon sx={{ fontSize: "1.2rem" }} />
+                              ) : (
+                                <FavoriteBorderIcon
+                                  sx={{ fontSize: "1.2rem" }}
+                                />
                               )}
-                            </Typography>
+                            </IconButton>
                           </Box>
                         </Box>
+
+                        {/* Expiry Date - Bottom */}
+                        {product.expireDate && (
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: "red",
+                              fontSize: { xs: "0.7rem", sm: "0.8rem" },
+                              textAlign: "center",
+                              mt: 1,
+                              fontWeight: 500,
+                            }}
+                          >
+                            {t("Expire Date")}:{" "}
+                            {new Date(product.expireDate).toLocaleDateString(
+                              "ar-SY",
+                              {
+                                year: "numeric",
+                                month: "numeric",
+                                day: "numeric",
+                              }
+                            )}
+                          </Typography>
+                        )}
                       </CardContent>
                     </Card>
                   );

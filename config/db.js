@@ -4,13 +4,13 @@ require("dotenv").config();
 const connectDB = async () => {
   try {
     console.log("Attempting to connect to MongoDB...");
-    console.log("Connection string:", process.env.MONGO_URI);
 
-    if (!process.env.MONGO_URI) {
-      throw new Error("MONGO_URI is not defined");
-    }
+    // Use default connection if MONGO_URI is not set
+    const mongoUri =
+      process.env.MONGO_URI || "mongodb://localhost:27017/marketplace";
+    console.log("Connection string:", mongoUri);
 
-    await mongoose.connect(process.env.MONGO_URI, {
+    await mongoose.connect(mongoUri, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });

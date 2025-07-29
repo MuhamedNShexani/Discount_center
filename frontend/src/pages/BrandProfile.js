@@ -35,6 +35,9 @@ import {
   Select,
   MenuItem,
   InputAdornment,
+  Tooltip,
+  Rating,
+  CircularProgress,
 } from "@mui/material";
 import {
   ArrowBack,
@@ -47,6 +50,9 @@ import {
   ExpandMore,
   ExpandLess,
 } from "@mui/icons-material";
+import FavoriteIcon from "@mui/icons-material/Favorite";
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import StarIcon from "@mui/icons-material/Star";
 import { brandAPI, productAPI, giftAPI } from "../services/api";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
@@ -55,6 +61,8 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import CardGiftcardIcon from "@mui/icons-material/CardGiftcard";
 import { useTranslation } from "react-i18next";
 import Loader from "../components/Loader";
+import { useUserTracking } from "../hooks/useUserTracking";
+import { useAuth } from "../context/AuthContext";
 
 const BrandProfile = () => {
   const { id } = useParams();
@@ -62,6 +70,9 @@ const BrandProfile = () => {
   const [searchParams] = useSearchParams();
   const theme = useTheme();
   const { t } = useTranslation();
+  const { isAuthenticated } = useAuth();
+  const { toggleLike, isProductLiked, recordView } = useUserTracking();
+
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const [brand, setBrand] = useState(null);
@@ -78,6 +89,11 @@ const BrandProfile = () => {
   const [expandedTypes, setExpandedTypes] = useState({});
   const [displayCounts, setDisplayCounts] = useState({});
   const [filtersOpen, setFiltersOpen] = useState(false);
+
+  // Like functionality states
+  const [likeCounts, setLikeCounts] = useState({});
+  const [likeStates, setLikeStates] = useState({});
+  const [likeLoading, setLikeLoading] = useState({});
 
   // Filter states
   const [filters, setFilters] = useState({
@@ -96,6 +112,20 @@ const BrandProfile = () => {
       fetchBrandData();
     }
   }, [id]);
+
+  // Initialize like states when products change
+  useEffect(() => {
+    const initialLikeCounts = {};
+    const initialLikeStates = {};
+
+    products.forEach((product) => {
+      initialLikeCounts[product._id] = product.likeCount || 0;
+      initialLikeStates[product._id] = isProductLiked(product._id);
+    });
+
+    setLikeCounts(initialLikeCounts);
+    setLikeStates(initialLikeStates);
+  }, [products, isProductLiked]);
 
   const fetchBrandData = async () => {
     try {
@@ -250,6 +280,49 @@ const BrandProfile = () => {
       ...prev,
       [type]: (prev[type] || 10) + 20,
     }));
+  };
+
+  // Handle like button click
+  const handleLikeClick = async (productId, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!isAuthenticated) {
+      // Show login prompt or redirect to login
+      return;
+    }
+
+    // Prevent multiple rapid clicks
+    if (likeLoading[productId]) return;
+
+    // Optimistic update
+    const currentLikeState = likeStates[productId];
+    const currentLikeCount = likeCounts[productId];
+
+    setLikeLoading((prev) => ({ ...prev, [productId]: true }));
+    setLikeStates((prev) => ({ ...prev, [productId]: !currentLikeState }));
+    setLikeCounts((prev) => ({
+      ...prev,
+      [productId]: currentLikeState
+        ? currentLikeCount - 1
+        : currentLikeCount + 1,
+    }));
+
+    try {
+      const result = await toggleLike(productId);
+
+      if (!result.success) {
+        // Revert optimistic update on failure
+        setLikeStates((prev) => ({ ...prev, [productId]: currentLikeState }));
+        setLikeCounts((prev) => ({ ...prev, [productId]: currentLikeCount }));
+      }
+    } catch (error) {
+      // Revert optimistic update on error
+      setLikeStates((prev) => ({ ...prev, [productId]: currentLikeState }));
+      setLikeCounts((prev) => ({ ...prev, [productId]: currentLikeCount }));
+    } finally {
+      setLikeLoading((prev) => ({ ...prev, [productId]: false }));
+    }
   };
 
   // Render gift card
@@ -454,36 +527,22 @@ const BrandProfile = () => {
           component={Link}
           to={`/products/${product._id}`}
           sx={{
-            height: { xs: "280px", sm: "320px", md: "350px" },
-            width: { xs: "100%", sm: "280px", md: "280px" },
-            maxWidth: { xs: "100%", sm: "280px", md: "280px" },
-            minWidth: { xs: "auto", sm: "280px", md: "280px" },
+            height: { xs: "320px", sm: "380px" },
+            width: { xs: "160px", sm: "220px", md: "280px" },
+            maxWidth: { xs: "160px", sm: "220px", md: "280px" },
+            minWidth: { xs: "160px", sm: "220px", md: "280px" },
             textDecoration: "none",
+            borderRadius: 2,
+            overflow: "hidden",
             display: "flex",
             flexDirection: "column",
-            borderRadius: { xs: 2, sm: 3, md: 3 },
-            overflow: "hidden",
-            background:
-              theme.palette.mode === "dark"
-                ? "linear-gradient(135deg, #34495e 0%, #2c3e50 100%)"
-                : "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
-            border: `1px solid ${
-              theme.palette.mode === "dark" ? "#4a5568" : "#e2e8f0"
-            }`,
-            boxShadow:
-              theme.palette.mode === "dark"
-                ? "0 8px 32px rgba(0,0,0,0.3)"
-                : "0 8px 32px rgba(0,0,0,0.1)",
-            transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+            flexShrink: 0,
+            background: "white",
+            border: "1px solid #e2e8f0",
+            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
             "&:hover": {
-              transform: "translateY(-8px) scale(1.02)",
-              boxShadow:
-                theme.palette.mode === "dark"
-                  ? "0 20px 40px rgba(0,0,0,0.4)"
-                  : "0 20px 40px rgba(0,0,0,0.15)",
-              "& .product-image": {
-                transform: "scale(1.1)",
-              },
+              transform: "translateY(-4px)",
+              boxShadow: "0 12px 24px rgba(0,0,0,0.15)",
             },
           }}
         >
@@ -492,8 +551,9 @@ const BrandProfile = () => {
             sx={{
               position: "relative",
               overflow: "hidden",
-              height: { xs: "140px", sm: "160px", md: "180px" },
+              height: { xs: "100px", sm: "180px", md: "150px" },
               flexShrink: 0,
+              backgroundColor: "#f8f9fa",
             }}
           >
             {product.image ? (
@@ -502,13 +562,12 @@ const BrandProfile = () => {
                 height="180"
                 image={`${process.env.REACT_APP_BACKEND_URL}${product.image}`}
                 alt={product.name}
-                className="product-image"
                 sx={{
                   objectFit: "contain",
                   width: "100%",
                   height: "100%",
-                  transition: "transform 0.4s ease",
-                  p: { xs: 1, sm: 0, md: 0 },
+                  transition: "transform 0.3s ease",
+                  "&:hover": { transform: "scale(1.05)" },
                 }}
               />
             ) : (
@@ -519,84 +578,67 @@ const BrandProfile = () => {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  background:
-                    theme.palette.mode === "dark"
-                      ? "linear-gradient(135deg, #4a5568 0%, #2d3748 100%)"
-                      : "linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)",
+                  background: "#f8f9fa",
                 }}
               >
                 <StorefrontIcon
                   sx={{
                     fontSize: 60,
-                    color:
-                      theme.palette.mode === "dark" ? "#718096" : "#a0aec0",
+                    color: "#a0aec0",
                   }}
                 />
               </Box>
             )}
 
-            {/* Badges */}
-            <Box
-              sx={{
-                position: "absolute",
-                top: 12,
-                left: 12,
-                right: 12,
-              }}
-            >
+            {/* View Count Badge - Top Right */}
+            {product.viewCount > 0 && (
               <Box
-                display="flex"
-                justifyContent="space-between"
-                alignItems="flex-start"
+                sx={{
+                  position: "absolute",
+                  top: 8,
+                  right: 8,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.5,
+                  backgroundColor: "rgba(0, 0, 0, 0.7)",
+                  color: "white",
+                  px: 1,
+                  py: 0.5,
+                  borderRadius: 1,
+                  fontSize: "0.7rem",
+                }}
               >
-                <Chip
-                  label={t(product.type)}
-                  sx={{
-                    backgroundColor: "rgba(82, 183, 136, 0.9)",
-                    color: "white",
-                    fontSize: "0.75rem",
-                    fontWeight: 600,
-                    backdropFilter: "blur(10px)",
-                  }}
-                />
-                {discount > 0 && (
-                  <Chip
-                    label={`-${discount}%`}
-                    sx={{
-                      backgroundColor: "#e53e3e",
-                      color: "white",
-                      fontWeight: 700,
-                      fontSize: "0.75rem",
-                      boxShadow: "0 4px 12px rgba(229, 62, 62, 0.4)",
-                    }}
-                  />
-                )}
+                <VisibilityIcon sx={{ fontSize: "0.8rem" }} />
+                {product.viewCount}
               </Box>
-            </Box>
+            )}
           </Box>
 
           {/* Product Content */}
           <CardContent
             sx={{
-              p: 2,
+              p: { xs: 1.5, md: 2 },
               flex: 1,
               display: "flex",
               flexDirection: "column",
-              minHeight: "140px",
+              position: "relative",
             }}
           >
+            {/* Product Name */}
             <Typography
               variant="h6"
-              gutterBottom
               sx={{
+                color: "#000000",
                 fontWeight: 600,
-                color: theme.palette.text.primary,
-                fontSize: "1rem",
-                lineHeight: 1.3,
+                fontSize: { xs: "0.9rem", sm: "1rem" },
+                textAlign: "center",
                 mb: 1,
+                lineHeight: 1.3,
+                minHeight: "2em",
+                display: "-webkit-box",
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: "vertical",
                 overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
               }}
             >
               {product.name}
@@ -607,74 +649,141 @@ const BrandProfile = () => {
               <Typography
                 variant="body2"
                 sx={{
-                  color: theme.palette.text.secondary,
-                  fontSize: "0.875rem",
+                  color: "#666",
+                  fontSize: "0.8rem",
                   mb: 1,
                   fontStyle: "italic",
+                  textAlign: "center",
                 }}
               >
                 {product.marketId.name}
               </Typography>
             )}
 
-            {/* Price Section */}
-            <Box sx={{ mt: "auto" }}>
-              {/* Expiry Info */}
-              {remainingDays !== null && (
-                <Box display="flex" alignItems="center" gap={0.5} mb={1}>
-                  <LocalOfferIcon sx={{ fontSize: 16, color: "#52b788" }} />
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color:
-                        remainingDays > 7
-                          ? "#52b788"
-                          : remainingDays > 0
-                          ? "#f59e0b"
-                          : "#ef4444",
-                      fontWeight: 600,
-                    }}
-                  >
-                    {remainingDays > 0
-                      ? `${remainingDays} ${t("days remaining")}`
-                      : t("Expired")}
-                  </Typography>
-                </Box>
-              )}
-
+            {/* Pricing Section */}
+            {showPrice && (
               <Box
-                display="flex"
-                alignItems="center"
-                justifyContent="space-between"
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  mb: 1,
+                }}
               >
                 {product.previousPrice &&
-                  product.previousPrice > product.newPrice &&
-                  showPrice && (
+                  product.previousPrice > product.newPrice && (
                     <Typography
                       variant="body2"
                       sx={{
                         textDecoration: "line-through",
-                        color: theme.palette.text.secondary,
-                        fontSize: "0.875rem",
+                        color: "red",
+                        fontSize: { xs: "0.8rem", sm: "0.9rem" },
+                        fontWeight: 500,
                       }}
                     >
                       {formatPrice(product.previousPrice)}
                     </Typography>
                   )}
-                {showPrice && (
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      color: "#52b788",
-                      fontWeight: 700,
-                      fontSize: "1.125rem",
-                    }}
-                  >
-                    {formatPrice(product.newPrice)}
-                  </Typography>
-                )}
+                <Typography
+                  variant="h6"
+                  sx={{
+                    color: "#52b788",
+                    fontWeight: 700,
+                    fontSize: { xs: "1.1rem", sm: "1.3rem" },
+                  }}
+                >
+                  {formatPrice(product.newPrice)}
+                </Typography>
+              </Box>
+            )}
+
+            {/* Bottom Section with Discount Badge and Like Button */}
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-end",
+                mt: "auto",
+              }}
+            >
+              {/* Discount Badge - Bottom Left */}
+              {(discount > 0 || product.isDiscount) && (
+                <Chip
+                  label={discount > 0 ? `-${discount}%` : t("Discount")}
+                  sx={{
+                    backgroundColor: "#e53e3e",
+                    color: "white",
+                    fontWeight: 700,
+                    fontSize: "0.75rem",
+                    height: "24px",
+                  }}
+                />
+              )}
+
+              {/* Like Button and Count - Bottom Right */}
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.5,
+                }}
+              >
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "#666",
+                    fontSize: "0.8rem",
+                    fontWeight: 500,
+                  }}
+                >
+                  {likeCounts[product._id] || product.likeCount || 0}
+                </Typography>
+                <IconButton
+                  onClick={(e) => handleLikeClick(product._id, e)}
+                  disabled={likeLoading[product._id]}
+                  sx={{
+                    color:
+                      likeStates[product._id] || isProductLiked(product._id)
+                        ? "#e53e3e"
+                        : "#666",
+                    "&:hover": {
+                      color: "#e53e3e",
+                      transform: "scale(1.1)",
+                    },
+                    transition: "all 0.2s ease",
+                    p: 0.5,
+                  }}
+                  size="small"
+                >
+                  {likeStates[product._id] || isProductLiked(product._id) ? (
+                    <FavoriteIcon sx={{ fontSize: "1.2rem" }} />
+                  ) : (
+                    <FavoriteBorderIcon sx={{ fontSize: "1.2rem" }} />
+                  )}
+                </IconButton>
               </Box>
             </Box>
+
+            {/* Expiry Date - Bottom */}
+            {product.expireDate && (
+              <Typography
+                variant="caption"
+                sx={{
+                  color: "red",
+                  fontSize: { xs: "0.7rem", sm: "0.8rem" },
+                  textAlign: "center",
+                  mt: 1,
+                  fontWeight: 500,
+                }}
+              >
+                {t("Expire Date")}:{" "}
+                {new Date(product.expireDate).toLocaleDateString("ar-SY", {
+                  year: "numeric",
+                  month: "numeric",
+                  day: "numeric",
+                })}
+              </Typography>
+            )}
           </CardContent>
         </Card>
       </Fade>

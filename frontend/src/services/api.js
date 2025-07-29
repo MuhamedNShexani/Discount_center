@@ -65,4 +65,39 @@ export const giftAPI = {
   getByBrand: (brandId) => api.get(`/gifts/brand/${brandId}`),
 };
 
+// User API calls
+export const userAPI = {
+  getByDevice: (deviceId) => api.get(`/users/device/${deviceId}`),
+  toggleLike: (deviceId, productId, headers = {}) =>
+    api.post("/users/like-product", { productId }, { headers }),
+  recordView: (deviceId, productId, headers = {}) =>
+    api.post("/users/view-product", { deviceId, productId }, { headers }),
+  addReview: (deviceId, productId, rating, comment, headers = {}) =>
+    api.post(
+      "/users/review-product",
+      { productId, rating, comment },
+      { headers }
+    ),
+  getLikedProducts: (deviceId, headers = {}) =>
+    api.get("/users/liked-products", { headers }),
+  getViewedProducts: (deviceId, headers = {}) =>
+    api.get("/users/viewed-products", { headers }),
+};
+
+// Auth API calls
+export const authAPI = {
+  register: (userData) => api.post("/auth/register", userData),
+  login: (email, password) => api.post("/auth/login", { email, password }),
+  getProfile: (headers) => api.get("/auth/profile", { headers }),
+  updateProfile: (profileData, headers) =>
+    api.put("/auth/profile", profileData, { headers }),
+  changePassword: (currentPassword, newPassword, headers) =>
+    api.put(
+      "/auth/change-password",
+      { currentPassword, newPassword },
+      { headers }
+    ),
+  logout: (headers) => api.post("/auth/logout", {}, { headers }),
+};
+
 export default api;

@@ -29,6 +29,9 @@ import {
   Avatar,
   Badge,
   TablePagination,
+  IconButton,
+  Rating,
+  Tooltip,
 } from "@mui/material";
 import { Link } from "react-router-dom";
 import { productAPI, categoryAPI } from "../services/api";
@@ -42,13 +45,22 @@ import SearchIcon from "@mui/icons-material/Search";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import FavoriteIcon from "@mui/icons-material/Favorite";
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import StarIcon from "@mui/icons-material/Star";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@mui/material/styles";
 import { useLocation } from "react-router-dom";
+import { useUserTracking } from "../hooks/useUserTracking";
+import { useAuth } from "../context/AuthContext";
 
 const ProductCategory = () => {
   const theme = useTheme();
   const location = useLocation();
+  const { t } = useTranslation();
+  const { isAuthenticated } = useAuth();
+  const { toggleLike, isProductLiked, recordView } = useUserTracking();
+
   const [categories, setCategories] = useState([]);
   const [categoryTypes, setCategoryTypes] = useState([]);
   const [products, setProducts] = useState([]);
@@ -59,7 +71,11 @@ const ProductCategory = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const { t } = useTranslation();
+
+  // Like functionality states
+  const [likeCounts, setLikeCounts] = useState({});
+  const [likeStates, setLikeStates] = useState({});
+  const [likeLoading, setLikeLoading] = useState({});
 
   // Filter states
   const [filters, setFilters] = useState({
@@ -87,6 +103,20 @@ const ProductCategory = () => {
   useEffect(() => {
     setPage(0);
   }, [filters, selectedCategoryType]);
+
+  // Initialize like states when products change
+  useEffect(() => {
+    const initialLikeCounts = {};
+    const initialLikeStates = {};
+
+    products.forEach((product) => {
+      initialLikeCounts[product._id] = product.likeCount || 0;
+      initialLikeStates[product._id] = isProductLiked(product._id);
+    });
+
+    setLikeCounts(initialLikeCounts);
+    setLikeStates(initialLikeStates);
+  }, [products, isProductLiked]);
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -175,6 +205,48 @@ const ProductCategory = () => {
   const handleProductClick = (product) => {
     setSelectedProduct(product);
     setDialogOpen(true);
+  };
+
+  // Handle like button click
+  const handleLikeClick = async (productId, e) => {
+    e.stopPropagation();
+
+    if (!isAuthenticated) {
+      // Show login prompt or redirect to login
+      return;
+    }
+
+    // Prevent multiple rapid clicks
+    if (likeLoading[productId]) return;
+
+    // Optimistic update
+    const currentLikeState = likeStates[productId];
+    const currentLikeCount = likeCounts[productId];
+
+    setLikeLoading((prev) => ({ ...prev, [productId]: true }));
+    setLikeStates((prev) => ({ ...prev, [productId]: !currentLikeState }));
+    setLikeCounts((prev) => ({
+      ...prev,
+      [productId]: currentLikeState
+        ? currentLikeCount - 1
+        : currentLikeCount + 1,
+    }));
+
+    try {
+      const result = await toggleLike(productId);
+
+      if (!result.success) {
+        // Revert optimistic update on failure
+        setLikeStates((prev) => ({ ...prev, [productId]: currentLikeState }));
+        setLikeCounts((prev) => ({ ...prev, [productId]: currentLikeCount }));
+      }
+    } catch (error) {
+      // Revert optimistic update on error
+      setLikeStates((prev) => ({ ...prev, [productId]: currentLikeState }));
+      setLikeCounts((prev) => ({ ...prev, [productId]: currentLikeCount }));
+    } finally {
+      setLikeLoading((prev) => ({ ...prev, [productId]: false }));
+    }
   };
 
   // Apply filters to products
@@ -948,6 +1020,108 @@ const ProductCategory = () => {
                           </>
                         )}
                       </Box>
+                      {/* Like, View Count, and Rating Section */}
+                      <Box
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="space-between"
+                        mb={1}
+                        sx={{ minHeight: { xs: 24, md: 32 } }}
+                      >
+                        {/* Like Button */}
+                        <Tooltip
+                          title={
+                            isAuthenticated
+                              ? likeStates[product._id]
+                                ? t("Unlike")
+                                : t("Like")
+                              : t("Login to like")
+                          }
+                        >
+                          <IconButton
+                            onClick={(e) => handleLikeClick(product._id, e)}
+                            disabled={likeLoading[product._id]}
+                            size="small"
+                            sx={{
+                              color: likeStates[product._id]
+                                ? "#e91e63"
+                                : theme.palette.text.secondary,
+                              "&:hover": {
+                                color: likeStates[product._id]
+                                  ? "#c2185b"
+                                  : "#e91e63",
+                              },
+                            }}
+                          >
+                            {likeLoading[product._id] ? (
+                              <CircularProgress size={16} />
+                            ) : likeStates[product._id] ? (
+                              <FavoriteIcon
+                                sx={{ fontSize: { xs: 16, md: 18 } }}
+                              />
+                            ) : (
+                              <FavoriteBorderIcon
+                                sx={{ fontSize: { xs: 16, md: 18 } }}
+                              />
+                            )}
+                          </IconButton>
+                        </Tooltip>
+
+                        {/* Like Count */}
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: theme.palette.text.secondary,
+                            fontSize: { xs: "0.6rem", md: "0.75rem" },
+                            minWidth: "20px",
+                            textAlign: "center",
+                          }}
+                        >
+                          {likeCounts[product._id] || 0}
+                        </Typography>
+
+                        {/* View Count */}
+                        <Box display="flex" alignItems="center" gap={0.5}>
+                          <VisibilityIcon
+                            sx={{
+                              fontSize: { xs: 12, md: 14 },
+                              color: theme.palette.text.secondary,
+                            }}
+                          />
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: theme.palette.text.secondary,
+                              fontSize: { xs: "0.6rem", md: "0.75rem" },
+                            }}
+                          >
+                            {product.viewCount || 0}
+                          </Typography>
+                        </Box>
+
+                        {/* Rating */}
+                        <Box display="flex" alignItems="center" gap={0.5}>
+                          <StarIcon
+                            sx={{
+                              fontSize: { xs: 12, md: 14 },
+                              color: "#ffc107",
+                            }}
+                          />
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: theme.palette.text.secondary,
+                              fontSize: { xs: "0.6rem", md: "0.75rem" },
+                            }}
+                          >
+                            {product.averageRating
+                              ? product.averageRating.toFixed(1)
+                              : "0.0"}
+                          </Typography>
+                        </Box>
+                      </Box>
+
+                      {/* Price and Discount Section */}
                       <Box
                         display="flex"
                         alignItems="center"

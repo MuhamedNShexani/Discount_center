@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Box,
@@ -13,6 +13,13 @@ import {
   CircularProgress,
   Alert,
   Divider,
+  IconButton,
+  Rating,
+  TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import { ArrowBack } from "@mui/icons-material";
 import { productAPI, categoryAPI } from "../services/api";
@@ -25,9 +32,14 @@ import PhoneIcon from "@mui/icons-material/Phone";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import CategoryIcon from "@mui/icons-material/Category";
+import FavoriteIcon from "@mui/icons-material/Favorite";
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import StarIcon from "@mui/icons-material/Star";
 import { useTranslation } from "react-i18next";
 import { Link as RouterLink } from "react-router-dom";
 import { useTheme } from "@mui/material/styles";
+import { useUserTracking } from "../hooks/useUserTracking";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -41,23 +53,141 @@ const ProductDetail = () => {
   const { t } = useTranslation();
   const theme = useTheme();
 
+  // User tracking hook
+  const { toggleLike, recordView, addReview, isProductLiked, isAuthenticated } =
+    useUserTracking();
+
+  // State for tracking like count locally
+  const [localLikeCount, setLocalLikeCount] = useState(0);
+  const [localLikeState, setLocalLikeState] = useState(false);
+  const [likeLoading, setLikeLoading] = useState(false);
+  const viewRecordedRef = useRef(false); // Use ref to track if view has been recorded for this product
+
+  // Handle like button click
+  const handleLikeClick = async () => {
+    if (!isAuthenticated) {
+      alert(t("Please log in to like products."));
+      return;
+    }
+
+    // Prevent multiple rapid clicks
+    if (likeLoading) {
+      return;
+    }
+
+    // Get current state
+    const currentLikeCount = localLikeCount || product?.likeCount || 0;
+    const isCurrentlyLiked = localLikeState || isProductLiked(product._id);
+
+    // Set loading state
+    setLikeLoading(true);
+
+    try {
+      // Optimistically update the UI
+      if (isCurrentlyLiked) {
+        // Currently liked, so unlike
+        setLocalLikeCount(Math.max(0, currentLikeCount - 1));
+        setLocalLikeState(false);
+      } else {
+        // Currently not liked, so like
+        setLocalLikeCount(currentLikeCount + 1);
+        setLocalLikeState(true);
+      }
+
+      // Make the API call
+      const result = await toggleLike(product._id);
+
+      if (!result.success) {
+        // Revert the optimistic update if the API call failed
+        setLocalLikeCount(currentLikeCount);
+        setLocalLikeState(isCurrentlyLiked);
+        alert(result.message || "Failed to update like");
+      }
+    } catch (error) {
+      // Revert on error
+      setLocalLikeCount(currentLikeCount);
+      setLocalLikeState(isCurrentlyLiked);
+      alert("Failed to update like");
+    } finally {
+      // Clear loading state
+      setLikeLoading(false);
+    }
+  };
+
+  // Review state
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
+
   useEffect(() => {
     fetchProduct();
     fetchCategories();
+    // Reset view recorded state when product changes
+    viewRecordedRef.current = false;
   }, [id]);
 
   const fetchProduct = async () => {
     try {
       setLoading(true);
       const response = await productAPI.getById(id);
-      setProduct(response.data);
+      const productData = response.data;
+      setProduct(productData);
+
+      // Initialize local like count
+      setLocalLikeCount(productData.likeCount || 0);
+
+      // Record view only once when product is loaded
+      if (!viewRecordedRef.current) {
+        recordView(id);
+        viewRecordedRef.current = true;
+      }
+
       // Fetch related products after getting the current product
-      fetchRelatedProducts(response.data);
+      fetchRelatedProducts(productData);
     } catch (err) {
       setError("Failed to load product details. Please try again.");
       console.error("Error fetching product:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Update like state when user data changes
+  useEffect(() => {
+    if (product && isAuthenticated) {
+      setLocalLikeState(isProductLiked(product._id));
+    }
+  }, [product, isAuthenticated, isProductLiked]);
+
+  // Handle review submission
+  const handleReviewSubmit = async () => {
+    if (reviewRating === 0) {
+      alert("Please select a rating");
+      return;
+    }
+
+    try {
+      setSubmittingReview(true);
+      const result = await addReview(id, reviewRating, reviewComment);
+      if (result.success) {
+        // Update product with new rating data
+        setProduct((prev) => ({
+          ...prev,
+          averageRating: result.data.averageRating,
+          reviewCount: result.data.reviewCount,
+        }));
+        setReviewDialogOpen(false);
+        setReviewRating(0);
+        setReviewComment("");
+      } else {
+        alert("Failed to submit review: " + result.message);
+      }
+    } catch (error) {
+      console.error("Error submitting review:", error);
+      alert("Failed to submit review");
+    } finally {
+      setSubmittingReview(false);
     }
   };
 
@@ -584,6 +714,200 @@ const ProductDetail = () => {
                   )}
               </Box>
 
+              {/* User Interaction Section */}
+              <Box sx={{ mb: { xs: 2, md: 3 } }}>
+                {/* Mobile Layout - Stacked Design */}
+                <Box
+                  sx={{
+                    display: { xs: "flex", sm: "flex" },
+                    flexDirection: { xs: "column", sm: "row" },
+                    alignItems: { xs: "stretch", sm: "center" },
+                    gap: { xs: 1.5, sm: 2 },
+                    mb: { xs: 2, sm: 2 },
+                  }}
+                >
+                  {/* Top Row - Like Button and Stats */}
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: { xs: 1, sm: 2 },
+                      justifyContent: { xs: "space-between", sm: "flex-start" },
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    {/* Like Button */}
+                    <IconButton
+                      onClick={handleLikeClick}
+                      disabled={likeLoading}
+                      sx={{
+                        backgroundColor: localLikeState
+                          ? "rgba(229, 62, 62, 0.1)"
+                          : "rgba(0, 0, 0, 0.04)",
+                        color: localLikeState ? "#e53e3e" : "#666",
+                        "&:hover": {
+                          backgroundColor: localLikeState
+                            ? "rgba(229, 62, 62, 0.2)"
+                            : "rgba(0, 0, 0, 0.08)",
+                          transform: "scale(1.05)",
+                        },
+                        transition: "all 0.2s ease",
+                        width: { xs: "48px", sm: "56px" },
+                        height: { xs: "48px", sm: "56px" },
+                      }}
+                      size="large"
+                    >
+                      {localLikeState ? (
+                        <FavoriteIcon
+                          sx={{ fontSize: { xs: "1.25rem", sm: "1.5rem" } }}
+                        />
+                      ) : (
+                        <FavoriteBorderIcon
+                          sx={{ fontSize: { xs: "1.25rem", sm: "1.5rem" } }}
+                        />
+                      )}
+                    </IconButton>
+
+                    {/* Stats Container */}
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: { xs: 1.5, sm: 2 },
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      {/* View Count */}
+                      <Box
+                        display="flex"
+                        alignItems="center"
+                        gap={0.5}
+                        sx={{
+                          backgroundColor: "rgba(0, 0, 0, 0.04)",
+                          borderRadius: 1,
+                          px: { xs: 1, sm: 1.5 },
+                          py: { xs: 0.5, sm: 0.75 },
+                          minWidth: { xs: "fit-content", sm: "auto" },
+                        }}
+                      >
+                        <VisibilityIcon
+                          sx={{
+                            color: "text.secondary",
+                            fontSize: { xs: "1rem", sm: "1.2rem" },
+                          }}
+                        />
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{
+                            fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                            fontWeight: 500,
+                          }}
+                        >
+                          {product.viewCount || 0}
+                        </Typography>
+                      </Box>
+
+                      {/* Like Count */}
+                      <Box
+                        display="flex"
+                        alignItems="center"
+                        gap={0.5}
+                        sx={{
+                          backgroundColor: "rgba(229, 62, 62, 0.1)",
+                          borderRadius: 1,
+                          px: { xs: 1, sm: 1.5 },
+                          py: { xs: 0.5, sm: 0.75 },
+                          minWidth: { xs: "fit-content", sm: "auto" },
+                        }}
+                      >
+                        <FavoriteIcon
+                          sx={{
+                            color: "#e53e3e",
+                            fontSize: { xs: "1rem", sm: "1.2rem" },
+                          }}
+                        />
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{
+                            fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                            fontWeight: 500,
+                          }}
+                        >
+                          {localLikeCount || product.likeCount || 0}
+                        </Typography>
+                      </Box>
+
+                      {/* Average Rating */}
+                      {product.averageRating > 0 && (
+                        <Box
+                          display="flex"
+                          alignItems="center"
+                          gap={0.5}
+                          sx={{
+                            backgroundColor: "rgba(255, 193, 7, 0.1)",
+                            borderRadius: 1,
+                            px: { xs: 1, sm: 1.5 },
+                            py: { xs: 0.5, sm: 0.75 },
+                            minWidth: { xs: "fit-content", sm: "auto" },
+                          }}
+                        >
+                          <StarIcon
+                            sx={{
+                              color: "#ffc107",
+                              fontSize: { xs: "1rem", sm: "1.2rem" },
+                            }}
+                          />
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{
+                              fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                              fontWeight: 500,
+                            }}
+                          >
+                            {product.averageRating.toFixed(1)}
+                          </Typography>
+                        </Box>
+                      )}
+                    </Box>
+                  </Box>
+
+                  {/* Bottom Row - Review Button */}
+                  <Button
+                    variant="outlined"
+                    onClick={() => {
+                      if (!isAuthenticated) {
+                        alert(t("Please log in to leave reviews."));
+                        return;
+                      }
+                      setReviewDialogOpen(true);
+                    }}
+                    startIcon={<StarIcon />}
+                    sx={{
+                      borderRadius: 2,
+                      textTransform: "none",
+                      fontSize: { xs: "0.875rem", sm: "1rem" },
+                      width: { xs: "100%", sm: "auto" },
+                      height: { xs: "44px", sm: "auto" },
+                      backgroundColor: "rgba(255, 193, 7, 0.05)",
+                      borderColor: "#ffc107",
+                      color: "#ffc107",
+                      "&:hover": {
+                        backgroundColor: "rgba(255, 193, 7, 0.1)",
+                        borderColor: "#ffa000",
+                        color: "#ffa000",
+                      },
+                    }}
+                  >
+                    {t("Write a Review")}
+                  </Button>
+                </Box>
+              </Box>
+
+              <Divider sx={{ my: { xs: 2, md: 3 } }} />
+
               {/* Product Details Section */}
               <Box sx={{ mb: { xs: 2, md: 3 } }}>
                 <Typography
@@ -961,6 +1285,50 @@ const ProductDetail = () => {
           )}
         </Paper>
       )}
+
+      {/* Review Dialog */}
+      <Dialog
+        open={reviewDialogOpen}
+        onClose={() => setReviewDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>{t("Write a Review")}</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="body1" gutterBottom>
+              {t("Rating")}:
+            </Typography>
+            <Rating
+              value={reviewRating}
+              onChange={(event, newValue) => setReviewRating(newValue)}
+              size="large"
+              sx={{ fontSize: "2rem" }}
+            />
+          </Box>
+          <TextField
+            fullWidth
+            multiline
+            rows={4}
+            label={t("Comment (optional)")}
+            value={reviewComment}
+            onChange={(e) => setReviewComment(e.target.value)}
+            variant="outlined"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setReviewDialogOpen(false)}>
+            {t("Cancel")}
+          </Button>
+          <Button
+            onClick={handleReviewSubmit}
+            variant="contained"
+            disabled={submittingReview || reviewRating === 0}
+          >
+            {submittingReview ? t("Submitting...") : t("Submit Review")}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

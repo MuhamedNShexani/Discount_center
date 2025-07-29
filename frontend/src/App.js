@@ -26,6 +26,7 @@ import DataEntryForm from "./pages/DataEntryForm";
 import ProductDetail from "./pages/ProductDetail";
 import MarketProfile from "./pages/MarketProfile";
 import Gifts from "./pages/Gifts";
+import AdminPage from "./pages/AdminPage";
 import NavigationBar from "./NavigationBar";
 import BottomNavigationBar from "./components/BottomNavigation";
 import { AuthProvider } from "./context/AuthContext";
@@ -284,6 +285,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <DataEntryForm />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/specific"
+                  element={
+                    <ProtectedRoute allowedEmails={["mshexani45@gmail.com"]}>
+                      <AdminPage />
                     </ProtectedRoute>
                   }
                 />

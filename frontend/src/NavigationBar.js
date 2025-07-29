@@ -46,12 +46,12 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
     { name: t("Markets"), path: "/markets", icon: <StoreIcon /> },
     { name: t("Brands"), path: "/brands", icon: <BusinessIcon /> },
     { name: t("Gifts"), path: "/gifts", icon: <CardGiftcardIcon /> },
-    // Only show Admin link when logged in
-    ...(user
+    // Only show Admin link for specific admin email
+    ...(user && user.email === "mshexani45@gmail.com"
       ? [
           {
             name: t("Admin"),
-            path: "/admin",
+            path: "/admin/specific",
             icon: <AdminPanelSettingsIcon />,
           },
         ]
