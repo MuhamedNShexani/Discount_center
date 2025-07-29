@@ -205,6 +205,8 @@ const ProductCategory = () => {
   const handleProductClick = (product) => {
     setSelectedProduct(product);
     setDialogOpen(true);
+    // Record view when dialog is opened
+    recordView(product._id);
   };
 
   // Handle like button click

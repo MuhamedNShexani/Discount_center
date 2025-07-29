@@ -29,6 +29,7 @@ const resources = {
       "Mobile Menu": "Mobile Menu",
       Theme: "Theme",
       "Light Mode": "Light Mode",
+      "Dark Mode": "Dark Mode",
       "Admin Dashboard": "Admin Dashboard",
       "Manage markets and products efficiently":
         "Manage markets and products efficiently",
@@ -262,6 +263,9 @@ const resources = {
       "Review submitted successfully": "Review submitted successfully",
       "Failed to submit review": "Failed to submit review",
       "Please login to leave reviews": "Please login to leave reviews",
+      "Dark Mode": "Dark Mode",
+      Login: "Login",
+      Logout: "Logout",
     },
   },
   ar: {
@@ -530,6 +534,10 @@ const resources = {
       "Review submitted successfully": "تم إرسال التقييم بنجاح",
       "Failed to submit review": "فشل في إرسال التقييم",
       "Please login to leave reviews": "يرجى تسجيل الدخول لترك التقييمات",
+      "Dark Mode": "الوضع الداكن",
+      "Light Mode": "الوضع الفاتح",
+      Login: "تسجيل الدخول",
+      Logout: "تسجيل الخروج",
     },
   },
   ku: {
@@ -759,8 +767,8 @@ const resources = {
       "Logo URL": "بەستەری لوگۆ",
       "Current Image:": "وێنەی ئێستا:",
       Language: "زمان",
-      "Dark Mode": "ڕۆشنایی تاریک",
-      "Light Mode": "ڕۆشنایی سفێر",
+      "Dark Mode": "گۆڕینى دۆخ بۆ تاریک",
+      "Light Mode": "گۆڕینى دۆخ بۆ ڕووناک",
       of: "لە",
       "more than": "زیاتر",
       products: "کاڵا",
@@ -894,6 +902,8 @@ const resources = {
       "Failed to submit review": "هەڵسەنگاندن نەکرا",
       "Please login to leave reviews":
         "تکایە بچۆرە ژوورەوە بۆ بەجێهێنانی هەڵسەنگاندن",
+      Login: "چوونەژوورەوە",
+      Logout: "چوونە دەرەوە",
     },
   },
 };

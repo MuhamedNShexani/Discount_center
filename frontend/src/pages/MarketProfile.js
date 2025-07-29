@@ -515,7 +515,7 @@ const MarketProfile = () => {
             sx={{
               position: "relative",
               overflow: "hidden",
-              height: { xs: "140px", sm: "180px" },
+              height: { xs: "100px", sm: "100px" },
               flexShrink: 0,
               backgroundColor: "#f8f9fa",
             }}

@@ -12,6 +12,10 @@ import {
   MenuItem,
   Avatar,
   Paper,
+  Menu,
+  ListItemIcon,
+  ListItemText,
+  Divider,
 } from "@mui/material";
 import {
   Home as HomeIcon,
@@ -22,7 +26,11 @@ import {
   Brightness7 as Brightness7Icon,
   Store as StoreIcon,
   Login as LoginIcon,
+  Logout as LogoutIcon,
   CardGiftcard as CardGiftcardIcon,
+  Person as PersonIcon,
+  Language as LanguageIcon,
+  Settings as SettingsIcon,
 } from "@mui/icons-material";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -36,8 +44,24 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
   const lang = i18n.language;
   const location = useLocation();
 
+  // Profile menu state
+  const [profileAnchorEl, setProfileAnchorEl] = useState(null);
+
   const handleLangChange = (event) => {
     i18n.changeLanguage(event.target.value);
+  };
+
+  const handleProfileMenuOpen = (event) => {
+    setProfileAnchorEl(event.currentTarget);
+  };
+
+  const handleProfileMenuClose = () => {
+    setProfileAnchorEl(null);
+  };
+
+  const handleLogout = () => {
+    logout();
+    handleProfileMenuClose();
   };
 
   const navItems = [
@@ -235,63 +259,260 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
 
           {/* Controls */}
           <Box display="flex" alignItems="center" gap={{ xs: 2, sm: 1 }}>
-            {/* Language Selector */}
-            <Paper
-              elevation={0}
-              sx={{
-                backgroundColor: "rgba(255,255,255,0.1)",
-                backdropFilter: "blur(10px)",
-                border: "1px solid rgba(255,255,255,0.2)",
-                borderRadius: 2,
-              }}
-            >
-              <Select
-                value={lang}
-                onChange={handleLangChange}
-                size="small"
-                variant="standard"
-                disableUnderline
-                sx={{
-                  color: "white",
-                  minWidth: { xs: 60, sm: 80 },
-                  px: { xs: 0.5, sm: 1 },
-                  "& .MuiSvgIcon-root": {
-                    color: "white",
-                  },
-                  "& .MuiSelect-select": {
-                    py: 0.5,
-                    fontSize: { xs: "0.8rem", sm: "0.9rem" },
-                  },
-                }}
-              >
-                <MenuItem value="en">🇺🇸 EN</MenuItem>
-                <MenuItem value="ar">🇸🇦 AR</MenuItem>
-                <MenuItem value="ku">🏳️ KU</MenuItem>
-              </Select>
-            </Paper>
+            {/* Desktop Controls */}
+            {isSmUp && (
+              <>
+                {/* Language Selector */}
+                <Paper
+                  elevation={0}
+                  sx={{
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    backdropFilter: "blur(10px)",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    borderRadius: 2,
+                  }}
+                >
+                  <Select
+                    value={lang}
+                    onChange={handleLangChange}
+                    size="small"
+                    variant="standard"
+                    disableUnderline
+                    sx={{
+                      color: "white",
+                      minWidth: { xs: 60, sm: 80 },
+                      px: { xs: 0.5, sm: 1 },
+                      "& .MuiSvgIcon-root": {
+                        color: "white",
+                      },
+                      "& .MuiSelect-select": {
+                        py: 0.5,
+                        fontSize: { xs: "0.8rem", sm: "0.9rem" },
+                      },
+                    }}
+                  >
+                    <MenuItem value="en">🇺🇸 EN</MenuItem>
+                    <MenuItem value="ar">🇸🇦 AR</MenuItem>
+                    <MenuItem value="ku">🏳️ KU</MenuItem>
+                  </Select>
+                </Paper>
 
-            {/* Dark Mode Toggle */}
-            <IconButton
-              onClick={() => setDarkMode(!darkMode)}
-              sx={{
-                color: "white",
-                backgroundColor: "rgba(255,255,255,0.1)",
-                backdropFilter: "blur(10px)",
-                border: "1px solid rgba(255,255,255,0.2)",
-                transition: "all 0.3s ease",
-                width: { xs: 36, sm: 40 },
-                height: { xs: 36, sm: 40 },
-                "&:hover": {
-                  backgroundColor: "rgba(255,255,255,0.2)",
-                  transform: "scale(1.1) rotate(180deg)",
-                },
-              }}
-            >
-              {darkMode ? <Brightness7Icon /> : <Brightness4Icon />}
-            </IconButton>
+                {/* Dark Mode Toggle */}
+                <IconButton
+                  onClick={() => setDarkMode(!darkMode)}
+                  sx={{
+                    color: "white",
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    backdropFilter: "blur(10px)",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    transition: "all 0.3s ease",
+                    width: { xs: 36, sm: 40 },
+                    height: { xs: 36, sm: 40 },
+                    "&:hover": {
+                      backgroundColor: "rgba(255,255,255,0.2)",
+                      transform: "scale(1.1) rotate(180deg)",
+                    },
+                  }}
+                >
+                  {darkMode ? <Brightness7Icon /> : <Brightness4Icon />}
+                </IconButton>
+              </>
+            )}
+
+            {/* Mobile Controls */}
+            {!isSmUp && (
+              <>
+                {/* Mobile Language Selector */}
+                <Paper
+                  elevation={0}
+                  sx={{
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    backdropFilter: "blur(10px)",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    borderRadius: 2,
+                  }}
+                >
+                  <Select
+                    value={lang}
+                    onChange={handleLangChange}
+                    size="small"
+                    variant="standard"
+                    disableUnderline
+                    sx={{
+                      color: "white",
+                      minWidth: 60,
+                      px: 0.5,
+                      "& .MuiSvgIcon-root": {
+                        color: "white",
+                      },
+                      "& .MuiSelect-select": {
+                        py: 0.5,
+                        fontSize: "0.8rem",
+                      },
+                    }}
+                  >
+                    <MenuItem value="en">🇺🇸 EN</MenuItem>
+                    <MenuItem value="ar">🇸🇦 AR</MenuItem>
+                    <MenuItem value="ku">🏳️ KU</MenuItem>
+                  </Select>
+                </Paper>
+
+                {/* Mobile Profile Icon */}
+                <IconButton
+                  onClick={handleProfileMenuOpen}
+                  sx={{
+                    color: "white",
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    backdropFilter: "blur(10px)",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    transition: "all 0.3s ease",
+                    width: 40,
+                    height: 40,
+                    "&:hover": {
+                      backgroundColor: "rgba(255,255,255,0.2)",
+                      transform: "scale(1.1)",
+                    },
+                  }}
+                >
+                  <PersonIcon />
+                </IconButton>
+              </>
+            )}
           </Box>
         </Toolbar>
       </AppBar>
+
+      {/* Mobile Profile Menu */}
+      <Menu
+        anchorEl={profileAnchorEl}
+        open={Boolean(profileAnchorEl)}
+        onClose={handleProfileMenuClose}
+        PaperProps={{
+          sx: {
+            mt: 1,
+            minWidth: 200,
+            backgroundColor:
+              theme.palette.mode === "dark" ? "#2c3e50" : "#ffffff",
+            backdropFilter: "blur(20px)",
+            border: `1px solid ${
+              theme.palette.mode === "dark"
+                ? "rgba(255,255,255,0.1)"
+                : "rgba(0,0,0,0.1)"
+            }`,
+            boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
+            borderRadius: 2,
+          },
+        }}
+        transformOrigin={{ horizontal: "right", vertical: "top" }}
+        anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+      >
+        {/* User Info */}
+        {user && (
+          <>
+            <Box
+              sx={{
+                px: 2,
+                py: 1.5,
+                borderBottom: `1px solid ${theme.palette.divider}`,
+              }}
+            >
+              <Typography
+                variant="subtitle2"
+                color="text.primary"
+                fontWeight={600}
+              >
+                {user.firstName} {user.lastName}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {user.email}
+              </Typography>
+            </Box>
+            <Divider />
+          </>
+        )}
+
+        {/* Theme Toggle */}
+        <MenuItem
+          onClick={() => {
+            setDarkMode(!darkMode);
+            handleProfileMenuClose();
+          }}
+          sx={{
+            py: 1.5,
+            px: 2,
+            "&:hover": {
+              backgroundColor:
+                theme.palette.mode === "dark"
+                  ? "rgba(255,255,255,0.08)"
+                  : "rgba(0,0,0,0.04)",
+            },
+          }}
+        >
+          <ListItemIcon>
+            {darkMode ? <Brightness7Icon /> : <Brightness4Icon />}
+          </ListItemIcon>
+          <ListItemText
+            primary={darkMode ? t("Light Mode") : t("Dark Mode")}
+            primaryTypographyProps={{
+              fontSize: "0.875rem",
+              fontWeight: 500,
+            }}
+          />
+        </MenuItem>
+
+        <Divider />
+
+        {/* Login/Logout */}
+        {user ? (
+          <MenuItem
+            onClick={handleLogout}
+            sx={{
+              py: 1.5,
+              px: 2,
+              color: "#e53e3e",
+              "&:hover": {
+                backgroundColor: "rgba(229, 62, 62, 0.08)",
+              },
+            }}
+          >
+            <ListItemIcon>
+              <LogoutIcon sx={{ color: "#e53e3e" }} />
+            </ListItemIcon>
+            <ListItemText
+              primary={t("Logout")}
+              primaryTypographyProps={{
+                fontSize: "0.875rem",
+                fontWeight: 500,
+              }}
+            />
+          </MenuItem>
+        ) : (
+          <MenuItem
+            component={Link}
+            to="/login"
+            onClick={handleProfileMenuClose}
+            sx={{
+              py: 1.5,
+              px: 2,
+              color: "#40916c",
+              "&:hover": {
+                backgroundColor: "rgba(64, 145, 108, 0.08)",
+              },
+            }}
+          >
+            <ListItemIcon>
+              <LoginIcon sx={{ color: "#40916c" }} />
+            </ListItemIcon>
+            <ListItemText
+              primary={t("Login")}
+              primaryTypographyProps={{
+                fontSize: "0.875rem",
+                fontWeight: 500,
+              }}
+            />
+          </MenuItem>
+        )}
+      </Menu>
     </>
   );
 };
