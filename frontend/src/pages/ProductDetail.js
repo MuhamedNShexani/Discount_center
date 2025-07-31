@@ -226,8 +226,8 @@ const ProductDetail = () => {
         })
         .slice(0, 5); // Limit to 5 products
 
-      // Filter products by same market (excluding current product and already selected category products)
-      const sameMarketProducts = allProducts
+      // Filter products by same store (excluding current product and already selected category products)
+      const sameStoreProducts = allProducts
         .filter((p) => p._id !== currentProduct._id)
         .filter((p) => {
           // Exclude products already in sameCategoryProducts
@@ -237,9 +237,9 @@ const ProductDetail = () => {
           if (isAlreadyInCategory) return false;
 
           if (
-            currentProduct.marketId &&
-            p.marketId &&
-            currentProduct.marketId._id === p.marketId._id
+            currentProduct.storeId &&
+            p.storeId &&
+            currentProduct.storeId._id === p.storeId._id
           ) {
             return true;
           }
@@ -248,7 +248,7 @@ const ProductDetail = () => {
         .slice(0, 5); // Limit to 5 products
 
       // Combine both arrays
-      const related = [...sameCategoryProducts, ...sameMarketProducts];
+      const related = [...sameCategoryProducts, ...sameStoreProducts];
       setRelatedProducts(related);
     } catch (err) {
       console.error("Error fetching related products:", err);
@@ -509,7 +509,7 @@ const ProductDetail = () => {
                   </Typography>
                 </Box>
               )}
-              {product.marketId && (
+              {product.storeId && (
                 <Box display="flex" alignItems="center" mb={2}>
                   <StorefrontIcon
                     sx={{
@@ -520,7 +520,7 @@ const ProductDetail = () => {
                   />
                   <Typography
                     variant="h6"
-                    onClick={() => navigate(`/markets/${product.marketId._id}`)}
+                    onClick={() => navigate(`/stores/${product.storeId._id}`)}
                     color="text.secondary"
                     sx={{
                       cursor: "pointer",
@@ -528,7 +528,7 @@ const ProductDetail = () => {
                       fontSize: { xs: "0.875rem", sm: "1rem", md: "1.25rem" },
                     }}
                   >
-                    {t("Market")}:{" "}
+                    {t("Store")}:{" "}
                     <span
                       style={{
                         color:
@@ -538,7 +538,7 @@ const ProductDetail = () => {
                         fontWeight: "bold",
                       }}
                     >
-                      {product.marketId.name}
+                      {product.storeId.name}
                     </span>
                   </Typography>
                 </Box>
@@ -988,14 +988,14 @@ const ProductDetail = () => {
 
               {/* Action Buttons */}
               {/* <Box sx={{ mt: 4 }}>
-                {product.marketId && product.marketId._id && (
+                {product.storeId && product.storeId._id && (
                   <Button
                     variant="outlined"
                     size="large"
-                    onClick={() => navigate(`/markets/${product.marketId._id}`)}
+                    onClick={() => navigate(`/stores/${product.storeId._id}`)}
                     sx={{ mr: 2 }}
                   >
-                    {t("View Market")}
+                    {t("View Store")}
                   </Button>
                 )}
                 {product.brandId && product.brandId._id && (
@@ -1193,7 +1193,7 @@ const ProductDetail = () => {
                         </Box>
                       )}
 
-                      {relatedProduct.marketId && (
+                      {relatedProduct.storeId && (
                         <Box display="flex" alignItems="center" mb={1}>
                           <StorefrontIcon
                             sx={{
@@ -1209,7 +1209,7 @@ const ProductDetail = () => {
                               fontSize: { xs: "0.7rem", sm: "0.75rem" },
                             }}
                           >
-                            {relatedProduct.marketId.name}
+                            {relatedProduct.storeId.name}
                           </Typography>
                         </Box>
                       )}

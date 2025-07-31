@@ -4,7 +4,7 @@ const Gift = require("../models/Gift");
 const getGifts = async (req, res) => {
   try {
     const gifts = await Gift.find()
-      .populate("marketId", "name logo")
+      .populate("storeId", "name logo")
       .populate("brandId", "name logo")
       .sort({ createdAt: -1 });
 
@@ -25,7 +25,7 @@ const getGifts = async (req, res) => {
 const getGiftById = async (req, res) => {
   try {
     const gift = await Gift.findById(req.params.id)
-      .populate("marketId", "name logo address phone")
+      .populate("storeId", "name logo address phone")
       .populate("brandId", "name logo address phone");
 
     if (!gift) {
@@ -48,11 +48,11 @@ const getGiftById = async (req, res) => {
   }
 };
 
-// Get gifts by market
-const getGiftsByMarket = async (req, res) => {
+// Get gifts by store
+const getGiftsByStore = async (req, res) => {
   try {
-    const gifts = await Gift.find({ marketId: req.params.marketId })
-      .populate("marketId", "name logo")
+    const gifts = await Gift.find({ storeId: req.params.storeId })
+      .populate("storeId", "name logo")
       .populate("brandId", "name logo")
       .sort({ createdAt: -1 });
 
@@ -63,7 +63,7 @@ const getGiftsByMarket = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Error fetching market gifts",
+      message: "Error fetching store gifts",
       error: error.message,
     });
   }
@@ -73,7 +73,7 @@ const getGiftsByMarket = async (req, res) => {
 const getGiftsByBrand = async (req, res) => {
   try {
     const gifts = await Gift.find({ brandId: req.params.brandId })
-      .populate("marketId", "name logo")
+      .populate("storeId", "name logo")
       .populate("brandId", "name logo")
       .sort({ createdAt: -1 });
 
@@ -93,16 +93,16 @@ const getGiftsByBrand = async (req, res) => {
 // Create new gift
 const createGift = async (req, res) => {
   try {
-    const { image, description, marketId, brandId, productId, expireDate } =
+    const { image, description, storeId, brandId, productId, expireDate } =
       req.body;
 
     const gift = new Gift({
       image,
       description,
-      marketId: marketId
-        ? Array.isArray(marketId)
-          ? marketId
-          : [marketId]
+      storeId: storeId
+        ? Array.isArray(storeId)
+          ? storeId
+          : [storeId]
         : [],
       brandId,
       productId,
@@ -111,7 +111,7 @@ const createGift = async (req, res) => {
 
     const savedGift = await gift.save();
     const populatedGift = await Gift.findById(savedGift._id)
-      .populate("marketId", "name logo")
+      .populate("storeId", "name logo")
       .populate("brandId", "name logo");
 
     res.status(201).json({
@@ -131,7 +131,7 @@ const createGift = async (req, res) => {
 // Update gift
 const updateGift = async (req, res) => {
   try {
-    const { image, description, marketId, brandId, productId, expireDate } =
+    const { image, description, storeId, brandId, productId, expireDate } =
       req.body;
 
     const gift = await Gift.findByIdAndUpdate(
@@ -139,10 +139,10 @@ const updateGift = async (req, res) => {
       {
         image,
         description,
-        marketId: marketId
-          ? Array.isArray(marketId)
-            ? marketId
-            : [marketId]
+        storeId: storeId
+          ? Array.isArray(storeId)
+            ? storeId
+            : [storeId]
           : [],
         brandId,
         productId,
@@ -150,7 +150,7 @@ const updateGift = async (req, res) => {
       },
       { new: true }
     )
-      .populate("marketId", "name logo")
+      .populate("storeId", "name logo")
       .populate("brandId", "name logo");
 
     if (!gift) {
@@ -202,7 +202,7 @@ const deleteGift = async (req, res) => {
 module.exports = {
   getGifts,
   getGiftById,
-  getGiftsByMarket,
+  getGiftsByStore,
   getGiftsByBrand,
   createGift,
   updateGift,

@@ -11,13 +11,13 @@ const api = axios.create({
   },
 });
 
-// Market API calls
-export const marketAPI = {
-  getAll: () => api.get("/markets"),
-  getById: (id) => api.get(`/markets/${id}`),
-  create: (data) => api.post("/markets", data),
-  update: (id, data) => api.put(`/markets/${id}`, data),
-  delete: (id) => api.delete(`/markets/${id}`),
+// Store API calls
+export const storeAPI = {
+  getAll: () => api.get("/stores"),
+  getById: (id) => api.get(`/stores/${id}`),
+  create: (data) => api.post("/stores", data),
+  update: (id, data) => api.put(`/stores/${id}`, data),
+  delete: (id) => api.delete(`/stores/${id}`),
 };
 
 // Brand API calls
@@ -48,7 +48,7 @@ export const productAPI = {
   update: (id, data) => api.put(`/products/${id}`, data),
   delete: (id) => api.delete(`/products/${id}`),
   getByBrand: (brandId) => api.get(`/products/brand/${brandId}`),
-  getByMarket: (marketId) => api.get(`/products/market/${marketId}`),
+  getByStore: (storeId) => api.get(`/products/store/${storeId}`),
   getByCategory: (category) => api.get(`/products/category/${category}`),
   getCategories: () => api.get("/products/categories"),
   bulkUpload: (data) => api.post("/products/bulk-upload", data),
@@ -61,7 +61,7 @@ export const giftAPI = {
   create: (data) => api.post("/gifts", data),
   update: (id, data) => api.put(`/gifts/${id}`, data),
   delete: (id) => api.delete(`/gifts/${id}`),
-  getByMarket: (marketId) => api.get(`/gifts/market/${marketId}`),
+  getByStore: (storeId) => api.get(`/gifts/store/${storeId}`),
   getByBrand: (brandId) => api.get(`/gifts/brand/${brandId}`),
 };
 

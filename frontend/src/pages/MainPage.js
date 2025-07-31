@@ -24,7 +24,7 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
 import { Link, useNavigate } from "react-router-dom";
-import { marketAPI, productAPI, categoryAPI } from "../services/api";
+import { storeAPI, productAPI, categoryAPI } from "../services/api";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import BusinessIcon from "@mui/icons-material/Business";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
@@ -48,26 +48,29 @@ import banner6 from "./assests/6.png";
 const MainPage = () => {
   const theme = useTheme();
   const navigate = useNavigate();
-  const [markets, setMarkets] = useState([]);
-  const [productsByMarket, setProductsByMarket] = useState({});
+  const [stores, setStores] = useState([]);
+  const [productsByStore, setProductsByStore] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedCategoryType, setSelectedCategoryType] = useState(null);
+  const [selectedStoreType, setSelectedStoreType] = useState("all");
   const [priceRange, setPriceRange] = useState([0, 1000000]);
   const [showOnlyDiscount, setShowOnlyDiscount] = useState(true); // Default to showing only discounted products
   const [categories, setCategories] = useState([]);
+  const [categoryTypes, setCategoryTypes] = useState([]);
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
 
   // Notification dialog state
   const [loginNotificationOpen, setLoginNotificationOpen] = useState(false);
 
-  // Markets pagination state
-  const [displayedMarkets, setDisplayedMarkets] = useState([]);
-  const [marketsPage, setMarketsPage] = useState(1);
-  const [marketsPerPage] = useState(8);
-  const [hasMoreMarkets, setHasMoreMarkets] = useState(true);
+  // Stores pagination state
+  const [displayedStores, setDisplayedStores] = useState([]);
+  const [storesPage, setStoresPage] = useState(1);
+  const [storesPerPage] = useState(8);
+  const [hasMoreStores, setHasMoreStores] = useState(true);
 
   // User tracking hook
   const { toggleLike, recordView, isProductLiked, isAuthenticated } =
@@ -199,16 +202,16 @@ const MainPage = () => {
 
   // Update like states when user data changes
   useEffect(() => {
-    if (isAuthenticated && Object.keys(productsByMarket).length > 0) {
+    if (isAuthenticated && Object.keys(productsByStore).length > 0) {
       const updatedLikeStates = {};
-      Object.values(productsByMarket)
+      Object.values(productsByStore)
         .flat()
         .forEach((product) => {
           updatedLikeStates[product._id] = isProductLiked(product._id);
         });
       setLikeStates(updatedLikeStates);
     }
-  }, [isAuthenticated, productsByMarket, isProductLiked]);
+  }, [isAuthenticated, productsByStore, isProductLiked]);
 
   // Fetch categories for filter dropdown
   useEffect(() => {
@@ -218,7 +221,24 @@ const MainPage = () => {
   const fetchCategories = async () => {
     try {
       const response = await categoryAPI.getAll();
+
       setCategories(response.data);
+
+      // Extract all category types from categories
+      const allCategoryTypes = [];
+      response.data.forEach((category) => {
+        if (category.types && category.types.length > 0) {
+          category.types.forEach((type) => {
+            allCategoryTypes.push({
+              ...type,
+              categoryId: category._id,
+              categoryName: category.name,
+              fullName: `${category.name} - ${type.name}`,
+            });
+          });
+        }
+      });
+      setCategoryTypes(allCategoryTypes);
     } catch (err) {
       console.error("Error fetching categories:", err);
     }
@@ -226,52 +246,223 @@ const MainPage = () => {
 
   // Helper function to get category type name from categoryTypeId
   const getCategoryTypeName = (categoryTypeId, categoryId) => {
-    // If categoryTypeId is available, try to find the type name
-    if (categoryTypeId && categoryId) {
-      const category = categories.find((cat) => cat._id === categoryId);
+    const category = categories.find((cat) => cat._id === categoryId);
+    if (!category || !category.types) return "";
 
-      if (category && category.types) {
-        // First try to find by ID (converting ObjectId to string)
-        let type = category.types.find(
-          (t) => t._id.toString() === categoryTypeId
-        );
+    const categoryType = category.types.find(
+      (type) => type._id === categoryTypeId
+    );
+    return categoryType ? categoryType.name : "";
+  };
 
-        // If not found by ID, try to find by name directly
-        if (!type) {
-          type = category.types.find((t) => t.name === categoryTypeId);
-        }
-
-        if (type) {
-          return type.name;
-        }
-      }
+  // Fetch products by category (like ProductCategories page)
+  const fetchProductsByCategory = async (categoryId) => {
+    try {
+      const response = await productAPI.getAll({ category: categoryId });
+      return response.data;
+    } catch (err) {
+      console.error("Error fetching products by category:", err);
+      return [];
     }
+  };
 
-    // Return N/A if no valid category type found
-    return "N/A";
+  // Handle category selection
+  const handleCategoryChange = async (category) => {
+    setSelectedCategory(category);
+    setSelectedCategoryType(null); // Reset category type when category changes
+
+    if (category) {
+      // Fetch products for the selected category
+      const categoryProducts = await fetchProductsByCategory(category._id);
+
+      // Get unique store IDs from the category products
+      const storeIds = [
+        ...new Set(categoryProducts.map((product) => product.storeId)),
+      ];
+
+      // Fetch only the stores that have products in this category
+      const storesResponse = await storeAPI.getAll();
+      const allStores = storesResponse.data;
+      const filteredStores = allStores.filter((store) =>
+        storeIds.includes(store._id)
+      );
+
+      // Group products by store
+      const productsByStoreMap = {};
+      const initialLikeCounts = {};
+      const initialLikeStates = {};
+
+      categoryProducts.forEach((product) => {
+        if (!productsByStoreMap[product.storeId]) {
+          productsByStoreMap[product.storeId] = [];
+        }
+        productsByStoreMap[product.storeId].push(product);
+
+        // Initialize like counts and states
+        initialLikeCounts[product._id] = product.likeCount || 0;
+        initialLikeStates[product._id] = false;
+      });
+
+      // Update stores and products
+      setStores(filteredStores);
+      setDisplayedStores(filteredStores.slice(0, storesPerPage));
+      setHasMoreStores(filteredStores.length > storesPerPage);
+      setProductsByStore(productsByStoreMap);
+      setLikeCounts(initialLikeCounts);
+      setLikeStates(initialLikeStates);
+
+      // Update category types for the selected category
+      if (category.types && category.types.length > 0) {
+        setCategoryTypes(category.types);
+      } else {
+        setCategoryTypes([]);
+      }
+    } else {
+      // If no category selected, fetch all products by store (original behavior)
+      await fetchData();
+      setCategoryTypes([]);
+    }
+  };
+
+  // Handle store type selection
+  const handleStoreTypeChange = async (storeType) => {
+    setSelectedStoreType(storeType);
+    setSelectedCategory(null); // Reset category when store type changes
+    setSelectedCategoryType(null); // Reset category type when store type changes
+
+    if (storeType === "all") {
+      // If "all" is selected, fetch all categories
+      await fetchCategories();
+      await fetchData();
+    } else {
+      // Filter categories by store type
+      const allCategories = await categoryAPI.getAll();
+
+      const filteredCategories = allCategories.data.filter(
+        (category) => category.storeType === storeType
+      );
+
+      setCategories(filteredCategories);
+
+      // Fetch stores of the selected type
+      const storesResponse = await storeAPI.getAll();
+      const allStores = storesResponse.data;
+      const filteredStores = allStores.filter(
+        (store) => store.storeType === storeType
+      );
+
+      // Update stores
+      setStores(filteredStores);
+      setDisplayedStores(filteredStores.slice(0, storesPerPage));
+      setHasMoreStores(filteredStores.length > storesPerPage);
+
+      // Fetch products for these stores
+      const productsResponse = await productAPI.getAll();
+      const allProducts = productsResponse.data;
+      const filteredProducts = allProducts.filter((product) =>
+        filteredStores.some((store) => store._id === product.storeId)
+      );
+
+      // Group products by store
+      const productsByStoreMap = {};
+      const initialLikeCounts = {};
+      const initialLikeStates = {};
+
+      filteredProducts.forEach((product) => {
+        if (!productsByStoreMap[product.storeId]) {
+          productsByStoreMap[product.storeId] = [];
+        }
+        productsByStoreMap[product.storeId].push(product);
+
+        // Initialize like counts and states
+        initialLikeCounts[product._id] = product.likeCount || 0;
+        initialLikeStates[product._id] = false;
+      });
+
+      setProductsByStore(productsByStoreMap);
+      setLikeCounts(initialLikeCounts);
+      setLikeStates(initialLikeStates);
+      setCategoryTypes([]);
+    }
+  };
+
+  // Handle category type selection
+  const handleCategoryTypeChange = async (categoryType) => {
+    setSelectedCategoryType(categoryType);
+
+    if (categoryType && selectedCategory) {
+      // Filter products by category type within the selected category
+      const categoryProducts = await fetchProductsByCategory(
+        selectedCategory._id
+      );
+
+      // Filter products by category type name
+      const filteredProducts = categoryProducts.filter(
+        (product) => product.categoryTypeId === categoryType.name
+      );
+
+      // Get unique store IDs from the filtered products
+      const storeIds = [
+        ...new Set(filteredProducts.map((product) => product.storeId)),
+      ];
+
+      // Fetch only the stores that have products in this category type
+      const storesResponse = await storeAPI.getAll();
+      const allStores = storesResponse.data;
+      const filteredStores = allStores.filter((store) =>
+        storeIds.includes(store._id)
+      );
+
+      // Group products by store
+      const productsByStoreMap = {};
+      const initialLikeCounts = {};
+      const initialLikeStates = {};
+
+      filteredProducts.forEach((product) => {
+        if (!productsByStoreMap[product.storeId]) {
+          productsByStoreMap[product.storeId] = [];
+        }
+        productsByStoreMap[product.storeId].push(product);
+
+        // Initialize like counts and states
+        initialLikeCounts[product._id] = product.likeCount || 0;
+        initialLikeStates[product._id] = false;
+      });
+
+      // Update stores and products
+      setStores(filteredStores);
+      setDisplayedStores(filteredStores.slice(0, storesPerPage));
+      setHasMoreStores(filteredStores.length > storesPerPage);
+      setProductsByStore(productsByStoreMap);
+      setLikeCounts(initialLikeCounts);
+      setLikeStates(initialLikeStates);
+    } else if (selectedCategory) {
+      // If no category type selected but category is selected, show all products in category
+      await handleCategoryChange(selectedCategory);
+    }
   };
 
   const fetchData = async () => {
     try {
       setLoading(true);
 
-      // Fetch markets
-      const marketsResponse = await marketAPI.getAll();
-      const marketsData = marketsResponse.data;
-      setMarkets(marketsData);
+      // Fetch stores
+      const storesResponse = await storeAPI.getAll();
+      const storesData = storesResponse.data;
+      setStores(storesData);
 
-      // Initialize displayed markets (first 8)
-      const initialDisplayed = marketsData.slice(0, marketsPerPage);
-      setDisplayedMarkets(initialDisplayed);
-      setHasMoreMarkets(marketsData.length > marketsPerPage);
+      // Initialize displayed stores (first 8)
+      const initialDisplayed = storesData.slice(0, storesPerPage);
+      setDisplayedStores(initialDisplayed);
+      setHasMoreStores(storesData.length > storesPerPage);
 
-      // Fetch products for each market (prioritize discounted products)
+      // Fetch products for each store (prioritize discounted products)
       const productsMap = {};
       const initialLikeCounts = {};
       const initialLikeStates = {};
 
-      for (const market of marketsData) {
-        const productsResponse = await productAPI.getByMarket(market._id);
+      for (const store of storesData) {
+        const productsResponse = await productAPI.getByStore(store._id);
         const allProducts = productsResponse.data;
 
         // Sort products: discounted first, then by name
@@ -285,7 +476,7 @@ const MainPage = () => {
 
         // Take first 12 products (prioritizing discounted ones)
         const products = sortedProducts.slice(0, 12);
-        productsMap[market._id] = products;
+        productsMap[store._id] = products;
 
         // Initialize like counts and states for these products
         products.forEach((product) => {
@@ -294,7 +485,7 @@ const MainPage = () => {
         });
       }
 
-      setProductsByMarket(productsMap);
+      setProductsByStore(productsMap);
       setLikeCounts(initialLikeCounts);
       setLikeStates(initialLikeStates);
     } catch (err) {
@@ -309,16 +500,16 @@ const MainPage = () => {
     }
   };
 
-  // Load more markets function
-  const loadMoreMarkets = () => {
-    const nextPage = marketsPage + 1;
-    const startIndex = (nextPage - 1) * marketsPerPage;
-    const endIndex = startIndex + marketsPerPage;
-    const newMarkets = markets.slice(startIndex, endIndex);
+  // Load more stores function
+  const loadMoreStores = () => {
+    const nextPage = storesPage + 1;
+    const startIndex = (nextPage - 1) * storesPerPage;
+    const endIndex = startIndex + storesPerPage;
+    const newStores = stores.slice(startIndex, endIndex);
 
-    setDisplayedMarkets((prev) => [...prev, ...newMarkets]);
-    setMarketsPage(nextPage);
-    setHasMoreMarkets(endIndex < markets.length);
+    setDisplayedStores((prev) => [...prev, ...newStores]);
+    setStoresPage(nextPage);
+    setHasMoreStores(endIndex < stores.length);
   };
 
   const formatPrice = (price) => {
@@ -334,39 +525,51 @@ const MainPage = () => {
     return Math.round(((previousPrice - newPrice) / previousPrice) * 100);
   };
 
-  const filteredMarkets = displayedMarkets.filter((market) => {
-    // If market name matches search or any of its products match search/filters
-    const marketNameMatch = market.name
+  const filteredStores = displayedStores.filter((store) => {
+    // Store type filter
+    const storeTypeMatch =
+      selectedStoreType === "all" || store.storeType === selectedStoreType;
+
+    // Get products for this store
+    const storeProducts = productsByStore[store._id] || [];
+
+    // Hide stores with no products
+    if (storeProducts.length === 0) {
+      return false;
+    }
+
+    // If store name matches search or any of its products match search/filters
+    const storeNameMatch = store.name
       ?.toLowerCase()
       .includes(search.toLowerCase());
-    const filteredProducts = (productsByMarket[market._id] || []).filter(
-      (product) => {
-        const nameMatch = product.name
-          ?.toLowerCase()
-          .includes(search.toLowerCase());
-        const categoryMatch =
-          !selectedCategory || product.categoryId === selectedCategory._id;
-        const priceMatch =
-          typeof product.newPrice === "number" &&
-          product.newPrice >= priceRange[0] &&
-          product.newPrice <= priceRange[1];
-        // Auto-detect discount based on price difference
-        const hasPriceDiscount =
-          product.previousPrice &&
-          product.newPrice &&
-          product.previousPrice > product.newPrice;
-        const discountMatch =
-          !showOnlyDiscount ||
-          product.isDiscount === true ||
-          product.isDiscount === "true" ||
-          hasPriceDiscount === true;
+    const filteredProducts = storeProducts.filter((product) => {
+      const nameMatch = product.name
+        ?.toLowerCase()
+        .includes(search.toLowerCase());
 
-        return nameMatch && categoryMatch && priceMatch && discountMatch;
-      }
-    );
+      // Category filter is now handled by fetchProductsByCategory, so we don't need to filter here
+      // Just apply other filters
+      const priceMatch =
+        typeof product.newPrice === "number" &&
+        product.newPrice >= priceRange[0] &&
+        product.newPrice <= priceRange[1];
 
-    // Show market if name matches or if it has products that match filters
-    return marketNameMatch || filteredProducts.length > 0;
+      // Auto-detect discount based on price difference
+      const hasPriceDiscount =
+        product.previousPrice &&
+        product.newPrice &&
+        product.previousPrice > product.newPrice;
+      const discountMatch =
+        !showOnlyDiscount ||
+        product.isDiscount === true ||
+        product.isDiscount === "true" ||
+        hasPriceDiscount === true;
+
+      return nameMatch && priceMatch && discountMatch;
+    });
+
+    // Show store if store type matches, name matches, or if it has products that match filters
+    return storeTypeMatch && (storeNameMatch || filteredProducts.length > 0);
   });
 
   if (loading) return <Loader message={t("Loading...")} />;
@@ -404,47 +607,21 @@ const MainPage = () => {
         </Box>
       </Box>
 
-      {/* Title and Stats Section */}
-      <Box display="flex" flexDirection="column" alignItems="center" mb={4}>
-        <StorefrontIcon
-          sx={{
-            fontSize: { xs: "2rem", sm: "2.5rem", md: "3rem" },
-            color: theme.palette.mode === "dark" ? "contained" : "#40916c",
-            mb: 1,
-          }}
-        />
-
-        <Typography
-          variant="subtitle1"
-          sx={{
-            fontSize: { xs: "1.5rem", sm: "2rem", md: "3rem" },
-            color: theme.palette.mode === "dark" ? "contained" : "#40916c",
-            mb: 3,
-            textAlign: "center",
-            px: { xs: 1, sm: 2 },
-          }}
-          gutterBottom
-        >
-          {showOnlyDiscount
-            ? t("Discover Discount Products from Various Markets")
-            : t("Discover All Products from Various Markets")}
-        </Typography>
-      </Box>
-
-      {/* Filters Section */}
+      {/* Enhanced Filters Section */}
       <Box
         sx={{
-          backgroundColor: "#2c3e50",
+          backgroundColor:
+            theme.palette.mode === "dark" ? "#40916c" : "#34495e",
           borderRadius: { xs: 2, md: 3 },
           p: { xs: 2, md: 3 },
           mb: 4,
           boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
         }}
       >
-        {/* Search Bar */}
+        {/* Search and Basic Filters */}
         <Box
           sx={{
-            mb: 2,
+            mb: 3,
             display: "flex",
             gap: { xs: 1, md: 2 },
             alignItems: "center",
@@ -453,14 +630,13 @@ const MainPage = () => {
         >
           <TextField
             variant="outlined"
-            placeholder={t("Search for discount products...")}
+            placeholder={t("Search for products...")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             sx={{
               flex: 1,
               width: { xs: "100%", sm: "auto" },
               maxWidth: { xs: "100%", sm: 400 },
-
               backgroundColor: "white",
               borderRadius: 1,
               "& .MuiOutlinedInput-root": {
@@ -482,7 +658,6 @@ const MainPage = () => {
                   color: theme.palette.mode === "dark" ? "black" : "grey.500",
                 },
               },
-
               startAdornment: (
                 <InputAdornment position="start">
                   <SearchIcon
@@ -538,7 +713,7 @@ const MainPage = () => {
             <Typography
               sx={{
                 fontSize: "0.875rem",
-                color: theme.palette.mode === "dark" ? "white" : "grey.500",
+                color: "white",
               }}
             >
               -
@@ -547,15 +722,12 @@ const MainPage = () => {
             <TextField
               type="number"
               placeholder={t("Max Price")}
-              color={theme.palette.mode === "dark" ? "#2c3e50" : "grey.500"}
               value={priceRange[1] === 1000000 ? "" : priceRange[1]}
               onChange={(e) => {
                 const val = Number(e.target.value) || 1000000;
                 setPriceRange([priceRange[0], val]);
               }}
               sx={{
-                color: theme.palette.mode === "dark" ? "#2c3e50" : "grey.500",
-
                 width: { xs: "45%", sm: 80, md: 120 },
                 backgroundColor: "white",
                 borderRadius: 1,
@@ -579,88 +751,123 @@ const MainPage = () => {
           </Box>
         </Box>
 
-        {/* Category Buttons */}
-        <Box
-          sx={{
-            display: "flex",
-            gap: { xs: 0.5, sm: 1 },
-            flexWrap: "wrap",
-            alignItems: "center",
-            justifyContent: { xs: "center", md: "flex-start" },
-          }}
-        >
-          {/* Browse All Categories */}
-          <Button
-            variant={selectedCategory === null ? "contained" : "outlined"}
-            onClick={() => setSelectedCategory(null)}
+        {/* Store Type Filter */}
+        <Box sx={{ mb: 3 }}>
+          <Typography
+            variant="subtitle2"
             sx={{
-              backgroundColor:
-                selectedCategory === null
-                  ? theme.palette.mode === "dark"
-                    ? "#34495e"
-                    : "#40916c"
-                  : "transparent",
               color: "white",
-              border: "1px solid rgba(255,255,255,0.3)",
-              borderRadius: 2,
-              px: { xs: 1.5, md: 2 },
-              py: 0.5,
-              fontSize: { xs: "0.75rem", md: "0.875rem" },
-              textTransform: "none",
-              minHeight: "32px",
-              "&:hover": {
+              mb: 1.5,
+              fontSize: "0.9rem",
+              fontWeight: 600,
+            }}
+          >
+            {t("Store Type")}
+          </Typography>
+          <Box
+            sx={{
+              display: "flex",
+              gap: { xs: 0.5, sm: 1 },
+              flexWrap: "wrap",
+              alignItems: "center",
+            }}
+          >
+            {[
+              { key: "all", label: t("All Stores"), icon: "🏪" },
+              { key: "market", label: t("Markets"), icon: "🛒" },
+              { key: "clothes", label: t("Clothes"), icon: "👕" },
+              { key: "electronic", label: t("Electronics"), icon: "📱" },
+              { key: "cosmetic", label: t("Cosmetics"), icon: "💄" },
+            ].map((type) => (
+              <Button
+                key={type.key}
+                variant={
+                  selectedStoreType === type.key ? "contained" : "outlined"
+                }
+                onClick={() => handleStoreTypeChange(type.key)}
+                sx={{
+                  backgroundColor:
+                    selectedStoreType === type.key
+                      ? theme.palette.mode === "dark"
+                        ? "#34495e"
+                        : "#40916c"
+                      : "transparent",
+                  color: "white",
+                  border: "1px solid rgba(255,255,255,0.3)",
+                  borderRadius: 2,
+                  px: { xs: 1.5, md: 2 },
+                  py: 0.5,
+                  fontSize: { xs: "0.75rem", md: "0.875rem" },
+                  textTransform: "none",
+                  minHeight: "32px",
+                  "&:hover": {
+                    backgroundColor:
+                      selectedStoreType === type.key
+                        ? theme.palette.mode === "dark"
+                          ? "#34495e"
+                          : "#40916c"
+                        : "rgba(255,255,255,0.1)",
+                    borderColor: "rgba(255,255,255,0.5)",
+                  },
+                }}
+              >
+                <span style={{ marginRight: "4px" }}>{type.icon}</span>
+                {type.label}
+              </Button>
+            ))}
+          </Box>
+        </Box>
+
+        {/* Categories Filter */}
+        <Box sx={{ mb: 3 }}>
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "white",
+              mb: 1.5,
+              fontSize: "0.9rem",
+              fontWeight: 600,
+            }}
+          >
+            {t("Categories")}
+          </Typography>
+          <Box
+            sx={{
+              display: "flex",
+              gap: { xs: 0.5, sm: 1 },
+              alignItems: "center",
+              justifyContent: { xs: "flex-start", md: "flex-start" },
+              overflowX: "auto",
+              overflowY: "hidden",
+              scrollbarWidth: "thin",
+              scrollbarColor: "rgba(255,255,255,0.3) transparent",
+              "&::-webkit-scrollbar": {
+                height: "6px",
+              },
+              "&::-webkit-scrollbar-track": {
+                background: "transparent",
+              },
+              "&::-webkit-scrollbar-thumb": {
+                background: "rgba(255,255,255,0.3)",
+                borderRadius: "3px",
+                "&:hover": {
+                  background: "rgba(255,255,255,0.5)",
+                },
+              },
+              pb: 1,
+              minHeight: "50px",
+            }}
+          >
+            {/* Browse All Categories */}
+            <Button
+              variant={selectedCategory === null ? "contained" : "outlined"}
+              onClick={() => handleCategoryChange(null)}
+              sx={{
                 backgroundColor:
                   selectedCategory === null
                     ? theme.palette.mode === "dark"
-                      ? "#34495e"
-                      : "#40916c"
-                    : "rgba(255,255,255,0.1)",
-                borderColor: "rgba(255,255,255,0.5)",
-              },
-            }}
-            startIcon={<CategoryIcon sx={{ fontSize: "16px" }} />}
-          >
-            {t("All Categories")}
-          </Button>
-
-          {/* Hot Deals Button */}
-          <Button
-            variant="outlined"
-            sx={{
-              color: "white",
-              border: "1px solid rgba(255,255,255,0.3)",
-              borderRadius: 2,
-              px: { xs: 1.5, md: 2 },
-              py: 0.5,
-              fontSize: { xs: "0.75rem", md: "0.875rem" },
-              textTransform: "none",
-              minHeight: "32px",
-              "&:hover": {
-                backgroundColor: "rgba(255,255,255,0.1)",
-                borderColor: "rgba(255,255,255,0.5)",
-              },
-            }}
-            startIcon={<LocalOfferIcon sx={{ fontSize: "16px" }} />}
-          >
-            🔥 {t("Hot Deals")}
-          </Button>
-
-          {/* Category Filter Buttons */}
-          {categories.slice(0, 6).map((category) => (
-            <Button
-              key={category._id}
-              variant={
-                selectedCategory?._id === category._id
-                  ? "contained"
-                  : "outlined"
-              }
-              onClick={() => setSelectedCategory(category)}
-              sx={{
-                backgroundColor:
-                  selectedCategory?._id === category._id
-                    ? theme.palette.mode === "dark"
-                      ? "#34495e"
-                      : "#40916c"
+                      ? "#40916c"
+                      : "#34495e"
                     : "transparent",
                 color: "white",
                 border: "1px solid rgba(255,255,255,0.3)",
@@ -670,9 +877,10 @@ const MainPage = () => {
                 fontSize: { xs: "0.75rem", md: "0.875rem" },
                 textTransform: "none",
                 minHeight: "32px",
+                flexShrink: 0,
                 "&:hover": {
                   backgroundColor:
-                    selectedCategory?._id === category._id
+                    selectedCategory === null
                       ? theme.palette.mode === "dark"
                         ? "#34495e"
                         : "#40916c"
@@ -680,131 +888,232 @@ const MainPage = () => {
                   borderColor: "rgba(255,255,255,0.5)",
                 },
               }}
+              startIcon={<CategoryIcon sx={{ fontSize: "16px" }} />}
             >
-              {t(category.name)}
+              {t("All Categories")}
             </Button>
-          ))}
 
-          {/* More Categories Dropdown for remaining categories */}
-          {categories.length > 6 && (
-            <FormControl size="small">
-              <Select
-                displayEmpty
-                value={selectedCategory?._id || ""}
-                onChange={(e) =>
-                  setSelectedCategory(
-                    categories.find((cat) => cat._id === e.target.value) || null
-                  )
+            {/* Category Filter Buttons */}
+            {categories.map((category) => (
+              <Button
+                key={category._id}
+                variant={
+                  selectedCategory?._id === category._id
+                    ? "contained"
+                    : "outlined"
                 }
+                onClick={() => handleCategoryChange(category)}
                 sx={{
+                  backgroundColor:
+                    selectedCategory?._id === category._id
+                      ? theme.palette.mode === "dark"
+                        ? "#34495e"
+                        : "#40916c"
+                      : "transparent",
                   color: "white",
                   border: "1px solid rgba(255,255,255,0.3)",
                   borderRadius: 2,
+                  px: { xs: 1.5, md: 2 },
+                  py: 0.5,
                   fontSize: { xs: "0.75rem", md: "0.875rem" },
+                  textTransform: "none",
                   minHeight: "32px",
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    border: "none",
-                  },
-                  "& .MuiSelect-icon": {
-                    color: "white",
+                  flexShrink: 0,
+                  whiteSpace: "nowrap",
+                  "&:hover": {
+                    backgroundColor:
+                      selectedCategory?._id === category._id
+                        ? theme.palette.mode === "dark"
+                          ? "#34495e"
+                          : "#40916c"
+                        : "rgba(255,255,255,0.1)",
+                    borderColor: "rgba(255,255,255,0.5)",
                   },
                 }}
-                renderValue={(selected) =>
-                  selected
-                    ? t(
-                        categories.find((cat) => cat._id === selected)?.name ||
-                          "More Categories"
-                      )
-                    : t("More Categories")
-                }
               >
-                {categories.slice(6).map((category) => (
-                  <MenuItem key={category._id} value={category._id}>
-                    {t(category.name)}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          )}
+                {t(category.name)}
+              </Button>
+            ))}
+          </Box>
+        </Box>
 
-          {/* Discount Toggle Button */}
-          {/* <Button
-            variant={showOnlyDiscount ? "contained" : "outlined"}
-            onClick={() => setShowOnlyDiscount(!showOnlyDiscount)}
-            sx={{
-              backgroundColor: showOnlyDiscount
-                ? theme.palette.mode === "dark"
-                  ? "#34495e"
-                  : "#40916c"
-                : "transparent",
-              color: "white",
-              border: "1px solid rgba(255,255,255,0.3)",
-              borderRadius: 2,
-              px: { xs: 1.5, md: 2 },
-              py: 0.5,
-              fontSize: { xs: "0.75rem", md: "0.875rem" },
-              textTransform: "none",
-              minHeight: "32px",
-              "&:hover": {
-                backgroundColor: showOnlyDiscount
-                  ? theme.palette.mode === "dark"
-                    ? "#34495e"
-                    : "#40916c"
-                  : "rgba(255,255,255,0.1)",
-                borderColor: "rgba(255,255,255,0.5)",
-              },
-            }}
-            startIcon={<LocalOfferIcon sx={{ fontSize: "16px" }} />}
-          >
-            {showOnlyDiscount ? t("Discount Only") : t("All Products")}
-          </Button> */}
+        {/* Category Types Filter */}
+        {selectedCategory && (
+          <Box sx={{ mb: 3 }}>
+            <Typography
+              variant="subtitle2"
+              sx={{
+                color: "white",
+                mb: 1.5,
+                fontSize: "0.9rem",
+                fontWeight: 600,
+              }}
+            >
+              {t("Category Types")} - {selectedCategory.name}
+            </Typography>
+            <Box
+              sx={{
+                display: "flex",
+                gap: { xs: 0.5, sm: 1 },
+                alignItems: "center",
+                justifyContent: { xs: "flex-start", md: "flex-start" },
+                overflowX: "auto",
+                overflowY: "hidden",
+                scrollbarWidth: "thin",
+                scrollbarColor: "rgba(255,255,255,0.3) transparent",
+                "&::-webkit-scrollbar": {
+                  height: "6px",
+                },
+                "&::-webkit-scrollbar-track": {
+                  background: "transparent",
+                },
+                "&::-webkit-scrollbar-thumb": {
+                  background: "rgba(255,255,255,0.3)",
+                  borderRadius: "3px",
+                  "&:hover": {
+                    background: "rgba(255,255,255,0.5)",
+                  },
+                },
+                pb: 1,
+                minHeight: "50px",
+              }}
+            >
+              {/* All Category Types */}
+              <Button
+                variant={
+                  selectedCategoryType === null ? "contained" : "outlined"
+                }
+                onClick={() => handleCategoryTypeChange(null)}
+                sx={{
+                  backgroundColor:
+                    selectedCategoryType === null
+                      ? theme.palette.mode === "dark"
+                        ? "#34495e"
+                        : "#40916c"
+                      : "transparent",
+                  color: "white",
+                  border: "1px solid rgba(255,255,255,0.3)",
+                  borderRadius: 2,
+                  px: { xs: 1.5, md: 2 },
+                  py: 0.5,
+                  fontSize: { xs: "0.75rem", md: "0.875rem" },
+                  textTransform: "none",
+                  minHeight: "32px",
+                  flexShrink: 0,
+                  "&:hover": {
+                    backgroundColor:
+                      selectedCategoryType === null
+                        ? theme.palette.mode === "dark"
+                          ? "#34495e"
+                          : "#40916c"
+                        : "rgba(255,255,255,0.1)",
+                    borderColor: "rgba(255,255,255,0.5)",
+                  },
+                }}
+                startIcon={<CategoryIcon sx={{ fontSize: "16px" }} />}
+              >
+                {t("All Category Types")}
+              </Button>
 
-          {/* Reset Filters Button */}
+              {/* Category Type Filter Buttons */}
+              {categoryTypes.map((categoryType, index) => (
+                <Button
+                  key={index}
+                  variant={
+                    selectedCategoryType?.name === categoryType.name
+                      ? "contained"
+                      : "outlined"
+                  }
+                  onClick={() => handleCategoryTypeChange(categoryType)}
+                  sx={{
+                    backgroundColor:
+                      selectedCategoryType?._id === categoryType._id
+                        ? theme.palette.mode === "dark"
+                          ? "#34495e"
+                          : "#40916c"
+                        : "transparent",
+                    color: "white",
+                    border: "1px solid rgba(255,255,255,0.3)",
+                    borderRadius: 2,
+                    px: { xs: 1.5, md: 2 },
+                    py: 0.5,
+                    fontSize: { xs: "0.75rem", md: "0.875rem" },
+                    textTransform: "none",
+                    minHeight: "32px",
+                    flexShrink: 0,
+                    whiteSpace: "nowrap",
+                    "&:hover": {
+                      backgroundColor:
+                        selectedCategoryType?.name === categoryType.name
+                          ? theme.palette.mode === "dark"
+                            ? "#34495e"
+                            : "#40916c"
+                          : "rgba(255,255,255,0.1)",
+                      borderColor: "rgba(255,255,255,0.5)",
+                    },
+                  }}
+                >
+                  {t(categoryType.name)}
+                </Button>
+              ))}
+            </Box>
+          </Box>
+        )}
+
+        {/* Clear Filters Button */}
+        <Box sx={{ mt: 2, display: "flex", justifyContent: "center" }}>
           <Button
             variant="outlined"
             onClick={() => {
               setSearch("");
               setSelectedCategory(null);
+              setSelectedCategoryType(null);
+              setSelectedStoreType("all");
               setPriceRange([0, 1000000]);
-              setShowOnlyDiscount(true); // Reset to discount only
+              setShowOnlyDiscount(true);
+              setStoresPage(1); // Reset stores page
+              // Reset all data to initial state
+              fetchCategories();
+              fetchData();
+              setCategoryTypes([]);
             }}
             sx={{
               color: "white",
-              border: "1px solid rgba(255,255,255,0.3)",
+              borderColor: "rgba(255,255,255,0.5)",
               borderRadius: 2,
-              px: { xs: 1.5, md: 2 },
+              px: 3,
               py: 0.5,
-              fontSize: { xs: "0.75rem", md: "0.875rem" },
+              fontSize: "0.875rem",
               textTransform: "none",
-              minHeight: "32px",
-              ml: { xs: 0, md: "auto" },
               "&:hover": {
                 backgroundColor: "rgba(255,255,255,0.1)",
-                borderColor: "rgba(255,255,255,0.5)",
+                borderColor: "white",
               },
             }}
           >
-            {t("Reset Filters")}
+            {t("Clear All Filters")}
           </Button>
         </Box>
       </Box>
 
-      {filteredMarkets.map((market) => {
-        // Filter products for this market based on the same logic as in filteredMarkets
-        const filteredProducts = (productsByMarket[market._id] || []).filter(
+      {filteredStores.map((store) => {
+        // Filter products for this store based on the same logic as in filteredStores
+        const filteredProducts = (productsByStore[store._id] || []).filter(
           (product) => {
             const nameMatch = product.name
               ?.toLowerCase()
               .includes(search.toLowerCase());
-            const marketNameMatch = market.name
+            const storeNameMatch = store.name
               ?.toLowerCase()
               .includes(search.toLowerCase());
-            const categoryMatch =
-              !selectedCategory || product.categoryId === selectedCategory._id;
+
+            // Category filter is now handled by fetchProductsByCategory, so we don't need to filter here
+            // Just apply other filters
             const priceMatch =
               typeof product.newPrice === "number" &&
               product.newPrice >= priceRange[0] &&
               product.newPrice <= priceRange[1];
+
             // Auto-detect discount based on price difference
             const hasPriceDiscount =
               product.previousPrice &&
@@ -815,19 +1124,15 @@ const MainPage = () => {
               product.isDiscount === true ||
               product.isDiscount === "true" ||
               hasPriceDiscount === true;
-            return (
-              (nameMatch || marketNameMatch) &&
-              categoryMatch &&
-              priceMatch &&
-              discountMatch
-            );
+
+            return (nameMatch || storeNameMatch) && priceMatch && discountMatch;
           }
         );
         return (
           <Card
             component={Link}
-            to={`/markets/${market._id}`}
-            key={market._id}
+            to={`/stores/${store._id}`}
+            key={store._id}
             style={{ textDecoration: "none" }}
             sx={{
               mb: 4,
@@ -854,13 +1159,11 @@ const MainPage = () => {
               },
             }}
           >
-            {/* Market Header with Gradient Overlay */}
+            {/* Store Header with Gradient Overlay */}
             <Box
               sx={{
                 background:
-                  theme.palette.mode === "dark"
-                    ? "linear-gradient(135deg, #52b788 0%, #40916c 100%)"
-                    : "linear-gradient(135deg, #52b788 0%, #40916c 100%)",
+                  theme.palette.mode === "dark" ? "#40916c" : "#34495e",
                 p: { xs: 2, md: 3, lg: 1 },
                 color: "white",
                 position: "relative",
@@ -888,7 +1191,7 @@ const MainPage = () => {
                   gap: { xs: 2, sm: 3 },
                 }}
               >
-                {market.logo ? (
+                {store.logo ? (
                   <Box
                     sx={{
                       width: { xs: 60, sm: 80, md: 150 },
@@ -908,8 +1211,8 @@ const MainPage = () => {
                         height: "100%",
                         objectFit: "cover",
                       }}
-                      image={`${process.env.REACT_APP_BACKEND_URL}${market.logo}`}
-                      alt={market.name}
+                      image={`${process.env.REACT_APP_BACKEND_URL}${store.logo}`}
+                      alt={store.name}
                     />
                   </Box>
                 ) : (
@@ -960,9 +1263,9 @@ const MainPage = () => {
                         },
                       }}
                     >
-                      {market.name}
+                      {store.name}
                     </Typography>
-                    {market.isVip && (
+                    {store.isVip && (
                       <Box
                         alt={t("sponsor")}
                         sx={{
@@ -1000,7 +1303,7 @@ const MainPage = () => {
                       textAlign: "left",
                     }}
                   >
-                    {market.address}
+                    {store.address}
                   </Typography>
                   <Chip
                     label={`${filteredProducts.length} ${t(
@@ -1021,7 +1324,7 @@ const MainPage = () => {
                 {/* <Button
                   variant="contained"
                   component={Link}
-                  to={`/markets/${market._id}`}
+                  to={`/stores/${store._id}`}
                   startIcon={<ShoppingCartIcon />}
                   sx={{
                     backgroundColor: "rgba(255,255,255,0.2)",
@@ -1055,7 +1358,7 @@ const MainPage = () => {
                 sx={{
                   display: "flex",
                   overflowX: "auto",
-                  gap: { xs: 2, md: 3 },
+                  gap: { xs: 0.5, md: 3 },
                   pb: 2,
                   "&::-webkit-scrollbar": {
                     height: 8,
@@ -1066,7 +1369,8 @@ const MainPage = () => {
                     borderRadius: 4,
                   },
                   "&::-webkit-scrollbar-thumb": {
-                    backgroundColor: "#52b788",
+                    backgroundColor:
+                      theme.palette.mode === "dark" ? "#40916c" : "#34495e",
                     borderRadius: 4,
                     "&:hover": {
                       backgroundColor: "#45a049",
@@ -1345,8 +1649,8 @@ const MainPage = () => {
         );
       })}
 
-      {/* Load More Markets Button */}
-      {hasMoreMarkets && filteredMarkets.length > 0 && (
+      {/* Load More Stores Button */}
+      {hasMoreStores && filteredStores.length > 0 && (
         <Box
           sx={{
             display: "flex",
@@ -1356,7 +1660,7 @@ const MainPage = () => {
           }}
         >
           <Button
-            onClick={loadMoreMarkets}
+            onClick={loadMoreStores}
             variant="outlined"
             size="large"
             sx={{
@@ -1380,19 +1684,19 @@ const MainPage = () => {
         </Box>
       )}
 
-      {markets.length === 0 && (
+      {stores.length === 0 && (
         <Alert
           severity="info"
           sx={{
             borderRadius: 2,
             backgroundColor:
-              theme.palette.mode === "dark" ? "#2c3e50" : "#e3f2fd",
+              theme.palette.mode === "dark" ? "#52b788" : "#e3f2fd",
             border: `1px solid ${
-              theme.palette.mode === "dark" ? "#34495e" : "#bbdefb"
+              theme.palette.mode === "dark" ? "#40916c" : "#bbdefb"
             }`,
           }}
         >
-          No markets found. Add some markets through the admin panel.
+          No stores found. Add some stores through the admin panel.
         </Alert>
       )}
 

@@ -31,7 +31,7 @@ module.exports = {
   getProductById,
   createProduct,
   getProductsByBrand,
-  getProductsByMarket,
+  getProductsByStore,
   getProductsByCategory,
   getCategories,
   updateProduct,

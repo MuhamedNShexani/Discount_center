@@ -12,9 +12,11 @@ import {
   Fade,
   Chip,
   IconButton,
+  Button,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { marketAPI } from "../services/api";
+import { useSearchParams } from "react-router-dom";
+import { storeAPI } from "../services/api";
 import BusinessIcon from "@mui/icons-material/Business";
 import PhoneIcon from "@mui/icons-material/Phone";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
@@ -23,24 +25,43 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import Loader from "../components/Loader";
 import { useTranslation } from "react-i18next";
 
-const MarketList = () => {
+const StoreList = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const theme = useTheme();
   const { t } = useTranslation();
 
-  const [markets, setMarkets] = useState([]);
+  const [stores, setStores] = useState([]);
+  const [filteredStores, setFilteredStores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Get store type from URL query parameter
+  const storeType = searchParams.get("type");
+
   useEffect(() => {
-    fetchMarkets();
+    fetchStores();
   }, []);
 
-  const fetchMarkets = async () => {
+  // Filter stores when stores data or storeType changes
+  useEffect(() => {
+    if (stores.length > 0) {
+      if (storeType && storeType !== "all") {
+        const filtered = stores.filter(
+          (store) => store.storeType === storeType
+        );
+        setFilteredStores(filtered);
+      } else {
+        setFilteredStores(stores);
+      }
+    }
+  }, [stores, storeType]);
+
+  const fetchStores = async () => {
     try {
       setLoading(true);
-      const response = await marketAPI.getAll();
-      setMarkets(response.data);
+      const response = await storeAPI.getAll();
+      setStores(response.data);
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -48,14 +69,35 @@ const MarketList = () => {
           err.message ||
           t("Network error. Please check your connection.")
       );
-      console.error("Error fetching markets:", err);
+      console.error("Error fetching stores:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleMarketClick = (market) => {
-    navigate(`/markets/${market._id}`);
+  const handleStoreClick = (store) => {
+    navigate(`/stores/${store._id}`);
+  };
+
+  // Helper function to get store type icon
+  const getStoreTypeIcon = (type) => {
+    switch (type) {
+      case "market":
+        return "🛒";
+      case "clothes":
+        return "👕";
+      case "electronic":
+        return "📱";
+      case "cosmetic":
+        return "💄";
+      default:
+        return "🏪";
+    }
+  };
+
+  // Helper function to clear filter
+  const clearFilter = () => {
+    navigate("/stores");
   };
 
   if (loading) return <Loader message={t("Loading...")} />;
@@ -104,7 +146,9 @@ const MarketList = () => {
                 textShadow: "0 4px 8px rgba(0,0,0,0.3)",
               }}
             >
-              {t("Markets")}
+              {storeType
+                ? t(storeType.charAt(0).toUpperCase() + storeType.slice(1))
+                : t("Stores")}
             </Typography>
             <Typography
               variant="h5"
@@ -116,10 +160,12 @@ const MarketList = () => {
                 fontSize: { xs: "1rem", sm: "1.25rem", md: "1.5rem" },
               }}
             >
-              {t("Browse all markets and their products")}
+              {storeType
+                ? t(`Browse ${storeType} stores and their products`)
+                : t("Browse all stores and their products")}
             </Typography>
             <Chip
-              label={`(${markets.length})${t("markets Available")}`}
+              label={`(${filteredStores.length})${t("stores Available")}`}
               sx={{
                 mt: 3,
                 backgroundColor: "rgba(255,255,255,0.2)",
@@ -135,7 +181,43 @@ const MarketList = () => {
         </Box>
       </Box>
 
-      {/* Markets Grid */}
+      {/* Clear Filter Button */}
+      {/* {storeType && (
+        <Box sx={{ mb: 3, textAlign: "center" }}>
+          <Button
+            variant="outlined"
+            onClick={clearFilter}
+            startIcon={
+              <span style={{ fontSize: "1.2rem" }}>
+                {getStoreTypeIcon(storeType)}
+              </span>
+            }
+            sx={{
+              color: theme.palette.mode === "dark" ? "#52b788" : "#40916c",
+              borderColor:
+                theme.palette.mode === "dark" ? "#52b788" : "#40916c",
+              borderRadius: 2,
+              px: 3,
+              py: 1,
+              fontSize: "0.9rem",
+              textTransform: "none",
+              "&:hover": {
+                backgroundColor:
+                  theme.palette.mode === "dark"
+                    ? "rgba(82, 183, 136, 0.1)"
+                    : "rgba(64, 145, 108, 0.1)",
+                borderColor:
+                  theme.palette.mode === "dark" ? "#40916c" : "#52b788",
+              },
+            }}
+          >
+            {t("Clear Filter")} -{" "}
+            {t(storeType.charAt(0).toUpperCase() + storeType.slice(1))}
+          </Button>
+        </Box>
+      )} */}
+
+      {/* Stores Grid */}
       <Box
         sx={{
           display: "grid",
@@ -149,8 +231,8 @@ const MarketList = () => {
           alignItems: "center",
         }}
       >
-        {markets.map((market, index) => (
-          <Fade in={true} timeout={300 + index * 100} key={market._id}>
+        {filteredStores.map((store, index) => (
+          <Fade in={true} timeout={300 + index * 100} key={store._id}>
             <Card
               sx={{
                 height: { xs: "200px", sm: "400px", md: "420px" },
@@ -181,18 +263,18 @@ const MarketList = () => {
                     theme.palette.mode === "dark"
                       ? "0 24px 48px rgba(0,0,0,0.4)"
                       : "0 24px 48px rgba(0,0,0,0.15)",
-                  "& .market-arrow": {
+                  "& .store-arrow": {
                     transform: "translateX(8px)",
                     opacity: 1,
                   },
-                  "& .market-image": {
+                  "& .store-image": {
                     transform: "scale(1.1)",
                   },
                 },
               }}
-              onClick={() => handleMarketClick(market)}
+              onClick={() => handleStoreClick(store)}
             >
-              {/* Market Image/Logo */}
+              {/* Store Image/Logo */}
               <Box
                 sx={{
                   position: "relative",
@@ -205,13 +287,13 @@ const MarketList = () => {
                       : "linear-gradient(135deg, #52b788 0%, #40916c 100%)",
                 }}
               >
-                {market.logo ? (
+                {store.logo ? (
                   <CardMedia
                     component="img"
                     height="200"
-                    image={`${process.env.REACT_APP_BACKEND_URL}${market.logo}`}
-                    alt={market.name}
-                    className="market-image"
+                    image={`${process.env.REACT_APP_BACKEND_URL}${store.logo}`}
+                    alt={store.name}
+                    className="store-image"
                     sx={{
                       objectFit: "contain",
                       transition: "transform 0.4s ease",
@@ -250,7 +332,7 @@ const MarketList = () => {
 
                 {/* Arrow Icon - Hidden on mobile */}
                 <IconButton
-                  className="market-arrow"
+                  className="store-arrow"
                   sx={{
                     position: "absolute",
                     top: 16,
@@ -270,7 +352,7 @@ const MarketList = () => {
                 </IconButton>
               </Box>
 
-              {/* Market Content */}
+              {/* Store Content */}
               <CardContent
                 align="center"
                 sx={{
@@ -310,9 +392,47 @@ const MarketList = () => {
                       textAlign: "center",
                     }}
                   >
-                    {market.name}
+                    {store.name}
                   </Typography>
-                  {market.isVip && (
+
+                  {/* Store Type Badge */}
+                  {store.storeType && (
+                    <Chip
+                      label={t(
+                        store.storeType.charAt(0).toUpperCase() +
+                          store.storeType.slice(1)
+                      )}
+                      icon={
+                        <span style={{ fontSize: "1rem" }}>
+                          {getStoreTypeIcon(store.storeType)}
+                        </span>
+                      }
+                      size="small"
+                      sx={{
+                        backgroundColor:
+                          theme.palette.mode === "dark"
+                            ? "rgba(82, 183, 136, 0.2)"
+                            : "rgba(82, 183, 136, 0.1)",
+                        color:
+                          theme.palette.mode === "dark" ? "#52b788" : "#40916c",
+                        border: `1px solid ${
+                          theme.palette.mode === "dark"
+                            ? "rgba(82, 183, 136, 0.3)"
+                            : "rgba(82, 183, 136, 0.2)"
+                        }`,
+                        fontSize: "0.75rem",
+                        fontWeight: 600,
+                        height: "24px",
+                        "& .MuiChip-icon": {
+                          color:
+                            theme.palette.mode === "dark"
+                              ? "#52b788"
+                              : "#40916c",
+                        },
+                      }}
+                    />
+                  )}
+                  {store.isVip && (
                     <Box
                       sx={{
                         position: "absolute",
@@ -335,7 +455,7 @@ const MarketList = () => {
                     />
                   )}
                 </Box>
-                {/* Market Details - Hidden on mobile */}
+                {/* Store Details - Hidden on mobile */}
                 <Box
                   sx={{
                     mb: 2,
@@ -367,7 +487,7 @@ const MarketList = () => {
                         WebkitBoxOrient: "vertical",
                       }}
                     >
-                      {market.address || t("address not provided")}
+                      {store.address || t("address not provided")}
                     </Typography>
                   </Box>
 
@@ -397,7 +517,7 @@ const MarketList = () => {
                         whiteSpace: "nowrap",
                       }}
                     >
-                      {market.phone || t("phone not provided")}
+                      {store.phone || t("phone not provided")}
                     </Typography>
                   </Box>
 
@@ -415,7 +535,7 @@ const MarketList = () => {
                       height: "45px",
                     }}
                   >
-                    {market.description || t("description not provided")}
+                    {store.description || t("description not provided")}
                   </Typography>
                 </Box>
                 {/* Action Area - Hidden on mobile */}
@@ -466,7 +586,7 @@ const MarketList = () => {
       </Box>
 
       {/* Empty State */}
-      {markets.length === 0 && (
+      {filteredStores.length === 0 && (
         <Box
           sx={{
             textAlign: "center",
@@ -490,7 +610,7 @@ const MarketList = () => {
               mb: 2,
             }}
           >
-            {t("No markets found")}
+            {t("No stores found")}
           </Typography>
           <Typography
             variant="body1"
@@ -501,7 +621,7 @@ const MarketList = () => {
               lineHeight: 1.6,
             }}
           >
-            {t("No markets found. Add some markets through the admin panel.")}
+            {t("No stores found. Add some stores through the admin panel.")}
           </Typography>
         </Box>
       )}
@@ -509,4 +629,4 @@ const MarketList = () => {
   );
 };
 
-export default MarketList;
+export default StoreList;

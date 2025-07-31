@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Paper,
   BottomNavigation,
@@ -6,6 +6,11 @@ import {
   Box,
   useTheme,
   useMediaQuery,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  ClickAwayListener,
 } from "@mui/material";
 import {
   Home as HomeIcon,
@@ -25,6 +30,54 @@ const BottomNavigationBar = () => {
   const { user } = useAuth();
   const location = useLocation();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const [storesAnchorEl, setStoresAnchorEl] = useState(null);
+
+  // Store type options for mobile selection
+  const storeTypes = [
+    // { type: "all", name: t("All Stores"), icon: "🏪", path: "/stores" },
+    {
+      type: "market",
+      name: t("Markets"),
+      icon: "🛒",
+      path: "/stores?type=market",
+    },
+    {
+      type: "clothes",
+      name: t("Clothes"),
+      icon: "👕",
+      path: "/stores?type=clothes",
+    },
+    {
+      type: "electronic",
+      name: t("Electronics"),
+      icon: "📱",
+      path: "/stores?type=electronic",
+    },
+    {
+      type: "cosmetic",
+      name: t("Cosmetics"),
+      icon: "💄",
+      path: "/stores?type=cosmetic",
+    },
+  ];
+
+  // Handle store type selection
+  const handleStoreTypeSelect = (path) => {
+    setStoresAnchorEl(null);
+    // Navigate to the selected store type
+    window.location.href = path;
+  };
+
+  // Handle stores button click
+  const handleStoresClick = (e) => {
+    e.preventDefault();
+    setStoresAnchorEl(e.currentTarget);
+  };
+
+  // Handle stores menu close
+  const handleStoresMenuClose = () => {
+    setStoresAnchorEl(null);
+  };
 
   // Function to determine the active navigation item
   const getActiveValue = () => {
@@ -35,8 +88,8 @@ const BottomNavigationBar = () => {
     if (pathname === "/categories") return "/categories";
     if (pathname === "/gifts") return "/gifts";
 
-    // Check for markets (including nested routes)
-    if (pathname.startsWith("/markets")) return "/markets";
+    // Check for stores (including nested routes)
+    if (pathname.startsWith("/stores")) return "/stores";
 
     // Check for brands (including nested routes)
     if (pathname.startsWith("/brands")) return "/brands";
@@ -51,7 +104,7 @@ const BottomNavigationBar = () => {
   const navItems = [
     { name: t("Home"), path: "/", icon: <HomeIcon /> },
     { name: t("Categories"), path: "/categories", icon: <CategoryIcon /> },
-    { name: t("Markets"), path: "/markets", icon: <StoreIcon /> },
+    { name: t("Stores"), path: "/stores", icon: <StoreIcon /> },
     { name: t("Brands"), path: "/brands", icon: <BusinessIcon /> },
     { name: t("Gifts"), path: "/gifts", icon: <CardGiftcardIcon /> },
   ];
@@ -77,8 +130,8 @@ const BottomNavigationBar = () => {
           borderRadius: "16px 16px 0 0",
           background:
             theme.palette.mode === "dark"
-              ? "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)"
-              : "linear-gradient(135deg, #52b788 0%, #40916c 100%)",
+              ? "linear-gradient(135deg, #52b788 0%, #40916c 100%)"
+              : "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)",
           backdropFilter: "blur(20px)",
           border: `1px solid ${
             theme.palette.mode === "dark"
@@ -109,6 +162,7 @@ const BottomNavigationBar = () => {
         >
           {navItems.map((item) => {
             const isActive = activeValue === item.path;
+            const isStoresItem = item.path === "/stores";
 
             return (
               <BottomNavigationAction
@@ -116,8 +170,9 @@ const BottomNavigationBar = () => {
                 label={item.name}
                 value={item.path}
                 icon={item.icon}
-                component={Link}
-                to={item.path}
+                component={isStoresItem ? "button" : Link}
+                to={isStoresItem ? undefined : item.path}
+                onClick={isStoresItem ? handleStoresClick : undefined}
                 sx={{
                   color: isActive
                     ? "white !important"
@@ -168,6 +223,69 @@ const BottomNavigationBar = () => {
           })}
         </BottomNavigation>
       </Paper>
+
+      {/* Store Type Selection Dropdown */}
+      <Menu
+        anchorEl={storesAnchorEl}
+        open={Boolean(storesAnchorEl)}
+        onClose={handleStoresMenuClose}
+        anchorOrigin={{
+          vertical: "top",
+          horizontal: "center",
+        }}
+        transformOrigin={{
+          vertical: "bottom",
+          horizontal: "center",
+        }}
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            background:
+              theme.palette.mode === "dark"
+                ? "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)"
+                : "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
+            border: `1px solid ${
+              theme.palette.mode === "dark" ? "#34495e" : "#e9ecef"
+            }`,
+            boxShadow:
+              theme.palette.mode === "dark"
+                ? "0 8px 32px rgba(0,0,0,0.3)"
+                : "0 8px 32px rgba(0,0,0,0.1)",
+            minWidth: 200,
+          },
+        }}
+      >
+        {storeTypes.map((storeType) => (
+          <MenuItem
+            key={storeType.type}
+            onClick={() => handleStoreTypeSelect(storeType.path)}
+            sx={{
+              py: 1.5,
+              px: 2,
+              "&:hover": {
+                backgroundColor:
+                  theme.palette.mode === "dark"
+                    ? "rgba(82, 183, 136, 0.1)"
+                    : "rgba(82, 183, 136, 0.05)",
+              },
+            }}
+          >
+            <ListItemIcon sx={{ minWidth: 40 }}>
+              <span style={{ fontSize: "1.2rem" }}>{storeType.icon}</span>
+            </ListItemIcon>
+            <ListItemText
+              primary={storeType.name}
+              sx={{
+                "& .MuiListItemText-primary": {
+                  fontSize: "0.95rem",
+                  fontWeight: 500,
+                  color: theme.palette.text.primary,
+                },
+              }}
+            />
+          </MenuItem>
+        ))}
+      </Menu>
     </Box>
   );
 };

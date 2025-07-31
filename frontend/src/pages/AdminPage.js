@@ -41,7 +41,7 @@ import {
   Dashboard as DashboardIcon,
   People as PeopleIcon,
   ShoppingCart as ProductsIcon,
-  Store as MarketsIcon,
+  Store as StoresIcon,
   Business as BrandsIcon,
   CardGiftcard as GiftsIcon,
 } from "@mui/icons-material";
@@ -56,7 +56,7 @@ const AdminPage = () => {
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalProducts: 0,
-    totalMarkets: 0,
+    totalStores: 0,
     totalBrands: 0,
     totalGifts: 0,
   });
@@ -87,7 +87,7 @@ const AdminPage = () => {
       setStats({
         totalUsers: 150,
         totalProducts: 1250,
-        totalMarkets: 25,
+        totalStores: 25,
         totalBrands: 80,
         totalGifts: 45,
       });
@@ -168,11 +168,11 @@ const AdminPage = () => {
           <Card sx={{ bgcolor: "success.light", color: "white" }}>
             <CardContent>
               <Typography variant="h4" component="div">
-                {stats.totalMarkets}
+                {stats.totalStores}
               </Typography>
               <Typography variant="body2">
-                <MarketsIcon sx={{ mr: 1, verticalAlign: "middle" }} />
-                {t("Total Markets")}
+                <StoresIcon sx={{ mr: 1, verticalAlign: "middle" }} />
+                {t("Total Stores")}
               </Typography>
             </CardContent>
           </Card>
@@ -218,7 +218,7 @@ const AdminPage = () => {
           <Tab label={t("Dashboard")} />
           <Tab label={t("Users")} />
           <Tab label={t("Products")} />
-          <Tab label={t("Markets")} />
+          <Tab label={t("Stores")} />
           <Tab label={t("Brands")} />
           <Tab label={t("Gifts")} />
         </Tabs>
@@ -326,10 +326,10 @@ const AdminPage = () => {
           {activeTab === 3 && (
             <Box>
               <Typography variant="h5" gutterBottom>
-                {t("Market Management")}
+                {t("Store Management")}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {t("Market management interface will be implemented here")}
+                {t("Store management interface will be implemented here")}
               </Typography>
             </Box>
           )}

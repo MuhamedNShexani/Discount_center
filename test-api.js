@@ -3,8 +3,8 @@ const axios = require("axios");
 const BASE_URL = "http://localhost:5000/api";
 
 // Test data
-const testMarket = {
-  name: "Test Market",
+const testStore = {
+  name: "Test Store",
   logo: "https://via.placeholder.com/150",
   address: "123 Test Street, Test City",
   phone: "+1-234-567-8900",
@@ -23,35 +23,33 @@ const testProduct = {
   previousPrice: 25.99,
   newPrice: 19.99,
   expireDate: "2024-12-31",
-  marketId: "", // Will be filled after market creation
+  storeId: "", // Will be filled after store creation
 };
 
 const API_URL = process.env.API_URL || "http://localhost:3001/api";
 
 const testAPI = async () => {
   try {
-    console.log("🚀 Testing Market API...\n");
+    console.log("🚀 Testing Store API...\n");
 
-    // Test 1: Create Market
-    console.log("1. Creating test market...");
-    const marketResponse = await axios.post(`${BASE_URL}/markets`, testMarket);
-    console.log("✅ Market created:", marketResponse.data.name);
-    const marketId = marketResponse.data._id;
+    // Test 1: Create Store
+    console.log("1. Creating test store...");
+    const storeResponse = await axios.post(`${BASE_URL}/stores`, testStore);
+    console.log("✅ Store created:", storeResponse.data.name);
+    const storeId = storeResponse.data._id;
 
-    // Test 2: Get All Markets
-    console.log("\n2. Getting all markets...");
-    const marketsResponse = await axios.get(`${BASE_URL}/markets`);
-    console.log("✅ Markets found:", marketsResponse.data.length);
+    // Test 2: Get All Stores
+    console.log("\n2. Getting all stores...");
+    const storesResponse = await axios.get(`${BASE_URL}/stores`);
+    console.log("✅ Stores found:", storesResponse.data.length);
 
-    // Test 3: Get Market by ID
-    console.log("\n3. Getting market by ID...");
-    const marketByIdResponse = await axios.get(
-      `${BASE_URL}/markets/${marketId}`
-    );
-    console.log("✅ Market retrieved:", marketByIdResponse.data.name);
+    // Test 3: Get Store by ID
+    console.log("\n3. Getting store by ID...");
+    const storeByIdResponse = await axios.get(`${BASE_URL}/stores/${storeId}`);
+    console.log("✅ Store retrieved:", storeByIdResponse.data.name);
 
     // Prepare test product
-    testProduct.brandId = marketId;
+    testProduct.brandId = storeId;
 
     // Test 4: Create Product
     console.log("\n4. Creating test product...");
@@ -66,14 +64,14 @@ const testAPI = async () => {
     const productsResponse = await axios.get(`${BASE_URL}/products`);
     console.log("✅ Products found:", productsResponse.data.length);
 
-    // Test 6: Get Products by Market
-    console.log("\n6. Getting products by market...");
-    const productsByMarketResponse = await axios.get(
-      `${BASE_URL}/products/brand/${marketId}`
+    // Test 6: Get Products by Store
+    console.log("\n6. Getting products by store...");
+    const productsByStoreResponse = await axios.get(
+      `${BASE_URL}/products/brand/${storeId}`
     );
     console.log(
-      "✅ Products by market found:",
-      productsByMarketResponse.data.length
+      "✅ Products by store found:",
+      productsByStoreResponse.data.length
     );
 
     // Test 7: Get Categories

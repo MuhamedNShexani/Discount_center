@@ -36,12 +36,12 @@ async function testCategoryTypeProduct() {
     const brandsResponse = await axios.get(`${API_URL}/brands`);
     const brands = brandsResponse.data;
 
-    // Get markets
-    const marketsResponse = await axios.get(`${API_URL}/markets`);
-    const markets = marketsResponse.data;
+    // Get stores
+    const storesResponse = await axios.get(`${API_URL}/stores`);
+    const stores = storesResponse.data;
 
-    if (brands.length === 0 || markets.length === 0) {
-      console.log("Need at least one brand and market to test");
+    if (brands.length === 0 || stores.length === 0) {
+      console.log("Need at least one brand and store to test");
       return;
     }
 
@@ -52,7 +52,7 @@ async function testCategoryTypeProduct() {
       categoryId: category._id,
       categoryTypeId: category.types[0]._id,
       brandId: brands[0]._id,
-      marketId: markets[0]._id,
+      storeId: stores[0]._id,
       previousPrice: 15.0,
       newPrice: 12.0,
       isDiscount: true,
@@ -77,7 +77,7 @@ async function testCategoryTypeProduct() {
       category: getResponse.data.categoryId?.name,
       categoryTypeId: getResponse.data.categoryTypeId,
       brand: getResponse.data.brandId?.name,
-      market: getResponse.data.marketId?.name,
+      store: getResponse.data.storeId?.name,
     });
 
     console.log("✅ Category type product test successful!");

@@ -10,10 +10,10 @@ const giftSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    marketId: [
+    storeId: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Market",
+        ref: "Store",
         required: false,
       },
     ],

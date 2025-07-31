@@ -9,7 +9,7 @@ const {
   updateProduct,
   deleteProduct,
   getProductsByBrand,
-  getProductsByMarket,
+  getProductsByStore,
   getProductsByCategory,
   getCategories,
 } = require("../controllers/productController");
@@ -27,9 +27,9 @@ router.get("/categories", getCategories);
 // @desc    Get products by brand
 router.get("/brand/:brandId", getProductsByBrand);
 
-// @route   GET /api/products/market/:marketId
-// @desc    Get products by market
-router.get("/market/:marketId", getProductsByMarket);
+// @route   GET /api/products/store/:storeId
+// @desc    Get products by store
+router.get("/store/:storeId", getProductsByStore);
 
 // @route   GET /api/products/category/:category
 // @desc    Get products by category
@@ -106,7 +106,7 @@ router.post("/bulk-upload", upload.single("excelFile"), async (req, res) => {
           newPrice: row[5] ? parseFloat(row[5]) : null,
           isDiscount: row[6] === "true" || row[6] === "1" || row[6] === true,
           brandId: row[7] || "",
-          marketId: row[8] || "",
+          storeId: row[8] || "",
           description: row[9] || "",
           expireDate: row[10] ? new Date(row[10]).toISOString() : null,
           weight: row[11] || "",
@@ -118,12 +118,12 @@ router.post("/bulk-upload", upload.single("excelFile"), async (req, res) => {
           productData.isDiscount === undefined ||
           !productData.categoryId ||
           !productData.categoryTypeId ||
-          !productData.marketId
+          !productData.storeId
         ) {
           errors.push(
             `Row ${
               i + 2
-            }: Missing required fields (name, isDiscount, categoryId, categoryTypeId, marketId)`
+            }: Missing required fields (name, isDiscount, categoryId, categoryTypeId, storeId)`
           );
           continue;
         }

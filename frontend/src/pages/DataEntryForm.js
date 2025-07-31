@@ -37,9 +37,10 @@ import {
   Divider,
   useTheme,
   TablePagination,
+  Checkbox,
 } from "@mui/material";
 import {
-  marketAPI,
+  storeAPI,
   productAPI,
   brandAPI,
   categoryAPI,
@@ -60,6 +61,7 @@ import InventoryIcon from "@mui/icons-material/Inventory";
 import StoreIcon from "@mui/icons-material/Store";
 import DownloadIcon from "@mui/icons-material/Download";
 import CardGiftcardIcon from "@mui/icons-material/CardGiftcard";
+import CategoryIcon from "@mui/icons-material/Category";
 import { useTranslation } from "react-i18next";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
@@ -69,7 +71,7 @@ const DataEntryForm = () => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState(0);
   const [activeListTab, setActiveListTab] = useState(0); // State for list tabs
-  const [markets, setMarkets] = useState([]);
+  const [stores, setStores] = useState([]);
   const [brands, setBrands] = useState([]);
   const [categories, setCategories] = useState([]);
   const [categoryTypes, setCategoryTypes] = useState([]);
@@ -79,7 +81,7 @@ const DataEntryForm = () => {
   const [message, setMessage] = useState({ type: "", text: "" });
 
   // Pagination states
-  const [marketsPage, setMarketsPage] = useState(0);
+  const [storesPage, setStoresPage] = useState(0);
   const [brandsPage, setBrandsPage] = useState(0);
   const [productsPage, setProductsPage] = useState(0);
   const [giftsPage, setGiftsPage] = useState(0);
@@ -89,7 +91,7 @@ const DataEntryForm = () => {
   const brandLogoFileRef = useRef(null);
   const productImageFileRef = useRef(null);
   const editProductImageFileRef = useRef(null);
-  const marketLogoFileRef = useRef(null);
+  const storeLogoFileRef = useRef(null);
   const giftImageFileRef = useRef(null);
   const editGiftImageFileRef = useRef(null);
 
@@ -102,8 +104,8 @@ const DataEntryForm = () => {
     description: "",
     isVip: false,
   });
-  // Market form state
-  const [marketForm, setMarketForm] = useState({
+  // Store form state
+  const [storeForm, setStoreForm] = useState({
     name: "",
     logo: "",
     address: "",
@@ -125,7 +127,7 @@ const DataEntryForm = () => {
     brandId: "",
     categoryId: "",
     categoryTypeId: "",
-    marketId: "",
+    storeId: "",
     expireDate: "",
   });
 
@@ -133,10 +135,17 @@ const DataEntryForm = () => {
   const [giftForm, setGiftForm] = useState({
     image: "",
     description: "",
-    marketId: [],
+    storeId: [],
     brandId: "",
     productId: "",
     expireDate: "",
+  });
+
+  // Category form state
+  const [categoryForm, setCategoryForm] = useState({
+    name: "",
+    storeType: "market",
+    types: [""], // Array of category types
   });
 
   // File upload state
@@ -146,17 +155,17 @@ const DataEntryForm = () => {
   const [selectedExcelFile, setSelectedExcelFile] = useState(null);
   const [bulkUploadLoading, setBulkUploadLoading] = useState(false);
   const [selectedEditImage, setSelectedEditImage] = useState(null);
-  const [selectedMarketLogo, setSelectedMarketLogo] = useState(null);
+  const [selectedStoreLogo, setSelectedStoreLogo] = useState(null);
   const [selectedGiftImage, setSelectedGiftImage] = useState(null);
   const [selectedEditGiftImage, setSelectedEditGiftImage] = useState(null);
 
-  // Brand and Market bulk upload state
+  // Brand and Store bulk upload state
   const [selectedBrandExcelFile, setSelectedBrandExcelFile] = useState(null);
-  const [selectedMarketExcelFile, setSelectedMarketExcelFile] = useState(null);
+  const [selectedStoreExcelFile, setSelectedStoreExcelFile] = useState(null);
   const [brandBulkUploadLoading, setBrandBulkUploadLoading] = useState(false);
-  const [marketBulkUploadLoading, setMarketBulkUploadLoading] = useState(false);
+  const [storeBulkUploadLoading, setStoreBulkUploadLoading] = useState(false);
 
-  const [selectedMarketFilter, setSelectedMarketFilter] = useState("");
+  const [selectedStoreFilter, setSelectedStoreFilter] = useState("");
   const [editDialog, setEditDialog] = useState({
     open: false,
     type: "",
@@ -174,29 +183,29 @@ const DataEntryForm = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
-    fetchMarkets();
+    fetchStores();
     fetchBrands();
     fetchCategories();
     fetchGifts();
   }, []);
 
   useEffect(() => {
-    fetchProducts(selectedMarketFilter);
-  }, [selectedMarketFilter]);
+    fetchProducts(selectedStoreFilter);
+  }, [selectedStoreFilter]);
 
-  const fetchMarkets = async () => {
+  const fetchStores = async () => {
     try {
-      const response = await marketAPI.getAll();
-      setMarkets(response.data);
+      const response = await storeAPI.getAll();
+      setStores(response.data);
     } catch (err) {
-      console.error("Error fetching markets:", err);
+      console.error("Error fetching stores:", err);
     }
   };
 
-  const fetchProducts = async (marketId) => {
+  const fetchProducts = async (storeId) => {
     try {
-      if (marketId) {
-        const response = await productAPI.getByMarket(marketId);
+      if (storeId) {
+        const response = await productAPI.getByStore(storeId);
         setProducts(response.data);
       } else {
         const response = await productAPI.getAll();
@@ -283,9 +292,9 @@ const DataEntryForm = () => {
     setMessage({ type: "", text: "" });
   };
 
-  const handleMarketFormChange = (e) => {
-    setMarketForm({
-      ...marketForm,
+  const handleStoreFormChange = (e) => {
+    setStoreForm({
+      ...storeForm,
       [e.target.name]: e.target.value,
     });
   };
@@ -296,8 +305,8 @@ const DataEntryForm = () => {
   };
 
   // Pagination handlers
-  const handleMarketsPageChange = (event, newPage) => {
-    setMarketsPage(newPage);
+  const handleStoresPageChange = (event, newPage) => {
+    setStoresPage(newPage);
   };
 
   const handleBrandsPageChange = (event, newPage) => {
@@ -320,7 +329,7 @@ const DataEntryForm = () => {
   };
 
   const handleFilterChange = (e) => {
-    setSelectedMarketFilter(e.target.value);
+    setSelectedStoreFilter(e.target.value);
   };
 
   const handleProductFormChange = (e) => {
@@ -352,10 +361,10 @@ const DataEntryForm = () => {
   // Handle gift form change for multi-select fields
   const handleGiftFormMultiChange = (e) => {
     const { name, value } = e.target;
-    setGiftForm({
-      ...giftForm,
+    setGiftForm((prev) => ({
+      ...prev,
       [name]: value,
-    });
+    }));
   };
 
   // Handle file selection for brand logo
@@ -366,11 +375,11 @@ const DataEntryForm = () => {
     }
   };
 
-  // Handle file selection for market logo
-  const handleMarketLogoChange = (e) => {
+  // Handle file selection for store logo
+  const handleStoreLogoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setSelectedMarketLogo(file);
+      setSelectedStoreLogo(file);
     }
   };
 
@@ -430,13 +439,13 @@ const DataEntryForm = () => {
     }
   };
 
-  // Upload market logo
-  const uploadMarketLogo = async (file) => {
+  // Upload store logo
+  const uploadStoreLogo = async (file) => {
     const formData = new FormData();
     formData.append("logo", file);
 
     try {
-      const response = await fetch(`${API_URL}/api/markets/upload-logo`, {
+      const response = await fetch(`${API_URL}/api/stores/upload-logo`, {
         method: "POST",
         body: formData,
       });
@@ -517,11 +526,11 @@ const DataEntryForm = () => {
     }
   };
 
-  // Handle Market Excel file selection
-  const handleMarketExcelFileChange = (e) => {
+  // Handle Store Excel file selection
+  const handleStoreExcelFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setSelectedMarketExcelFile(file);
+      setSelectedStoreExcelFile(file);
     }
   };
 
@@ -570,7 +579,7 @@ const DataEntryForm = () => {
         });
       }
 
-      fetchProducts(selectedMarketFilter); // Refresh products list
+      fetchProducts(selectedStoreFilter); // Refresh products list
       setSelectedExcelFile(null); // Clear file input
     } catch (err) {
       setMessage({
@@ -641,10 +650,10 @@ const DataEntryForm = () => {
     }
   };
 
-  // Process Excel file and create markets
-  const handleMarketBulkUpload = async (e) => {
+  // Process Excel file and create stores
+  const handleStoreBulkUpload = async (e) => {
     e.preventDefault();
-    if (!selectedMarketExcelFile) {
+    if (!selectedStoreExcelFile) {
       setMessage({
         type: "error",
         text: t("Please select an Excel file."),
@@ -652,14 +661,14 @@ const DataEntryForm = () => {
       return;
     }
 
-    setMarketBulkUploadLoading(true);
+    setStoreBulkUploadLoading(true);
     setMessage({ type: "", text: "" });
 
     try {
       const formData = new FormData();
-      formData.append("excelFile", selectedMarketExcelFile);
+      formData.append("excelFile", selectedStoreExcelFile);
 
-      const response = await fetch(`${API_URL}/api/markets/bulk-upload`, {
+      const response = await fetch(`${API_URL}/api/stores/bulk-upload`, {
         method: "POST",
         body: formData,
       });
@@ -672,7 +681,7 @@ const DataEntryForm = () => {
       const data = await response.json();
       setMessage({
         type: "success",
-        text: t("Successfully uploaded {{count}} markets", {
+        text: t("Successfully uploaded {{count}} stores", {
           count: data.createdCount,
         }),
       });
@@ -686,16 +695,16 @@ const DataEntryForm = () => {
         });
       }
 
-      fetchMarkets(); // Refresh markets list
-      setSelectedMarketExcelFile(null); // Clear file input
+      fetchStores(); // Refresh stores list
+      setSelectedStoreExcelFile(null); // Clear file input
     } catch (err) {
       setMessage({
         type: "error",
-        text: "Failed to upload markets. Please check your Excel file format.",
+        text: "Failed to upload stores. Please check your Excel file format.",
       });
-      console.error("Error uploading markets:", err);
+      console.error("Error uploading stores:", err);
     } finally {
-      setMarketBulkUploadLoading(false);
+      setStoreBulkUploadLoading(false);
     }
   };
 
@@ -815,12 +824,12 @@ const DataEntryForm = () => {
       setUploadLoading(false);
     }
   };
-  const handleMarketSubmit = async (e) => {
+  const handleStoreSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage({ type: "", text: "" });
 
-    if (!selectedMarketLogo) {
+    if (!selectedStoreLogo) {
       setMessage({ type: "error", text: t("Please select a logo file.") });
       setLoading(false);
       return;
@@ -828,31 +837,31 @@ const DataEntryForm = () => {
 
     try {
       setUploadLoading(true);
-      const logoUrl = await uploadMarketLogo(selectedMarketLogo);
+      const logoUrl = await uploadStoreLogo(selectedStoreLogo);
       setUploadLoading(false);
 
-      const marketData = {
-        ...marketForm,
+      const storeData = {
+        ...storeForm,
         logo: logoUrl,
       };
 
-      await marketAPI.create(marketData);
-      setMessage({ type: "success", text: t("Market created successfully!") });
-      setMarketForm({
+      await storeAPI.create(storeData);
+      setMessage({ type: "success", text: t("Store created successfully!") });
+      setStoreForm({
         name: "",
         logo: "",
         address: "",
         phone: "",
         description: "",
       });
-      setSelectedMarketLogo(null);
-      fetchMarkets(); // Refresh markets list
+      setSelectedStoreLogo(null);
+      fetchStores(); // Refresh stores list
     } catch (err) {
       setMessage({
         type: "error",
-        text: t("Failed to create market. Please try again."),
+        text: t("Failed to create store. Please try again."),
       });
-      console.error("Error creating market:", err);
+      console.error("Error creating store:", err);
     } finally {
       setLoading(false);
       setUploadLoading(false);
@@ -890,7 +899,7 @@ const DataEntryForm = () => {
         brandId: productForm.brandId,
         categoryId: productForm.categoryId,
         categoryTypeId: productForm.categoryTypeId,
-        marketId: productForm.marketId,
+        storeId: productForm.storeId,
       };
 
       await productAPI.create(productData);
@@ -904,7 +913,7 @@ const DataEntryForm = () => {
         description: "",
         barcode: "",
         weight: "",
-        marketId: "",
+        storeId: "",
         brandId: "",
         categoryId: "",
         categoryTypeId: "",
@@ -914,7 +923,7 @@ const DataEntryForm = () => {
       if (productImageFileRef.current) {
         productImageFileRef.current.value = "";
       }
-      fetchProducts(selectedMarketFilter);
+      fetchProducts(selectedStoreFilter);
     } catch (err) {
       setMessage({
         type: "error",
@@ -950,10 +959,10 @@ const DataEntryForm = () => {
       return;
     }
 
-    if (!giftForm.marketId || giftForm.marketId.length === 0) {
+    if (!giftForm.storeId || giftForm.storeId.length === 0) {
       setMessage({
         type: "error",
-        text: t("Please select at least one market."),
+        text: t("Please select at least one store."),
       });
       setLoading(false);
       return;
@@ -967,7 +976,7 @@ const DataEntryForm = () => {
       const giftData = {
         ...giftForm,
         image: imageUrl,
-        marketId: giftForm.marketId,
+        storeId: giftForm.storeId,
         brandId: giftForm.brandId || null,
         productId: giftForm.productId || null,
         expireDate: giftForm.expireDate
@@ -982,7 +991,7 @@ const DataEntryForm = () => {
       setGiftForm({
         image: "",
         description: "",
-        marketId: [],
+        storeId: [],
         brandId: "",
         productId: "",
         expireDate: "",
@@ -1004,6 +1013,72 @@ const DataEntryForm = () => {
     }
   };
 
+  const handleCategorySubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage({ type: "", text: "" });
+
+    if (!categoryForm.name.trim()) {
+      setMessage({
+        type: "error",
+        text: t("Please enter a category name."),
+      });
+      setLoading(false);
+      return;
+    }
+
+    if (
+      !categoryForm.types ||
+      categoryForm.types.length === 0 ||
+      categoryForm.types.every((type) => !type.trim())
+    ) {
+      setMessage({
+        type: "error",
+        text: t("Please enter at least one category type."),
+      });
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // Filter out empty types and convert to proper format
+      const validTypes = categoryForm.types
+        .filter((type) => type.trim() !== "")
+        .map((type) => ({
+          name: type.trim(),
+          description: "", // Optional description field
+        }));
+
+      const categoryData = {
+        name: categoryForm.name.trim(),
+        storeType: categoryForm.storeType,
+        types: validTypes,
+      };
+
+      console.log("Category data being sent:", categoryData);
+      const response = await categoryAPI.create(categoryData);
+      console.log("Category creation response:", response);
+      setMessage({
+        type: "success",
+        text: t("Category created successfully!"),
+      });
+      setCategoryForm({
+        name: "",
+        storeType: "market",
+        types: [""],
+      });
+      fetchCategories();
+    } catch (err) {
+      setMessage({
+        type: "error",
+        text: t("Failed to create category. Please try again."),
+      });
+      console.error("Error creating category:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Open edit dialog and set form data
   const handleEditOpen = (type, data) => {
     if (type === "brand") {
@@ -1014,7 +1089,7 @@ const DataEntryForm = () => {
         phone: data.phone,
         description: data.description || "",
       });
-    } else if (type === "market") {
+    } else if (type === "store") {
       setEditForm({
         name: data.name,
         logo: data.logo,
@@ -1032,7 +1107,7 @@ const DataEntryForm = () => {
         description: data.description || "",
         barcode: data.barcode || "",
         weight: data.weight || "",
-        marketId: data.marketId?._id || data.marketId,
+        storeId: data.storeId?._id || data.storeId,
         brandId: data.brandId?._id || data.brandId,
         categoryId: data.categoryId?._id || data.categoryId,
         categoryTypeId: data.categoryTypeId,
@@ -1044,7 +1119,7 @@ const DataEntryForm = () => {
       setEditForm({
         image: data.image,
         description: data.description || "",
-        marketId: data.marketId?.map((m) => m._id) || data.marketId || [],
+        storeId: data.storeId?.map((m) => m._id) || data.storeId || [],
         brandId: data.brandId?._id || data.brandId || "",
         productId: data.productId || "",
         expireDate: data.expireDate
@@ -1090,21 +1165,21 @@ const DataEntryForm = () => {
           text: t("Brand updated successfully!"),
         });
         fetchBrands();
-      } else if (editDialog.type === "market") {
+      } else if (editDialog.type === "store") {
         let logoUrl = editForm.logo;
         if (selectedEditImage) {
-          logoUrl = await uploadMarketLogo(selectedEditImage);
+          logoUrl = await uploadStoreLogo(selectedEditImage);
         }
 
-        await marketAPI.update(editDialog.data._id, {
+        await storeAPI.update(editDialog.data._id, {
           ...editForm,
           logo: logoUrl,
         });
         setMessage({
           type: "success",
-          text: t("Market updated successfully!"),
+          text: t("Store updated successfully!"),
         });
-        fetchMarkets();
+        fetchStores();
       } else if (editDialog.type === "product") {
         let imageUrl = editForm.image;
         if (selectedEditImage) {
@@ -1126,7 +1201,7 @@ const DataEntryForm = () => {
           brandId: editForm.brandId,
           categoryId: editForm.categoryId,
           categoryTypeId: editForm.categoryTypeId,
-          marketId: editForm.marketId,
+          storeId: editForm.storeId,
         };
 
         await productAPI.update(editDialog.data._id, productUpdateData);
@@ -1134,7 +1209,7 @@ const DataEntryForm = () => {
           type: "success",
           text: t("Product updated successfully!"),
         });
-        fetchProducts(selectedMarketFilter);
+        fetchProducts(selectedStoreFilter);
       } else if (editDialog.type === "gift") {
         let imageUrl = editForm.image;
         if (selectedEditGiftImage) {
@@ -1144,7 +1219,7 @@ const DataEntryForm = () => {
         const giftUpdateData = {
           ...editForm,
           image: imageUrl,
-          marketId: editForm.marketId,
+          storeId: editForm.storeId,
           brandId: editForm.brandId || null,
           productId: editForm.productId || null,
           expireDate: editForm.expireDate
@@ -1182,14 +1257,14 @@ const DataEntryForm = () => {
           text: t("Brand deleted successfully!"),
         });
         fetchBrands();
-        fetchProducts(selectedMarketFilter); // Refresh products as some might be deleted
+        fetchProducts(selectedStoreFilter); // Refresh products as some might be deleted
       } else if (deleteDialog.type === "product") {
         await productAPI.delete(deleteDialog.data._id);
         setMessage({
           type: "success",
           text: t("Product deleted successfully!"),
         });
-        fetchProducts(selectedMarketFilter);
+        fetchProducts(selectedStoreFilter);
       } else if (deleteDialog.type === "gift") {
         await giftAPI.delete(deleteDialog.data._id);
         setMessage({
@@ -1220,24 +1295,24 @@ const DataEntryForm = () => {
       setDeleteLoading(false);
     }
   };
-  const handleDeleteMarketConfirm = async () => {
+  const handleDeleteStoreConfirm = async () => {
     setDeleteLoading(true);
     try {
-      if (deleteDialog.type === "market") {
-        await marketAPI.delete(deleteDialog.data._id);
+      if (deleteDialog.type === "store") {
+        await storeAPI.delete(deleteDialog.data._id);
         setMessage({
           type: "success",
-          text: t("Market deleted successfully!"),
+          text: t("Store deleted successfully!"),
         });
-        fetchMarkets();
-        fetchProducts(selectedMarketFilter); // Refresh products as some might be deleted
+        fetchStores();
+        fetchProducts(selectedStoreFilter); // Refresh products as some might be deleted
       } else if (deleteDialog.type === "product") {
         await productAPI.delete(deleteDialog.data._id);
         setMessage({
           type: "success",
           text: t("Product deleted successfully!"),
         });
-        fetchProducts(selectedMarketFilter);
+        fetchProducts(selectedStoreFilter);
       } else if (deleteDialog.type === "gift") {
         await giftAPI.delete(deleteDialog.data._id);
         setMessage({
@@ -1253,10 +1328,10 @@ const DataEntryForm = () => {
       let errorMsg = t("Failed to delete. Please try again.");
       if (
         err.response?.data?.msg ===
-        "Cannot delete market. It has associated products. Please delete the products first."
+        "Cannot delete store. It has associated products. Please delete the products first."
       ) {
         errorMsg = t(
-          "Cannot delete market. It has associated products. Please delete the products first."
+          "Cannot delete store. It has associated products. Please delete the products first."
         );
       }
       setMessage({
@@ -1267,6 +1342,39 @@ const DataEntryForm = () => {
     } finally {
       setDeleteLoading(false);
     }
+  };
+
+  const handleCategoryFormChange = (e) => {
+    const { name, value } = e.target;
+    setCategoryForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleCategoryTypeChange = (index, value) => {
+    setCategoryForm((prev) => {
+      const newTypes = [...prev.types];
+      newTypes[index] = value;
+      return {
+        ...prev,
+        types: newTypes,
+      };
+    });
+  };
+
+  const addCategoryType = () => {
+    setCategoryForm((prev) => ({
+      ...prev,
+      types: [...prev.types, ""],
+    }));
+  };
+
+  const removeCategoryType = (index) => {
+    setCategoryForm((prev) => ({
+      ...prev,
+      types: prev.types.filter((_, i) => i !== index),
+    }));
   };
 
   return (
@@ -1280,8 +1388,8 @@ const DataEntryForm = () => {
           overflow: "hidden",
           background:
             theme.palette.mode === "dark"
-              ? "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)"
-              : "linear-gradient(135deg, #52b788 0%, #40916c 100%)",
+              ? "linear-gradient(135deg, #52b788 0%, #40916c 100%)"
+              : "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)",
           boxShadow:
             theme.palette.mode === "dark"
               ? "0 12px 40px rgba(0,0,0,0.3)"
@@ -1328,7 +1436,7 @@ const DataEntryForm = () => {
                       textShadow: "0 2px 4px rgba(0,0,0,0.3)",
                     }}
                   >
-                    {t("Manage markets and products efficiently")}
+                    {t("Manage stores and products efficiently")}
                   </Typography>
                 </Box>
               </Box>
@@ -1341,7 +1449,7 @@ const DataEntryForm = () => {
               >
                 <Chip
                   icon={<StoreIcon />}
-                  label={`${t("Markets")}(${markets.length})`}
+                  label={`${t("Stores")}(${stores.length})`}
                   sx={{
                     backgroundColor: "rgba(255,255,255,0.2)",
                     color: "white",
@@ -1424,7 +1532,7 @@ const DataEntryForm = () => {
               }}
             >
               <Tab
-                label={t("Add Market")}
+                label={t("Add Store")}
                 icon={<StoreIcon />}
                 iconPosition="start"
                 sx={{ textTransform: "none" }}
@@ -1444,6 +1552,12 @@ const DataEntryForm = () => {
               <Tab
                 label={t("Add Gift")}
                 icon={<CardGiftcardIcon />}
+                iconPosition="start"
+                sx={{ textTransform: "none" }}
+              />
+              <Tab
+                label={t("Add Category")}
+                icon={<CategoryIcon />}
                 iconPosition="start"
                 sx={{ textTransform: "none" }}
               />
@@ -1477,16 +1591,16 @@ const DataEntryForm = () => {
           )}
 
           {activeTab === 0 && (
-            <Box component="form" onSubmit={handleMarketSubmit}>
+            <Box component="form" onSubmit={handleStoreSubmit}>
               <Grid container spacing={2}>
                 {/* Brand Form Fields */}
                 <Grid xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    label={t("Market Name")}
+                    label={t("Store Name")}
                     name="name"
-                    value={marketForm.name}
-                    onChange={handleMarketFormChange}
+                    value={storeForm.name}
+                    onChange={handleStoreFormChange}
                     required
                     InputProps={{
                       startAdornment: (
@@ -1502,8 +1616,8 @@ const DataEntryForm = () => {
                     fullWidth
                     label={t("Address")}
                     name="address"
-                    value={marketForm.address}
-                    onChange={handleMarketFormChange}
+                    value={storeForm.address}
+                    onChange={handleStoreFormChange}
                   />
                 </Grid>
                 <Grid xs={12} sm={6}>
@@ -1511,8 +1625,8 @@ const DataEntryForm = () => {
                     fullWidth
                     label={t("Phone")}
                     name="phone"
-                    value={marketForm.phone}
-                    onChange={handleMarketFormChange}
+                    value={storeForm.phone}
+                    onChange={handleStoreFormChange}
                   />
                 </Grid>
                 <Grid xs={12}>
@@ -1520,8 +1634,8 @@ const DataEntryForm = () => {
                     fullWidth
                     label={t("Description")}
                     name="description"
-                    value={marketForm.description}
-                    onChange={handleMarketFormChange}
+                    value={storeForm.description}
+                    onChange={handleStoreFormChange}
                     multiline
                     rows={3}
                   />
@@ -1530,19 +1644,19 @@ const DataEntryForm = () => {
                   <input
                     accept="image/*"
                     style={{ display: "none" }}
-                    id="market-logo-file"
+                    id="store-logo-file"
                     type="file"
-                    onChange={handleMarketLogoChange}
+                    onChange={handleStoreLogoChange}
                   />
-                  <label htmlFor="market-logo-file">
+                  <label htmlFor="store-logo-file">
                     <Button
                       variant="outlined"
                       component="span"
                       fullWidth
                       startIcon={<AddIcon />}
                     >
-                      {selectedMarketLogo
-                        ? selectedMarketLogo.name
+                      {selectedStoreLogo
+                        ? selectedStoreLogo.name
                         : t("Upload Logo")}
                     </Button>
                   </label>
@@ -1550,19 +1664,18 @@ const DataEntryForm = () => {
                 <Grid xs={12}>
                   <FormControlLabel
                     control={
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         name="isVip"
-                        checked={marketForm.isVip}
+                        checked={storeForm.isVip}
                         onChange={(e) =>
-                          setMarketForm({
-                            ...marketForm,
+                          setStoreForm({
+                            ...storeForm,
                             isVip: e.target.checked,
                           })
                         }
                       />
                     }
-                    label={t("VIP Market")}
+                    label={t("VIP Store")}
                   />
                 </Grid>
                 <Grid xs={12}>
@@ -1583,24 +1696,24 @@ const DataEntryForm = () => {
                       ? t("Creating...")
                       : uploadLoading
                       ? t("Uploading...")
-                      : t("Add Market")}
+                      : t("Add Store")}
                   </Button>
                 </Grid>
               </Grid>
             </Box>
           )}
 
-          {/* Market Bulk Upload Section */}
+          {/* Store Bulk Upload Section */}
           {activeTab === 0 && (
             <Box
               sx={{ mt: 4, p: 3, backgroundColor: "#f8f9fa", borderRadius: 2 }}
             >
               <Typography variant="h6" gutterBottom sx={{ color: "#2c3e50" }}>
-                {t("Bulk Upload Markets")}
+                {t("Bulk Upload Stores")}
               </Typography>
               <Typography variant="body2" sx={{ color: "#B08463", mb: 2 }}>
                 {t(
-                  "Upload an Excel file (.xlsx) with market data. The file should have columns: Name, Logo, Address, Phone, Description"
+                  "Upload an Excel file (.xlsx) with store data. The file should have columns: Name, Logo, Address, Phone, Description"
                 )}
               </Typography>
               <Grid container spacing={2}>
@@ -1608,11 +1721,11 @@ const DataEntryForm = () => {
                   <input
                     accept=".xlsx,.xls"
                     style={{ display: "none" }}
-                    id="market-excel-file"
+                    id="store-excel-file"
                     type="file"
-                    onChange={handleMarketExcelFileChange}
+                    onChange={handleStoreExcelFileChange}
                   />
-                  <label htmlFor="market-excel-file">
+                  <label htmlFor="store-excel-file">
                     <Button
                       variant="outlined"
                       component="span"
@@ -1620,8 +1733,8 @@ const DataEntryForm = () => {
                       startIcon={<AddIcon />}
                       sx={{ mb: 2 }}
                     >
-                      {selectedMarketExcelFile
-                        ? selectedMarketExcelFile.name
+                      {selectedStoreExcelFile
+                        ? selectedStoreExcelFile.name
                         : t("Select Excel File")}
                     </Button>
                   </label>
@@ -1634,7 +1747,7 @@ const DataEntryForm = () => {
                       const sampleData = [
                         ["Name", "Logo", "Address", "Phone", "Description"],
                         [
-                          "Sample Market",
+                          "Sample Store",
                           "logo_url_here",
                           "Sample Address",
                           "+1234567890",
@@ -1652,7 +1765,7 @@ const DataEntryForm = () => {
                       const url = window.URL.createObjectURL(blob);
                       const a = document.createElement("a");
                       a.href = url;
-                      a.download = "market_template.csv";
+                      a.download = "store_template.csv";
                       document.body.appendChild(a);
                       a.click();
                       document.body.removeChild(a);
@@ -1667,13 +1780,11 @@ const DataEntryForm = () => {
                 </Grid>
                 <Grid xs={12}>
                   <Button
-                    onClick={handleMarketBulkUpload}
+                    onClick={handleStoreBulkUpload}
                     variant="contained"
-                    disabled={
-                      marketBulkUploadLoading || !selectedMarketExcelFile
-                    }
+                    disabled={storeBulkUploadLoading || !selectedStoreExcelFile}
                     startIcon={
-                      marketBulkUploadLoading ? (
+                      storeBulkUploadLoading ? (
                         <CircularProgress size={20} />
                       ) : (
                         <AddIcon />
@@ -1681,9 +1792,9 @@ const DataEntryForm = () => {
                     }
                     fullWidth
                   >
-                    {marketBulkUploadLoading
+                    {storeBulkUploadLoading
                       ? t("Uploading...")
-                      : t("Upload Markets")}
+                      : t("Upload Stores")}
                   </Button>
                 </Grid>
                 <Grid xs={12}>
@@ -1774,8 +1885,7 @@ const DataEntryForm = () => {
                 <Grid xs={12}>
                   <FormControlLabel
                     control={
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         name="isVip"
                         checked={brandForm.isVip}
                         onChange={(e) =>
@@ -2015,8 +2125,7 @@ const DataEntryForm = () => {
                   <FormControl fullWidth>
                     <FormControlLabel
                       control={
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           name="isDiscount"
                           checked={productForm.isDiscount}
                           onChange={(e) =>
@@ -2033,21 +2142,21 @@ const DataEntryForm = () => {
                 </Grid>
                 <Grid xs={12} sm={6}>
                   <FormControl fullWidth required>
-                    <InputLabel shrink>{t("Market")}</InputLabel>
+                    <InputLabel shrink>{t("Store")}</InputLabel>
                     <Select
-                      name="marketId"
-                      value={productForm.marketId}
+                      name="storeId"
+                      value={productForm.storeId}
                       onChange={handleProductFormChange}
-                      label={t("Market")}
+                      label={t("Store")}
                       displayEmpty
-                      labelId="add-product-market-label"
+                      labelId="add-product-store-label"
                     >
                       <MenuItem value="">
-                        <em>{t("Select Market")}</em>
+                        <em>{t("Select Store")}</em>
                       </MenuItem>
-                      {markets.map((market) => (
-                        <MenuItem key={market._id} value={market._id}>
-                          {market.name}
+                      {stores.map((store) => (
+                        <MenuItem key={store._id} value={store._id}>
+                          {store.name}
                         </MenuItem>
                       ))}
                     </Select>
@@ -2065,7 +2174,7 @@ const DataEntryForm = () => {
                       sx={{
                         width: "150px",
                       }}
-                      labelId="add-product-market-label"
+                      labelId="add-product-store-label"
                     >
                       <MenuItem value="">
                         <em>{t("Select Brand")}</em>
@@ -2247,23 +2356,23 @@ const DataEntryForm = () => {
                 </Grid>
                 <Grid xs={12} sm={6}>
                   <FormControl fullWidth>
-                    <InputLabel>{t("Markets")}</InputLabel>
+                    <InputLabel>{t("Stores")}</InputLabel>
                     <Select
                       multiple
-                      name="marketId"
-                      value={giftForm.marketId}
+                      name="storeId"
+                      value={giftForm.storeId}
                       onChange={handleGiftFormMultiChange}
-                      label={t("Markets")}
+                      label={t("Stores")}
                       renderValue={(selected) => (
                         <Box
                           sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}
                         >
                           {selected.map((value) => {
-                            const market = markets.find((m) => m._id === value);
+                            const store = stores.find((m) => m._id === value);
                             return (
                               <Chip
                                 key={value}
-                                label={market ? market.name : value}
+                                label={store ? store.name : value}
                                 size="small"
                               />
                             );
@@ -2271,9 +2380,9 @@ const DataEntryForm = () => {
                         </Box>
                       )}
                     >
-                      {markets.map((market) => (
-                        <MenuItem key={market._id} value={market._id}>
-                          {market.name}
+                      {stores.map((store) => (
+                        <MenuItem key={store._id} value={store._id}>
+                          {store.name}
                         </MenuItem>
                       ))}
                     </Select>
@@ -2373,6 +2482,94 @@ const DataEntryForm = () => {
           )}
 
           {activeTab === 4 && (
+            <Box component="form" onSubmit={handleCategorySubmit}>
+              <Grid container spacing={2}>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("Category Name")}
+                    name="name"
+                    value={categoryForm.name}
+                    onChange={handleCategoryFormChange}
+                    required
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <CategoryIcon />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>{t("Store Type")}</InputLabel>
+                    <Select
+                      name="storeType"
+                      value={categoryForm.storeType}
+                      onChange={handleCategoryFormChange}
+                      label={t("Store Type")}
+                    >
+                      <MenuItem value="market">{t("Market")}</MenuItem>
+                      <MenuItem value="clothes">{t("Clothes")}</MenuItem>
+                      <MenuItem value="electronic">{t("Electronics")}</MenuItem>
+                      <MenuItem value="cosmetic">{t("Cosmetics")}</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid xs={12}>
+                  <Typography variant="h6" gutterBottom>
+                    {t("Category Types")}
+                  </Typography>
+                  {categoryForm.types.map((type, index) => (
+                    <Box key={index} sx={{ display: "flex", gap: 1, mb: 1 }}>
+                      <TextField
+                        fullWidth
+                        label={`${t("Category Type")} ${index + 1}`}
+                        value={type}
+                        onChange={(e) =>
+                          handleCategoryTypeChange(index, e.target.value)
+                        }
+                        placeholder={t("Enter category type name")}
+                      />
+                      <IconButton
+                        onClick={() => removeCategoryType(index)}
+                        disabled={categoryForm.types.length === 1}
+                        color="error"
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Box>
+                  ))}
+                  <Button
+                    variant="outlined"
+                    onClick={addCategoryType}
+                    startIcon={<AddIcon />}
+                    sx={{ mt: 1 }}
+                  >
+                    {t("Add Category Type")}
+                  </Button>
+                </Grid>
+
+                <Grid xs={12}>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    disabled={loading}
+                    startIcon={
+                      loading ? <CircularProgress size={20} /> : <SaveIcon />
+                    }
+                    fullWidth
+                  >
+                    {loading ? t("Creating...") : t("Create Category")}
+                  </Button>
+                </Grid>
+              </Grid>
+            </Box>
+          )}
+
+          {activeTab === 5 && (
             <Box component="form" onSubmit={handleBulkUpload}>
               <Grid container spacing={2}>
                 {/* Bulk Upload Fields */}
@@ -2386,7 +2583,7 @@ const DataEntryForm = () => {
                   </Typography>
                   <Typography variant="body2" sx={{ color: "#B08463", mb: 2 }}>
                     {t(
-                      "Upload an Excel file (.xlsx) with product data. The file should have columns: Barcode, Name, Type, Previous Price, New Price, Is Discount, Brand ID, Market ID, Description, Expire Date, Weight"
+                      "Upload an Excel file (.xlsx) with product data. The file should have columns: Barcode, Name, Type, Previous Price, New Price, Is Discount, Brand ID, Store ID, Description, Expire Date, Weight"
                     )}
                   </Typography>
                 </Grid>
@@ -2426,7 +2623,7 @@ const DataEntryForm = () => {
                           "New Price",
                           "Is Discount",
                           "Brand ID",
-                          "Market ID",
+                          "Store ID",
                           "Description",
                           "Expire Date",
                           "Weight",
@@ -2439,7 +2636,7 @@ const DataEntryForm = () => {
                           "80",
                           "true",
                           "brand_id_here",
-                          "market_id_here",
+                          "store_id_here",
                           "Sample description",
                           "2024-12-31",
                           "500g",
@@ -2499,7 +2696,7 @@ const DataEntryForm = () => {
                     <br />• {t("Column F: New Price (optional)")}
                     <br />• {t("Column G: Is Discount (required)")}
                     <br />• {t("Column H: Brand ID (optional)")}
-                    <br />• {t("Column I: Market ID (required)")}
+                    <br />• {t("Column I: Store ID (required)")}
                     <br />• {t("Column J: Description (optional)")}
                     <br />•{" "}
                     {t("Column K: Expire Date (optional, YYYY-MM-DD format)")}
@@ -2537,7 +2734,7 @@ const DataEntryForm = () => {
             sx={{ mb: 2 }}
           >
             <Tab
-              label={t("Markets")}
+              label={t("Stores")}
               icon={<StoreIcon />}
               iconPosition="start"
             />
@@ -2558,7 +2755,7 @@ const DataEntryForm = () => {
             />
           </Tabs>
 
-          {/* Market List Panel */}
+          {/* Store List Panel */}
           {activeListTab === 0 && (
             <Box>
               <TableContainer component={Paper}>
@@ -2640,31 +2837,31 @@ const DataEntryForm = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {markets
+                    {stores
                       .slice(
-                        marketsPage * rowsPerPage,
-                        marketsPage * rowsPerPage + rowsPerPage
+                        storesPage * rowsPerPage,
+                        storesPage * rowsPerPage + rowsPerPage
                       )
-                      .map((market, idx) => (
-                        <TableRow key={market._id}>
+                      .map((store, idx) => (
+                        <TableRow key={store._id}>
                           <TableCell>
-                            {marketsPage * rowsPerPage + idx + 1}
+                            {storesPage * rowsPerPage + idx + 1}
                           </TableCell>
                           <TableCell
                             width={200}
                             sx={{ fontSize: "18px", fontWeight: "bold" }}
                           >
-                            {market.name}
+                            {store.name}
                           </TableCell>
                           <TableCell>
-                            {market.logo && (
+                            {store.logo && (
                               <img
                                 src={
-                                  market.logo.startsWith("http")
-                                    ? market.logo
-                                    : `${API_URL}${market.logo}`
+                                  store.logo.startsWith("http")
+                                    ? store.logo
+                                    : `${API_URL}${store.logo}`
                                 }
-                                alt={market.name}
+                                alt={store.name}
                                 width={80}
                                 height={80}
                                 style={{
@@ -2674,8 +2871,8 @@ const DataEntryForm = () => {
                               />
                             )}
                           </TableCell>
-                          {/* <TableCell>{market.address}</TableCell> */}
-                          <TableCell>{market.phone}</TableCell>
+                          {/* <TableCell>{store.address}</TableCell> */}
+                          <TableCell>{store.phone}</TableCell>
                           <TableCell
                             width="100px"
                             height="100px"
@@ -2685,10 +2882,10 @@ const DataEntryForm = () => {
                               textOverflow: "ellipsis",
                             }}
                           >
-                            {market.description}
+                            {store.description}
                           </TableCell>
                           <TableCell>
-                            {market.isVip && (
+                            {store.isVip && (
                               <Box
                                 sx={{
                                   backgroundColor: "#FFD700",
@@ -2711,7 +2908,7 @@ const DataEntryForm = () => {
                           <TableCell>
                             <IconButton
                               color="primary"
-                              onClick={() => handleEditOpen("market", market)}
+                              onClick={() => handleEditOpen("store", store)}
                             >
                               <EditIcon />
                             </IconButton>
@@ -2720,8 +2917,8 @@ const DataEntryForm = () => {
                               onClick={() =>
                                 setDeleteDialog({
                                   open: true,
-                                  type: "market",
-                                  data: market,
+                                  type: "store",
+                                  data: store,
                                 })
                               }
                             >
@@ -2735,9 +2932,9 @@ const DataEntryForm = () => {
               </TableContainer>
               <TablePagination
                 component="div"
-                count={markets.length}
-                page={marketsPage}
-                onPageChange={handleMarketsPageChange}
+                count={stores.length}
+                page={storesPage}
+                onPageChange={handleStoresPageChange}
                 rowsPerPage={rowsPerPage}
                 rowsPerPageOptions={[10]}
                 labelDisplayedRows={({ from, to, count }) =>
@@ -2973,18 +3170,18 @@ const DataEntryForm = () => {
                 }}
               >
                 <FormControl sx={{ minWidth: 240 }}>
-                  <InputLabel>{t("Search by Market")}</InputLabel>
+                  <InputLabel>{t("Search by Store")}</InputLabel>
                   <Select
-                    value={selectedMarketFilter}
+                    value={selectedStoreFilter}
                     onChange={handleFilterChange}
-                    label={t("Search by Market")}
+                    label={t("Search by Store")}
                   >
                     <MenuItem value="">
-                      <em>{t("All Markets")}</em>
+                      <em>{t("All Stores")}</em>
                     </MenuItem>
-                    {markets.map((market) => (
-                      <MenuItem key={market._id} value={market._id}>
-                        {market.name}
+                    {stores.map((store) => (
+                      <MenuItem key={store._id} value={store._id}>
+                        {store.name}
                       </MenuItem>
                     ))}
                   </Select>
@@ -3093,7 +3290,7 @@ const DataEntryForm = () => {
                           color: "primary.contrastText",
                         }}
                       >
-                        {t("Market")}
+                        {t("Store")}
                       </TableCell>
                       <TableCell
                         sx={{
@@ -3187,7 +3384,7 @@ const DataEntryForm = () => {
                               />
                             )}
                           </TableCell>
-                          <TableCell>{product.marketId?.name || ""}</TableCell>
+                          <TableCell>{product.storeId?.name || ""}</TableCell>
                           <TableCell>
                             {product.expireDate
                               ? new Date(
@@ -3275,7 +3472,7 @@ const DataEntryForm = () => {
                           color: "primary.contrastText",
                         }}
                       >
-                        {t("Markets")}
+                        {t("Stores")}
                       </TableCell>
                       <TableCell
                         sx={{
@@ -3359,10 +3556,10 @@ const DataEntryForm = () => {
                                 gap: 0.5,
                               }}
                             >
-                              {gift.marketId?.map((market) => (
+                              {gift.storeId?.map((store) => (
                                 <Chip
-                                  key={market._id || market}
-                                  label={market.name || market}
+                                  key={store._id || store}
+                                  label={store.name || store}
                                   size="small"
                                   variant="outlined"
                                 />
@@ -3465,8 +3662,8 @@ const DataEntryForm = () => {
           {t(
             editDialog.type === "brand"
               ? "Edit Brand"
-              : editDialog.type === "market"
-              ? "Edit Market"
+              : editDialog.type === "store"
+              ? "Edit Store"
               : editDialog.type === "gift"
               ? "Edit Gift"
               : "Edit Product"
@@ -3552,8 +3749,7 @@ const DataEntryForm = () => {
               <Box sx={{ mt: 2 }}>
                 <FormControlLabel
                   control={
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       name="isVip"
                       checked={editForm.isVip || false}
                       onChange={(e) =>
@@ -3568,7 +3764,7 @@ const DataEntryForm = () => {
                 />
               </Box>
             </Box>
-          ) : editDialog.type === "market" ? (
+          ) : editDialog.type === "store" ? (
             <Box component="form" sx={{ mt: 1 }}>
               <TextField
                 margin="normal"
@@ -3648,8 +3844,7 @@ const DataEntryForm = () => {
               <Box sx={{ mt: 2 }}>
                 <FormControlLabel
                   control={
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       name="isVip"
                       checked={editForm.isVip || false}
                       onChange={(e) =>
@@ -3660,7 +3855,7 @@ const DataEntryForm = () => {
                       }
                     />
                   }
-                  label={t("VIP Market")}
+                  label={t("VIP Store")}
                 />
               </Box>
             </Box>
@@ -3721,21 +3916,21 @@ const DataEntryForm = () => {
               </Box>
 
               <FormControl fullWidth margin="normal">
-                <InputLabel>{t("Markets")}</InputLabel>
+                <InputLabel>{t("Stores")}</InputLabel>
                 <Select
                   multiple
-                  name="marketId"
-                  value={editForm.marketId}
+                  name="storeId"
+                  value={editForm.storeId}
                   onChange={handleEditFormChange}
-                  label={t("Markets")}
+                  label={t("Stores")}
                   renderValue={(selected) => (
                     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
                       {selected.map((value) => {
-                        const market = markets.find((m) => m._id === value);
+                        const store = stores.find((m) => m._id === value);
                         return (
                           <Chip
                             key={value}
-                            label={market ? market.name : value}
+                            label={store ? store.name : value}
                             size="small"
                           />
                         );
@@ -3743,9 +3938,9 @@ const DataEntryForm = () => {
                     </Box>
                   )}
                 >
-                  {markets.map((market) => (
-                    <MenuItem key={market._id} value={market._id}>
-                      {market.name}
+                  {stores.map((store) => (
+                    <MenuItem key={store._id} value={store._id}>
+                      {store.name}
                     </MenuItem>
                   ))}
                 </Select>
@@ -3866,73 +4061,72 @@ const DataEntryForm = () => {
                     />
                   </Box>
                 )}
-              </Box>
 
-              <TextField
-                margin="normal"
-                fullWidth
-                label={t("Previous Price")}
-                name="previousPrice"
-                type="number"
-                value={editForm.previousPrice}
-                onChange={handleEditFormChange}
-              />
-              <TextField
-                margin="normal"
-                fullWidth
-                label={t("New Price")}
-                name="newPrice"
-                type="number"
-                value={editForm.newPrice}
-                onChange={handleEditFormChange}
-              />
-              <TextField
-                margin="normal"
-                fullWidth
-                label={t("Weight")}
-                name="weight"
-                value={editForm.weight}
-                onChange={handleEditFormChange}
-                placeholder="e.g., 500g, 1kg, 2.5kg"
-              />
-              <TextField
-                margin="normal"
-                fullWidth
-                label={t("Barcode")}
-                name="barcode"
-                value={editForm.barcode}
-                onChange={handleEditFormChange}
-                placeholder="Enter product barcode"
-              />
-              <FormControl fullWidth margin="normal">
-                <FormControlLabel
-                  control={
-                    <input
-                      type="checkbox"
-                      name="isDiscount"
-                      checked={editForm.isDiscount}
-                      onChange={(e) =>
-                        setEditForm({
-                          ...editForm,
-                          isDiscount: e.target.checked,
-                        })
-                      }
-                    />
-                  }
-                  label={t("Is Discount Product")}
-                />
-              </FormControl>
-              <FormControl fullWidth margin="normal">
-                <InputLabel>{t("Market")}</InputLabel>
-                <Select
-                  name="marketId"
-                  value={editForm.marketId}
+                <TextField
+                  margin="normal"
+                  fullWidth
+                  label={t("Previous Price")}
+                  name="previousPrice"
+                  type="number"
+                  value={editForm.previousPrice}
                   onChange={handleEditFormChange}
-                  label={t("Market")}
+                />
+                <TextField
+                  margin="normal"
+                  fullWidth
+                  label={t("New Price")}
+                  name="newPrice"
+                  type="number"
+                  value={editForm.newPrice}
+                  onChange={handleEditFormChange}
+                />
+                <TextField
+                  margin="normal"
+                  fullWidth
+                  label={t("Weight")}
+                  name="weight"
+                  value={editForm.weight}
+                  onChange={handleEditFormChange}
+                  placeholder="e.g., 500g, 1kg, 2.5kg"
+                />
+                <TextField
+                  margin="normal"
+                  fullWidth
+                  label={t("Barcode")}
+                  name="barcode"
+                  value={editForm.barcode}
+                  onChange={handleEditFormChange}
+                  placeholder="Enter product barcode"
+                />
+                <FormControl fullWidth margin="normal">
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        name="isDiscount"
+                        checked={editForm.isDiscount}
+                        onChange={(e) =>
+                          setEditForm({
+                            ...editForm,
+                            isDiscount: e.target.checked,
+                          })
+                        }
+                      />
+                    }
+                    label={t("Is Discount Product")}
+                  />
+                </FormControl>
+              </Box>
+              <FormControl fullWidth margin="normal">
+                <InputLabel>{t("Store")}</InputLabel>
+                <Select
+                  name="storeId"
+                  value={editForm.storeId}
+                  onChange={handleEditFormChange}
+                  label={t("Store")}
                 >
-                  {markets.map((market) => (
-                    <MenuItem key={market._id} value={market._id}>
-                      {market.name}
+                  {stores.map((store) => (
+                    <MenuItem key={store._id} value={store._id}>
+                      {store.name}
                     </MenuItem>
                   ))}
                 </Select>
@@ -4039,7 +4233,7 @@ const DataEntryForm = () => {
                 ? handleDeleteBrandConfirm()
                 : deleteDialog.type === "gift"
                 ? handleDeleteBrandConfirm()
-                : handleDeleteMarketConfirm()
+                : handleDeleteStoreConfirm()
             }
             disabled={deleteLoading}
           >

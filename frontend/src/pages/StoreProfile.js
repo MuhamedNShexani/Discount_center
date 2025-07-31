@@ -53,7 +53,7 @@ import {
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import StarIcon from "@mui/icons-material/Star";
-import { marketAPI, productAPI, giftAPI } from "../services/api";
+import { storeAPI, productAPI, giftAPI } from "../services/api";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import StorefrontIcon from "@mui/icons-material/Storefront";
@@ -64,7 +64,7 @@ import Loader from "../components/Loader";
 import { useUserTracking } from "../hooks/useUserTracking";
 import { useAuth } from "../context/AuthContext";
 
-const MarketProfile = () => {
+const StoreProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -73,7 +73,7 @@ const MarketProfile = () => {
   const { isAuthenticated } = useAuth();
   const { toggleLike, isProductLiked, recordView } = useUserTracking();
 
-  const [market, setMarket] = useState(null);
+  const [store, setStore] = useState(null);
   const [products, setProducts] = useState([]);
   const [gifts, setGifts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -111,7 +111,7 @@ const MarketProfile = () => {
 
   useEffect(() => {
     if (id) {
-      fetchMarketData();
+      fetchStoreData();
     }
   }, [id]);
 
@@ -129,20 +129,20 @@ const MarketProfile = () => {
     setLikeStates(initialLikeStates);
   }, [products, isProductLiked]);
 
-  const fetchMarketData = async () => {
+  const fetchStoreData = async () => {
     try {
       setLoading(true);
 
-      // Fetch market details
-      const marketResponse = await marketAPI.getById(id);
-      setMarket(marketResponse.data);
+      // Fetch store details
+      const storeResponse = await storeAPI.getById(id);
+      setStore(storeResponse.data);
 
-      // Fetch products for this market
-      const productsResponse = await productAPI.getByMarket(id);
+      // Fetch products for this store
+      const productsResponse = await productAPI.getByStore(id);
       setProducts(productsResponse.data);
 
-      // Fetch gifts for this market
-      const giftsResponse = await giftAPI.getByMarket(id);
+      // Fetch gifts for this store
+      const giftsResponse = await giftAPI.getByStore(id);
       setGifts(giftsResponse.data.data || []);
     } catch (err) {
       setError(
@@ -151,7 +151,7 @@ const MarketProfile = () => {
           err.message ||
           "Network error. Please check your connection."
       );
-      console.error("Error fetching market data:", err);
+      console.error("Error fetching store data:", err);
     } finally {
       setLoading(false);
     }
@@ -993,7 +993,7 @@ const MarketProfile = () => {
 
   if (loading) return <Loader message="Loading..." />;
   if (error) return <Loader message={error} />;
-  if (!market) return <Alert severity="error">Market not found</Alert>;
+  if (!store) return <Alert severity="error">Store not found</Alert>;
 
   const discountedProducts = getDiscountedProducts();
   const nonDiscountedProducts = getNonDiscountedProducts();
@@ -1026,7 +1026,7 @@ const MarketProfile = () => {
         {t("Back")}
       </Button>
 
-      {/* Enhanced Market Header */}
+      {/* Enhanced Store Header */}
       <Paper
         elevation={0}
         sx={{
@@ -1078,10 +1078,10 @@ const MarketProfile = () => {
                 mb: 2,
               }}
             >
-              {market.logo ? (
+              {store.logo ? (
                 <Avatar
-                  src={`${process.env.REACT_APP_BACKEND_URL}${market.logo}`}
-                  alt={market.name}
+                  src={`${process.env.REACT_APP_BACKEND_URL}${store.logo}`}
+                  alt={store.name}
                   sx={{
                     width: 60,
                     height: 60,
@@ -1114,7 +1114,7 @@ const MarketProfile = () => {
                   flex: 1,
                 }}
               >
-                {market.name}
+                {store.name}
               </Typography>
             </Box>
 
@@ -1126,10 +1126,10 @@ const MarketProfile = () => {
               sx={{ display: { xs: "none", md: "flex" } }}
             >
               <Grid item xs={12} md={3}>
-                {market.logo ? (
+                {store.logo ? (
                   <Avatar
-                    src={`${process.env.REACT_APP_BACKEND_URL}${market.logo}`}
-                    alt={market.name}
+                    src={`${process.env.REACT_APP_BACKEND_URL}${store.logo}`}
+                    alt={store.name}
                     sx={{
                       width: { xs: 80, sm: 100, md: 150 },
                       height: { xs: 80, sm: 100, md: 150 },
@@ -1167,10 +1167,10 @@ const MarketProfile = () => {
                     color: "white",
                   }}
                 >
-                  {market.name}
+                  {store.name}
                 </Typography>
                 <Box sx={{ mb: 3 }}>
-                  {market.address && (
+                  {store.address && (
                     <Box
                       display="flex"
                       alignItems="center"
@@ -1189,12 +1189,12 @@ const MarketProfile = () => {
                         }}
                         color="white"
                       >
-                        {market.address}
+                        {store.address}
                       </Typography>
                     </Box>
                   )}
 
-                  {market.phone && (
+                  {store.phone && (
                     <Box
                       display="flex"
                       alignItems="center"
@@ -1211,13 +1211,13 @@ const MarketProfile = () => {
                           color: "white",
                         }}
                       >
-                        {market.phone}
+                        {store.phone}
                       </Typography>
                     </Box>
                   )}
                 </Box>
 
-                {market.description && (
+                {store.description && (
                   <Typography
                     variant="body1"
                     sx={{
@@ -1230,7 +1230,7 @@ const MarketProfile = () => {
                       color: "white",
                     }}
                   >
-                    {market.description}
+                    {store.description}
                   </Typography>
                 )}
 
@@ -1255,10 +1255,10 @@ const MarketProfile = () => {
                     }}
                   />
                   <Chip
-                    icon={market.isVip ? "" : <ShoppingCartIcon />}
-                    label={market.isVip ? t("VIP Market") : t("Premium Market")}
+                    icon={store.isVip ? "" : <ShoppingCartIcon />}
+                    label={store.isVip ? t("VIP Store") : t("Premium Store")}
                     sx={{
-                      backgroundColor: market.isVip
+                      backgroundColor: store.isVip
                         ? "red"
                         : "rgba(255,255,255,0.2)",
                       color: "white",
@@ -1275,7 +1275,7 @@ const MarketProfile = () => {
             {/* Mobile Content - Address, Phone, Description */}
             <Box sx={{ display: { xs: "block", md: "none" } }}>
               <Box sx={{ mb: 2 }}>
-                {market.address && (
+                {store.address && (
                   <Box display="flex" mb={1} color="white">
                     <LocationOn sx={{ mr: 1, fontSize: 18, opacity: 0.9 }} />
                     <Typography
@@ -1286,12 +1286,12 @@ const MarketProfile = () => {
                       }}
                       color="white"
                     >
-                      {market.address}
+                      {store.address}
                     </Typography>
                   </Box>
                 )}
 
-                {market.phone && (
+                {store.phone && (
                   <Box display="flex" mb={1}>
                     <Phone sx={{ mr: 1, fontSize: 18, opacity: 0.9 }} />
                     <Typography
@@ -1303,13 +1303,13 @@ const MarketProfile = () => {
                         color: "white",
                       }}
                     >
-                      {market.phone}
+                      {store.phone}
                     </Typography>
                   </Box>
                 )}
               </Box>
 
-              {market.description && (
+              {store.description && (
                 <Typography
                   variant="body2"
                   sx={{
@@ -1322,7 +1322,7 @@ const MarketProfile = () => {
                     mb: 2,
                   }}
                 >
-                  {market.description}
+                  {store.description}
                 </Typography>
               )}
 
@@ -1346,10 +1346,10 @@ const MarketProfile = () => {
                   }}
                 />
                 <Chip
-                  icon={market.isVip ? "" : <ShoppingCartIcon />}
-                  label={market.isVip ? t("VIP Market") : t("Premium Market")}
+                  icon={store.isVip ? "" : <ShoppingCartIcon />}
+                  label={store.isVip ? t("VIP Store") : t("Premium Store")}
                   sx={{
-                    backgroundColor: market.isVip
+                    backgroundColor: store.isVip
                       ? "red"
                       : "rgba(255,255,255,0.2)",
                     color: "white",
@@ -1386,7 +1386,7 @@ const MarketProfile = () => {
               mb: 3,
             }}
           >
-            {t("Discover amazing products from this market")}
+            {t("Discover amazing products from this store")}
           </Typography>
           <Divider sx={{ maxWidth: 200, mx: "auto" }} />
         </Box> */}
@@ -1455,7 +1455,7 @@ const MarketProfile = () => {
                 width: { xs: "100px", sm: "100px", md: "100%" },
               }}
             />
-            {market?.isVip && (
+            {store?.isVip && (
               <Tab
                 label={`${t("All Products")} (${nonDiscountedProducts.length})`}
                 icon={<StorefrontIcon />}
@@ -1508,7 +1508,7 @@ const MarketProfile = () => {
                     lineHeight: 1.6,
                   }}
                 >
-                  {t("This market hasn't added any discount products yet.")}
+                  {t("This store hasn't added any discount products yet.")}
                 </Typography>
               </Box>
             ) : (
@@ -1555,7 +1555,7 @@ const MarketProfile = () => {
                     lineHeight: 1.6,
                   }}
                 >
-                  {t("This market hasn't added any gifts yet.")}
+                  {t("This store hasn't added any gifts yet.")}
                 </Typography>
               </Box>
             ) : (
@@ -1577,7 +1577,7 @@ const MarketProfile = () => {
           </Box>
         )}
 
-        {market?.isVip && activeTab === 2 && (
+        {store?.isVip && activeTab === 2 && (
           <Box>
             {nonDiscountedProducts.length === 0 ? (
               <Box
@@ -1615,7 +1615,7 @@ const MarketProfile = () => {
                     lineHeight: 1.6,
                   }}
                 >
-                  {t("This market hasn't added any regular products yet.")}
+                  {t("This store hasn't added any regular products yet.")}
                 </Typography>
               </Box>
             ) : (
@@ -1753,4 +1753,4 @@ const MarketProfile = () => {
   );
 };
 
-export default MarketProfile;
+export default StoreProfile;

@@ -13,7 +13,7 @@ console.log("PORT:", process.env.PORT);
 // Connect Database
 if (!process.env.MONGO_URI) {
   console.log("MONGO_URI not found in environment, using default connection");
-  process.env.MONGO_URI = "mongodb://localhost:27017/marketplace";
+  process.env.MONGO_URI = "mongodb://localhost:27017/storeplace";
 }
 
 connectDB();
@@ -26,7 +26,7 @@ app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
 // Routes
-app.use("/api/markets", require("./routes/market"));
+app.use("/api/stores", require("./routes/store"));
 app.use("/api/brands", require("./routes/brand"));
 app.use("/api/products", require("./routes/product"));
 app.use("/api/categories", require("./routes/category"));

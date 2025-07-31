@@ -30,7 +30,7 @@ import { Search, FilterList, Store, Business } from "@mui/icons-material";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import CardGiftcard from "@mui/icons-material/CardGiftcard";
-import { giftAPI, marketAPI, brandAPI } from "../services/api";
+import { giftAPI, storeAPI, brandAPI } from "../services/api";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
@@ -47,13 +47,13 @@ const Gifts = () => {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [markets, setMarkets] = useState([]);
+  const [stores, setStores] = useState([]);
   const [brands, setBrands] = useState([]);
 
   // Filter states
   const [filters, setFilters] = useState({
     search: "",
-    market: "",
+    store: "",
     brand: "",
   });
 
@@ -68,30 +68,27 @@ const Gifts = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [giftsResponse, marketsResponse, brandsResponse] =
-        await Promise.all([
-          giftAPI.getAll(),
-          marketAPI.getAll(),
-          brandAPI.getAll(),
-        ]);
+      const [giftsResponse, storesResponse, brandsResponse] = await Promise.all(
+        [giftAPI.getAll(), storeAPI.getAll(), brandAPI.getAll()]
+      );
 
       console.log("Gifts response:", giftsResponse);
-      console.log("Markets response:", marketsResponse);
+      console.log("Stores response:", storesResponse);
       console.log("Brands response:", brandsResponse);
 
       // Handle the API response structure: { success: true, data: gifts }
       const giftsData = Array.isArray(giftsResponse.data?.data)
         ? giftsResponse.data.data
         : [];
-      const marketsData = Array.isArray(marketsResponse.data)
-        ? marketsResponse.data
+      const storesData = Array.isArray(storesResponse.data)
+        ? storesResponse.data
         : [];
       const brandsData = Array.isArray(brandsResponse.data)
         ? brandsResponse.data
         : [];
 
       setGifts(giftsData);
-      setMarkets(marketsData);
+      setStores(storesData);
       setBrands(brandsData);
     } catch (err) {
       setError(
@@ -103,7 +100,7 @@ const Gifts = () => {
       console.error("Error fetching gifts data:", err);
       // Set empty arrays on error to prevent "not iterable" errors
       setGifts([]);
-      setMarkets([]);
+      setStores([]);
       setBrands([]);
     } finally {
       setLoading(false);
@@ -126,13 +123,13 @@ const Gifts = () => {
       );
     }
 
-    // Market filter
-    if (filters.market) {
+    // Store filter
+    if (filters.store) {
       filtered = filtered.filter(
         (gift) =>
-          gift.marketId &&
-          Array.isArray(gift.marketId) &&
-          gift.marketId.some((market) => market._id === filters.market)
+          gift.storeId &&
+          Array.isArray(gift.storeId) &&
+          gift.storeId.some((store) => store._id === filters.store)
       );
     }
 
@@ -247,17 +244,17 @@ const Gifts = () => {
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
             <FormControl sx={{ width: "140px" }} fullWidth>
-              <InputLabel>{t("Market")}</InputLabel>
+              <InputLabel>{t("Store")}</InputLabel>
               <Select
-                value={filters.market}
-                onChange={(e) => handleFilterChange("market", e.target.value)}
+                value={filters.store}
+                onChange={(e) => handleFilterChange("store", e.target.value)}
                 onClick={(e) => e.stopPropagation()}
-                label={t("Market")}
+                label={t("Store")}
               >
-                <MenuItem value="">{t("All Markets")}</MenuItem>
-                {markets.map((market) => (
-                  <MenuItem key={market._id} value={market._id}>
-                    {market.name}
+                <MenuItem value="">{t("All Stores")}</MenuItem>
+                {stores.map((store) => (
+                  <MenuItem key={store._id} value={store._id}>
+                    {store.name}
                   </MenuItem>
                 ))}
               </Select>
@@ -380,9 +377,9 @@ const Gifts = () => {
             {gift.description}
           </Typography>
 
-          {/* Market and Brand Info */}
+          {/* Store and Brand Info */}
           <Box sx={{ mb: 2, flexShrink: 0 }}>
-            {gift.marketId && gift.marketId.length > 0 && (
+            {gift.storeId && gift.storeId.length > 0 && (
               <Box sx={{ mb: 1 }}>
                 <Box sx={{ display: "flex", alignItems: "center", mb: 0.5 }}>
                   <Store
@@ -402,7 +399,7 @@ const Gifts = () => {
                       fontWeight: 500,
                     }}
                   >
-                    {t("Markets")}:
+                    {t("Stores")}:
                   </Typography>
                 </Box>
                 <Box
@@ -412,13 +409,13 @@ const Gifts = () => {
                     gap: 0.5,
                   }}
                 >
-                  {gift.marketId.map((market, index) => (
+                  {gift.storeId.map((store, index) => (
                     <Typography
-                      key={market._id}
+                      key={store._id}
                       variant="body2"
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigate(`/markets/${market._id}?tab=gifts`);
+                        navigate(`/stores/${store._id}?tab=gifts`);
                       }}
                       sx={{
                         fontSize: {
@@ -452,7 +449,7 @@ const Gifts = () => {
                         },
                       }}
                     >
-                      {market.name}
+                      {store.name}
                     </Typography>
                   ))}
                 </Box>
@@ -538,12 +535,10 @@ const Gifts = () => {
   }
 
   const allGifts = Array.isArray(filteredGifts) ? filteredGifts : [];
-  const marketGifts = Array.isArray(filteredGifts)
+  const storeGifts = Array.isArray(filteredGifts)
     ? filteredGifts.filter(
         (gift) =>
-          gift.marketId &&
-          Array.isArray(gift.marketId) &&
-          gift.marketId.length > 0
+          gift.storeId && Array.isArray(gift.storeId) && gift.storeId.length > 0
       )
     : [];
   const brandGifts = Array.isArray(filteredGifts)
@@ -580,7 +575,7 @@ const Gifts = () => {
               fontSize: { xs: "0.875rem", sm: "1rem" },
             }}
           >
-            {t("Discover amazing gifts from markets and brands")}
+            {t("Discover amazing gifts from stores and brands")}
           </Typography>
         </Box>
       </Box>
@@ -625,7 +620,7 @@ const Gifts = () => {
             iconPosition="start"
           />
           <Tab
-            label={`${t("Market Gifts")} (${marketGifts.length})`}
+            label={`${t("Store Gifts")} (${storeGifts.length})`}
             icon={<Store />}
             iconPosition="start"
           />
@@ -678,7 +673,7 @@ const Gifts = () => {
 
         {activeTab === 1 && (
           <Box>
-            {marketGifts.length === 0 ? (
+            {storeGifts.length === 0 ? (
               <Box
                 sx={{
                   textAlign: "center",
@@ -688,10 +683,10 @@ const Gifts = () => {
               >
                 <Store sx={{ fontSize: 64, mb: 2, opacity: 0.5 }} />
                 <Typography variant="h6" gutterBottom>
-                  {t("No market gifts available")}
+                  {t("No store gifts available")}
                 </Typography>
                 <Typography variant="body1">
-                  {t("No market gifts match your current filters.")}
+                  {t("No store gifts match your current filters.")}
                 </Typography>
               </Box>
             ) : (
@@ -703,7 +698,7 @@ const Gifts = () => {
                   width: "100%",
                 }}
               >
-                {marketGifts.map((gift) => (
+                {storeGifts.map((gift) => (
                   <Box key={gift._id} sx={{ display: "flex" }}>
                     {renderGiftCard(gift)}
                   </Box>

@@ -5,8 +5,12 @@ const Category = require("../models/Category");
 const getCategories = async (req, res) => {
   try {
     const categories = await Category.find({ isActive: true }).sort({
-      name: 1,
+      createdAt: 1,
     });
+    console.log(
+      "Categories returned in order:",
+      categories.map((c) => c.name)
+    );
     res.json(categories);
   } catch (err) {
     console.error(err.message);

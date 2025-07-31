@@ -302,7 +302,7 @@ const getLikedProducts = async (req, res) => {
       path: "likedProducts",
       populate: [
         { path: "brandId", select: "name logo" },
-        { path: "marketId", select: "name logo" },
+        { path: "storeId", select: "name logo" },
         { path: "categoryId", select: "name" },
       ],
     });
@@ -335,7 +335,7 @@ const getViewedProducts = async (req, res) => {
       path: "viewedProducts.productId",
       populate: [
         { path: "brandId", select: "name logo" },
-        { path: "marketId", select: "name logo" },
+        { path: "storeId", select: "name logo" },
         { path: "categoryId", select: "name" },
       ],
     });

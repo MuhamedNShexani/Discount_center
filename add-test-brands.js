@@ -25,7 +25,7 @@ const testBrands = [
   },
   {
     name: "Global Foods Ltd.",
-    address: "789 Market Square, Food District",
+    address: "789 Store Square, Food District",
     phone: "+1-555-0789",
     description:
       "International food distribution company offering premium quality products from around the world.",
@@ -35,7 +35,7 @@ const testBrands = [
     address: "321 Art Boulevard, Creative Quarter",
     phone: "+1-555-0321",
     description:
-      "Award-winning design studio specializing in branding, web design, and creative marketing solutions.",
+      "Award-winning design studio specializing in branding, web design, and creative storeing solutions.",
   },
   {
     name: "Health & Wellness Center",

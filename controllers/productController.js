@@ -1,5 +1,5 @@
 const Product = require("../models/Product");
-const Market = require("../models/Market");
+const Store = require("../models/Store");
 const Brand = require("../models/Brand");
 const Category = require("../models/Category");
 
@@ -8,14 +8,14 @@ const Category = require("../models/Category");
 // @access  Public
 const getProducts = async (req, res) => {
   try {
-    const { brand, category, market } = req.query;
+    const { brand, category, store } = req.query;
     let query = {};
 
     if (brand) {
       query.brandId = brand;
     }
-    if (market) {
-      query.marketId = market;
+    if (store) {
+      query.storeId = store;
     }
 
     if (category) {
@@ -24,7 +24,7 @@ const getProducts = async (req, res) => {
 
     const products = await Product.find(query)
       .populate("brandId", "name logo")
-      .populate("marketId", "name logo")
+      .populate("storeId", "name logo")
       .populate("categoryId", "name types")
       .sort({ name: 1 });
 
@@ -42,7 +42,7 @@ const getProductById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id)
       .populate("brandId", "name logo address phone description")
-      .populate("marketId", "name address phone description")
+      .populate("storeId", "name address phone description")
       .populate("categoryId", "name types description");
 
     if (!product) {
@@ -78,16 +78,16 @@ const createProduct = async (req, res) => {
     categoryId,
     description,
     barcode,
-    marketId,
+    storeId,
     expireDate,
   } = req.body;
 
   try {
-    // Check if market exists
-    const market = await Market.findById(marketId);
-    if (!market) {
-      console.error("[createProduct] Market not found for marketId:", marketId);
-      return res.status(404).json({ msg: "Market not found" });
+    // Check if store exists
+    const store = await Store.findById(storeId);
+    if (!store) {
+      console.error("[createProduct] Store not found for storeId:", storeId);
+      return res.status(404).json({ msg: "Store not found" });
     }
 
     // Check if brand exists
@@ -134,7 +134,7 @@ const createProduct = async (req, res) => {
       isDiscount,
       weight,
       brandId,
-      marketId,
+      storeId,
       expireDate,
     });
 
@@ -154,7 +154,7 @@ const getProductsByBrand = async (req, res) => {
   try {
     const products = await Product.find({ brandId: req.params.brandId })
       .populate("brandId", "name logo")
-      .populate("marketId", "name logo")
+      .populate("storeId", "name logo")
       .populate("categoryId", "name types")
       .sort({ name: 1 });
 
@@ -165,14 +165,14 @@ const getProductsByBrand = async (req, res) => {
   }
 };
 
-// @desc    Get products by market
-// @route   GET /api/products/market/:marketId
+// @desc    Get products by store
+// @route   GET /api/products/store/:storeId
 // @access  Public
-const getProductsByMarket = async (req, res) => {
+const getProductsByStore = async (req, res) => {
   try {
-    const products = await Product.find({ marketId: req.params.marketId })
+    const products = await Product.find({ storeId: req.params.storeId })
       .populate("brandId", "name logo")
-      .populate("marketId", "name logo")
+      .populate("storeId", "name logo")
       .populate("categoryId", "name types")
       .sort({ name: 1 });
 
@@ -190,7 +190,7 @@ const getProductsByCategory = async (req, res) => {
   try {
     const products = await Product.find({ type: req.params.category })
       .populate("brandId", "name logo")
-      .populate("marketId", "name logo")
+      .populate("storeId", "name logo")
       .sort({ name: 1 });
 
     res.json(products);
@@ -261,7 +261,7 @@ module.exports = {
   updateProduct,
   deleteProduct,
   getProductsByBrand,
-  getProductsByMarket,
+  getProductsByStore,
   getProductsByCategory,
   getCategories,
 };

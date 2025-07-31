@@ -5,8 +5,8 @@ import LanguageDetector from "i18next-browser-languagedetector";
 const resources = {
   en: {
     translation: {
-      "Market Products": "Market Products",
-      Markets: "Markets",
+      "Store Products": "Store Products",
+      Stores: "Stores",
       Categories: "Categories",
       Home: "Home",
       Admin: "Admin",
@@ -15,24 +15,26 @@ const resources = {
       Latest: "Latest",
       "Hot Deals": "Hot Deals",
       "More Categories": "More Categories",
+      "More Category Types": "More Category Types",
+      "All Category Types": "All Category Types",
       "Search for items...": "Search for items...",
       "View all products": "View all products",
       Available: "Available",
       "Click to explore products": "Click to explore products",
-      "No markets found": "No markets found",
-      "Premium Market": "Premium Market",
-      "Discover amazing products from this market":
-        "Discover amazing products from this market",
+      "No stores found": "No stores found",
+      "Premium Store": "Premium Store",
+      "Discover amazing products from this store":
+        "Discover amazing products from this store",
       "No products available": "No products available",
-      "This market hasn't added any products yet. Check back later!":
-        "This market hasn't added any products yet. Check back later!",
+      "This store hasn't added any products yet. Check back later!":
+        "This store hasn't added any products yet. Check back later!",
       "Mobile Menu": "Mobile Menu",
       Theme: "Theme",
       "Light Mode": "Light Mode",
       "Dark Mode": "Dark Mode",
       "Admin Dashboard": "Admin Dashboard",
-      "Manage markets and products efficiently":
-        "Manage markets and products efficiently",
+      "Manage stores and products efficiently":
+        "Manage stores and products efficiently",
       "Welcome back, Admin": "Welcome back, Admin",
       "System Overview": "System Overview",
       "Recent Activity": "Recent Activity",
@@ -47,9 +49,9 @@ const resources = {
       "Product Management": "Product Management",
       "Product management interface will be implemented here":
         "Product management interface will be implemented here",
-      "Market Management": "Market Management",
-      "Market management interface will be implemented here":
-        "Market management interface will be implemented here",
+      "Store Management": "Store Management",
+      "Store management interface will be implemented here":
+        "Store management interface will be implemented here",
       "Brand Management": "Brand Management",
       "Brand management interface will be implemented here":
         "Brand management interface will be implemented here",
@@ -58,18 +60,18 @@ const resources = {
         "Gift management interface will be implemented here",
       "Total Users": "Total Users",
       "Total Products": "Total Products",
-      "Total Markets": "Total Markets",
+      "Total Stores": "Total Stores",
       "Total Brands": "Total Brands",
       "Total Gifts": "Total Gifts",
       "Access denied. Admin privileges required.":
         "Access denied. Admin privileges required.",
-      "Add Market": "Add Market",
+      "Add Store": "Add Store",
       "More Products": "More Products",
       "View Profile": "View Profile",
-      "Discover products from various markets":
-        "Discover products from various markets",
-      "Browse all markets and their products":
-        "Browse all markets and their products",
+      "Discover products from various stores":
+        "Discover products from various stores",
+      "Browse all stores and their products":
+        "Browse all stores and their products",
       English: "English",
       Arabic: "Arabic",
       Kurdish: "Kurdish",
@@ -77,6 +79,10 @@ const resources = {
       Products: "Products",
       "Related Products": "Related Products",
       "Product Categories": "Product Categories",
+      "Category Types": "Category Types",
+      "More Categories": "More Categories",
+      "More Category Types": "More Category Types",
+      "All Category Types": "All Category Types",
       "Browse products by category": "Browse products by category",
       "View details": "View details",
       Category: "Category",
@@ -84,8 +90,8 @@ const resources = {
       Expires: "Expires",
       Close: "Close",
       "Admin Panel": "Admin Panel",
-      "Add markets and products to the marketplace":
-        "Add markets and products to the marketplace",
+      "Add stores and products to the storeplace":
+        "Add stores and products to the storeplace",
       "Add Brand": "Add Brand",
       "Add Product": "Add Product",
       "Bulk Upload": "Bulk Upload",
@@ -113,10 +119,10 @@ const resources = {
       "Column C: Previous Price (optional)":
         "Column C: Previous Price (optional)",
       "Column D: New Price (required)": "Column D: New Price (required)",
-      "Column E: Market ID (required)": "Column E: Market ID (required)",
+      "Column E: Store ID (required)": "Column E: Store ID (required)",
       "Column F: Expire Date (optional, YYYY-MM-DD format)":
         "Column F: Expire Date (optional, YYYY-MM-DD format)",
-      "All Markets": "All Markets",
+      "All Stores": "All Stores",
       Name: "Name",
       Logo: "Logo",
       Actions: "Actions",
@@ -144,7 +150,7 @@ const resources = {
       "Create a new gift with image, description, and associations":
         "Create a new gift with image, description, and associations",
       "Select Gift Image": "Select Gift Image",
-      Markets: "Markets",
+      Stores: "Stores",
       "Product ID (Barcode)": "Product ID (Barcode)",
       Barcode: "Barcode",
       "Create Gift": "Create Gift",
@@ -189,7 +195,7 @@ const resources = {
       "Product created successfully!": "Product created successfully!",
       "Failed to create product. Please try again.":
         "Failed to create product. Please try again.",
-      "VIP Market": "VIP Market",
+      "VIP Store": "VIP Store",
       "VIP Brand": "VIP Brand",
       "Please select an image file.": "Please select an image file.",
       "Please select an Excel file.": "Please select an Excel file.",
@@ -212,8 +218,8 @@ const resources = {
       "No gifts available": "No gifts available",
       "This brand hasn't added any gifts yet.":
         "This brand hasn't added any gifts yet.",
-      "This market hasn't added any gifts yet.":
-        "This market hasn't added any gifts yet.",
+      "This store hasn't added any gifts yet.":
+        "This store hasn't added any gifts yet.",
       // User Tracking & Review
       views: "views",
       likes: "likes",
@@ -271,16 +277,46 @@ const resources = {
         "You must login to like products. Do you want to login?",
       Yes: "Yes",
       No: "No",
-      "Load More Markets": "Load More Markets",
+      "Load More Stores": "Load More Stores",
       "Load More": "Load More",
       "Guest User": "Guest User",
       "Not logged in": "Not logged in",
+      "Store Type": "Store Type",
+      "All Stores": "All Stores",
+      Markets: "Markets",
+      Clothes: "Clothes",
+      Electronics: "Electronics",
+      Cosmetics: "Cosmetics",
+      "Product Categories": "Product Categories",
+      "Category Types": "Category Types",
+      "More Categories": "More Categories",
+      "More Category Types": "More Category Types",
+      "All Category Types": "All Category Types",
+      "Clear All Filters": "Clear All Filters",
+      "Clear Filter": "Clear Filter",
+      "All Category Types": "All Category Types",
+      "All Categories": "All Categories",
+      "Select Store Type": "Select Store Type",
+      "Data Entry": "Data Entry",
+      "Add Category": "Add Category",
+      "Category Name": "Category Name",
+      "Category Types": "Category Types",
+      "Category Type": "Category Type",
+      "Add Category Type": "Add Category Type",
+      "Create Category": "Create Category",
+      "Category created successfully!": "Category created successfully!",
+      "Failed to create category. Please try again.":
+        "Failed to create category. Please try again.",
+      "Please enter a category name.": "Please enter a category name.",
+      "Please enter at least one category type.":
+        "Please enter at least one category type.",
+      "Enter category type name": "Enter category type name",
     },
   },
   ar: {
     translation: {
-      "Market Products": "منتجات السوق",
-      Markets: "الأسواق",
+      "Store Products": "منتجات السوق",
+      Stores: "الأسواق",
       Categories: "الفئات",
       Home: "الرئيسية",
       Admin: "الإدارة",
@@ -289,22 +325,24 @@ const resources = {
       Latest: "الأحدث",
       "Hot Deals": "العروض الساخنة",
       "More Categories": "المزيد من الفئات",
+      "More Category Types": "المزيد من أنواع الفئات",
+      "All Category Types": "جميع أنواع الفئات",
       "Search for items...": "البحث عن العناصر...",
       "View all products": "عرض جميع المنتجات",
       Available: "متاح",
       "Click to explore products": "انقر لاستكشاف المنتجات",
-      "No markets found": "لم يتم العثور على أسواق",
-      "Premium Market": "سوق عظيم",
-      "Discover amazing products from this market":
+      "No stores found": "لم يتم العثور على أسواق",
+      "Premium Store": "سوق عظيم",
+      "Discover amazing products from this store":
         "اكتشف المنتجات العظيمة من هذا السوق",
       "No products available": "لا توجد منتجات متاحة",
-      "This market hasn't added any products yet. Check back later!":
+      "This store hasn't added any products yet. Check back later!":
         "لم يتم إضافة منتجات لهذا السوق بعد. يرجى التحقق لاحقاً!",
       "Mobile Menu": "القائمة المحمولة",
       Theme: "المظهر",
       "Light Mode": "الوضع الفاتح",
       "Admin Dashboard": "لوحة التحكم الإدارية",
-      "Manage markets and products efficiently":
+      "Manage stores and products efficiently":
         "إدارة الأسواق والمنتجات بكفاءة",
       "Welcome back, Admin": "مرحباً بعودتك، المدير",
       "System Overview": "نظرة عامة على النظام",
@@ -320,8 +358,8 @@ const resources = {
       "Product Management": "إدارة المنتجات",
       "Product management interface will be implemented here":
         "سيتم تنفيذ واجهة إدارة المنتجات هنا",
-      "Market Management": "إدارة الأسواق",
-      "Market management interface will be implemented here":
+      "Store Management": "إدارة الأسواق",
+      "Store management interface will be implemented here":
         "سيتم تنفيذ واجهة إدارة الأسواق هنا",
       "Brand Management": "إدارة الشركات",
       "Brand management interface will be implemented here":
@@ -331,17 +369,17 @@ const resources = {
         "سيتم تنفيذ واجهة إدارة الهدايا هنا",
       "Total Users": "إجمالي المستخدمين",
       "Total Products": "إجمالي المنتجات",
-      "Total Markets": "إجمالي الأسواق",
+      "Total Stores": "إجمالي الأسواق",
       "Total Brands": "إجمالي الشركات",
       "Total Gifts": "إجمالي الهدايا",
       "Access denied. Admin privileges required.":
         "تم رفض الوصول. مطلوب صلاحيات المدير.",
-      "Add Market": "إضافة سوق",
+      "Add Store": "إضافة سوق",
       "More Products": "المزيد من المنتجات",
       "View Profile": "عرض الملف الشخصي",
-      "Discover products from various markets":
+      "Discover products from various stores":
         "اكتشف المنتجات من مختلف الأسواق",
-      "Browse all markets and their products": "تصفح جميع الأسواق ومنتجاتها",
+      "Browse all stores and their products": "تصفح جميع الأسواق ومنتجاتها",
       English: "الإنجليزية",
       Arabic: "العربية",
       Kurdish: "الكردية",
@@ -349,6 +387,10 @@ const resources = {
       Products: "المنتجات",
       "Related Products": "المنتجات ذات الصلة",
       "Product Categories": "فئات المنتجات",
+      "Category Types": "فئات المنتجات",
+      "More Categories": "المزيد من الفئات",
+      "More Category Types": "المزيد من أنواع الفئات",
+      "All Category Types": "جميع أنواع الفئات",
       "Browse products by category": "تصفح المنتجات حسب الفئة",
       "View details": "عرض التفاصيل",
       Category: "الفئة",
@@ -356,7 +398,7 @@ const resources = {
       Expires: "تاريخ الانتهاء",
       Close: "إغلاق",
       "Admin Panel": "لوحة الإدارة",
-      "Add markets and products to the marketplace":
+      "Add stores and products to the storeplace":
         "إضافة الأسواق والمنتجات إلى السوق",
       "Add Brand": "إضافة شركة",
       "Add Product": "إضافة منتج",
@@ -387,7 +429,7 @@ const resources = {
       "Column E: Brand ID (required)": "العمود E: معرف الشركة (إجباري)",
       "Column F: Expire Date (optional, YYYY-MM-DD format)":
         "العمود F: تاريخ الانتهاء (اختياري، بصيغة YYYY-MM-DD)",
-      "All Markets": "جميع الأسواق",
+      "All Stores": "جميع الأسواق",
       Name: "الاسم",
       Logo: "الشعار",
       Actions: "الإجراءات",
@@ -414,7 +456,7 @@ const resources = {
       "Create a new gift with image, description, and associations":
         "إنشاء هدية جديدة مع صورة ووصف وارتباطات",
       "Select Gift Image": "اختر صورة الهدية",
-      Markets: "الأسواق",
+      Stores: "الأسواق",
       "Product ID (Barcode)": "معرف المنتج (الباركود)",
       Barcode: "الباركود",
       "Create Gift": "إنشاء هدية",
@@ -467,7 +509,7 @@ const resources = {
       "Product created successfully!": "تم إنشاء المنتج بنجاح!",
       "Failed to create product. Please try again.":
         "فشل إنشاء المنتج. يرجى المحاولة مرة أخرى.",
-      "VIP Market": "سوق VIP",
+      "VIP Store": "سوق VIP",
       "VIP Brand": "شركة VIP",
       "Please select an image file.": "يرجى اختيار ملف صورة.",
       "Please select an Excel file.": "يرجى اختيار ملف إكسل.",
@@ -479,7 +521,7 @@ const resources = {
       "Product updated successfully!": "تم تحديث المنتج بنجاح!",
       "Failed to update. Please try again.":
         "فشل التحديث. يرجى المحاولة مرة أخرى.",
-      "Number of markets that are available in the system":
+      "Number of stores that are available in the system":
         "عدد الأسواق المتاحة في النظام",
       "Brand deleted successfully!": "تم حذف الشركة بنجاح!",
       "Product deleted successfully!": "تم حذف المنتج بنجاح!",
@@ -492,7 +534,7 @@ const resources = {
       "No gifts available": "لا توجد هدايا متاحة",
       "This brand hasn't added any gifts yet.":
         "لم تقم هذه الشركة بإضافة أي هدايا بعد.",
-      "This market hasn't added any gifts yet.":
+      "This store hasn't added any gifts yet.":
         "لم يقم هذا السوق بإضافة أي هدايا بعد.",
       // User Tracking & Review
       views: "مشاهدات",
@@ -552,27 +594,56 @@ const resources = {
         "هل تريد تسجيل الدخول للإعجاب بالمنتجات؟",
       Yes: "نعم",
       No: "لا",
-      "Load More Markets": "تحميل المزيد من الأسواق",
+      "Load More Stores": "تحميل المزيد من الأسواق",
       "Load More": "تحميل المزيد",
       "Guest User": "مستخدم زائر",
       "Not logged in": "لم تسجيل الدخول",
+      "Store Type": "نوع السوق",
+      "All Stores": "جميع السوق",
+      Markets: "الماركت",
+      Clothes: "الملابس",
+      Electronics: "الإلكترونيات",
+      Cosmetics: "المكياج",
+      "Product Categories": "فئات المنتجات",
+      "Category Types": "فئات المنتجات",
+      "More Categories": "المزيد من الفئات",
+      "More Category Types": "المزيد من أنواع الفئات",
+      "All Category Types": "هەموو جۆرەکانی کاڵاکان",
+      "Clear All Filters": "مسح جميع الفلاتر",
+      "Clear Filter": "مسح الفلتر",
+      "All Category Types": "هەموو جۆرەکانی کاڵاکان",
+      "All Categories": "All Categories",
+      "Select Store Type": "هەڵبژاردنی جۆری دوکان",
+      "Data Entry": "Data Entry",
+      "Add Category": "إضافة فئة",
+      "Category Name": "اسم الفئة",
+      "Category Types": "أنواع الفئات",
+      "Category Type": "نوع الفئة",
+      "Add Category Type": "إضافة نوع فئة",
+      "Create Category": "إنشاء فئة",
+      "Category created successfully!": "تم إنشاء الفئة بنجاح!",
+      "Failed to create category. Please try again.":
+        "فشل في إنشاء الفئة. يرجى المحاولة مرة أخرى.",
+      "Please enter a category name.": "يرجى إدخال اسم الفئة.",
+      "Please enter at least one category type.":
+        "يرجى إدخال نوع فئة واحد على الأقل.",
+      "Enter category type name": "أدخل اسم نوع الفئة",
     },
   },
   ku: {
     translation: {
-      "Market Products": "ناوەندی داشکاندەکان",
+      "Store Products": "ناوەندی داشکاندەکان",
       "Data Lists": "لیستى داتاکان",
-      Markets: "مارکێتەکان",
-      "Market Brands": "مارکێتەکان",
-      Categories: "جۆرەکان",
+      "Data Entry": "داتاکان",
+      Stores: "فرۆشگاکان",
+      "Store Brands": "فرۆشگاکان",
+      Categories: "پۆڵێنەکان",
       Home: "سەرەتا",
       Admin: "بەڕێوەبەر",
       "Main Page": "پەڕەی سەرەکی",
-      "Browse All Categories": "هەموو جۆرەکان بگەڕێ",
+      "Browse All Categories": "هەموو پۆڵێنەکان بگەڕێ",
       Latest: "نوێترین",
-      "Hot Deals": "باشترین داشکاندنەکان",
-      "Discounted Products": "کاڵا",
-      "More Categories": "جۆری زیاتر",
+      "More Categories": "پۆڵێنی زیاتر",
       sponsor: "سپۆنسەر",
       "Gift Information": "زانیارى خەڵات و دیارى",
       "Loading...": "تکایە چاوەڕوانبە ....",
@@ -604,21 +675,21 @@ const resources = {
       "Please login to view liked products": "پێویستە ئەکاونت دروست بکەى",
       "Please login to view history": "پێویستە ئەکاونت دروست بکەى",
       "Click to explore products": "بەردەستکردنی کاڵاکان",
-      "No markets found": "هیچ مارکێتێک نەدۆزرایەوە",
-      "Premium Market": "مارکێت",
+      "No stores found": "هیچ فرۆشگاێک نەدۆزرایەوە",
+      "Premium Store": "فرۆشگا",
       "No discount products available": "هیچ کاڵایەک نەدۆزرایەوە",
       "This brand hasn't added any regular products yet.":
         "ئەم بڕاندە لە ئێستادا هیچ کاڵایەکى بەردەست نییە ",
-      "Discover amazing products from this market": "  کاڵاى دڵخوازت  بدۆزەوە",
+      "Discover amazing products from this store": "  کاڵاى دڵخوازت  بدۆزەوە",
       "No products available": "هیچ کاڵایەک نەدۆزرایەوە",
-      "This market hasn't added any products yet. Check back later!":
-        "مارکێتەکە نەتوانرێت بەردەست بکەوە چونکە کاڵای هەیە. لە پاشەیەکی زیاتر بەردەست بکەوە.",
+      "This store hasn't added any products yet. Check back later!":
+        "فرۆشگاەکە نەتوانرێت بەردەست بکەوە چونکە کاڵای هەیە. لە پاشەیەکی زیاتر بەردەست بکەوە.",
       "Discover amazing products from this brand": "بدۆزەوە لە بڕاندی دڵخوازت",
       "This brand hasn't added any discount products yet.":
         "ئەم بڕاندە لە ئێستادا هیچ کاڵایەکى داشکاندنى بەردەست نییە",
       "address not provided": "ناونیشان نەدۆزرایەوە",
-      "This market hasn't added any discount products yet.":
-        "مارکێتەکە لە ئێستادا هیچ کاڵایەکى داشکاندنى بەردەست نییە",
+      "This store hasn't added any discount products yet.":
+        "فرۆشگاەکە لە ئێستادا هیچ کاڵایەکى داشکاندنى بەردەست نییە",
       "Discount Expired": "داشکاندەکە کۆتایی هاتووە",
       "phone not provided": "تەلەفون نەدۆزرایەوە",
       "description not provided": "وەسف نەدۆزرایەوە",
@@ -626,19 +697,18 @@ const resources = {
       Theme: "ڕەنگ",
       "This brand hasn't added any products yet. Check back later!":
         "ئەم بڕاندیە لە ئێستادا هیچ کاڵایەکى بەردەست نییە لە ئێستادا ",
-      "Light Mode": "ڕۆشنایی",
       Gifts: "خەڵات و دیاریەکان",
-      "Discover amazing gifts from markets and brands":
+      "Discover amazing gifts from stores and brands":
         "سوود مەند ببە لە ئۆفەرە تایبەتەکان",
       "All Gifts": "هەموو خەڵات و دیاریەکان",
       "Brand Gifts": "خەڵاتى بڕاندەکان",
-      "Market Gifts": "خەڵاتى مارکێتەکان",
+      "Store Gifts": "خەڵاتى فرۆشگاکان",
       "No gifts available": "هیچ خەڵات و دیاریەک نەدۆزرایەوە",
       Discounted: "داشکێندراوەکان",
       items: "کاڵا",
       "Admin Dashboard": "ڕێکخستنی بەڕێوەبەری",
-      "Manage markets and products efficiently":
-        "بەڕێوەبردنی مارکێت و کاڵاکان بە شێوازێکی باش",
+      "Manage stores and products efficiently":
+        "بەڕێوەبردنی فرۆشگا و کاڵاکان بە شێوازێکی باش",
       "Welcome back, Admin": "بەخێربێیتەوە، بەڕێوەبەر",
       "System Overview": "نەخشەی گشتی سیستەم",
       "Recent Activity": "چالاکییەکانی دوایی",
@@ -653,9 +723,9 @@ const resources = {
       "Product Management": "بەڕێوەبردنی کاڵاکان",
       "Product management interface will be implemented here":
         "ڕووکاری بەڕێوەبردنی کاڵاکان لێرە جێبەجێ دەکرێت",
-      "Market Management": "بەڕێوەبردنی مارکێتەکان",
-      "Market management interface will be implemented here":
-        "ڕووکاری بەڕێوەبردنی مارکێتەکان لێرە جێبەجێ دەکرێت",
+      "Store Management": "بەڕێوەبردنی فرۆشگاکان",
+      "Store management interface will be implemented here":
+        "ڕووکاری بەڕێوەبردنی فرۆشگاکان لێرە جێبەجێ دەکرێت",
       "Brand Management": "بەڕێوەبردنی بڕاندەکان",
       "Brand management interface will be implemented here":
         "ڕووکاری بەڕێوەبردنی بڕاندەکان لێرە جێبەجێ دەکرێت",
@@ -664,18 +734,18 @@ const resources = {
         "ڕووکاری بەڕێوەبردنی خەڵات و دیاریەکان لێرە جێبەجێ دەکرێت",
       "Total Users": "کۆی بەکارهێنەران",
       "Total Products": "کۆی کاڵاکان",
-      "Total Markets": "کۆی مارکێتەکان",
+      "Total Stores": "کۆی فرۆشگاکان",
       "Total Brands": "کۆی بڕاندەکان",
       "Total Gifts": "کۆی خەڵات و دیاریەکان",
       "Access denied. Admin privileges required.":
         "دەستپێگەیشتن ڕەتکرایەوە. پێویستە مافەکانی بەڕێوەبەر هەبێت.",
-      "Add Market": "زیادکردنی مارکێت",
+      "Add Store": "زیادکردنی فرۆشگا",
       "More Products": "کاڵای زیاتر",
       "View Profile": "پیشاندانی پرۆفایل",
-      "Discover products from various markets":
-        "بەدواى کاڵاى دڵخوازت  بگەڕێ لە مارکێتە جیاوازەکان",
-      "Browse all markets and their products":
-        "هەموو مارکێتەکان و کاڵاکانیان بگەڕێ",
+      "Discover products from various stores":
+        "بەدواى کاڵاى دڵخوازت  بگەڕێ لە فرۆشگاە جیاوازەکان",
+      "Browse all stores and their products":
+        "هەموو فرۆشگاکان و کاڵاکانیان بگەڕێ",
       English: "ئینگلیزی",
       Arabic: "عەرەبی",
       Kurdish: "کوردی",
@@ -686,23 +756,26 @@ const resources = {
       Products: "کاڵاکان",
       "Related Products": "کاڵاکانی پەیوەندیدار",
       "Product Categories": "جۆری کاڵاکان",
+      "Category Types": "جۆرەکانی کاڵاکان",
+      "More Categories": "پۆڵێنی زیاتر",
+      "More Category Types": "جۆری زیاتر",
+      "All Category Types": "هەموو جۆرە کاڵاکان",
       "Browse products by category": "کاڵاکان بە جۆر بگەڕێ",
       "View details": "وردەکاری ببینە",
-      Category: "جۆر",
+      Category: "پۆڵێن",
       Brand: "بڕاند",
-      Expires: "ڕێکەوتى کۆتایی داشکان",
       "brands Available": "بڕاند بەردەستە",
-      "No brands found": "هیچ بڕاندیەک نەدۆزرایەوە",
-      "No markets found": "هیچ مارکێتێک نەدۆزرایەوە",
+      "No brands found": "هیچ بڕاندەک نەدۆزرایەوە",
+      "No stores found": "هیچ فرۆشگاێک نەدۆزرایەوە",
       "No brands found. Add some brands through the admin panel.":
-        "هیچ بڕاندیەک نەدۆزرایەوە. لە ئێستادا هیچ داتایەک بوونى نییە.",
-      "No markets found. Add some markets through the admin panel.":
-        "هیچ مارکێتێک نەدۆزرایەوە. لە ئێستادا هیچ داتایەک بوونى نییە.",
+        "هیچ بڕاندەک نەدۆزرایەوە. لە ئێستادا هیچ داتایەک بوونى نییە.",
+      "No stores found. Add some stores through the admin panel.":
+        "هیچ فرۆشگاێک نەدۆزرایەوە. لە ئێستادا هیچ داتایەک بوونى نییە.",
       Close: "داخستن",
       "Admin Panel": "پەڕەی ئەدمین",
-      "Add markets and products to the marketplace":
-        "مارکێت و کاڵا زیاد بکە بۆ بازاڕ",
-      "Add Brand": "زیادکردنی مارکێت",
+      "Add stores and products to the storeplace":
+        "فرۆشگا و کاڵا زیاد بکە بۆ بازاڕ",
+      "Add Brand": "زیادکردنی فرۆشگا",
       "Add Product": "زیادکردنی کاڵا",
       "Bulk Upload": "بارکردنی گشتی",
       "Brand Name": "ناوی بڕاند",
@@ -728,10 +801,10 @@ const resources = {
       "Column B: Product Type (required)": "ستوونی B: جۆری کاڵا (پێویست)",
       "Column C: Previous Price (optional)": "ستوونی C: نرخی پێشوو (مەرج نییە)",
       "Column D: New Price (required)": "ستوونی D: نرخی نوێ (پێویست)",
-      "Column E: Brand ID (required)": "ستوونی E: ناسنامەی مارکێت (پێویست)",
+      "Column E: Brand ID (required)": "ستوونی E: ناسنامەی فرۆشگا (پێویست)",
       "Column F: Expire Date (optional, YYYY-MM-DD format)":
         "ستوونی F: بەسەرچوون (مەرج نییە، فۆرمی YYYY-MM-DD)",
-      "All Markets": "هەموو مارکێتەکان",
+      "All Stores": "هەموو فرۆشگاکان",
       "Discount Only": "تەنها داشکاندنەکان ",
       Filters: "فلتەرەکان",
       "All Brands": "هەموو بڕاندەکان",
@@ -741,12 +814,12 @@ const resources = {
       "Brands Available": "بڕاند بەردەستە",
       "Search By Name": "بگەڕێ بە پێی ناو",
       "Search By Brand": "بگەڕێ بە پێی بڕاند",
-      "Discover All Products from Various Markets":
-        "گەڕان بکە بۆ کاڵاکان لە مارکێتە جیاوازەکان",
+      "Discover All Products from Various Stores":
+        "گەڕان بکە بۆ کاڵاکان لە فرۆشگاە جیاوازەکان",
       "Search By Barcode": "بگەڕێ بە پێی بارکۆد",
       "Total Brands": "ژمارەی بڕاندەکان",
       Weight: "کێش",
-      "Search by Market": "بگەڕێ بە پێی مارکێت",
+      "Search by Store": "بگەڕێ بە پێی فرۆشگا",
       Price: "نرخ",
       "Browse Your favourite products": "بۆ کاڵاى دڵخوازت بگەڕێ",
       Name: "ناو",
@@ -755,19 +828,19 @@ const resources = {
       "All Products": "هەموو کاڵاکان",
       "Search for discount products...": "بگەڕێ بە پێی کاڵا داشکێندراوەکان...",
       "Search for products...": "بگەڕێ بە پێی کاڵاکان...",
-      "Discover Discount Products from Various Markets":
-        "گەڕان بکە بۆ کاڵا داشکێندراوەکان لە مارکێتە جیاوازەکان",
-      "Discover Products from Various Markets":
-        "گەڕان بکە بۆ کاڵاکان لە مارکێتە جیاوازەکان",
-      "Edit Market": "دەستکاری مارکێت",
+      "Discover Discount Products from Various Stores":
+        "گەڕان بکە بۆ کاڵا داشکێندراوەکان لە فرۆشگاە جیاوازەکان",
+      "Discover Products from Various Stores":
+        "گەڕان بکە بۆ کاڵاکان لە فرۆشگاە جیاوازەکان",
+      "Edit Store": "دەستکاری فرۆشگا",
       "Edit Brand": "دەستکاری بڕاند",
       "Edit Product": "دەستکاری کاڵا",
       Logo: "لوگۆ",
-      "markets Available": "مارکێت بەردەستە",
+      "stores Available": "فرۆشگا بەردەستە",
       "Number of products that are available in the system":
         "ژمارەی کاڵاکان کە لە سیستەمدا هەیە",
-      "Number of markets that are available in the system":
-        "ژمارەی مارکێتەکان کە لە سیستەمدا بەردەستن",
+      "Number of stores that are available in the system":
+        "ژمارەی فرۆشگاکان کە لە سیستەمدا بەردەستن",
       Actions: "کردارەکان",
       "All Products": "هەموو کاڵاکان",
       Type: "جۆر",
@@ -780,8 +853,8 @@ const resources = {
       "Search by Price": "بگەڕێ بە پێی نرخ",
       undefined: "پێناسەنەکراوەکان",
       "No regular products available": "هیچ کاڵایەک نەدۆزرایەوە",
-      "This market hasn't added any regular products yet.":
-        " هیچ کاڵایەکى ئاسایی لە ئێستادا بەردەست نییە لەم مارکێتە",
+      "This store hasn't added any regular products yet.":
+        " هیچ کاڵایەکى ئاسایی لە ئێستادا بەردەست نییە لەم فرۆشگاە",
       "Logo URL": "بەستەری لوگۆ",
       "Current Image:": "وێنەی ئێستا:",
       Language: "زمان",
@@ -800,7 +873,7 @@ const resources = {
       "Create a new gift with image, description, and associations":
         "دیارییەکی نوێ دروست بکە لەگەڵ وێنە و وەسف و پەیوەندییەکان",
       "Select Gift Image": "وێنەی دیاری هەلبژێرە",
-      Markets: "مارکێتەکان",
+      Stores: "فرۆشگاکان",
       "Product ID (Barcode)": "ناسنامەی کاڵا (بارکۆد)",
       Barcode: "بارکۆد",
       "Create Gift": "دروستکردنی دیاری",
@@ -844,7 +917,7 @@ const resources = {
       "Product created successfully!": "کاڵاکە بە سەرکەوتوویی دروستکرا!",
       "Failed to create product. Please try again.":
         "دروستکردنی کاڵاکە سەرکەوتوو نەبوو. تکایە دووبارە هەوڵبدەرەوە.",
-      "VIP Market": "مارکێتی VIP",
+      "VIP Store": "فرۆشگای VIP",
       "VIP Brand": "بڕاندی VIP",
       "Please select an image file.": "تکایە فایلێکی وێنە هەڵبژێرە.",
       "Please select an Excel file.": "تکایە فایلێکی ئێکسڵ هەڵبژێرە.",
@@ -867,33 +940,33 @@ const resources = {
       "No gifts available": "هیچ خەڵات و دیاریەک نەدۆزرایەوە",
       "This brand hasn't added any gifts yet.":
         "ئەم بڕاندە لە ئێستادا هیچ خەڵات و دیاریەک زیاد نەکردووە.",
-      "This market hasn't added any gifts yet.":
-        "ئەم مارکێتە لە ئێستادا هیچ خەڵات و دیاریەک زیاد نەکردووە.",
+      "This store hasn't added any gifts yet.":
+        "ئەم فرۆشگاە لە ئێستادا هیچ خەڵات و دیاریەک زیاد نەکردووە.",
       Discount: "داشکاندن",
       ID: "دینار",
       "View Products": "بینینی کاڵاکان",
-      "Add Market": "زیادکردنی مارکێت",
+      "Add Store": "زیادکردنی فرۆشگا",
       "Add Brand": "زیادکردنی بڕاند",
       "Add Product": "زیادکردنی کاڵا",
       "Bulk Upload": "بارکردنی گشتی",
       "Brand Name": "ناوی بڕاند",
       "Upload Logo": "بارکردنی لوگۆ",
-      "Market Name": "ناوی مارکێت",
+      "Store Name": "ناوی فرۆشگا",
       "Brand Name": "ناوی بڕاند",
-      "Market Address": "ناونیشانی مارکێت",
-      "Market Phone": "تەلەفونی مارکێت",
-      "Market Description": "وەسفی مارکێت",
-      "Market Logo": "لوگۆی مارکێت",
-      "Market ID": "ناسنامەی مارکێت",
+      "Store Address": "ناونیشانی فرۆشگا",
+      "Store Phone": "تەلەفونی فرۆشگا",
+      "Store Description": "وەسفی فرۆشگا",
+      "Store Logo": "لوگۆی فرۆشگا",
+      "Store ID": "ناسنامەی فرۆشگا",
       "Brand Address": "ناونیشانی بڕاند",
       "Brand Phone": "تەلەفونی بڕاند",
       "Brand Description": "وەسفی بڕاند",
       "Brand Logo": "لوگۆی بڕاند",
       "Brand ID": "ناسنامەی بڕاند",
-      "Select Market": "مارکێت هەلبژێرە",
+      "Select Store": "فرۆشگا هەلبژێرە",
       "Select Brand": "بڕاند هەلبژێرە",
-      "View Market": "بینینی مارکێت",
-      Market: "مارکێت",
+      "View Store": "بینینی فرۆشگا",
+      Store: "فرۆشگا",
       "View Brand": "بینینی بڕاند",
       Brands: "بڕاندەکان",
       views: "بینراوە",
@@ -927,10 +1000,42 @@ const resources = {
         "دەتەوێت بچیتە ژوورەوە ؟",
       Yes: "بەڵێ",
       No: "نەخێر",
-      "Load More": "زیاتر بینین",
-      "Load More": "تحميل المزيد",
+      "Load More": "بینینى زیاتر",
       "Guest User": "بەکارهێنەری میوان",
       "Not logged in": "چوونەژوورەوە نەکراوە",
+      "Store Type": "جۆری فرۆشگا",
+      "All Stores": "هەموو فرۆشگاکان",
+      Markets: "مارکێتەکان",
+      Clothes: "جلوبەرگەکان",
+      Electronics: "ئەلیکترۆنیاتەکان",
+      Cosmetics: "کۆسمەتیکەکان",
+      "Product Categories": "جۆرى پۆڵێن",
+      "Category Types": "جۆرى پۆڵێن",
+      "More Categories": "پۆڵێنی زیاتر",
+      "More Category Types": "پۆڵێنی زیاتر",
+      "All Category Types": "هەموو جۆرەکانی کاڵاکان",
+      "Clear All Filters": "سڕینەوەی هەموو فلتەرەکان",
+      "Clear Filter": "سڕینەوەی فلتەر",
+      "All Category Types": "هەموو جۆرەکانی کاڵاکان",
+      "All Categories": "All Categories",
+      "Select Store Type": "هەڵبژاردنی جۆری دوکان",
+      "Data Entry": "تۆمارکردنى داتا",
+      "Add Category": "زیادکردنی پۆڵێن",
+      "Category Name": "ناوی پۆڵێن",
+      "Category Types": "جۆرەکانی پۆڵێن",
+      "Category Type": "جۆری پۆڵێن",
+      "Add Category Type": "زیادکردنی جۆرى پۆڵێن",
+      "Create Category": "دروستکردنی پۆڵێن",
+      "Category created successfully!": "پۆڵێن بە سەرکەوتوویی دروستکرا!",
+      "Failed to create category. Please try again.":
+        "دروستکردنی پۆڵێن سەرکەوتوو نەبوو. تکایە دووبارە هەوڵبدەرەوە.",
+      "Please enter a category name.": "تکایە ناوی پۆڵێن بنووسە.",
+      "Please enter at least one category type.": "تکایە جۆرى پۆڵێن  بنووسە.",
+      "Enter category type name": "ناوی جۆرى پۆڵێن بنووسە",
+      Market: "مارکێت",
+      "Browse market stores and their products":
+        "بگەڕێ بۆ مارکێتەکان و کاڵاکانیان",
+      "Discounted Products": "کاڵاى داشکێندراو",
     },
   },
 };

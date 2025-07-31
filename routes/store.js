@@ -2,36 +2,36 @@ const express = require("express");
 const router = express.Router();
 const XLSX = require("xlsx");
 const {
-  getMarkets,
-  getMarketById,
-  createMarket,
-  updateMarket,
-  deleteMarket,
-} = require("../controllers/marketController");
+  getStores,
+  getStoreById,
+  createStore,
+  updateStore,
+  deleteStore,
+} = require("../controllers/storeController");
 const upload = require("../middleware/upload");
 
-// @route   GET /api/markets
-// @desc    Get all markets
-router.get("/", getMarkets);
+// @route   GET /api/stores
+// @desc    Get all stores
+router.get("/", getStores);
 
-// @route   GET /api/markets/:id
-// @desc    Get market by ID
-router.get("/:id", getMarketById);
+// @route   GET /api/stores/:id
+// @desc    Get store by ID
+router.get("/:id", getStoreById);
 
-// @route   POST /api/markets
-// @desc    Add new market
-router.post("/", createMarket);
+// @route   POST /api/stores
+// @desc    Add new store
+router.post("/", createStore);
 
-// @route   PUT /api/markets/:id
-// @desc    Update market
-router.put("/:id", updateMarket);
+// @route   PUT /api/stores/:id
+// @desc    Update store
+router.put("/:id", updateStore);
 
-// @route   DELETE /api/markets/:id
-// @desc    Delete market
-router.delete("/:id", deleteMarket);
+// @route   DELETE /api/stores/:id
+// @desc    Delete store
+router.delete("/:id", deleteStore);
 
-// @route   POST /api/markets/upload-logo
-// @desc    Upload market logo
+// @route   POST /api/stores/upload-logo
+// @desc    Upload store logo
 router.post("/upload-logo", upload.single("logo"), (req, res) => {
   try {
     if (!req.file) {
@@ -49,8 +49,8 @@ router.post("/upload-logo", upload.single("logo"), (req, res) => {
   }
 });
 
-// @route   POST /api/markets/bulk-upload
-// @desc    Upload Excel file and create multiple markets
+// @route   POST /api/stores/bulk-upload
+// @desc    Upload Excel file and create multiple stores
 router.post("/bulk-upload", upload.single("excelFile"), async (req, res) => {
   try {
     if (!req.file) {
@@ -77,7 +77,7 @@ router.post("/bulk-upload", upload.single("excelFile"), async (req, res) => {
       if (!row || row.length === 0 || !row[0]) continue;
 
       try {
-        const marketData = {
+        const storeData = {
           name: row[0] || "",
           logo: row[1] || "",
           address: row[2] || "",
@@ -86,15 +86,15 @@ router.post("/bulk-upload", upload.single("excelFile"), async (req, res) => {
         };
 
         // Validate required fields
-        if (!marketData.name) {
+        if (!storeData.name) {
           errors.push(`Row ${i + 2}: Missing required field (name)`);
           continue;
         }
 
-        // Create the market
-        const Market = require("../models/Market");
-        const newMarket = new Market(marketData);
-        await newMarket.save();
+        // Create the store
+        const Store = require("../models/Store");
+        const newStore = new Store(storeData);
+        await newStore.save();
         createdCount++;
       } catch (error) {
         errors.push(`Row ${i + 2}: ${error.message}`);

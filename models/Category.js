@@ -14,6 +14,11 @@ const categorySchema = new mongoose.Schema({
     type: String,
     required: false,
   },
+  storeType: {
+    type: String,
+    enum: ["market", "clothes", "electronic", "cosmetic"],
+    default: "market",
+  },
   types: [
     {
       name: {

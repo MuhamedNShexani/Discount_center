@@ -84,7 +84,7 @@ const ProductCategory = () => {
   const [filters, setFilters] = useState({
     name: "",
     brand: "",
-    market: "",
+    store: "",
     barcode: "",
     discount: true,
   });
@@ -282,12 +282,12 @@ const ProductCategory = () => {
       );
     }
 
-    // Filter by market
-    if (filters.market) {
+    // Filter by store
+    if (filters.store) {
       filtered = filtered.filter((product) =>
-        product.marketId?.name
+        product.storeId?.name
           ?.toLowerCase()
-          .includes(filters.market.toLowerCase())
+          .includes(filters.store.toLowerCase())
       );
     }
 
@@ -328,13 +328,13 @@ const ProductCategory = () => {
     return [...new Set(brands)].sort();
   };
 
-  // Get unique markets for filter dropdown
-  const getMarkets = () => {
-    const markets = products
-      .map((product) => product.marketId?.name)
+  // Get unique stores for filter dropdown
+  const getStores = () => {
+    const stores = products
+      .map((product) => product.storeId?.name)
       .filter((name) => name)
       .map((name) => name);
-    return [...new Set(markets)].sort();
+    return [...new Set(stores)].sort();
   };
 
   const formatPrice = (price) => {
@@ -476,19 +476,19 @@ const ProductCategory = () => {
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <FormControl sx={{ width: { xs: "125px", md: "300px" } }} fullWidth>
-              <InputLabel>{t("Market")}</InputLabel>
+              <InputLabel>{t("Store")}</InputLabel>
               <Select
-                value={filters.market}
-                onChange={(e) => handleFilterChange("market", e.target.value)}
+                value={filters.store}
+                onChange={(e) => handleFilterChange("store", e.target.value)}
                 onClick={(e) => e.stopPropagation()}
-                label={t("Market")}
+                label={t("Store")}
               >
                 <MenuItem value="" sx={{ width: "250px" }}>
-                  {t("All Markets")}
+                  {t("All Stores")}
                 </MenuItem>
-                {getMarkets().map((market) => (
-                  <MenuItem key={market} value={market}>
-                    {market}
+                {getStores().map((store) => (
+                  <MenuItem key={store} value={store}>
+                    {store}
                   </MenuItem>
                 ))}
               </Select>
@@ -540,7 +540,7 @@ const ProductCategory = () => {
                 setFilters({
                   name: "",
                   brand: "",
-                  market: "",
+                  store: "",
                   barcode: "",
                   discount: false,
                 });
@@ -961,7 +961,7 @@ const ProductCategory = () => {
                       ) : (
                         <Box sx={{ height: { xs: 16, md: 24 }, mb: 1 }} />
                       )}
-                      {product.marketId ? (
+                      {product.storeId ? (
                         <Box display="flex" mb={1}>
                           <StorefrontIcon
                             sx={{
@@ -977,9 +977,9 @@ const ProductCategory = () => {
                               fontSize: { xs: "0.55rem", sm: "0.75rem" },
                             }}
                           >
-                            {product.marketId.name ? (
+                            {product.storeId.name ? (
                               <>
-                                {t("Market")}: {product.marketId.name}
+                                {t("Store")}: {product.storeId.name}
                               </>
                             ) : (
                               "\u00A0"
@@ -1338,11 +1338,11 @@ const ProductCategory = () => {
                     </Typography>
                   </Box>
                 )}
-                {selectedProduct.marketId && (
+                {selectedProduct.storeId && (
                   <Box display="flex" alignItems="center" gap={1}>
                     <StorefrontIcon fontSize="small" color="action" />
                     <Typography variant="body2" color="text.secondary">
-                      {t("Market")}: {selectedProduct.marketId.name}
+                      {t("Store")}: {selectedProduct.storeId.name}
                     </Typography>
                   </Box>
                 )}

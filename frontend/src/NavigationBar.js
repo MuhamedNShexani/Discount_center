@@ -16,6 +16,7 @@ import {
   ListItemIcon,
   ListItemText,
   Divider,
+  ClickAwayListener,
 } from "@mui/material";
 import {
   Home as HomeIcon,
@@ -31,6 +32,8 @@ import {
   Person as PersonIcon,
   Language as LanguageIcon,
   Settings as SettingsIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
 } from "@mui/icons-material";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -43,9 +46,12 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
   const isSmUp = useMediaQuery(theme.breakpoints.up("sm"));
   const lang = i18n.language;
   const location = useLocation();
-
+  const isAuthenticated = !!user;
   // Profile menu state
   const [profileAnchorEl, setProfileAnchorEl] = useState(null);
+
+  // Stores dropdown state
+  const [storesAnchorEl, setStoresAnchorEl] = useState(null);
 
   const handleLangChange = (event) => {
     i18n.changeLanguage(event.target.value);
@@ -59,6 +65,14 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
     setProfileAnchorEl(null);
   };
 
+  const handleStoresMenuOpen = (event) => {
+    setStoresAnchorEl(event.currentTarget);
+  };
+
+  const handleStoresMenuClose = () => {
+    setStoresAnchorEl(null);
+  };
+
   const handleLogout = () => {
     logout();
     handleProfileMenuClose();
@@ -67,19 +81,28 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
   const navItems = [
     { name: t("Main Page"), path: "/", icon: <HomeIcon /> },
     { name: t("Products"), path: "/categories", icon: <CategoryIcon /> },
-    { name: t("Markets"), path: "/markets", icon: <StoreIcon /> },
     { name: t("Brands"), path: "/brands", icon: <BusinessIcon /> },
     { name: t("Gifts"), path: "/gifts", icon: <CardGiftcardIcon /> },
-    // Only show Admin link for specific admin email
-    ...(user && user.email === "mshexani45@gmail.com"
+    // Show Data Entry link for authenticated users
+    ...(user && isAuthenticated
       ? [
           {
-            name: t("Admin"),
-            path: "/admin/specific",
+            name: t("Data Entry"),
+            path: "/admin",
             icon: <AdminPanelSettingsIcon />,
           },
         ]
       : []),
+    // Only show Admin link for specific admin email
+    // ...(user && user.email === "mshexani45@gmail.com"
+    //   ? [
+    //       {
+    //         name: t("Admin"),
+    //         path: "/admin/specific",
+    //         icon: <AdminPanelSettingsIcon />,
+    //       },
+    //     ]
+    //   : []),
   ];
 
   return (
@@ -90,8 +113,8 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
         sx={{
           background:
             theme.palette.mode === "dark"
-              ? "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)"
-              : "linear-gradient(135deg, #52b788 0%, #40916c 100%)",
+              ? "linear-gradient(135deg, #52b788 0%, #40916c 100%)"
+              : "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)",
           backdropFilter: "blur(20px)",
           borderBottom: `1px solid ${
             theme.palette.mode === "dark"
@@ -141,7 +164,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                 },
               }}
             >
-              {t("Market Products")}
+              {t("Store Products")}
             </Typography>
           </Box>
 
@@ -154,7 +177,114 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                 gap: 1,
               }}
             >
-              {navItems.map((item) => (
+              {/* First two nav items (Main Page, Products) */}
+              {navItems.slice(0, 2).map((item) => (
+                <Button
+                  key={item.path}
+                  component={Link}
+                  to={item.path}
+                  startIcon={item.icon}
+                  sx={{
+                    color: "white",
+                    textTransform: "none",
+                    fontSize: "1.3rem",
+                    px: 2,
+                    py: 1,
+                    borderRadius: 2,
+                    minWidth: "auto",
+                    position: "relative",
+                    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                    backgroundColor:
+                      location.pathname === item.path
+                        ? "rgba(255,255,255,0.2)"
+                        : "transparent",
+                    backdropFilter:
+                      location.pathname === item.path ? "blur(10px)" : "none",
+                    border:
+                      location.pathname === item.path
+                        ? "1px solid rgba(255,255,255,0.3)"
+                        : "1px solid transparent",
+                    "&:hover": {
+                      backgroundColor: "rgba(255,255,255,0.15)",
+                      backdropFilter: "blur(10px)",
+                      transform: "translateY(-2px)",
+                      boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+                    },
+                    "&::after": {
+                      content: '""',
+                      position: "absolute",
+                      bottom: -2,
+                      left: "50%",
+                      transform: "translateX(-50%)",
+                      width: location.pathname === item.path ? "80%" : "0%",
+                      height: 2,
+                      backgroundColor: "white",
+                      borderRadius: 1,
+                      transition: "width 0.3s ease",
+                    },
+                  }}
+                >
+                  {item.name}
+                </Button>
+              ))}
+
+              {/* Stores Dropdown Button (3rd position) */}
+              <Button
+                onClick={handleStoresMenuOpen}
+                startIcon={<StoreIcon />}
+                endIcon={
+                  Boolean(storesAnchorEl) ? (
+                    <ExpandLessIcon />
+                  ) : (
+                    <ExpandMoreIcon />
+                  )
+                }
+                sx={{
+                  color: "white",
+                  textTransform: "none",
+                  fontSize: "1.3rem",
+                  px: 2,
+                  py: 1,
+                  borderRadius: 2,
+                  minWidth: "auto",
+                  position: "relative",
+                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                  backgroundColor: location.pathname.startsWith("/stores")
+                    ? "rgba(255,255,255,0.2)"
+                    : "transparent",
+                  backdropFilter: location.pathname.startsWith("/stores")
+                    ? "blur(10px)"
+                    : "none",
+                  border: location.pathname.startsWith("/stores")
+                    ? "1px solid rgba(255,255,255,0.3)"
+                    : "1px solid transparent",
+                  "&:hover": {
+                    backgroundColor: "rgba(255,255,255,0.15)",
+                    backdropFilter: "blur(10px)",
+                    transform: "translateY(-2px)",
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+                  },
+                  "&::after": {
+                    content: '""',
+                    position: "absolute",
+                    bottom: -2,
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    width: location.pathname.startsWith("/stores")
+                      ? "80%"
+                      : "0%",
+                    height: 2,
+                    backgroundColor: "white",
+                    borderRadius: 1,
+                    transition: "width 0.3s ease",
+                  },
+                }}
+              >
+                {t("Stores")}
+              </Button>
+
+              {/* Remaining nav items (Brands, Gifts, Admin) */}
+              {navItems.slice(2).map((item) => (
                 <Button
                   key={item.path}
                   component={Link}
@@ -426,7 +556,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                     width: 40,
                     height: 40,
                     backgroundColor:
-                      theme.palette.mode === "dark" ? "#52b788" : "#40916c",
+                      theme.palette.mode === "dark" ? "#2c3e50" : "#34495e",
                     fontSize: "1rem",
                     fontWeight: 600,
                   }}
@@ -552,14 +682,14 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
             sx={{
               py: 1.5,
               px: 2,
-              color: "#40916c",
+              color: "#2c3e50",
               "&:hover": {
                 backgroundColor: "rgba(64, 145, 108, 0.08)",
               },
             }}
           >
             <ListItemIcon>
-              <LoginIcon sx={{ color: "#40916c" }} />
+              <LoginIcon sx={{ color: "#2c3e50" }} />
             </ListItemIcon>
             <ListItemText
               primary={t("Login")}
@@ -570,6 +700,168 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
             />
           </MenuItem>
         )}
+      </Menu>
+
+      {/* Stores Dropdown Menu */}
+      <Menu
+        anchorEl={storesAnchorEl}
+        open={Boolean(storesAnchorEl)}
+        onClose={handleStoresMenuClose}
+        PaperProps={{
+          sx: {
+            mt: 1,
+            minWidth: 200,
+            backgroundColor:
+              theme.palette.mode === "dark" ? "#2c3e50" : "#ffffff",
+            backdropFilter: "blur(20px)",
+            border: `1px solid ${
+              theme.palette.mode === "dark"
+                ? "rgba(255,255,255,0.1)"
+                : "rgba(0,0,0,0.1)"
+            }`,
+            boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
+            borderRadius: 2,
+          },
+        }}
+        transformOrigin={{ horizontal: "left", vertical: "top" }}
+        anchorOrigin={{ horizontal: "left", vertical: "bottom" }}
+      >
+        {/* <MenuItem
+          component={Link}
+          to="/stores"
+          onClick={handleStoresMenuClose}
+          sx={{
+            py: 1.5,
+            px: 2,
+            "&:hover": {
+              backgroundColor:
+                theme.palette.mode === "dark"
+                  ? "rgba(255,255,255,0.08)"
+                  : "rgba(0,0,0,0.04)",
+            },
+          }}
+        >
+          <ListItemIcon>
+            <StoreIcon />
+          </ListItemIcon>
+          <ListItemText
+            primary={t("All Stores")}
+            primaryTypographyProps={{
+              fontSize: "0.875rem",
+              fontWeight: 500,
+            }}
+          />
+        </MenuItem> */}
+
+        {/* <Divider /> */}
+
+        <MenuItem
+          component={Link}
+          to="/stores?type=market"
+          onClick={handleStoresMenuClose}
+          sx={{
+            py: 1.5,
+            px: 2,
+            "&:hover": {
+              backgroundColor:
+                theme.palette.mode === "dark"
+                  ? "rgba(255,255,255,0.08)"
+                  : "rgba(0,0,0,0.04)",
+            },
+          }}
+        >
+          <ListItemIcon>
+            <span style={{ fontSize: "1.2rem" }}>🛒</span>
+          </ListItemIcon>
+          <ListItemText
+            primary={t("Markets")}
+            primaryTypographyProps={{
+              fontSize: "0.875rem",
+              fontWeight: 500,
+            }}
+          />
+        </MenuItem>
+
+        <MenuItem
+          component={Link}
+          to="/stores?type=clothes"
+          onClick={handleStoresMenuClose}
+          sx={{
+            py: 1.5,
+            px: 2,
+            "&:hover": {
+              backgroundColor:
+                theme.palette.mode === "dark"
+                  ? "rgba(255,255,255,0.08)"
+                  : "rgba(0,0,0,0.04)",
+            },
+          }}
+        >
+          <ListItemIcon>
+            <span style={{ fontSize: "1.2rem" }}>👕</span>
+          </ListItemIcon>
+          <ListItemText
+            primary={t("Clothes")}
+            primaryTypographyProps={{
+              fontSize: "0.875rem",
+              fontWeight: 500,
+            }}
+          />
+        </MenuItem>
+
+        <MenuItem
+          component={Link}
+          to="/stores?type=electronic"
+          onClick={handleStoresMenuClose}
+          sx={{
+            py: 1.5,
+            px: 2,
+            "&:hover": {
+              backgroundColor:
+                theme.palette.mode === "dark"
+                  ? "rgba(255,255,255,0.08)"
+                  : "rgba(0,0,0,0.04)",
+            },
+          }}
+        >
+          <ListItemIcon>
+            <span style={{ fontSize: "1.2rem" }}>📱</span>
+          </ListItemIcon>
+          <ListItemText
+            primary={t("Electronics")}
+            primaryTypographyProps={{
+              fontSize: "0.875rem",
+              fontWeight: 500,
+            }}
+          />
+        </MenuItem>
+
+        <MenuItem
+          component={Link}
+          to="/stores?type=cosmetic"
+          onClick={handleStoresMenuClose}
+          sx={{
+            py: 1.5,
+            px: 2,
+            "&:hover": {
+              backgroundColor:
+                theme.palette.mode === "dark"
+                  ? "rgba(255,255,255,0.08)"
+                  : "rgba(0,0,0,0.04)",
+            },
+          }}
+        >
+          <ListItemIcon>
+            <span style={{ fontSize: "1.2rem" }}>💄</span>
+          </ListItemIcon>
+          <ListItemText
+            primary={t("Cosmetics")}
+            primaryTypographyProps={{
+              fontSize: "0.875rem",
+              fontWeight: 500,
+            }}
+          />
+        </MenuItem>
       </Menu>
     </>
   );

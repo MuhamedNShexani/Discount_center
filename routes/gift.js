@@ -4,7 +4,7 @@ const upload = require("../middleware/upload");
 const {
   getGifts,
   getGiftById,
-  getGiftsByMarket,
+  getGiftsByStore,
   getGiftsByBrand,
   createGift,
   updateGift,
@@ -14,8 +14,8 @@ const {
 // Get all gifts
 router.get("/", getGifts);
 
-// Get gifts by market
-router.get("/market/:marketId", getGiftsByMarket);
+// Get gifts by store
+router.get("/store/:storeId", getGiftsByStore);
 
 // Get gifts by brand
 router.get("/brand/:brandId", getGiftsByBrand);

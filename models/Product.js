@@ -24,9 +24,9 @@ const productSchema = new mongoose.Schema(
       ref: "Brand",
       required: true,
     },
-    marketId: {
+    storeId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Market",
+      ref: "Store",
       required: false,
     },
     expireDate: { type: Date },

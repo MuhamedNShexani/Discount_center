@@ -1,12 +1,17 @@
 const mongoose = require("mongoose");
 
-const marketSchema = new mongoose.Schema({
+const storeSchema = new mongoose.Schema({
   name: { type: String, required: true },
   logo: { type: String },
   address: { type: String },
   phone: { type: String },
   description: { type: String },
+  storeType: {
+    type: String,
+    enum: ["market", "clothes", "electronic", "cosmetic"],
+    default: "market",
+  },
   isVip: { type: Boolean, default: false },
 });
 
-module.exports = mongoose.model("Market", marketSchema);
+module.exports = mongoose.model("Store", storeSchema);

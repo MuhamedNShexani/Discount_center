@@ -101,7 +101,7 @@ const BrandProfile = () => {
   // Filter states
   const [filters, setFilters] = useState({
     name: "",
-    market: "",
+    store: "",
     barcode: "",
     type: "",
   });
@@ -186,13 +186,13 @@ const BrandProfile = () => {
       const matchesName = product.name
         .toLowerCase()
         .includes(filters.name.toLowerCase());
-      const matchesMarket =
-        !filters.market ||
-        (product.marketId &&
-          product.marketId.name &&
-          product.marketId.name
+      const matchesStore =
+        !filters.store ||
+        (product.storeId &&
+          product.storeId.name &&
+          product.storeId.name
             .toLowerCase()
-            .includes(filters.market.toLowerCase()));
+            .includes(filters.store.toLowerCase()));
       const matchesBarcode =
         !filters.barcode ||
         (product.barcode &&
@@ -203,7 +203,7 @@ const BrandProfile = () => {
         !filters.type ||
         product.type.toLowerCase().includes(filters.type.toLowerCase());
 
-      return matchesName && matchesMarket && matchesBarcode && matchesType;
+      return matchesName && matchesStore && matchesBarcode && matchesType;
     });
   };
 
@@ -234,13 +234,13 @@ const BrandProfile = () => {
     return types.sort();
   };
 
-  // Get unique markets for filter dropdown
-  const getMarkets = () => {
-    const markets = products
-      .map((product) => product.marketId)
-      .filter((market) => market && market.name)
-      .map((market) => market.name);
-    return [...new Set(markets)].sort();
+  // Get unique stores for filter dropdown
+  const getStores = () => {
+    const stores = products
+      .map((product) => product.storeId)
+      .filter((store) => store && store.name)
+      .map((store) => store.name);
+    return [...new Set(stores)].sort();
   };
 
   // Handle filter changes
@@ -418,9 +418,9 @@ const BrandProfile = () => {
             {gift.description}
           </Typography>
 
-          {/* Market Info */}
+          {/* Store Info */}
           <Box sx={{ mb: 2, flexShrink: 0 }}>
-            {gift.marketId && gift.marketId.length > 0 && (
+            {gift.storeId && gift.storeId.length > 0 && (
               <Box sx={{ mb: 1 }}>
                 <Box sx={{ display: "flex", alignItems: "center", mb: 0.5 }}>
                   <Store
@@ -440,16 +440,16 @@ const BrandProfile = () => {
                       fontWeight: 500,
                     }}
                   >
-                    {t("Markets")}:
+                    {t("Stores")}:
                   </Typography>
                 </Box>
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                  {gift.marketId.map((market, index) => (
+                  {gift.storeId.map((store, index) => (
                     <Typography
-                      key={market._id}
+                      key={store._id}
                       variant="body2"
                       onClick={() => {
-                        navigate(`/markets/${market._id}?tab=gifts`);
+                        navigate(`/stores/${store._id}?tab=gifts`);
                       }}
                       sx={{
                         fontSize: {
@@ -483,7 +483,7 @@ const BrandProfile = () => {
                         },
                       }}
                     >
-                      {market.name}
+                      {store.name}
                     </Typography>
                   ))}
                 </Box>
@@ -648,8 +648,8 @@ const BrandProfile = () => {
               {product.name}
             </Typography>
 
-            {/* Market name if available */}
-            {product.marketId && product.marketId.name && (
+            {/* Store name if available */}
+            {product.storeId && product.storeId.name && (
               <Typography
                 variant="body2"
                 sx={{
@@ -660,7 +660,7 @@ const BrandProfile = () => {
                   textAlign: "center",
                 }}
               >
-                {product.marketId.name}
+                {product.storeId.name}
               </Typography>
             )}
 
@@ -972,17 +972,17 @@ const BrandProfile = () => {
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <FormControl sx={{ width: "200px" }} fullWidth>
-              <InputLabel>{t("Market")}</InputLabel>
+              <InputLabel>{t("Store")}</InputLabel>
               <Select
-                value={filters.market}
-                onChange={(e) => handleFilterChange("market", e.target.value)}
+                value={filters.store}
+                onChange={(e) => handleFilterChange("store", e.target.value)}
                 onClick={(e) => e.stopPropagation()}
-                label={t("Market")}
+                label={t("Store")}
               >
-                <MenuItem value="">{t("All Markets")}</MenuItem>
-                {getMarkets().map((market) => (
-                  <MenuItem key={market} value={market}>
-                    {market}
+                <MenuItem value="">{t("All Stores")}</MenuItem>
+                {getStores().map((store) => (
+                  <MenuItem key={store} value={store}>
+                    {store}
                   </MenuItem>
                 ))}
               </Select>
@@ -1511,6 +1511,17 @@ const BrandProfile = () => {
               },
             }}
           >
+            {brand?.isVip && (
+              <Tab
+                label={`${t("All Products")} (${nonDiscountedProducts.length})`}
+                icon={<StorefrontIcon />}
+                iconPosition="start"
+                sx={{
+                  textTransform: "none",
+                  width: { xs: "100px", sm: "100px", md: "100%" },
+                }}
+              />
+            )}
             <Tab
               label={`${t("Discounts")} (${discountedProducts.length})`}
               icon={<LocalOfferIcon />}
@@ -1529,129 +1540,11 @@ const BrandProfile = () => {
                 width: { xs: "100px", sm: "100px", md: "100%" },
               }}
             />
-            {brand?.isVip && (
-              <Tab
-                label={`${t("All Products")} (${nonDiscountedProducts.length})`}
-                icon={<StorefrontIcon />}
-                iconPosition="start"
-                sx={{
-                  textTransform: "none",
-                  width: { xs: "100px", sm: "100px", md: "100%" },
-                }}
-              />
-            )}
           </Tabs>
         </Paper>
 
         {/* Tab Content */}
-        {activeTab === 0 && (
-          <Box>
-            {discountedProducts.length === 0 ? (
-              <Box
-                sx={{
-                  textAlign: "center",
-                  py: 8,
-                  px: 4,
-                }}
-              >
-                <StorefrontIcon
-                  sx={{
-                    fontSize: 120,
-                    color:
-                      theme.palette.mode === "dark" ? "#4a5568" : "#cbd5e0",
-                    mb: 3,
-                  }}
-                />
-                <Typography
-                  variant="h4"
-                  gutterBottom
-                  sx={{
-                    color: theme.palette.text.secondary,
-                    fontWeight: 600,
-                    mb: 2,
-                  }}
-                >
-                  {t("No discount products available")}
-                </Typography>
-                <Typography
-                  variant="body1"
-                  sx={{
-                    color: theme.palette.text.secondary,
-                    maxWidth: 500,
-                    mx: "auto",
-                    lineHeight: 1.6,
-                  }}
-                >
-                  {t("This brand hasn't added any discount products yet.")}
-                </Typography>
-              </Box>
-            ) : (
-              renderProductsByType(discountedProducts)
-            )}
-          </Box>
-        )}
-
-        {activeTab === 1 && (
-          <Box>
-            {gifts.length === 0 ? (
-              <Box
-                sx={{
-                  textAlign: "center",
-                  py: 8,
-                  px: 4,
-                }}
-              >
-                <CardGiftcardIcon
-                  sx={{
-                    fontSize: 120,
-                    color:
-                      theme.palette.mode === "dark" ? "#4a5568" : "#cbd5e0",
-                    mb: 3,
-                  }}
-                />
-                <Typography
-                  variant="h4"
-                  gutterBottom
-                  sx={{
-                    color: theme.palette.text.secondary,
-                    fontWeight: 600,
-                    mb: 2,
-                  }}
-                >
-                  {t("No gifts available")}
-                </Typography>
-                <Typography
-                  variant="body1"
-                  sx={{
-                    color: theme.palette.text.secondary,
-                    maxWidth: 500,
-                    mx: "auto",
-                    lineHeight: 1.6,
-                  }}
-                >
-                  {t("This brand hasn't added any gifts yet.")}
-                </Typography>
-              </Box>
-            ) : (
-              <Box
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: { xs: "1fr", md: "1fr" },
-                  gap: 3,
-                  width: "100%",
-                }}
-              >
-                {gifts.map((gift) => (
-                  <Box key={gift._id} sx={{ display: "flex" }}>
-                    {renderGiftCard(gift)}
-                  </Box>
-                ))}
-              </Box>
-            )}
-          </Box>
-        )}
-
-        {brand?.isVip && activeTab === 2 && (
+        {brand?.isVip && activeTab === 0 && (
           <Box>
             {nonDiscountedProducts.length === 0 ? (
               <Box
@@ -1697,6 +1590,220 @@ const BrandProfile = () => {
             )}
           </Box>
         )}
+
+        {brand?.isVip
+          ? activeTab === 1 && (
+              <Box>
+                {discountedProducts.length === 0 ? (
+                  <Box
+                    sx={{
+                      textAlign: "center",
+                      py: 8,
+                      px: 4,
+                    }}
+                  >
+                    <StorefrontIcon
+                      sx={{
+                        fontSize: 120,
+                        color:
+                          theme.palette.mode === "dark" ? "#4a5568" : "#cbd5e0",
+                        mb: 3,
+                      }}
+                    />
+                    <Typography
+                      variant="h4"
+                      gutterBottom
+                      sx={{
+                        color: theme.palette.text.secondary,
+                        fontWeight: 600,
+                        mb: 2,
+                      }}
+                    >
+                      {t("No discount products available")}
+                    </Typography>
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        color: theme.palette.text.secondary,
+                        maxWidth: 500,
+                        mx: "auto",
+                        lineHeight: 1.6,
+                      }}
+                    >
+                      {t("This brand hasn't added any discount products yet.")}
+                    </Typography>
+                  </Box>
+                ) : (
+                  renderProductsByType(discountedProducts)
+                )}
+              </Box>
+            )
+          : activeTab === 0 && (
+              <Box>
+                {discountedProducts.length === 0 ? (
+                  <Box
+                    sx={{
+                      textAlign: "center",
+                      py: 8,
+                      px: 4,
+                    }}
+                  >
+                    <StorefrontIcon
+                      sx={{
+                        fontSize: 120,
+                        color:
+                          theme.palette.mode === "dark" ? "#4a5568" : "#cbd5e0",
+                        mb: 3,
+                      }}
+                    />
+                    <Typography
+                      variant="h4"
+                      gutterBottom
+                      sx={{
+                        color: theme.palette.text.secondary,
+                        fontWeight: 600,
+                        mb: 2,
+                      }}
+                    >
+                      {t("No discount products available")}
+                    </Typography>
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        color: theme.palette.text.secondary,
+                        maxWidth: 500,
+                        mx: "auto",
+                        lineHeight: 1.6,
+                      }}
+                    >
+                      {t("This brand hasn't added any discount products yet.")}
+                    </Typography>
+                  </Box>
+                ) : (
+                  renderProductsByType(discountedProducts)
+                )}
+              </Box>
+            )}
+
+        {brand?.isVip
+          ? activeTab === 2 && (
+              <Box>
+                {gifts.length === 0 ? (
+                  <Box
+                    sx={{
+                      textAlign: "center",
+                      py: 8,
+                      px: 4,
+                    }}
+                  >
+                    <CardGiftcardIcon
+                      sx={{
+                        fontSize: 120,
+                        color:
+                          theme.palette.mode === "dark" ? "#4a5568" : "#cbd5e0",
+                        mb: 3,
+                      }}
+                    />
+                    <Typography
+                      variant="h4"
+                      gutterBottom
+                      sx={{
+                        color: theme.palette.text.secondary,
+                        fontWeight: 600,
+                        mb: 2,
+                      }}
+                    >
+                      {t("No gifts available")}
+                    </Typography>
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        color: theme.palette.text.secondary,
+                        maxWidth: 500,
+                        mx: "auto",
+                        lineHeight: 1.6,
+                      }}
+                    >
+                      {t("This brand hasn't added any gifts yet.")}
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Box
+                    sx={{
+                      display: "grid",
+                      gridTemplateColumns: { xs: "1fr", md: "1fr" },
+                      gap: 3,
+                      width: "100%",
+                    }}
+                  >
+                    {gifts.map((gift) => (
+                      <Box key={gift._id} sx={{ display: "flex" }}>
+                        {renderGiftCard(gift)}
+                      </Box>
+                    ))}
+                  </Box>
+                )}
+              </Box>
+            )
+          : activeTab === 1 && (
+              <Box>
+                {gifts.length === 0 ? (
+                  <Box
+                    sx={{
+                      textAlign: "center",
+                      py: 8,
+                      px: 4,
+                    }}
+                  >
+                    <CardGiftcardIcon
+                      sx={{
+                        fontSize: 120,
+                        color:
+                          theme.palette.mode === "dark" ? "#4a5568" : "#cbd5e0",
+                        mb: 3,
+                      }}
+                    />
+                    <Typography
+                      variant="h4"
+                      gutterBottom
+                      sx={{
+                        color: theme.palette.text.secondary,
+                        fontWeight: 600,
+                        mb: 2,
+                      }}
+                    >
+                      {t("No gifts available")}
+                    </Typography>
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        color: theme.palette.text.secondary,
+                        maxWidth: 500,
+                        mx: "auto",
+                        lineHeight: 1.6,
+                      }}
+                    >
+                      {t("This brand hasn't added any gifts yet.")}
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Box
+                    sx={{
+                      display: "grid",
+                      gridTemplateColumns: { xs: "1fr", md: "1fr" },
+                      gap: 3,
+                      width: "100%",
+                    }}
+                  >
+                    {gifts.map((gift) => (
+                      <Box key={gift._id} sx={{ display: "flex" }}>
+                        {renderGiftCard(gift)}
+                      </Box>
+                    ))}
+                  </Box>
+                )}
+              </Box>
+            )}
       </Box>
       {/* Gift Details Dialog */}
       <Dialog
