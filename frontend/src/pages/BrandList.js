@@ -69,7 +69,7 @@ const BrandList = () => {
             background:
               theme.palette.mode === "dark"
                 ? "linear-gradient(135deg, #52b788 0%, #40916c 100%)"
-                : "linear-gradient(135deg, #52b788 0%, #40916c 100%)",
+                : "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)",
             borderRadius: 4,
             p: 4,
             color: "white",
@@ -165,9 +165,7 @@ const BrandList = () => {
                   theme.palette.mode === "dark"
                     ? "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)"
                     : "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
-                border: `1px solid ${
-                  theme.palette.mode === "dark" ? "#34495e" : "#e9ecef"
-                }`,
+                border: "none",
                 boxShadow:
                   theme.palette.mode === "dark"
                     ? "0 8px 32px rgba(0,0,0,0.3)"
@@ -195,13 +193,14 @@ const BrandList = () => {
               <Box
                 sx={{
                   position: "relative",
+
                   height: { xs: "140px", sm: "200px", md: "200px" },
                   flexShrink: 0,
                   overflow: "hidden",
                   background:
                     theme.palette.mode === "dark"
                       ? "linear-gradient(135deg, #52b788 0%, #40916c 100%)"
-                      : "linear-gradient(135deg, #52b788 0%, #40916c 100%)",
+                      : "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)",
                 }}
               >
                 {brand.logo ? (
@@ -212,11 +211,11 @@ const BrandList = () => {
                     alt={brand.name}
                     className="brand-image"
                     sx={{
-                      objectFit: "contain",
+                      objectFit: "cover",
                       transition: "transform 0.4s ease",
                       width: "100%",
                       height: "100%",
-                      p: { xs: 1, sm: 0, md: 0 },
+                      p: { xs: 0, sm: 0, md: 0 },
                     }}
                   />
                 ) : (
@@ -442,11 +441,7 @@ const BrandList = () => {
                       py: 1,
                       px: 2,
                       width: "100%",
-                      border: `1px solid ${
-                        theme.palette.mode === "dark"
-                          ? "rgba(82, 183, 136, 0.2)"
-                          : "rgba(82, 183, 136, 0.1)"
-                      }`,
+                      border: "none",
                     }}
                   >
                     <Typography
