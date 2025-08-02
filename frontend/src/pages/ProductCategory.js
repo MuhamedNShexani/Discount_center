@@ -87,6 +87,7 @@ const ProductCategory = () => {
     store: "",
     barcode: "",
     discount: true,
+    storeType: "all",
   });
 
   // Pagination states
@@ -688,7 +689,6 @@ const ProductCategory = () => {
                           fontWeight:
                             selectedCategory?._id === category._id ? 600 : 400,
                           fontSize: { xs: "0.7rem", sm: "0.875rem" },
-                          display: { xs: "none", sm: "block" },
                         }}
                       >
                         {category.name}

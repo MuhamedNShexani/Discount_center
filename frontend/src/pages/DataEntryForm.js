@@ -237,8 +237,6 @@ const DataEntryForm = () => {
   const fetchGifts = async () => {
     try {
       const response = await giftAPI.getAll();
-      console.log("Gifts API response:", response);
-      console.log("Gifts data:", response.data);
       setGifts(response.data.data || []);
     } catch (err) {
       console.error("Error fetching gifts:", err);
@@ -785,17 +783,14 @@ const DataEntryForm = () => {
     try {
       setUploadLoading(true);
       const logoUrl = await uploadBrandLogo(selectedBrandLogo);
-      console.log("Logo uploaded successfully:", logoUrl);
       setUploadLoading(false);
 
       const brandData = {
         ...brandForm,
         logo: logoUrl,
       };
-      console.log("Brand data to be saved:", brandData);
 
       const result = await brandAPI.create(brandData);
-      console.log("Brand created successfully:", result);
       setMessage({ type: "success", text: t("Brand created successfully!") });
       setBrandForm({
         name: "",
@@ -984,9 +979,7 @@ const DataEntryForm = () => {
           : null,
       };
 
-      console.log("Gift data being sent:", giftData);
       const response = await giftAPI.create(giftData);
-      console.log("Gift creation response:", response);
       setMessage({ type: "success", text: t("Gift created successfully!") });
       setGiftForm({
         image: "",
@@ -1055,9 +1048,7 @@ const DataEntryForm = () => {
         types: validTypes,
       };
 
-      console.log("Category data being sent:", categoryData);
       const response = await categoryAPI.create(categoryData);
-      console.log("Category creation response:", response);
       setMessage({
         type: "success",
         text: t("Category created successfully!"),

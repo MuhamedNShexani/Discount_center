@@ -677,6 +677,8 @@ const resources = {
       "Click to explore products": "بەردەستکردنی کاڵاکان",
       "No stores found": "هیچ فرۆشگاێک نەدۆزرایەوە",
       "Premium Store": "فرۆشگا",
+      Electronic: "ئەلکترۆنیک",
+      Cosmetic: "کۆسمێتیک",
       "No discount products available": "هیچ کاڵایەک نەدۆزرایەوە",
       "This brand hasn't added any regular products yet.":
         "ئەم بڕاندە لە ئێستادا هیچ کاڵایەکى بەردەست نییە ",
@@ -993,8 +995,11 @@ const resources = {
       "Failed to submit review": "هەڵسەنگاندن نەکرا",
       "Please login to leave reviews":
         "تکایە بچۆرە ژوورەوە بۆ بەجێهێنانی هەڵسەنگاندن",
+      "No stores match the current filters.": "هیچ فرۆشگایەک نەدۆزرایەوە.",
+      "Search for products or stores...": "بگەڕێ بە پێی کاڵا یان فرۆشگا...",
       Login: "چوونەژوورەوە",
       Logout: "چوونە دەرەوە",
+      "Is Discount Product": "داشکاندراوە",
       "Login Required": "چوونەژوورەوە پێویستە",
       "You must login to like products. Do you want to login?":
         "دەتەوێت بچیتە ژوورەوە ؟",
@@ -1006,10 +1011,11 @@ const resources = {
       "Store Type": "جۆری فرۆشگا",
       "All Stores": "هەموو فرۆشگاکان",
       Markets: "مارکێتەکان",
-      Clothes: "جلوبەرگەکان",
+      Clothes: "جلوبەرگ",
       Electronics: "ئەلیکترۆنیاتەکان",
       Cosmetics: "کۆسمەتیکەکان",
       "Product Categories": "جۆرى پۆڵێن",
+      all: "هەموو",
       "Category Types": "جۆرى پۆڵێن",
       "More Categories": "پۆڵێنی زیاتر",
       "More Category Types": "پۆڵێنی زیاتر",

@@ -10,6 +10,10 @@ const productSchema = new mongoose.Schema(
       ref: "Category",
       required: true,
     },
+    storeType: {
+      type: String,
+      required: true,
+    },
     categoryTypeId: {
       type: String, // This will store the type ID within the category
       required: true,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -49,6 +49,7 @@ const MainPage = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const [stores, setStores] = useState([]);
+  const [allProducts, setAllProducts] = useState([]);
   const [productsByStore, setProductsByStore] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -59,12 +60,14 @@ const MainPage = () => {
   const [selectedStoreType, setSelectedStoreType] = useState("all");
   const [priceRange, setPriceRange] = useState([0, 1000000]);
   const [showOnlyDiscount, setShowOnlyDiscount] = useState(true); // Default to showing only discounted products
-  const [categories, setCategories] = useState([]);
-  const [categoryTypes, setCategoryTypes] = useState([]);
+  const [allCategories, setAllCategories] = useState([]);
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
 
   // Notification dialog state
   const [loginNotificationOpen, setLoginNotificationOpen] = useState(false);
+
+  // Filter toggle state for mobile
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Stores pagination state
   const [displayedStores, setDisplayedStores] = useState([]);
@@ -91,22 +94,17 @@ const MainPage = () => {
       return;
     }
 
-    // Prevent multiple rapid clicks
     if (likeLoading[productId]) {
       return;
     }
 
-    // Get current state
     const currentLikeCount = likeCounts[productId] || 0;
     const isCurrentlyLiked = likeStates[productId] || isProductLiked(productId);
 
-    // Set loading state
     setLikeLoading((prev) => ({ ...prev, [productId]: true }));
 
     try {
-      // Optimistically update the UI
       if (isCurrentlyLiked) {
-        // Currently liked, so unlike
         setLikeCounts((prev) => ({
           ...prev,
           [productId]: Math.max(0, currentLikeCount - 1),
@@ -116,7 +114,6 @@ const MainPage = () => {
           [productId]: false,
         }));
       } else {
-        // Currently not liked, so like
         setLikeCounts((prev) => ({
           ...prev,
           [productId]: currentLikeCount + 1,
@@ -127,11 +124,9 @@ const MainPage = () => {
         }));
       }
 
-      // Make the API call
       const result = await toggleLike(productId);
 
       if (!result.success) {
-        // Revert the optimistic update if the API call failed
         setLikeCounts((prev) => ({
           ...prev,
           [productId]: currentLikeCount,
@@ -143,7 +138,6 @@ const MainPage = () => {
         alert(result.message || "Failed to update like");
       }
     } catch (error) {
-      // Revert on error
       setLikeCounts((prev) => ({
         ...prev,
         [productId]: currentLikeCount,
@@ -154,7 +148,6 @@ const MainPage = () => {
       }));
       alert("Failed to update like");
     } finally {
-      // Clear loading state
       setLikeLoading((prev) => ({ ...prev, [productId]: false }));
     }
   };
@@ -202,288 +195,47 @@ const MainPage = () => {
 
   // Update like states when user data changes
   useEffect(() => {
-    if (isAuthenticated && Object.keys(productsByStore).length > 0) {
+    if (isAuthenticated && allProducts.length > 0) {
       const updatedLikeStates = {};
-      Object.values(productsByStore)
-        .flat()
-        .forEach((product) => {
-          updatedLikeStates[product._id] = isProductLiked(product._id);
-        });
+      allProducts.forEach((product) => {
+        updatedLikeStates[product._id] = isProductLiked(product._id);
+      });
       setLikeStates(updatedLikeStates);
     }
-  }, [isAuthenticated, productsByStore, isProductLiked]);
-
-  // Fetch categories for filter dropdown
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchCategories = async () => {
-    try {
-      const response = await categoryAPI.getAll();
-
-      setCategories(response.data);
-
-      // Extract all category types from categories
-      const allCategoryTypes = [];
-      response.data.forEach((category) => {
-        if (category.types && category.types.length > 0) {
-          category.types.forEach((type) => {
-            allCategoryTypes.push({
-              ...type,
-              categoryId: category._id,
-              categoryName: category.name,
-              fullName: `${category.name} - ${type.name}`,
-            });
-          });
-        }
-      });
-      setCategoryTypes(allCategoryTypes);
-    } catch (err) {
-      console.error("Error fetching categories:", err);
-    }
-  };
-
-  // Helper function to get category type name from categoryTypeId
-  const getCategoryTypeName = (categoryTypeId, categoryId) => {
-    const category = categories.find((cat) => cat._id === categoryId);
-    if (!category || !category.types) return "";
-
-    const categoryType = category.types.find(
-      (type) => type._id === categoryTypeId
-    );
-    return categoryType ? categoryType.name : "";
-  };
-
-  // Fetch products by category (like ProductCategories page)
-  const fetchProductsByCategory = async (categoryId) => {
-    try {
-      const response = await productAPI.getAll({ category: categoryId });
-      return response.data;
-    } catch (err) {
-      console.error("Error fetching products by category:", err);
-      return [];
-    }
-  };
-
-  // Handle category selection
-  const handleCategoryChange = async (category) => {
-    setSelectedCategory(category);
-    setSelectedCategoryType(null); // Reset category type when category changes
-
-    if (category) {
-      // Fetch products for the selected category
-      const categoryProducts = await fetchProductsByCategory(category._id);
-
-      // Get unique store IDs from the category products
-      const storeIds = [
-        ...new Set(categoryProducts.map((product) => product.storeId)),
-      ];
-
-      // Fetch only the stores that have products in this category
-      const storesResponse = await storeAPI.getAll();
-      const allStores = storesResponse.data;
-      const filteredStores = allStores.filter((store) =>
-        storeIds.includes(store._id)
-      );
-
-      // Group products by store
-      const productsByStoreMap = {};
-      const initialLikeCounts = {};
-      const initialLikeStates = {};
-
-      categoryProducts.forEach((product) => {
-        if (!productsByStoreMap[product.storeId]) {
-          productsByStoreMap[product.storeId] = [];
-        }
-        productsByStoreMap[product.storeId].push(product);
-
-        // Initialize like counts and states
-        initialLikeCounts[product._id] = product.likeCount || 0;
-        initialLikeStates[product._id] = false;
-      });
-
-      // Update stores and products
-      setStores(filteredStores);
-      setDisplayedStores(filteredStores.slice(0, storesPerPage));
-      setHasMoreStores(filteredStores.length > storesPerPage);
-      setProductsByStore(productsByStoreMap);
-      setLikeCounts(initialLikeCounts);
-      setLikeStates(initialLikeStates);
-
-      // Update category types for the selected category
-      if (category.types && category.types.length > 0) {
-        setCategoryTypes(category.types);
-      } else {
-        setCategoryTypes([]);
-      }
-    } else {
-      // If no category selected, fetch all products by store (original behavior)
-      await fetchData();
-      setCategoryTypes([]);
-    }
-  };
-
-  // Handle store type selection
-  const handleStoreTypeChange = async (storeType) => {
-    setSelectedStoreType(storeType);
-    setSelectedCategory(null); // Reset category when store type changes
-    setSelectedCategoryType(null); // Reset category type when store type changes
-
-    if (storeType === "all") {
-      // If "all" is selected, fetch all categories
-      await fetchCategories();
-      await fetchData();
-    } else {
-      // Filter categories by store type
-      const allCategories = await categoryAPI.getAll();
-
-      const filteredCategories = allCategories.data.filter(
-        (category) => category.storeType === storeType
-      );
-
-      setCategories(filteredCategories);
-
-      // Fetch stores of the selected type
-      const storesResponse = await storeAPI.getAll();
-      const allStores = storesResponse.data;
-      const filteredStores = allStores.filter(
-        (store) => store.storeType === storeType
-      );
-
-      // Update stores
-      setStores(filteredStores);
-      setDisplayedStores(filteredStores.slice(0, storesPerPage));
-      setHasMoreStores(filteredStores.length > storesPerPage);
-
-      // Fetch products for these stores
-      const productsResponse = await productAPI.getAll();
-      const allProducts = productsResponse.data;
-      const filteredProducts = allProducts.filter((product) =>
-        filteredStores.some((store) => store._id === product.storeId)
-      );
-
-      // Group products by store
-      const productsByStoreMap = {};
-      const initialLikeCounts = {};
-      const initialLikeStates = {};
-
-      filteredProducts.forEach((product) => {
-        if (!productsByStoreMap[product.storeId]) {
-          productsByStoreMap[product.storeId] = [];
-        }
-        productsByStoreMap[product.storeId].push(product);
-
-        // Initialize like counts and states
-        initialLikeCounts[product._id] = product.likeCount || 0;
-        initialLikeStates[product._id] = false;
-      });
-
-      setProductsByStore(productsByStoreMap);
-      setLikeCounts(initialLikeCounts);
-      setLikeStates(initialLikeStates);
-      setCategoryTypes([]);
-    }
-  };
-
-  // Handle category type selection
-  const handleCategoryTypeChange = async (categoryType) => {
-    setSelectedCategoryType(categoryType);
-
-    if (categoryType && selectedCategory) {
-      // Filter products by category type within the selected category
-      const categoryProducts = await fetchProductsByCategory(
-        selectedCategory._id
-      );
-
-      // Filter products by category type name
-      const filteredProducts = categoryProducts.filter(
-        (product) => product.categoryTypeId === categoryType.name
-      );
-
-      // Get unique store IDs from the filtered products
-      const storeIds = [
-        ...new Set(filteredProducts.map((product) => product.storeId)),
-      ];
-
-      // Fetch only the stores that have products in this category type
-      const storesResponse = await storeAPI.getAll();
-      const allStores = storesResponse.data;
-      const filteredStores = allStores.filter((store) =>
-        storeIds.includes(store._id)
-      );
-
-      // Group products by store
-      const productsByStoreMap = {};
-      const initialLikeCounts = {};
-      const initialLikeStates = {};
-
-      filteredProducts.forEach((product) => {
-        if (!productsByStoreMap[product.storeId]) {
-          productsByStoreMap[product.storeId] = [];
-        }
-        productsByStoreMap[product.storeId].push(product);
-
-        // Initialize like counts and states
-        initialLikeCounts[product._id] = product.likeCount || 0;
-        initialLikeStates[product._id] = false;
-      });
-
-      // Update stores and products
-      setStores(filteredStores);
-      setDisplayedStores(filteredStores.slice(0, storesPerPage));
-      setHasMoreStores(filteredStores.length > storesPerPage);
-      setProductsByStore(productsByStoreMap);
-      setLikeCounts(initialLikeCounts);
-      setLikeStates(initialLikeStates);
-    } else if (selectedCategory) {
-      // If no category type selected but category is selected, show all products in category
-      await handleCategoryChange(selectedCategory);
-    }
-  };
+  }, [isAuthenticated, allProducts, isProductLiked]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
 
-      // Fetch stores
-      const storesResponse = await storeAPI.getAll();
+      // Fetch stores, categories, and all products in parallel
+      const [storesResponse, categoriesResponse, productsResponse] =
+        await Promise.all([
+          storeAPI.getAll(),
+          categoryAPI.getAll(),
+          productAPI.getAll(),
+        ]);
+
       const storesData = storesResponse.data;
+      const categoriesData = categoriesResponse.data;
+      const productsData = productsResponse.data;
+
       setStores(storesData);
+      setAllCategories(categoriesData);
+      setAllProducts(productsData);
 
-      // Initialize displayed stores (first 8)
-      const initialDisplayed = storesData.slice(0, storesPerPage);
-      setDisplayedStores(initialDisplayed);
-      setHasMoreStores(storesData.length > storesPerPage);
-
-      // Fetch products for each store (prioritize discounted products)
+      // Group products by store and initialize like counts/states
       const productsMap = {};
       const initialLikeCounts = {};
       const initialLikeStates = {};
-
-      for (const store of storesData) {
-        const productsResponse = await productAPI.getByStore(store._id);
-        const allProducts = productsResponse.data;
-
-        // Sort products: discounted first, then by name
-        const sortedProducts = allProducts.sort((a, b) => {
-          // First priority: discounted products
-          if (a.isDiscount && !b.isDiscount) return -1;
-          if (!a.isDiscount && b.isDiscount) return 1;
-          // Second priority: alphabetical by name
-          return (a.name || "").localeCompare(b.name || "");
-        });
-
-        // Take first 12 products (prioritizing discounted ones)
-        const products = sortedProducts.slice(0, 12);
-        productsMap[store._id] = products;
-
-        // Initialize like counts and states for these products
-        products.forEach((product) => {
-          initialLikeCounts[product._id] = product.likeCount || 0;
-          initialLikeStates[product._id] = false; // Will be updated by isProductLiked
-        });
-      }
+      productsData.forEach((product) => {
+        if (!productsMap[product.storeId]) {
+          productsMap[product.storeId] = [];
+        }
+        productsMap[product.storeId].push(product);
+        initialLikeCounts[product._id] = product.likeCount || 0;
+        initialLikeStates[product._id] = false;
+      });
 
       setProductsByStore(productsMap);
       setLikeCounts(initialLikeCounts);
@@ -500,16 +252,163 @@ const MainPage = () => {
     }
   };
 
-  // Load more stores function
+  // Memoized list of categories based on the selected store type
+  const filteredCategories = useMemo(() => {
+    if (selectedStoreType === "all") {
+      return allCategories;
+    }
+    return allCategories.filter(
+      (category) => category.storeType === selectedStoreType
+    );
+  }, [allCategories, selectedStoreType]);
+
+  // Memoized list of category types based on the selected category
+  const categoryTypes = useMemo(() => {
+    if (!selectedCategory) {
+      return [];
+    }
+    return selectedCategory.types || [];
+  }, [selectedCategory]);
+
+  const handleStoreTypeChange = (storeType) => {
+    setSelectedStoreType(storeType);
+    setSelectedCategory(null);
+    setSelectedCategoryType(null);
+  };
+
+  const handleCategoryChange = (category) => {
+    setSelectedCategory(category);
+    setSelectedCategoryType(null);
+  };
+
+  const handleCategoryTypeChange = (categoryType) => {
+    setSelectedCategoryType(categoryType);
+  };
+
+  const clearAllFilters = () => {
+    setSearch("");
+    setSelectedCategory(null);
+    setSelectedCategoryType(null);
+    setSelectedStoreType("all");
+    setPriceRange([0, 1000000]);
+    setShowOnlyDiscount(true);
+    setStoresPage(1);
+  };
+
+  // Helper to safely get ID from string or object
+  const getID = (id) => {
+    if (typeof id === "string") return id;
+    if (id && typeof id === "object") {
+      return id.$oid || String(id._id) || String(id);
+    }
+    return id;
+  };
+
+  // 1. Memoize the filtered products list
+  const filteredProducts = useMemo(() => {
+    return allProducts.filter((product) => {
+      // Filter by Store Type
+      if (
+        selectedStoreType !== "all" &&
+        product.storeType !== selectedStoreType
+      ) {
+        return false;
+      }
+
+      // Filter by Category
+      if (
+        selectedCategory &&
+        getID(product.categoryId) !== getID(selectedCategory._id)
+      ) {
+        return false;
+      }
+
+      // Filter by Category Type
+      if (
+        selectedCategoryType &&
+        getID(product.categoryTypeId) !== getID(selectedCategoryType._id)
+      ) {
+        return false;
+      }
+
+      // Filter by Price
+      if (
+        product.newPrice < priceRange[0] ||
+        product.newPrice > priceRange[1]
+      ) {
+        return false;
+      }
+
+      // Filter by Discount
+      const hasPriceDiscount =
+        product.previousPrice &&
+        product.newPrice &&
+        product.previousPrice > product.newPrice;
+      if (showOnlyDiscount && !product.isDiscount && !hasPriceDiscount) {
+        return false;
+      }
+
+      // Filter by Search (product name)
+      if (
+        search &&
+        !product.name?.toLowerCase().includes(search.toLowerCase())
+      ) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [
+    allProducts,
+    selectedStoreType,
+    selectedCategory,
+    selectedCategoryType,
+    search,
+    priceRange,
+    showOnlyDiscount,
+  ]);
+
+  // 2. Memoize the final list of stores to display
+  const finalFilteredStores = useMemo(() => {
+    // Get unique store IDs from the already filtered products
+    const storeIdsWithFilteredProducts = [
+      ...new Set(filteredProducts.map((p) => getID(p.storeId))),
+    ];
+
+    // Filter the stores themselves
+    return stores.filter((store) => {
+      const storeID = getID(store._id);
+
+      // Store must have products that passed the filters
+      const hasMatchingProducts =
+        storeIdsWithFilteredProducts.includes(storeID);
+
+      // Or the store name itself matches the search
+      const storeNameMatch =
+        search && store.name?.toLowerCase().includes(search.toLowerCase());
+
+      // And the store must match the type filter
+      const storeTypeMatch =
+        selectedStoreType === "all" || store.storeType === selectedStoreType;
+
+      return (hasMatchingProducts || storeNameMatch) && storeTypeMatch;
+    });
+  }, [filteredProducts, stores, search, selectedStoreType]);
+
+  // Effect for pagination
+  useEffect(() => {
+    setStoresPage(1); // Reset to first page on filter change
+    const initialDisplayed = finalFilteredStores.slice(0, storesPerPage);
+    setDisplayedStores(initialDisplayed);
+    setHasMoreStores(finalFilteredStores.length > storesPerPage);
+  }, [finalFilteredStores, storesPerPage]);
+
   const loadMoreStores = () => {
     const nextPage = storesPage + 1;
-    const startIndex = (nextPage - 1) * storesPerPage;
-    const endIndex = startIndex + storesPerPage;
-    const newStores = stores.slice(startIndex, endIndex);
-
-    setDisplayedStores((prev) => [...prev, ...newStores]);
+    const newStores = finalFilteredStores.slice(0, nextPage * storesPerPage);
+    setDisplayedStores(newStores);
     setStoresPage(nextPage);
-    setHasMoreStores(endIndex < stores.length);
+    setHasMoreStores(newStores.length < finalFilteredStores.length);
   };
 
   const formatPrice = (price) => {
@@ -525,512 +424,380 @@ const MainPage = () => {
     return Math.round(((previousPrice - newPrice) / previousPrice) * 100);
   };
 
-  const filteredStores = displayedStores.filter((store) => {
-    // Store type filter
-    const storeTypeMatch =
-      selectedStoreType === "all" || store.storeType === selectedStoreType;
-
-    // Get products for this store
-    const storeProducts = productsByStore[store._id] || [];
-
-    // Hide stores with no products
-    if (storeProducts.length === 0) {
-      return false;
-    }
-
-    // If store name matches search or any of its products match search/filters
-    const storeNameMatch = store.name
-      ?.toLowerCase()
-      .includes(search.toLowerCase());
-    const filteredProducts = storeProducts.filter((product) => {
-      const nameMatch = product.name
-        ?.toLowerCase()
-        .includes(search.toLowerCase());
-
-      // Category filter is now handled by fetchProductsByCategory, so we don't need to filter here
-      // Just apply other filters
-      const priceMatch =
-        typeof product.newPrice === "number" &&
-        product.newPrice >= priceRange[0] &&
-        product.newPrice <= priceRange[1];
-
-      // Auto-detect discount based on price difference
-      const hasPriceDiscount =
-        product.previousPrice &&
-        product.newPrice &&
-        product.previousPrice > product.newPrice;
-      const discountMatch =
-        !showOnlyDiscount ||
-        product.isDiscount === true ||
-        product.isDiscount === "true" ||
-        hasPriceDiscount === true;
-
-      return nameMatch && priceMatch && discountMatch;
-    });
-
-    // Show store if store type matches, name matches, or if it has products that match filters
-    return storeTypeMatch && (storeNameMatch || filteredProducts.length > 0);
-  });
-
   if (loading) return <Loader message={t("Loading...")} />;
   if (error) return <Loader message={error} />;
 
   return (
     <Box sx={{ px: { xs: 0.5, sm: 1.5, md: 3 } }}>
-      {/* Banner Slider Section */}
-      <Box sx={{ mb: 4, mt: 10 }}>
-        <Box
-          sx={{
-            width: "100%",
-            height: { xs: "200px", sm: "250px", md: "300px" },
-            borderRadius: { xs: 2, md: 3 },
-            overflow: "hidden",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
-            mb: 3,
-          }}
-        >
-          <Slider {...bannerSettings}>
-            {bannerImages.map((src, index) => (
-              <div key={index}>
-                <img
-                  src={src}
-                  alt={`Banner ${index + 1}`}
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                  }}
-                />
-              </div>
-            ))}
-          </Slider>
-        </Box>
-      </Box>
-
-      {/* Enhanced Filters Section */}
+      {/* Sticky Banner and Filters Container - Mobile Only */}
       <Box
         sx={{
-          backgroundColor:
-            theme.palette.mode === "dark" ? "#40916c" : "#34495e",
-          borderRadius: { xs: 2, md: 3 },
-          p: { xs: 2, md: 3 },
-          mb: 4,
-          boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
+          position: { xs: "sticky", md: "static" },
+          top: { xs: 0, md: "auto" },
+          zIndex: { xs: 1000, md: "auto" },
+          backgroundColor: {
+            xs: theme.palette.mode === "dark" ? "#121212" : "#ffffff",
+            md: "transparent",
+          },
+          pt: { xs: 1, md: 0 },
+          pb: { xs: 1, md: 0 },
         }}
       >
-        {/* Search and Basic Filters */}
-        <Box
-          sx={{
-            mb: 3,
-            display: "flex",
-            gap: { xs: 1, md: 2 },
-            alignItems: "center",
-            flexDirection: { xs: "column", sm: "row" },
-          }}
-        >
-          <TextField
-            variant="outlined"
-            placeholder={t("Search for products...")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+        {/* Banner Slider Section */}
+        <Box sx={{ mb: 1, mt: 5 }}>
+          <Box
             sx={{
-              flex: 1,
-              width: { xs: "100%", sm: "auto" },
-              maxWidth: { xs: "100%", sm: 400 },
-              backgroundColor: "white",
-              borderRadius: 1,
-              "& .MuiOutlinedInput-root": {
-                "& fieldset": {
-                  borderColor: "transparent",
-                },
-                "&:hover fieldset": {
-                  borderColor: "transparent",
-                },
-                "&.Mui-focused fieldset": {
-                  borderColor: theme.palette.primary.main,
-                },
-              },
+              width: "100%",
+              height: { xs: "100px", sm: "150px", md: "200px" },
+              borderRadius: { xs: 2, md: 3 },
+              overflow: "hidden",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
+              mb: 3,
             }}
-            size="small"
-            InputProps={{
-              inputProps: {
-                style: {
-                  color: theme.palette.mode === "dark" ? "black" : "grey.500",
-                },
-              },
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon
-                    sx={{
-                      color:
-                        theme.palette.mode === "dark" ? "#2c3e50" : "grey.500",
+          >
+            <Slider {...bannerSettings}>
+              {bannerImages.map((src, index) => (
+                <div key={index}>
+                  <img
+                    src={src}
+                    alt={`Banner ${index + 1}`}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
                     }}
                   />
-                </InputAdornment>
-              ),
-            }}
-          />
+                </div>
+              ))}
+            </Slider>
+          </Box>
+        </Box>
 
-          {/* Price Range Filters */}
+        {/* Enhanced Filters Section */}
+        <Box
+          sx={{
+            backgroundColor:
+              theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+            borderRadius: { xs: 2, md: 3 },
+            p: { xs: 2, md: 3 },
+            mb: 0,
+            boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
+            display: "block",
+            position: "relative",
+          }}
+        >
+          {/* Top Left Icon Buttons - Mobile Only */}
           <Box
             sx={{
-              display: "flex",
-              gap: { xs: 0.5, sm: 1 },
-              alignItems: "center",
-              flexWrap: { xs: "wrap", sm: "nowrap" },
+              position: "absolute",
+              top: 8,
+              right: 8,
+              display: { xs: "flex", md: "none" },
+              gap: 1,
+              zIndex: 10,
             }}
+            mb={1}
           >
-            <TextField
-              type="number"
-              placeholder={t("Min Price")}
-              value={priceRange[0] || ""}
-              onChange={(e) => {
-                const val = Number(e.target.value) || 0;
-                setPriceRange([val, priceRange[1]]);
-              }}
+            {/* Mobile Filter clean Button */}
+            <IconButton
+              onClick={clearAllFilters}
               sx={{
-                width: { xs: "45%", sm: 80, md: 120 },
-                backgroundColor: "white",
-                borderRadius: 1,
-                "& .MuiOutlinedInput-root": {
-                  "& fieldset": { borderColor: "transparent" },
-                  "&:hover fieldset": { borderColor: "transparent" },
-                  "&.Mui-focused fieldset": {
-                    borderColor: theme.palette.primary.main,
-                  },
-                },
-              }}
-              size="small"
-              InputProps={{
-                inputProps: {
-                  style: {
-                    color: theme.palette.mode === "dark" ? "black" : "grey.500",
-                  },
-                },
-              }}
-            />
-
-            <Typography
-              sx={{
-                fontSize: "0.875rem",
                 color: "white",
-              }}
-            >
-              -
-            </Typography>
-
-            <TextField
-              type="number"
-              placeholder={t("Max Price")}
-              value={priceRange[1] === 1000000 ? "" : priceRange[1]}
-              onChange={(e) => {
-                const val = Number(e.target.value) || 1000000;
-                setPriceRange([priceRange[0], val]);
-              }}
-              sx={{
-                width: { xs: "45%", sm: 80, md: 120 },
-                backgroundColor: "white",
-                borderRadius: 1,
-                "& .MuiOutlinedInput-root": {
-                  "& fieldset": { borderColor: "transparent" },
-                  "&:hover fieldset": { borderColor: "transparent" },
-                  "&.Mui-focused fieldset": {
-                    borderColor: theme.palette.primary.main,
-                  },
-                },
-              }}
-              size="small"
-              InputProps={{
-                inputProps: {
-                  style: {
-                    color: theme.palette.mode === "dark" ? "black" : "grey.500",
-                  },
-                },
-              }}
-            />
-          </Box>
-        </Box>
-
-        {/* Store Type Filter */}
-        <Box sx={{ mb: 3 }}>
-          <Typography
-            variant="subtitle2"
-            sx={{
-              color: "white",
-              mb: 1.5,
-              fontSize: "0.9rem",
-              fontWeight: 600,
-            }}
-          >
-            {t("Store Type")}
-          </Typography>
-          <Box
-            sx={{
-              display: "flex",
-              gap: { xs: 0.5, sm: 1 },
-              flexWrap: "wrap",
-              alignItems: "center",
-            }}
-          >
-            {[
-              { key: "all", label: t("All Stores"), icon: "🏪" },
-              { key: "market", label: t("Markets"), icon: "🛒" },
-              { key: "clothes", label: t("Clothes"), icon: "👕" },
-              { key: "electronic", label: t("Electronics"), icon: "📱" },
-              { key: "cosmetic", label: t("Cosmetics"), icon: "💄" },
-            ].map((type) => (
-              <Button
-                key={type.key}
-                variant={
-                  selectedStoreType === type.key ? "contained" : "outlined"
-                }
-                onClick={() => handleStoreTypeChange(type.key)}
-                sx={{
-                  backgroundColor:
-                    selectedStoreType === type.key
-                      ? theme.palette.mode === "dark"
-                        ? "#34495e"
-                        : "#40916c"
-                      : "transparent",
-                  color: "white",
-                  border: "1px solid rgba(255,255,255,0.3)",
-                  borderRadius: 2,
-                  px: { xs: 1.5, md: 2 },
-                  py: 0.5,
-                  fontSize: { xs: "0.75rem", md: "0.875rem" },
-                  textTransform: "none",
-                  minHeight: "32px",
-                  "&:hover": {
-                    backgroundColor:
-                      selectedStoreType === type.key
-                        ? theme.palette.mode === "dark"
-                          ? "#34495e"
-                          : "#40916c"
-                        : "rgba(255,255,255,0.1)",
-                    borderColor: "rgba(255,255,255,0.5)",
-                  },
-                }}
-              >
-                <span style={{ marginRight: "4px" }}>{type.icon}</span>
-                {type.label}
-              </Button>
-            ))}
-          </Box>
-        </Box>
-
-        {/* Categories Filter */}
-        <Box sx={{ mb: 3 }}>
-          <Typography
-            variant="subtitle2"
-            sx={{
-              color: "white",
-              mb: 1.5,
-              fontSize: "0.9rem",
-              fontWeight: 600,
-            }}
-          >
-            {t("Categories")}
-          </Typography>
-          <Box
-            sx={{
-              display: "flex",
-              gap: { xs: 0.5, sm: 1 },
-              alignItems: "center",
-              justifyContent: { xs: "flex-start", md: "flex-start" },
-              overflowX: "auto",
-              overflowY: "hidden",
-              scrollbarWidth: "thin",
-              scrollbarColor: "rgba(255,255,255,0.3) transparent",
-              "&::-webkit-scrollbar": {
-                height: "6px",
-              },
-              "&::-webkit-scrollbar-track": {
-                background: "transparent",
-              },
-              "&::-webkit-scrollbar-thumb": {
-                background: "rgba(255,255,255,0.3)",
-                borderRadius: "3px",
+                backgroundColor: "rgba(255,255,255,0.1)",
                 "&:hover": {
-                  background: "rgba(255,255,255,0.5)",
+                  backgroundColor: "rgba(255,255,255,0.2)",
                 },
-              },
-              pb: 1,
-              minHeight: "50px",
-            }}
-          >
-            {/* Browse All Categories */}
-            <Button
-              variant={selectedCategory === null ? "contained" : "outlined"}
-              onClick={() => handleCategoryChange(null)}
+                width: 32,
+                height: 32,
+              }}
+            >
+              <CategoryIcon sx={{ fontSize: "18px" }} />
+            </IconButton>
+
+            {/* Mobile Filter Toggle Button */}
+            <IconButton
+              onClick={() => setFiltersOpen(!filtersOpen)}
               sx={{
-                backgroundColor:
-                  selectedCategory === null
-                    ? theme.palette.mode === "dark"
-                      ? "#40916c"
-                      : "#34495e"
-                    : "transparent",
                 color: "white",
-                border: "1px solid rgba(255,255,255,0.3)",
-                borderRadius: 2,
-                px: { xs: 1.5, md: 2 },
-                py: 0.5,
-                fontSize: { xs: "0.75rem", md: "0.875rem" },
-                textTransform: "none",
-                minHeight: "32px",
-                flexShrink: 0,
+                backgroundColor: "rgba(255,255,255,0.1)",
                 "&:hover": {
-                  backgroundColor:
-                    selectedCategory === null
-                      ? theme.palette.mode === "dark"
-                        ? "#34495e"
-                        : "#40916c"
-                      : "rgba(255,255,255,0.1)",
-                  borderColor: "rgba(255,255,255,0.5)",
+                  backgroundColor: "rgba(255,255,255,0.2)",
                 },
+                width: 32,
+                height: 32,
               }}
-              startIcon={<CategoryIcon sx={{ fontSize: "16px" }} />}
             >
-              {t("All Categories")}
-            </Button>
-
-            {/* Category Filter Buttons */}
-            {categories.map((category) => (
-              <Button
-                key={category._id}
-                variant={
-                  selectedCategory?._id === category._id
-                    ? "contained"
-                    : "outlined"
-                }
-                onClick={() => handleCategoryChange(category)}
-                sx={{
-                  backgroundColor:
-                    selectedCategory?._id === category._id
-                      ? theme.palette.mode === "dark"
-                        ? "#34495e"
-                        : "#40916c"
-                      : "transparent",
-                  color: "white",
-                  border: "1px solid rgba(255,255,255,0.3)",
-                  borderRadius: 2,
-                  px: { xs: 1.5, md: 2 },
-                  py: 0.5,
-                  fontSize: { xs: "0.75rem", md: "0.875rem" },
-                  textTransform: "none",
-                  minHeight: "32px",
-                  flexShrink: 0,
-                  whiteSpace: "nowrap",
-                  "&:hover": {
-                    backgroundColor:
-                      selectedCategory?._id === category._id
-                        ? theme.palette.mode === "dark"
-                          ? "#34495e"
-                          : "#40916c"
-                        : "rgba(255,255,255,0.1)",
-                    borderColor: "rgba(255,255,255,0.5)",
-                  },
-                }}
-              >
-                {t(category.name)}
-              </Button>
-            ))}
+              <SearchIcon sx={{ fontSize: "18px" }} />
+            </IconButton>
           </Box>
-        </Box>
 
-        {/* Category Types Filter */}
-        {selectedCategory && (
-          <Box sx={{ mb: 3 }}>
-            <Typography
-              variant="subtitle2"
-              sx={{
-                color: "white",
-                mb: 1.5,
-                fontSize: "0.9rem",
-                fontWeight: 600,
-              }}
-            >
-              {t("Category Types")} - {selectedCategory.name}
-            </Typography>
+          {/* Filter Content */}
+          <Box>
+            {/* Search and Basic Filters */}
             <Box
               sx={{
-                display: "flex",
-                gap: { xs: 0.5, sm: 1 },
-                alignItems: "center",
-                justifyContent: { xs: "flex-start", md: "flex-start" },
-                overflowX: "auto",
-                overflowY: "hidden",
-                scrollbarWidth: "thin",
-                scrollbarColor: "rgba(255,255,255,0.3) transparent",
-                "&::-webkit-scrollbar": {
-                  height: "6px",
-                },
-                "&::-webkit-scrollbar-track": {
-                  background: "transparent",
-                },
-                "&::-webkit-scrollbar-thumb": {
-                  background: "rgba(255,255,255,0.3)",
-                  borderRadius: "3px",
-                  "&:hover": {
-                    background: "rgba(255,255,255,0.5)",
-                  },
-                },
-                pb: 1,
-                minHeight: "50px",
+                mt: 3,
+                display: { xs: filtersOpen ? "block" : "none", md: "block" },
               }}
             >
-              {/* All Category Types */}
-              <Button
-                variant={
-                  selectedCategoryType === null ? "contained" : "outlined"
-                }
-                onClick={() => handleCategoryTypeChange(null)}
+              <Box
                 sx={{
-                  backgroundColor:
-                    selectedCategoryType === null
-                      ? theme.palette.mode === "dark"
-                        ? "#34495e"
-                        : "#40916c"
-                      : "transparent",
-                  color: "white",
-                  border: "1px solid rgba(255,255,255,0.3)",
-                  borderRadius: 2,
-                  px: { xs: 1.5, md: 2 },
-                  py: 0.5,
-                  fontSize: { xs: "0.75rem", md: "0.875rem" },
-                  textTransform: "none",
-                  minHeight: "32px",
-                  flexShrink: 0,
-                  "&:hover": {
-                    backgroundColor:
-                      selectedCategoryType === null
-                        ? theme.palette.mode === "dark"
-                          ? "#34495e"
-                          : "#40916c"
-                        : "rgba(255,255,255,0.1)",
-                    borderColor: "rgba(255,255,255,0.5)",
-                  },
+                  mb: 1,
+                  display: "flex",
+                  gap: { xs: 1, md: 2 },
+                  alignItems: "center",
+                  flexDirection: { xs: "column", sm: "row" },
                 }}
-                startIcon={<CategoryIcon sx={{ fontSize: "16px" }} />}
               >
-                {t("All Category Types")}
-              </Button>
+                <TextField
+                  variant="outlined"
+                  placeholder={t("Search for products or stores...")}
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  sx={{
+                    flex: 1,
+                    width: { xs: "100%", sm: "auto" },
+                    maxWidth: { xs: "100%", sm: 400 },
+                    backgroundColor: "white",
+                    borderRadius: 1,
+                    "& .MuiOutlinedInput-root": {
+                      "& fieldset": {
+                        borderColor: "transparent",
+                      },
+                      "&:hover fieldset": {
+                        borderColor: "transparent",
+                      },
+                      "&.Mui-focused fieldset": {
+                        borderColor: theme.palette.primary.main,
+                      },
+                    },
+                  }}
+                  size="small"
+                  InputProps={{
+                    inputProps: {
+                      style: {
+                        color:
+                          theme.palette.mode === "dark" ? "black" : "grey.500",
+                      },
+                    },
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon
+                          sx={{
+                            color:
+                              theme.palette.mode === "dark"
+                                ? "#2c3e50"
+                                : "grey.500",
+                          }}
+                        />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
 
-              {/* Category Type Filter Buttons */}
-              {categoryTypes.map((categoryType, index) => (
+                {/* Price Range Filters */}
+                <Box
+                  sx={{
+                    display: "flex",
+
+                    gap: { xs: 0.5, sm: 1 },
+                    alignItems: "center",
+                    flexWrap: { xs: "wrap", sm: "nowrap" },
+                  }}
+                >
+                  <TextField
+                    type="number"
+                    placeholder={t("Min Price")}
+                    value={priceRange[0] || ""}
+                    onChange={(e) => {
+                      const val = Number(e.target.value) || 0;
+                      setPriceRange([val, priceRange[1]]);
+                    }}
+                    sx={{
+                      width: { xs: "45%", sm: 80, md: 120 },
+                      height: { xs: "35px", sm: "50px", md: "50px" },
+                      backgroundColor: "white",
+                      borderRadius: 1,
+                      "& .MuiOutlinedInput-root": {
+                        "& fieldset": { borderColor: "transparent" },
+                        "&:hover fieldset": { borderColor: "transparent" },
+                        "&.Mui-focused fieldset": {
+                          borderColor: theme.palette.primary.main,
+                        },
+                      },
+                    }}
+                    size="small"
+                    InputProps={{
+                      inputProps: {
+                        style: {
+                          color:
+                            theme.palette.mode === "dark"
+                              ? "black"
+                              : "grey.500",
+                        },
+                      },
+                    }}
+                  />
+
+                  <Typography
+                    sx={{
+                      fontSize: "0.875rem",
+                      color: "white",
+                    }}
+                  >
+                    -
+                  </Typography>
+
+                  <TextField
+                    type="number"
+                    placeholder={t("Max Price")}
+                    value={priceRange[1] === 1000000 ? "" : priceRange[1]}
+                    onChange={(e) => {
+                      const val = Number(e.target.value) || 1000000;
+                      setPriceRange([priceRange[0], val]);
+                    }}
+                    sx={{
+                      width: { xs: "45%", sm: 80, md: 120 },
+                      height: { xs: "35px", sm: "50px", md: "50px" },
+                      backgroundColor: "white",
+                      borderRadius: 1,
+                      "& .MuiOutlinedInput-root": {
+                        "& fieldset": { borderColor: "transparent" },
+                        "&:hover fieldset": { borderColor: "transparent" },
+                        "&.Mui-focused fieldset": {
+                          borderColor: theme.palette.primary.main,
+                        },
+                      },
+                    }}
+                    size="small"
+                    InputProps={{
+                      inputProps: {
+                        style: {
+                          color:
+                            theme.palette.mode === "dark"
+                              ? "black"
+                              : "grey.500",
+                        },
+                      },
+                    }}
+                  />
+                </Box>
+              </Box>
+            </Box>
+            {/* Store Type Filter */}
+            <Box sx={{ mb: 0 }}>
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  color: "white",
+                  mb: 0.5,
+                  fontSize: "0.9rem",
+                  fontWeight: 500,
+                }}
+              >
+                {t("Store Type")}
+              </Typography>
+              <Box
+                sx={{
+                  display: "flex",
+                  gap: { xs: 0.5, sm: 1 },
+                  flexWrap: "nowrap",
+                  alignItems: "center",
+                  overflowX: "auto",
+                  overflowY: "hidden",
+                  scrollbarWidth: "none",
+                  "&::-webkit-scrollbar": {
+                    display: "none",
+                  },
+                  pb: 0,
+                  minHeight: "20px",
+                }}
+              >
+                {[
+                  // { key: "all", label: t("All Stores"), icon: "🏪" },
+                  { key: "market", label: t("Market"), icon: "🛒" },
+                  { key: "clothes", label: t("Clothes"), icon: "👕" },
+                  { key: "electronic", label: t("Electronic"), icon: "📱" },
+                  { key: "cosmetic", label: t("Cosmetic"), icon: "💄" },
+                ].map((type) => (
+                  <Button
+                    key={type.key}
+                    variant={
+                      selectedStoreType === type.key ? "contained" : "outlined"
+                    }
+                    onClick={() => handleStoreTypeChange(type.key)}
+                    sx={{
+                      backgroundColor:
+                        selectedStoreType === type.key
+                          ? theme.palette.mode === "dark"
+                            ? "#34495e"
+                            : "#40916c"
+                          : "transparent",
+                      color: "white",
+                      border: "1px solid rgba(255,255,255,0.3)",
+                      borderRadius: 2,
+                      px: { xs: 1.5, md: 2 },
+                      py: 0.5,
+                      fontSize: { xs: "0.75rem", md: "0.875rem" },
+                      textTransform: "none",
+                      minHeight: "32px",
+                      "&:hover": {
+                        backgroundColor:
+                          selectedStoreType === type.key
+                            ? theme.palette.mode === "dark"
+                              ? "#34495e"
+                              : "#40916c"
+                            : "rgba(255,255,255,0.1)",
+                        borderColor: "rgba(255,255,255,0.5)",
+                      },
+                    }}
+                  >
+                    <span style={{ marginRight: "4px" }}>{type.icon}</span>
+                    {type.label}
+                  </Button>
+                ))}
+              </Box>
+            </Box>
+
+            {/* Categories Filter */}
+            <Box sx={{ mb: 0 }}>
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  color: "white",
+                  mb: 0.5,
+                  fontSize: "0.9rem",
+                  fontWeight: 600,
+                }}
+              >
+                {t("Categories")}
+              </Typography>
+              <Box
+                sx={{
+                  display: "flex",
+                  gap: { xs: 0.5, sm: 1 },
+                  alignItems: "center",
+                  justifyContent: { xs: "flex-start", md: "flex-start" },
+                  overflowX: "auto",
+                  overflowY: "hidden",
+                  scrollbarWidth: "none",
+                  "&::-webkit-scrollbar": {
+                    display: "none",
+                  },
+                  pb: 1,
+                  minHeight: "50px",
+                }}
+              >
+                {/* Browse All Categories */}
                 <Button
-                  key={index}
-                  variant={
-                    selectedCategoryType?.name === categoryType.name
-                      ? "contained"
-                      : "outlined"
-                  }
-                  onClick={() => handleCategoryTypeChange(categoryType)}
+                  variant={selectedCategory === null ? "contained" : "outlined"}
+                  onClick={() => handleCategoryChange(null)}
                   sx={{
                     backgroundColor:
-                      selectedCategoryType?._id === categoryType._id
+                      selectedCategory === null
                         ? theme.palette.mode === "dark"
-                          ? "#34495e"
-                          : "#40916c"
+                          ? "#40916c"
+                          : "#34495e"
                         : "transparent",
                     color: "white",
                     border: "1px solid rgba(255,255,255,0.3)",
@@ -1041,10 +808,9 @@ const MainPage = () => {
                     textTransform: "none",
                     minHeight: "32px",
                     flexShrink: 0,
-                    whiteSpace: "nowrap",
                     "&:hover": {
                       backgroundColor:
-                        selectedCategoryType?.name === categoryType.name
+                        selectedCategory === null
                           ? theme.palette.mode === "dark"
                             ? "#34495e"
                             : "#40916c"
@@ -1052,82 +818,211 @@ const MainPage = () => {
                       borderColor: "rgba(255,255,255,0.5)",
                     },
                   }}
+                  startIcon={<CategoryIcon sx={{ fontSize: "16px" }} />}
                 >
-                  {t(categoryType.name)}
+                  {t("all")}
                 </Button>
-              ))}
+
+                {/* Category Filter Buttons */}
+                {filteredCategories.map((category) => (
+                  <Button
+                    key={category._id}
+                    variant={
+                      selectedCategory?._id === category._id
+                        ? "contained"
+                        : "outlined"
+                    }
+                    onClick={() => handleCategoryChange(category)}
+                    sx={{
+                      backgroundColor:
+                        selectedCategory?._id === category._id
+                          ? theme.palette.mode === "dark"
+                            ? "#34495e"
+                            : "#40916c"
+                          : "transparent",
+                      color: "white",
+                      border: "1px solid rgba(255,255,255,0.3)",
+                      borderRadius: 2,
+                      px: { xs: 1.5, md: 2 },
+                      py: 0.5,
+                      fontSize: { xs: "0.75rem", md: "0.875rem" },
+                      textTransform: "none",
+                      minHeight: "32px",
+                      flexShrink: 0,
+                      whiteSpace: "nowrap",
+                      "&:hover": {
+                        backgroundColor:
+                          selectedCategory?._id === category._id
+                            ? theme.palette.mode === "dark"
+                              ? "#34495e"
+                              : "#40916c"
+                            : "rgba(255,255,255,0.1)",
+                        borderColor: "rgba(255,255,255,0.5)",
+                      },
+                    }}
+                  >
+                    {t(category.name)}
+                  </Button>
+                ))}
+              </Box>
+            </Box>
+
+            {/* Category Types Filter */}
+            {selectedCategory && (
+              <Box sx={{ mb: 0 }}>
+                {/* <Typography
+              variant="subtitle2"
+              sx={{
+                color: "white",
+                mb: 1.5,
+                fontSize: "0.9rem",
+                fontWeight: 600,
+              }}
+            >
+              {t("Category Types")} - {selectedCategory.name}
+            </Typography> */}
+                <Box
+                  sx={{
+                    display: "flex",
+                    gap: { xs: 0.5, sm: 1 },
+                    alignItems: "center",
+                    justifyContent: { xs: "flex-start", md: "flex-start" },
+                    overflowX: "auto",
+                    overflowY: "hidden",
+                    scrollbarWidth: "none",
+                    "&::-webkit-scrollbar": {
+                      display: "none",
+                    },
+                    pb: 0,
+                    minHeight: "20px",
+                  }}
+                >
+                  {/* All Category Types */}
+                  <Button
+                    variant={
+                      selectedCategoryType === null ? "contained" : "outlined"
+                    }
+                    onClick={() => handleCategoryTypeChange(null)}
+                    sx={{
+                      backgroundColor:
+                        selectedCategoryType === null
+                          ? theme.palette.mode === "dark"
+                            ? "#34495e"
+                            : "#40916c"
+                          : "transparent",
+                      color: "white",
+                      border: "1px solid rgba(255,255,255,0.3)",
+                      borderRadius: 2,
+                      px: { xs: 1.5, md: 2 },
+                      py: 0.5,
+                      fontSize: { xs: "0.75rem", md: "0.875rem" },
+                      textTransform: "none",
+                      minHeight: "32px",
+                      flexShrink: 0,
+                      "&:hover": {
+                        backgroundColor:
+                          selectedCategoryType === null
+                            ? theme.palette.mode === "dark"
+                              ? "#34495e"
+                              : "#40916c"
+                            : "rgba(255,255,255,0.1)",
+                        borderColor: "rgba(255,255,255,0.5)",
+                      },
+                    }}
+                    startIcon={<CategoryIcon sx={{ fontSize: "16px" }} />}
+                  >
+                    {t("All Category Types")}
+                  </Button>
+
+                  {/* Category Type Filter Buttons */}
+                  {categoryTypes.map((categoryType, index) => (
+                    <Button
+                      key={index}
+                      variant={
+                        selectedCategoryType?.name === categoryType.name
+                          ? "contained"
+                          : "outlined"
+                      }
+                      onClick={() => handleCategoryTypeChange(categoryType)}
+                      sx={{
+                        backgroundColor:
+                          selectedCategoryType?.name === categoryType.name
+                            ? theme.palette.mode === "dark"
+                              ? "#34495e"
+                              : "#40916c"
+                            : "transparent",
+                        color: "white",
+                        border: "1px solid rgba(255,255,255,0.3)",
+                        borderRadius: 2,
+                        px: { xs: 1.5, md: 2 },
+                        py: 0.5,
+                        fontSize: { xs: "0.75rem", md: "0.875rem" },
+                        textTransform: "none",
+                        minHeight: "32px",
+                        flexShrink: 0,
+                        whiteSpace: "nowrap",
+                        "&:hover": {
+                          backgroundColor:
+                            selectedCategoryType?.name === categoryType.name
+                              ? theme.palette.mode === "dark"
+                                ? "#34495e"
+                                : "#40916c"
+                              : "rgba(255,255,255,0.1)",
+                          borderColor: "rgba(255,255,255,0.5)",
+                        },
+                      }}
+                    >
+                      {t(categoryType.name)}
+                    </Button>
+                  ))}
+                </Box>
+              </Box>
+            )}
+
+            {/* Clear Filters Button - Desktop Only */}
+            <Box
+              sx={{
+                mt: 2,
+                display: { xs: "none", md: "flex" },
+                justifyContent: "center",
+              }}
+            >
+              <Button
+                variant="outlined"
+                onClick={clearAllFilters}
+                sx={{
+                  color: "white",
+                  borderColor: "rgba(255,255,255,0.5)",
+                  borderRadius: 2,
+                  px: 3,
+                  py: 0.5,
+                  fontSize: "0.875rem",
+                  textTransform: "none",
+                  "&:hover": {
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    borderColor: "white",
+                  },
+                }}
+              >
+                {t("Clear All Filters")}
+              </Button>
             </Box>
           </Box>
-        )}
-
-        {/* Clear Filters Button */}
-        <Box sx={{ mt: 2, display: "flex", justifyContent: "center" }}>
-          <Button
-            variant="outlined"
-            onClick={() => {
-              setSearch("");
-              setSelectedCategory(null);
-              setSelectedCategoryType(null);
-              setSelectedStoreType("all");
-              setPriceRange([0, 1000000]);
-              setShowOnlyDiscount(true);
-              setStoresPage(1); // Reset stores page
-              // Reset all data to initial state
-              fetchCategories();
-              fetchData();
-              setCategoryTypes([]);
-            }}
-            sx={{
-              color: "white",
-              borderColor: "rgba(255,255,255,0.5)",
-              borderRadius: 2,
-              px: 3,
-              py: 0.5,
-              fontSize: "0.875rem",
-              textTransform: "none",
-              "&:hover": {
-                backgroundColor: "rgba(255,255,255,0.1)",
-                borderColor: "white",
-              },
-            }}
-          >
-            {t("Clear All Filters")}
-          </Button>
         </Box>
       </Box>
 
-      {filteredStores.map((store) => {
-        // Filter products for this store based on the same logic as in filteredStores
-        const filteredProducts = (productsByStore[store._id] || []).filter(
-          (product) => {
-            const nameMatch = product.name
-              ?.toLowerCase()
-              .includes(search.toLowerCase());
-            const storeNameMatch = store.name
-              ?.toLowerCase()
-              .includes(search.toLowerCase());
+      {displayedStores.map((store) => {
+        // 3. Get the products for this card from the master filtered list
+        const productsForCard = filteredProducts
+          .filter((p) => getID(p.storeId) === getID(store._id))
+          .slice(0, 12);
 
-            // Category filter is now handled by fetchProductsByCategory, so we don't need to filter here
-            // Just apply other filters
-            const priceMatch =
-              typeof product.newPrice === "number" &&
-              product.newPrice >= priceRange[0] &&
-              product.newPrice <= priceRange[1];
+        const totalDiscountedInStore = productsForCard.filter(
+          (p) =>
+            p.isDiscount ||
+            (p.previousPrice && p.newPrice && p.previousPrice > p.newPrice)
+        ).length;
 
-            // Auto-detect discount based on price difference
-            const hasPriceDiscount =
-              product.previousPrice &&
-              product.newPrice &&
-              product.previousPrice > product.newPrice;
-            const discountMatch =
-              !showOnlyDiscount ||
-              product.isDiscount === true ||
-              product.isDiscount === "true" ||
-              hasPriceDiscount === true;
-
-            return (nameMatch || storeNameMatch) && priceMatch && discountMatch;
-          }
-        );
         return (
           <Card
             component={Link}
@@ -1306,7 +1201,7 @@ const MainPage = () => {
                     {store.address}
                   </Typography>
                   <Chip
-                    label={`${filteredProducts.length} ${t(
+                    label={`${totalDiscountedInStore} ${t(
                       "Discounted Products"
                     )}`}
                     sx={{
@@ -1320,39 +1215,16 @@ const MainPage = () => {
                     }}
                   />
                 </Box>
-
-                {/* <Button
-                  variant="contained"
-                  component={Link}
-                  to={`/stores/${store._id}`}
-                  startIcon={<ShoppingCartIcon />}
-                  sx={{
-                    backgroundColor: "rgba(255,255,255,0.2)",
-                    color: "white",
-                    backdropFilter: "blur(10px)",
-                    border: "2px solid rgba(255,255,255,0.3)",
-                    borderRadius: 2,
-                    px: { xs: 2, md: 3 },
-                    py: 1,
-                    fontWeight: 600,
-                    textTransform: "none",
-                    fontSize: { xs: "0.8rem", sm: "0.875rem", md: "1rem" },
-                    transition: "all 0.3s ease",
-                    "&:hover": {
-                      backgroundColor: "rgba(255,255,255,0.3)",
-                      transform: "scale(1.05)",
-                      boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
-                    },
-                  }}
-                >
-                  {t("View Profile")}
-                </Button> */}
               </Box>
             </Box>
 
             {/* Products Grid */}
             <Box
-              sx={{ p: { xs: 2, md: 3 }, width: { xs: "100%", md: "100%" } }}
+              sx={{
+                p: { xs: 0.7, md: 3 },
+                width: { xs: "100%", md: "100%" },
+                height: { xs: "250px", md: "100%" },
+              }}
             >
               <Box
                 sx={{
@@ -1378,7 +1250,7 @@ const MainPage = () => {
                   },
                 }}
               >
-                {filteredProducts.map((product) => {
+                {productsForCard.map((product) => {
                   const discount = calculateDiscount(
                     product.previousPrice,
                     product.newPrice
@@ -1427,7 +1299,7 @@ const MainPage = () => {
                             sx={{
                               objectFit: "contain",
                               width: "100%",
-                              height: "100%",
+                              height: { xs: "100px", sm: "150px", md: "200px" },
                               transition: "transform 0.3s ease",
                               "&:hover": { transform: "scale(1.05)" },
                             }}
@@ -1435,7 +1307,7 @@ const MainPage = () => {
                         ) : (
                           <Box
                             sx={{
-                              height: "100%",
+                              height: { xs: "100px", sm: "150px", md: "200px" },
                               width: "100%",
                               display: "flex",
                               alignItems: "center",
@@ -1479,7 +1351,7 @@ const MainPage = () => {
                       {/* Product Content */}
                       <CardContent
                         sx={{
-                          p: { xs: 1.5, md: 2 },
+                          p: { xs: 0, md: 2 },
                           flex: 1,
                           display: "flex",
                           flexDirection: "column",
@@ -1494,9 +1366,9 @@ const MainPage = () => {
                             fontWeight: 600,
                             fontSize: { xs: "0.9rem", sm: "1rem" },
                             textAlign: "center",
-                            mb: 1,
-                            lineHeight: 1.3,
-                            minHeight: "2.6em",
+                            mb: 0,
+                            lineHeight: 1,
+                            minHeight: "2em",
                             display: "-webkit-box",
                             WebkitLineClamp: 2,
                             WebkitBoxOrient: "vertical",
@@ -1512,7 +1384,7 @@ const MainPage = () => {
                             display: "flex",
                             flexDirection: "column",
                             alignItems: "center",
-                            mb: 1,
+                            mb: 0,
                           }}
                         >
                           {product.previousPrice &&
@@ -1547,7 +1419,7 @@ const MainPage = () => {
                             display: "flex",
                             justifyContent: "space-between",
                             alignItems: "flex-end",
-                            mt: "auto",
+                            mt: { xs: "1px", sm: "auto", md: "auto" },
                           }}
                         >
                           {/* Discount Badge - Bottom Left */}
@@ -1624,8 +1496,8 @@ const MainPage = () => {
                               color: "red",
                               fontSize: { xs: "0.7rem", sm: "0.8rem" },
                               textAlign: "center",
-                              mt: 1,
-                              fontWeight: 500,
+                              mt: 0,
+                              fontWeight: 400,
                             }}
                           >
                             {t("Expire Date")}:{" "}
@@ -1650,7 +1522,7 @@ const MainPage = () => {
       })}
 
       {/* Load More Stores Button */}
-      {hasMoreStores && filteredStores.length > 0 && (
+      {hasMoreStores && (
         <Box
           sx={{
             display: "flex",
@@ -1684,7 +1556,7 @@ const MainPage = () => {
         </Box>
       )}
 
-      {stores.length === 0 && (
+      {finalFilteredStores.length === 0 && !loading && (
         <Alert
           severity="info"
           sx={{
@@ -1696,7 +1568,7 @@ const MainPage = () => {
             }`,
           }}
         >
-          No stores found. Add some stores through the admin panel.
+          {t("No stores match the current filters.")}
         </Alert>
       )}
 
