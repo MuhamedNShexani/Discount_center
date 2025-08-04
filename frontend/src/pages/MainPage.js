@@ -18,6 +18,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Fab,
 } from "@mui/material";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
@@ -34,6 +35,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import Loader from "../components/Loader";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@mui/material/styles";
@@ -68,6 +70,9 @@ const MainPage = () => {
 
   // Filter toggle state for mobile
   const [filtersOpen, setFiltersOpen] = useState(false);
+
+  // Scroll to top state
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   // Stores pagination state
   const [displayedStores, setDisplayedStores] = useState([]);
@@ -192,6 +197,26 @@ const MainPage = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Handle scroll to show/hide scroll to top button
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop =
+        window.pageYOffset || document.documentElement.scrollTop;
+      setShowScrollTop(scrollTop > 300);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Scroll to top function
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
 
   // Update like states when user data changes
   useEffect(() => {
@@ -433,14 +458,14 @@ const MainPage = () => {
       <Box
         sx={{
           position: { xs: "sticky", md: "static" },
-          top: { xs: 0, md: "auto" },
+          top: { xs: 20, md: "auto" },
           zIndex: { xs: 1000, md: "auto" },
           backgroundColor: {
             xs: theme.palette.mode === "dark" ? "#121212" : "#ffffff",
             md: "transparent",
           },
           pt: { xs: 1, md: 0 },
-          pb: { xs: 1, md: 0 },
+          pb: { xs: 0.2, md: 0 },
         }}
       >
         {/* Banner Slider Section */}
@@ -472,101 +497,155 @@ const MainPage = () => {
             </Slider>
           </Box>
         </Box>
-
-        {/* Enhanced Filters Section */}
+      </Box>
+      {/* Enhanced Filters Section */}
+      <Box
+        sx={{
+          backgroundColor:
+            theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+          borderRadius: { xs: 2, md: 3 },
+          p: { xs: 2, md: 3 },
+          mb: 0,
+          boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
+          display: "block",
+          position: "relative",
+        }}
+      >
+        {/* Top Left Icon Buttons - Mobile Only */}
         <Box
           sx={{
-            backgroundColor:
-              theme.palette.mode === "dark" ? "#40916c" : "#34495e",
-            borderRadius: { xs: 2, md: 3 },
-            p: { xs: 2, md: 3 },
-            mb: 0,
-            boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
-            display: "block",
-            position: "relative",
+            position: "absolute",
+            top: 8,
+            right: 8,
+            display: { xs: "flex", md: "none" },
+            gap: 1,
+            zIndex: 10,
           }}
+          mb={1}
         >
-          {/* Top Left Icon Buttons - Mobile Only */}
+          {/* Mobile Filter clean Button */}
+          <IconButton
+            onClick={clearAllFilters}
+            sx={{
+              color: "white",
+              backgroundColor: "rgba(255,255,255,0.1)",
+              "&:hover": {
+                backgroundColor: "rgba(255,255,255,0.2)",
+              },
+              width: 32,
+              height: 32,
+            }}
+          >
+            <CategoryIcon sx={{ fontSize: "18px" }} />
+          </IconButton>
+
+          {/* Mobile Filter Toggle Button */}
+          <IconButton
+            onClick={() => setFiltersOpen(!filtersOpen)}
+            sx={{
+              color: "white",
+              backgroundColor: "rgba(255,255,255,0.1)",
+              "&:hover": {
+                backgroundColor: "rgba(255,255,255,0.2)",
+              },
+              width: 32,
+              height: 32,
+            }}
+          >
+            <SearchIcon sx={{ fontSize: "18px" }} />
+          </IconButton>
+        </Box>
+
+        {/* Filter Content */}
+        <Box>
+          {/* Search and Basic Filters */}
           <Box
             sx={{
-              position: "absolute",
-              top: 8,
-              right: 8,
-              display: { xs: "flex", md: "none" },
-              gap: 1,
-              zIndex: 10,
+              mt: 3,
+              display: { xs: filtersOpen ? "block" : "none", md: "block" },
             }}
-            mb={1}
           >
-            {/* Mobile Filter clean Button */}
-            <IconButton
-              onClick={clearAllFilters}
-              sx={{
-                color: "white",
-                backgroundColor: "rgba(255,255,255,0.1)",
-                "&:hover": {
-                  backgroundColor: "rgba(255,255,255,0.2)",
-                },
-                width: 32,
-                height: 32,
-              }}
-            >
-              <CategoryIcon sx={{ fontSize: "18px" }} />
-            </IconButton>
-
-            {/* Mobile Filter Toggle Button */}
-            <IconButton
-              onClick={() => setFiltersOpen(!filtersOpen)}
-              sx={{
-                color: "white",
-                backgroundColor: "rgba(255,255,255,0.1)",
-                "&:hover": {
-                  backgroundColor: "rgba(255,255,255,0.2)",
-                },
-                width: 32,
-                height: 32,
-              }}
-            >
-              <SearchIcon sx={{ fontSize: "18px" }} />
-            </IconButton>
-          </Box>
-
-          {/* Filter Content */}
-          <Box>
-            {/* Search and Basic Filters */}
             <Box
               sx={{
-                mt: 3,
-                display: { xs: filtersOpen ? "block" : "none", md: "block" },
+                mb: 1,
+                display: "flex",
+                gap: { xs: 1, md: 2 },
+                alignItems: "center",
+                flexDirection: { xs: "column", sm: "row" },
               }}
             >
+              <TextField
+                variant="outlined"
+                placeholder={t("Search for products or stores...")}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                sx={{
+                  flex: 1,
+                  width: { xs: "100%", sm: "auto" },
+                  maxWidth: { xs: "100%", sm: 400 },
+                  backgroundColor: "white",
+                  borderRadius: 1,
+                  "& .MuiOutlinedInput-root": {
+                    "& fieldset": {
+                      borderColor: "transparent",
+                    },
+                    "&:hover fieldset": {
+                      borderColor: "transparent",
+                    },
+                    "&.Mui-focused fieldset": {
+                      borderColor: theme.palette.primary.main,
+                    },
+                  },
+                }}
+                size="small"
+                InputProps={{
+                  inputProps: {
+                    style: {
+                      color:
+                        theme.palette.mode === "dark" ? "black" : "grey.500",
+                    },
+                  },
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon
+                        sx={{
+                          color:
+                            theme.palette.mode === "dark"
+                              ? "#2c3e50"
+                              : "grey.500",
+                        }}
+                      />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+
+              {/* Price Range Filters */}
               <Box
                 sx={{
-                  mb: 1,
                   display: "flex",
-                  gap: { xs: 1, md: 2 },
+
+                  gap: { xs: 0.5, sm: 1 },
                   alignItems: "center",
-                  flexDirection: { xs: "column", sm: "row" },
+                  flexWrap: { xs: "wrap", sm: "nowrap" },
                 }}
               >
                 <TextField
-                  variant="outlined"
-                  placeholder={t("Search for products or stores...")}
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  type="number"
+                  placeholder={t("Min Price")}
+                  value={priceRange[0] || ""}
+                  onChange={(e) => {
+                    const val = Number(e.target.value) || 0;
+                    setPriceRange([val, priceRange[1]]);
+                  }}
                   sx={{
-                    flex: 1,
-                    width: { xs: "100%", sm: "auto" },
-                    maxWidth: { xs: "100%", sm: 400 },
+                    width: { xs: "45%", sm: 80, md: 120 },
+                    height: { xs: "35px", sm: "50px", md: "50px" },
                     backgroundColor: "white",
                     borderRadius: 1,
                     "& .MuiOutlinedInput-root": {
-                      "& fieldset": {
-                        borderColor: "transparent",
-                      },
-                      "&:hover fieldset": {
-                        borderColor: "transparent",
-                      },
+                      "& fieldset": { borderColor: "transparent" },
+                      "&:hover fieldset": { borderColor: "transparent" },
                       "&.Mui-focused fieldset": {
                         borderColor: theme.palette.primary.main,
                       },
@@ -580,198 +659,249 @@ const MainPage = () => {
                           theme.palette.mode === "dark" ? "black" : "grey.500",
                       },
                     },
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon
-                          sx={{
-                            color:
-                              theme.palette.mode === "dark"
-                                ? "#2c3e50"
-                                : "grey.500",
-                          }}
-                        />
-                      </InputAdornment>
-                    ),
                   }}
                 />
 
-                {/* Price Range Filters */}
-                <Box
+                <Typography
                   sx={{
-                    display: "flex",
-
-                    gap: { xs: 0.5, sm: 1 },
-                    alignItems: "center",
-                    flexWrap: { xs: "wrap", sm: "nowrap" },
+                    fontSize: "0.875rem",
+                    color: "white",
                   }}
                 >
-                  <TextField
-                    type="number"
-                    placeholder={t("Min Price")}
-                    value={priceRange[0] || ""}
-                    onChange={(e) => {
-                      const val = Number(e.target.value) || 0;
-                      setPriceRange([val, priceRange[1]]);
-                    }}
-                    sx={{
-                      width: { xs: "45%", sm: 80, md: 120 },
-                      height: { xs: "35px", sm: "50px", md: "50px" },
-                      backgroundColor: "white",
-                      borderRadius: 1,
-                      "& .MuiOutlinedInput-root": {
-                        "& fieldset": { borderColor: "transparent" },
-                        "&:hover fieldset": { borderColor: "transparent" },
-                        "&.Mui-focused fieldset": {
-                          borderColor: theme.palette.primary.main,
-                        },
-                      },
-                    }}
-                    size="small"
-                    InputProps={{
-                      inputProps: {
-                        style: {
-                          color:
-                            theme.palette.mode === "dark"
-                              ? "black"
-                              : "grey.500",
-                        },
-                      },
-                    }}
-                  />
+                  -
+                </Typography>
 
-                  <Typography
-                    sx={{
-                      fontSize: "0.875rem",
-                      color: "white",
-                    }}
-                  >
-                    -
-                  </Typography>
-
-                  <TextField
-                    type="number"
-                    placeholder={t("Max Price")}
-                    value={priceRange[1] === 1000000 ? "" : priceRange[1]}
-                    onChange={(e) => {
-                      const val = Number(e.target.value) || 1000000;
-                      setPriceRange([priceRange[0], val]);
-                    }}
-                    sx={{
-                      width: { xs: "45%", sm: 80, md: 120 },
-                      height: { xs: "35px", sm: "50px", md: "50px" },
-                      backgroundColor: "white",
-                      borderRadius: 1,
-                      "& .MuiOutlinedInput-root": {
-                        "& fieldset": { borderColor: "transparent" },
-                        "&:hover fieldset": { borderColor: "transparent" },
-                        "&.Mui-focused fieldset": {
-                          borderColor: theme.palette.primary.main,
-                        },
+                <TextField
+                  type="number"
+                  placeholder={t("Max Price")}
+                  value={priceRange[1] === 1000000 ? "" : priceRange[1]}
+                  onChange={(e) => {
+                    const val = Number(e.target.value) || 1000000;
+                    setPriceRange([priceRange[0], val]);
+                  }}
+                  sx={{
+                    width: { xs: "45%", sm: 80, md: 120 },
+                    height: { xs: "35px", sm: "50px", md: "50px" },
+                    backgroundColor: "white",
+                    borderRadius: 1,
+                    "& .MuiOutlinedInput-root": {
+                      "& fieldset": { borderColor: "transparent" },
+                      "&:hover fieldset": { borderColor: "transparent" },
+                      "&.Mui-focused fieldset": {
+                        borderColor: theme.palette.primary.main,
                       },
-                    }}
-                    size="small"
-                    InputProps={{
-                      inputProps: {
-                        style: {
-                          color:
-                            theme.palette.mode === "dark"
-                              ? "black"
-                              : "grey.500",
-                        },
+                    },
+                  }}
+                  size="small"
+                  InputProps={{
+                    inputProps: {
+                      style: {
+                        color:
+                          theme.palette.mode === "dark" ? "black" : "grey.500",
                       },
-                    }}
-                  />
-                </Box>
+                    },
+                  }}
+                />
               </Box>
             </Box>
-            {/* Store Type Filter */}
-            <Box sx={{ mb: 0 }}>
-              <Typography
-                variant="subtitle2"
-                sx={{
-                  color: "white",
-                  mb: 0.5,
-                  fontSize: "0.9rem",
-                  fontWeight: 500,
-                }}
-              >
-                {t("Store Type")}
-              </Typography>
-              <Box
-                sx={{
-                  display: "flex",
-                  gap: { xs: 0.5, sm: 1 },
-                  flexWrap: "nowrap",
-                  alignItems: "center",
-                  overflowX: "auto",
-                  overflowY: "hidden",
-                  scrollbarWidth: "none",
-                  "&::-webkit-scrollbar": {
-                    display: "none",
-                  },
-                  pb: 0,
-                  minHeight: "20px",
-                }}
-              >
-                {[
-                  // { key: "all", label: t("All Stores"), icon: "🏪" },
-                  { key: "market", label: t("Market"), icon: "🛒" },
-                  { key: "clothes", label: t("Clothes"), icon: "👕" },
-                  { key: "electronic", label: t("Electronic"), icon: "📱" },
-                  { key: "cosmetic", label: t("Cosmetic"), icon: "💄" },
-                ].map((type) => (
-                  <Button
-                    key={type.key}
-                    variant={
-                      selectedStoreType === type.key ? "contained" : "outlined"
-                    }
-                    onClick={() => handleStoreTypeChange(type.key)}
-                    sx={{
+          </Box>
+          {/* Store Type Filter */}
+          <Box sx={{ mb: 0 }}>
+            <Typography
+              variant="subtitle2"
+              sx={{
+                color: "white",
+                mb: 0.5,
+                fontSize: "0.9rem",
+                fontWeight: 500,
+              }}
+            >
+              {t("Store Type")}
+            </Typography>
+            <Box
+              sx={{
+                display: "flex",
+                gap: { xs: 0.5, sm: 1 },
+                flexWrap: "nowrap",
+                alignItems: "center",
+                overflowX: "auto",
+                overflowY: "hidden",
+                scrollbarWidth: "none",
+                "&::-webkit-scrollbar": {
+                  display: "none",
+                },
+                pb: 0,
+                minHeight: "20px",
+              }}
+            >
+              {[
+                // { key: "all", label: t("All Stores"), icon: "🏪" },
+                { key: "market", label: t("Market"), icon: "🛒" },
+                { key: "clothes", label: t("Clothes"), icon: "👕" },
+                { key: "electronic", label: t("Electronic"), icon: "📱" },
+                { key: "cosmetic", label: t("Cosmetic"), icon: "💄" },
+              ].map((type) => (
+                <Button
+                  key={type.key}
+                  variant={
+                    selectedStoreType === type.key ? "contained" : "outlined"
+                  }
+                  onClick={() => handleStoreTypeChange(type.key)}
+                  sx={{
+                    backgroundColor:
+                      selectedStoreType === type.key
+                        ? theme.palette.mode === "dark"
+                          ? "#34495e"
+                          : "#40916c"
+                        : "transparent",
+                    color: "white",
+                    border: "1px solid rgba(255,255,255,0.3)",
+                    borderRadius: 2,
+                    px: { xs: 1.5, md: 2 },
+                    py: 0.5,
+                    fontSize: { xs: "0.75rem", md: "0.875rem" },
+                    textTransform: "none",
+                    minHeight: "32px",
+                    "&:hover": {
                       backgroundColor:
                         selectedStoreType === type.key
                           ? theme.palette.mode === "dark"
                             ? "#34495e"
                             : "#40916c"
-                          : "transparent",
-                      color: "white",
-                      border: "1px solid rgba(255,255,255,0.3)",
-                      borderRadius: 2,
-                      px: { xs: 1.5, md: 2 },
-                      py: 0.5,
-                      fontSize: { xs: "0.75rem", md: "0.875rem" },
-                      textTransform: "none",
-                      minHeight: "32px",
-                      "&:hover": {
-                        backgroundColor:
-                          selectedStoreType === type.key
-                            ? theme.palette.mode === "dark"
-                              ? "#34495e"
-                              : "#40916c"
-                            : "rgba(255,255,255,0.1)",
-                        borderColor: "rgba(255,255,255,0.5)",
-                      },
-                    }}
-                  >
-                    <span style={{ marginRight: "4px" }}>{type.icon}</span>
-                    {type.label}
-                  </Button>
-                ))}
-              </Box>
+                          : "rgba(255,255,255,0.1)",
+                      borderColor: "rgba(255,255,255,0.5)",
+                    },
+                  }}
+                >
+                  <span style={{ marginRight: "4px" }}>{type.icon}</span>
+                  {type.label}
+                </Button>
+              ))}
             </Box>
+          </Box>
 
-            {/* Categories Filter */}
-            <Box sx={{ mb: 0 }}>
-              <Typography
-                variant="subtitle2"
+          {/* Categories Filter */}
+          <Box sx={{ mb: 0 }}>
+            <Typography
+              variant="subtitle2"
+              sx={{
+                color: "white",
+                mb: 0.5,
+                fontSize: "0.9rem",
+                fontWeight: 600,
+              }}
+            >
+              {t("Categories")}
+            </Typography>
+            <Box
+              sx={{
+                display: "flex",
+                gap: { xs: 0.5, sm: 1 },
+                alignItems: "center",
+                justifyContent: { xs: "flex-start", md: "flex-start" },
+                overflowX: "auto",
+                overflowY: "hidden",
+                scrollbarWidth: "none",
+                "&::-webkit-scrollbar": {
+                  display: "none",
+                },
+                pb: 1,
+                minHeight: "50px",
+              }}
+            >
+              {/* Browse All Categories */}
+              <Button
+                variant={selectedCategory === null ? "contained" : "outlined"}
+                onClick={() => handleCategoryChange(null)}
                 sx={{
+                  backgroundColor:
+                    selectedCategory === null
+                      ? theme.palette.mode === "dark"
+                        ? "#40916c"
+                        : "#34495e"
+                      : "transparent",
                   color: "white",
-                  mb: 0.5,
-                  fontSize: "0.9rem",
-                  fontWeight: 600,
+                  border: "1px solid rgba(255,255,255,0.3)",
+                  borderRadius: 2,
+                  px: { xs: 1.5, md: 2 },
+                  py: 0.5,
+                  fontSize: { xs: "0.75rem", md: "0.875rem" },
+                  textTransform: "none",
+                  minHeight: "32px",
+                  flexShrink: 0,
+                  "&:hover": {
+                    backgroundColor:
+                      selectedCategory === null
+                        ? theme.palette.mode === "dark"
+                          ? "#34495e"
+                          : "#40916c"
+                        : "rgba(255,255,255,0.1)",
+                    borderColor: "rgba(255,255,255,0.5)",
+                  },
                 }}
+                startIcon={<CategoryIcon sx={{ fontSize: "16px" }} />}
               >
-                {t("Categories")}
-              </Typography>
+                {t("all")}
+              </Button>
+
+              {/* Category Filter Buttons */}
+              {filteredCategories.map((category) => (
+                <Button
+                  key={category._id}
+                  variant={
+                    selectedCategory?._id === category._id
+                      ? "contained"
+                      : "outlined"
+                  }
+                  onClick={() => handleCategoryChange(category)}
+                  sx={{
+                    backgroundColor:
+                      selectedCategory?._id === category._id
+                        ? theme.palette.mode === "dark"
+                          ? "#34495e"
+                          : "#40916c"
+                        : "transparent",
+                    color: "white",
+                    border: "1px solid rgba(255,255,255,0.3)",
+                    borderRadius: 2,
+                    px: { xs: 1.5, md: 2 },
+                    py: 0.5,
+                    fontSize: { xs: "0.75rem", md: "0.875rem" },
+                    textTransform: "none",
+                    minHeight: "32px",
+                    flexShrink: 0,
+                    whiteSpace: "nowrap",
+                    "&:hover": {
+                      backgroundColor:
+                        selectedCategory?._id === category._id
+                          ? theme.palette.mode === "dark"
+                            ? "#34495e"
+                            : "#40916c"
+                          : "rgba(255,255,255,0.1)",
+                      borderColor: "rgba(255,255,255,0.5)",
+                    },
+                  }}
+                >
+                  {t(category.name)}
+                </Button>
+              ))}
+            </Box>
+          </Box>
+
+          {/* Category Types Filter */}
+          {selectedCategory && (
+            <Box sx={{ mb: 0 }}>
+              {/* <Typography
+              variant="subtitle2"
+              sx={{
+                color: "white",
+                mb: 1.5,
+                fontSize: "0.9rem",
+                fontWeight: 600,
+              }}
+            >
+              {t("Category Types")} - {selectedCategory.name}
+            </Typography> */}
               <Box
                 sx={{
                   display: "flex",
@@ -784,20 +914,22 @@ const MainPage = () => {
                   "&::-webkit-scrollbar": {
                     display: "none",
                   },
-                  pb: 1,
-                  minHeight: "50px",
+                  pb: 0,
+                  minHeight: "20px",
                 }}
               >
-                {/* Browse All Categories */}
+                {/* All Category Types */}
                 <Button
-                  variant={selectedCategory === null ? "contained" : "outlined"}
-                  onClick={() => handleCategoryChange(null)}
+                  variant={
+                    selectedCategoryType === null ? "contained" : "outlined"
+                  }
+                  onClick={() => handleCategoryTypeChange(null)}
                   sx={{
                     backgroundColor:
-                      selectedCategory === null
+                      selectedCategoryType === null
                         ? theme.palette.mode === "dark"
-                          ? "#40916c"
-                          : "#34495e"
+                          ? "#34495e"
+                          : "#40916c"
                         : "transparent",
                     color: "white",
                     border: "1px solid rgba(255,255,255,0.3)",
@@ -810,7 +942,7 @@ const MainPage = () => {
                     flexShrink: 0,
                     "&:hover": {
                       backgroundColor:
-                        selectedCategory === null
+                        selectedCategoryType === null
                           ? theme.palette.mode === "dark"
                             ? "#34495e"
                             : "#40916c"
@@ -820,22 +952,22 @@ const MainPage = () => {
                   }}
                   startIcon={<CategoryIcon sx={{ fontSize: "16px" }} />}
                 >
-                  {t("all")}
+                  {t("All Category Types")}
                 </Button>
 
-                {/* Category Filter Buttons */}
-                {filteredCategories.map((category) => (
+                {/* Category Type Filter Buttons */}
+                {categoryTypes.map((categoryType, index) => (
                   <Button
-                    key={category._id}
+                    key={index}
                     variant={
-                      selectedCategory?._id === category._id
+                      selectedCategoryType?.name === categoryType.name
                         ? "contained"
                         : "outlined"
                     }
-                    onClick={() => handleCategoryChange(category)}
+                    onClick={() => handleCategoryTypeChange(categoryType)}
                     sx={{
                       backgroundColor:
-                        selectedCategory?._id === category._id
+                        selectedCategoryType?.name === categoryType.name
                           ? theme.palette.mode === "dark"
                             ? "#34495e"
                             : "#40916c"
@@ -852,161 +984,49 @@ const MainPage = () => {
                       whiteSpace: "nowrap",
                       "&:hover": {
                         backgroundColor:
-                          selectedCategory?._id === category._id
-                            ? theme.palette.mode === "dark"
-                              ? "#34495e"
-                              : "#40916c"
-                            : "rgba(255,255,255,0.1)",
-                        borderColor: "rgba(255,255,255,0.5)",
-                      },
-                    }}
-                  >
-                    {t(category.name)}
-                  </Button>
-                ))}
-              </Box>
-            </Box>
-
-            {/* Category Types Filter */}
-            {selectedCategory && (
-              <Box sx={{ mb: 0 }}>
-                {/* <Typography
-              variant="subtitle2"
-              sx={{
-                color: "white",
-                mb: 1.5,
-                fontSize: "0.9rem",
-                fontWeight: 600,
-              }}
-            >
-              {t("Category Types")} - {selectedCategory.name}
-            </Typography> */}
-                <Box
-                  sx={{
-                    display: "flex",
-                    gap: { xs: 0.5, sm: 1 },
-                    alignItems: "center",
-                    justifyContent: { xs: "flex-start", md: "flex-start" },
-                    overflowX: "auto",
-                    overflowY: "hidden",
-                    scrollbarWidth: "none",
-                    "&::-webkit-scrollbar": {
-                      display: "none",
-                    },
-                    pb: 0,
-                    minHeight: "20px",
-                  }}
-                >
-                  {/* All Category Types */}
-                  <Button
-                    variant={
-                      selectedCategoryType === null ? "contained" : "outlined"
-                    }
-                    onClick={() => handleCategoryTypeChange(null)}
-                    sx={{
-                      backgroundColor:
-                        selectedCategoryType === null
-                          ? theme.palette.mode === "dark"
-                            ? "#34495e"
-                            : "#40916c"
-                          : "transparent",
-                      color: "white",
-                      border: "1px solid rgba(255,255,255,0.3)",
-                      borderRadius: 2,
-                      px: { xs: 1.5, md: 2 },
-                      py: 0.5,
-                      fontSize: { xs: "0.75rem", md: "0.875rem" },
-                      textTransform: "none",
-                      minHeight: "32px",
-                      flexShrink: 0,
-                      "&:hover": {
-                        backgroundColor:
-                          selectedCategoryType === null
-                            ? theme.palette.mode === "dark"
-                              ? "#34495e"
-                              : "#40916c"
-                            : "rgba(255,255,255,0.1)",
-                        borderColor: "rgba(255,255,255,0.5)",
-                      },
-                    }}
-                    startIcon={<CategoryIcon sx={{ fontSize: "16px" }} />}
-                  >
-                    {t("All Category Types")}
-                  </Button>
-
-                  {/* Category Type Filter Buttons */}
-                  {categoryTypes.map((categoryType, index) => (
-                    <Button
-                      key={index}
-                      variant={
-                        selectedCategoryType?.name === categoryType.name
-                          ? "contained"
-                          : "outlined"
-                      }
-                      onClick={() => handleCategoryTypeChange(categoryType)}
-                      sx={{
-                        backgroundColor:
                           selectedCategoryType?.name === categoryType.name
                             ? theme.palette.mode === "dark"
                               ? "#34495e"
                               : "#40916c"
-                            : "transparent",
-                        color: "white",
-                        border: "1px solid rgba(255,255,255,0.3)",
-                        borderRadius: 2,
-                        px: { xs: 1.5, md: 2 },
-                        py: 0.5,
-                        fontSize: { xs: "0.75rem", md: "0.875rem" },
-                        textTransform: "none",
-                        minHeight: "32px",
-                        flexShrink: 0,
-                        whiteSpace: "nowrap",
-                        "&:hover": {
-                          backgroundColor:
-                            selectedCategoryType?.name === categoryType.name
-                              ? theme.palette.mode === "dark"
-                                ? "#34495e"
-                                : "#40916c"
-                              : "rgba(255,255,255,0.1)",
-                          borderColor: "rgba(255,255,255,0.5)",
-                        },
-                      }}
-                    >
-                      {t(categoryType.name)}
-                    </Button>
-                  ))}
-                </Box>
+                            : "rgba(255,255,255,0.1)",
+                        borderColor: "rgba(255,255,255,0.5)",
+                      },
+                    }}
+                  >
+                    {t(categoryType.name)}
+                  </Button>
+                ))}
               </Box>
-            )}
+            </Box>
+          )}
 
-            {/* Clear Filters Button - Desktop Only */}
-            <Box
+          {/* Clear Filters Button - Desktop Only */}
+          <Box
+            sx={{
+              mt: 2,
+              display: { xs: "none", md: "flex" },
+              justifyContent: "center",
+            }}
+          >
+            <Button
+              variant="outlined"
+              onClick={clearAllFilters}
               sx={{
-                mt: 2,
-                display: { xs: "none", md: "flex" },
-                justifyContent: "center",
+                color: "white",
+                borderColor: "rgba(255,255,255,0.5)",
+                borderRadius: 2,
+                px: 3,
+                py: 0.5,
+                fontSize: "0.875rem",
+                textTransform: "none",
+                "&:hover": {
+                  backgroundColor: "rgba(255,255,255,0.1)",
+                  borderColor: "white",
+                },
               }}
             >
-              <Button
-                variant="outlined"
-                onClick={clearAllFilters}
-                sx={{
-                  color: "white",
-                  borderColor: "rgba(255,255,255,0.5)",
-                  borderRadius: 2,
-                  px: 3,
-                  py: 0.5,
-                  fontSize: "0.875rem",
-                  textTransform: "none",
-                  "&:hover": {
-                    backgroundColor: "rgba(255,255,255,0.1)",
-                    borderColor: "white",
-                  },
-                }}
-              >
-                {t("Clear All Filters")}
-              </Button>
-            </Box>
+              {t("Clear All Filters")}
+            </Button>
           </Box>
         </Box>
       </Box>
@@ -1611,6 +1631,35 @@ const MainPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Scroll to Top Button */}
+      {showScrollTop && (
+        <Fab
+          color="primary"
+          aria-label="scroll to top"
+          onClick={scrollToTop}
+          sx={{
+            position: "fixed",
+            bottom: { xs: 80, sm: 16 }, // Higher on mobile to avoid bottom navigation
+            right: { xs: 16, sm: 16 },
+            zIndex: 1000,
+            backgroundColor:
+              theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+            color: "white",
+            width: { xs: 48, sm: 56 }, // Slightly smaller on mobile
+            height: { xs: 48, sm: 56 },
+            "&:hover": {
+              backgroundColor:
+                theme.palette.mode === "dark" ? "#52b788" : "#2c3e50",
+              transform: "translateY(-2px)",
+            },
+            transition: "all 0.3s ease",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
+          }}
+        >
+          <KeyboardArrowUpIcon sx={{ fontSize: { xs: "20px", sm: "24px" } }} />
+        </Fab>
+      )}
     </Box>
   );
 };

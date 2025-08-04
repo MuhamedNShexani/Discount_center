@@ -112,6 +112,7 @@ const DataEntryForm = () => {
     phone: "",
     description: "",
     isVip: false,
+    storeType: "market",
   });
 
   // Product form state
@@ -128,6 +129,7 @@ const DataEntryForm = () => {
     categoryId: "",
     categoryTypeId: "",
     storeId: "",
+    storeType: "market",
     expireDate: "",
   });
 
@@ -454,7 +456,7 @@ const DataEntryForm = () => {
       }
 
       const data = await response.json();
-      return data.imageUrl;
+      return data.url;
     } catch (error) {
       console.error("Error uploading logo:", error);
       throw error;
@@ -824,16 +826,14 @@ const DataEntryForm = () => {
     setLoading(true);
     setMessage({ type: "", text: "" });
 
-    if (!selectedStoreLogo) {
-      setMessage({ type: "error", text: t("Please select a logo file.") });
-      setLoading(false);
-      return;
-    }
-
     try {
-      setUploadLoading(true);
-      const logoUrl = await uploadStoreLogo(selectedStoreLogo);
-      setUploadLoading(false);
+      let logoUrl = "";
+
+      if (selectedStoreLogo) {
+        setUploadLoading(true);
+        logoUrl = await uploadStoreLogo(selectedStoreLogo);
+        setUploadLoading(false);
+      }
 
       const storeData = {
         ...storeForm,
@@ -848,6 +848,8 @@ const DataEntryForm = () => {
         address: "",
         phone: "",
         description: "",
+        isVip: false,
+        storeType: "market",
       });
       setSelectedStoreLogo(null);
       fetchStores(); // Refresh stores list
@@ -886,15 +888,16 @@ const DataEntryForm = () => {
         previousPrice: parseFloat(productForm.previousPrice) || null,
         newPrice: parseFloat(productForm.newPrice) || null,
         isDiscount: productForm.isDiscount,
-        barcode: productForm.barcode,
-        weight: productForm.weight,
+        barcode: productForm.barcode || null,
+        weight: productForm.weight || null,
         expireDate: productForm.expireDate
           ? new Date(productForm.expireDate).toISOString()
           : null,
-        brandId: productForm.brandId,
+        brandId: productForm.brandId || null,
         categoryId: productForm.categoryId,
         categoryTypeId: productForm.categoryTypeId,
         storeId: productForm.storeId,
+        storeType: productForm.storeType,
       };
 
       await productAPI.create(productData);
@@ -912,6 +915,7 @@ const DataEntryForm = () => {
         brandId: "",
         categoryId: "",
         categoryTypeId: "",
+        storeType: "market",
         expireDate: "",
       });
       setSelectedProductImage(null);
@@ -1602,6 +1606,23 @@ const DataEntryForm = () => {
                     }}
                   />
                 </Grid>
+                <Grid xs={12} sm={6}>
+                  <FormControl fullWidth required>
+                    <InputLabel shrink>{t("Store Type")}</InputLabel>
+                    <Select
+                      name="storeType"
+                      value={storeForm.storeType}
+                      onChange={handleStoreFormChange}
+                      label={t("Store Type")}
+                      displayEmpty
+                    >
+                      <MenuItem value="market">{t("Market")}</MenuItem>
+                      <MenuItem value="clothes">{t("Clothes")}</MenuItem>
+                      <MenuItem value="electronic">{t("Electronics")}</MenuItem>
+                      <MenuItem value="cosmetic">{t("Cosmetics")}</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
                 <Grid xs={12}>
                   <TextField
                     fullWidth
@@ -2150,6 +2171,23 @@ const DataEntryForm = () => {
                           {store.name}
                         </MenuItem>
                       ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <FormControl fullWidth required>
+                    <InputLabel shrink>{t("Store Type")}</InputLabel>
+                    <Select
+                      name="storeType"
+                      value={productForm.storeType}
+                      onChange={handleProductFormChange}
+                      label={t("Store Type")}
+                      displayEmpty
+                    >
+                      <MenuItem value="market">{t("Market")}</MenuItem>
+                      <MenuItem value="clothes">{t("Clothes")}</MenuItem>
+                      <MenuItem value="electronic">{t("Electronics")}</MenuItem>
+                      <MenuItem value="cosmetic">{t("Cosmetics")}</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>

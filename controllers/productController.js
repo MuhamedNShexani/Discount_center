@@ -79,6 +79,7 @@ const createProduct = async (req, res) => {
     description,
     barcode,
     storeId,
+    storeType,
     expireDate,
   } = req.body;
 
@@ -90,11 +91,13 @@ const createProduct = async (req, res) => {
       return res.status(404).json({ msg: "Store not found" });
     }
 
-    // Check if brand exists
-    const brand = await Brand.findById(brandId);
-    if (!brand) {
-      console.error("[createProduct] Brand not found for brandId:", brandId);
-      return res.status(404).json({ msg: "Brand not found" });
+    // Check if brand exists (only if brandId is provided)
+    if (brandId) {
+      const brand = await Brand.findById(brandId);
+      if (!brand) {
+        console.error("[createProduct] Brand not found for brandId:", brandId);
+        return res.status(404).json({ msg: "Brand not found" });
+      }
     }
 
     // Check if category exists
@@ -135,6 +138,7 @@ const createProduct = async (req, res) => {
       weight,
       brandId,
       storeId,
+      storeType,
       expireDate,
     });
 
