@@ -180,6 +180,20 @@ const BrandProfile = () => {
     return daysDiff > 0 ? daysDiff : 0;
   };
 
+  // Helper function to check if a discounted product has expired
+  const isDiscountValid = (product) => {
+    if (!product.isDiscount) return false;
+
+    // If no expiry date, discount is always valid
+    if (!product.expireDate) return true;
+
+    // Check if current date is before expiry date
+    const currentDate = new Date();
+    const expiryDate = new Date(product.expireDate);
+
+    return currentDate < expiryDate;
+  };
+
   // Filter products based on current filters
   const getFilteredProducts = () => {
     return products.filter((product) => {
@@ -209,7 +223,7 @@ const BrandProfile = () => {
 
   // Separate products into discounted and non-discounted
   const getDiscountedProducts = () => {
-    return getFilteredProducts().filter((product) => product.isDiscount);
+    return getFilteredProducts().filter((product) => isDiscountValid(product));
   };
 
   const getNonDiscountedProducts = () => {

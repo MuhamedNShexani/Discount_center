@@ -329,6 +329,20 @@ const MainPage = () => {
     return id;
   };
 
+  // Helper function to check if a discounted product has expired
+  const isDiscountValid = (product) => {
+    if (!product.isDiscount) return false;
+
+    // If no expiry date, discount is always valid
+    if (!product.expireDate) return true;
+
+    // Check if current date is before expiry date
+    const currentDate = new Date();
+    const expiryDate = new Date(product.expireDate);
+
+    return currentDate < expiryDate;
+  };
+
   // 1. Memoize the filtered products list
   const filteredProducts = useMemo(() => {
     return allProducts.filter((product) => {
@@ -369,8 +383,13 @@ const MainPage = () => {
         product.previousPrice &&
         product.newPrice &&
         product.previousPrice > product.newPrice;
-      if (showOnlyDiscount && !product.isDiscount && !hasPriceDiscount) {
-        return false;
+
+      // For discount filter, only show products that are discounted AND not expired
+      if (showOnlyDiscount) {
+        const isDiscounted = product.isDiscount || hasPriceDiscount;
+        if (!isDiscounted || !isDiscountValid(product)) {
+          return false;
+        }
       }
 
       // Filter by Search (product name)
@@ -1343,9 +1362,45 @@ const MainPage = () => {
                             />
                           </Box>
                         )}
-
+                        <IconButton
+                          onClick={(e) => handleLikeClick(product._id, e)}
+                          disabled={likeLoading[product._id]}
+                          sx={{
+                            position: "absolute",
+                            top: 8,
+                            right: 8,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 0.5,
+                            backgroundColor: "rgba(0, 0, 0, 0.7)",
+                            px: 1,
+                            py: 0.5,
+                            borderRadius: 1,
+                            fontSize: "0.7rem",
+                            bgcolor: "white",
+                            color:
+                              likeStates[product._id] ||
+                              isProductLiked(product._id)
+                                ? "#e53e3e"
+                                : "#666",
+                            "&:hover": {
+                              color: "#e53e3e",
+                              transform: "scale(1.1)",
+                            },
+                            transition: "all 0.2s ease",
+                            p: 0.5,
+                          }}
+                          size="small"
+                        >
+                          {likeStates[product._id] ||
+                          isProductLiked(product._id) ? (
+                            <FavoriteIcon sx={{ fontSize: "1.2rem" }} />
+                          ) : (
+                            <FavoriteBorderIcon sx={{ fontSize: "1.2rem" }} />
+                          )}
+                        </IconButton>
                         {/* View Count Badge - Top Right */}
-                        {product.viewCount > 0 && (
+                        {/* {product.viewCount > 0 && (
                           <Box
                             sx={{
                               position: "absolute",
@@ -1365,7 +1420,7 @@ const MainPage = () => {
                             <VisibilityIcon sx={{ fontSize: "0.8rem" }} />
                             {product.viewCount}
                           </Box>
-                        )}
+                        )} */}
                       </Box>
 
                       {/* Product Content */}
@@ -1466,7 +1521,7 @@ const MainPage = () => {
                               gap: 0.5,
                             }}
                           >
-                            <Typography
+                            {/* <Typography
                               variant="caption"
                               sx={{
                                 color: "#666",
@@ -1477,34 +1532,7 @@ const MainPage = () => {
                               {likeCounts[product._id] ||
                                 product.likeCount ||
                                 0}
-                            </Typography>
-                            <IconButton
-                              onClick={(e) => handleLikeClick(product._id, e)}
-                              disabled={likeLoading[product._id]}
-                              sx={{
-                                color:
-                                  likeStates[product._id] ||
-                                  isProductLiked(product._id)
-                                    ? "#e53e3e"
-                                    : "#666",
-                                "&:hover": {
-                                  color: "#e53e3e",
-                                  transform: "scale(1.1)",
-                                },
-                                transition: "all 0.2s ease",
-                                p: 0.5,
-                              }}
-                              size="small"
-                            >
-                              {likeStates[product._id] ||
-                              isProductLiked(product._id) ? (
-                                <FavoriteIcon sx={{ fontSize: "1.2rem" }} />
-                              ) : (
-                                <FavoriteBorderIcon
-                                  sx={{ fontSize: "1.2rem" }}
-                                />
-                              )}
-                            </IconButton>
+                            </Typography> */}
                           </Box>
                         </Box>
 

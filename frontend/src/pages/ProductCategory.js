@@ -256,6 +256,20 @@ const ProductCategory = () => {
     }
   };
 
+  // Helper function to check if a discounted product has expired
+  const isDiscountValid = (product) => {
+    if (!product.isDiscount) return false;
+
+    // If no expiry date, discount is always valid
+    if (!product.expireDate) return true;
+
+    // Check if current date is before expiry date
+    const currentDate = new Date();
+    const expiryDate = new Date(product.expireDate);
+
+    return currentDate < expiryDate;
+  };
+
   // Apply filters to products
   const applyFilters = () => {
     let filtered = [...products];
@@ -301,7 +315,7 @@ const ProductCategory = () => {
 
     // Filter by discount
     if (filters.discount) {
-      filtered = filtered.filter((product) => product.isDiscount);
+      filtered = filtered.filter((product) => isDiscountValid(product));
     }
 
     setFilteredProducts(filtered);

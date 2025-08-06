@@ -7,10 +7,7 @@ const getCategories = async (req, res) => {
     const categories = await Category.find({ isActive: true }).sort({
       createdAt: 1,
     });
-    console.log(
-      "Categories returned in order:",
-      categories.map((c) => c.name)
-    );
+
     res.json(categories);
   } catch (err) {
     console.error(err.message);

@@ -211,10 +211,15 @@ const ProductDetail = () => {
       const response = await productAPI.getAll();
       const allProducts = response.data;
 
-      // Filter products by same category (excluding current product)
+      // Filter products by same category (excluding current product and expired discounts)
       const sameCategoryProducts = allProducts
         .filter((p) => p._id !== currentProduct._id)
         .filter((p) => {
+          // Exclude expired discounted products
+          if (p.isDiscount && !isDiscountValid(p)) {
+            return false;
+          }
+
           if (
             currentProduct.categoryId &&
             p.categoryId &&
@@ -226,10 +231,15 @@ const ProductDetail = () => {
         })
         .slice(0, 5); // Limit to 5 products
 
-      // Filter products by same store (excluding current product and already selected category products)
+      // Filter products by same store (excluding current product, already selected category products, and expired discounts)
       const sameStoreProducts = allProducts
         .filter((p) => p._id !== currentProduct._id)
         .filter((p) => {
+          // Exclude expired discounted products
+          if (p.isDiscount && !isDiscountValid(p)) {
+            return false;
+          }
+
           // Exclude products already in sameCategoryProducts
           const isAlreadyInCategory = sameCategoryProducts.some(
             (catProduct) => catProduct._id === p._id
@@ -310,6 +320,20 @@ const ProductDetail = () => {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     return diffDays;
+  };
+
+  // Helper function to check if a discounted product has expired
+  const isDiscountValid = (product) => {
+    if (!product.isDiscount) return false;
+
+    // If no expiry date, discount is always valid
+    if (!product.expireDate) return true;
+
+    // Check if current date is before expiry date
+    const currentDate = new Date();
+    const expiryDate = new Date(product.expireDate);
+
+    return currentDate < expiryDate;
   };
 
   if (loading) {
@@ -981,7 +1005,7 @@ const ProductDetail = () => {
                     sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
                   >
                     <strong>{t("Discount Status")}:</strong>{" "}
-                    {product.isDiscount ? t("Discounted") : t("Regular Price")}
+                    {(product.isDiscount && isDiscountValid(product)) ? t("Discounted") : t("Regular Price")}
                   </Typography>
                 </Box> */}
               </Box>
@@ -1255,7 +1279,8 @@ const ProductDetail = () => {
                         {(relatedProduct.previousPrice &&
                           relatedProduct.previousPrice >
                             relatedProduct.newPrice) ||
-                        relatedProduct.isDiscount ? (
+                        (relatedProduct.isDiscount &&
+                          isDiscountValid(relatedProduct)) ? (
                           <Chip
                             icon={
                               <LocalOfferIcon
