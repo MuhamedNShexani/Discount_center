@@ -2778,6 +2778,11 @@ const DataEntryForm = () => {
               iconPosition="start"
             />
             <Tab
+              label={t("Categories")}
+              icon={<CategoryIcon />}
+              iconPosition="start"
+            />
+            <Tab
               label={t("Gifts")}
               icon={<CardGiftcardIcon />}
               iconPosition="start"
@@ -3460,8 +3465,125 @@ const DataEntryForm = () => {
             </Box>
           )}
 
-          {/* Gift List Panel */}
+          {/* Categories List Panel (with image upload) */}
           {activeListTab === 3 && (
+            <Box>
+              <TableContainer component={Paper}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("No.")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Name")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Store Type")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Image")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Actions")}
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {categories.map((cat, idx) => (
+                      <TableRow key={cat._id}>
+                        <TableCell>{idx + 1}</TableCell>
+                        <TableCell>{cat.name}</TableCell>
+                        <TableCell>{cat.storeType}</TableCell>
+                        <TableCell>
+                          {cat.image ? (
+                            <img
+                              src={`${API_URL}${cat.image}`}
+                              alt={cat.name}
+                              width={60}
+                              height={60}
+                              style={{ objectFit: "cover", borderRadius: 4 }}
+                            />
+                          ) : (
+                            <Chip label={t("No Image")} size="small" />
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            id={`cat-image-${cat._id}`}
+                            style={{ display: "none" }}
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              try {
+                                setEditLoading(true);
+                                await categoryAPI.uploadCategoryImage(
+                                  cat._id,
+                                  file
+                                );
+                                await fetchCategories();
+                              } catch (err) {
+                                console.error("Upload failed", err);
+                                alert("Failed to upload image");
+                              } finally {
+                                setEditLoading(false);
+                              }
+                            }}
+                          />
+                          <label htmlFor={`cat-image-${cat._id}`}>
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              component="span"
+                              startIcon={<CloudUploadIcon />}
+                              disabled={editLoading}
+                            >
+                              {t("Upload Image")}
+                            </Button>
+                          </label>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
+          )}
+
+          {/* Gift List Panel */}
+          {activeListTab === 4 && (
             <Box>
               <TableContainer component={Paper}>
                 <Table>

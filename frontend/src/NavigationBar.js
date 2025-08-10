@@ -228,17 +228,11 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                 </Button>
               ))}
 
-              {/* Stores Dropdown Button (3rd position) */}
+              {/* Stores link (no dropdown) */}
               <Button
-                onClick={handleStoresMenuOpen}
+                component={Link}
+                to="/stores"
                 startIcon={<StoreIcon />}
-                endIcon={
-                  Boolean(storesAnchorEl) ? (
-                    <ExpandLessIcon />
-                  ) : (
-                    <ExpandMoreIcon />
-                  )
-                }
                 sx={{
                   color: "white",
                   textTransform: "none",
@@ -702,167 +696,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
         )}
       </Menu>
 
-      {/* Stores Dropdown Menu */}
-      <Menu
-        anchorEl={storesAnchorEl}
-        open={Boolean(storesAnchorEl)}
-        onClose={handleStoresMenuClose}
-        PaperProps={{
-          sx: {
-            mt: 1,
-            minWidth: 200,
-            backgroundColor:
-              theme.palette.mode === "dark" ? "#2c3e50" : "#ffffff",
-            backdropFilter: "blur(20px)",
-            border: `1px solid ${
-              theme.palette.mode === "dark"
-                ? "rgba(255,255,255,0.1)"
-                : "rgba(0,0,0,0.1)"
-            }`,
-            boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
-            borderRadius: 2,
-          },
-        }}
-        transformOrigin={{ horizontal: "left", vertical: "top" }}
-        anchorOrigin={{ horizontal: "left", vertical: "bottom" }}
-      >
-        {/* <MenuItem
-          component={Link}
-          to="/stores"
-          onClick={handleStoresMenuClose}
-          sx={{
-            py: 1.5,
-            px: 2,
-            "&:hover": {
-              backgroundColor:
-                theme.palette.mode === "dark"
-                  ? "rgba(255,255,255,0.08)"
-                  : "rgba(0,0,0,0.04)",
-            },
-          }}
-        >
-          <ListItemIcon>
-            <StoreIcon />
-          </ListItemIcon>
-          <ListItemText
-            primary={t("All Stores")}
-            primaryTypographyProps={{
-              fontSize: "0.875rem",
-              fontWeight: 500,
-            }}
-          />
-        </MenuItem> */}
-
-        {/* <Divider /> */}
-
-        <MenuItem
-          component={Link}
-          to="/stores?type=market"
-          onClick={handleStoresMenuClose}
-          sx={{
-            py: 1.5,
-            px: 2,
-            "&:hover": {
-              backgroundColor:
-                theme.palette.mode === "dark"
-                  ? "rgba(255,255,255,0.08)"
-                  : "rgba(0,0,0,0.04)",
-            },
-          }}
-        >
-          <ListItemIcon>
-            <span style={{ fontSize: "1.2rem" }}>🛒</span>
-          </ListItemIcon>
-          <ListItemText
-            primary={t("Markets")}
-            primaryTypographyProps={{
-              fontSize: "0.875rem",
-              fontWeight: 500,
-            }}
-          />
-        </MenuItem>
-
-        <MenuItem
-          component={Link}
-          to="/stores?type=clothes"
-          onClick={handleStoresMenuClose}
-          sx={{
-            py: 1.5,
-            px: 2,
-            "&:hover": {
-              backgroundColor:
-                theme.palette.mode === "dark"
-                  ? "rgba(255,255,255,0.08)"
-                  : "rgba(0,0,0,0.04)",
-            },
-          }}
-        >
-          <ListItemIcon>
-            <span style={{ fontSize: "1.2rem" }}>👕</span>
-          </ListItemIcon>
-          <ListItemText
-            primary={t("Clothes")}
-            primaryTypographyProps={{
-              fontSize: "0.875rem",
-              fontWeight: 500,
-            }}
-          />
-        </MenuItem>
-
-        <MenuItem
-          component={Link}
-          to="/stores?type=electronic"
-          onClick={handleStoresMenuClose}
-          sx={{
-            py: 1.5,
-            px: 2,
-            "&:hover": {
-              backgroundColor:
-                theme.palette.mode === "dark"
-                  ? "rgba(255,255,255,0.08)"
-                  : "rgba(0,0,0,0.04)",
-            },
-          }}
-        >
-          <ListItemIcon>
-            <span style={{ fontSize: "1.2rem" }}>📱</span>
-          </ListItemIcon>
-          <ListItemText
-            primary={t("Electronics")}
-            primaryTypographyProps={{
-              fontSize: "0.875rem",
-              fontWeight: 500,
-            }}
-          />
-        </MenuItem>
-
-        <MenuItem
-          component={Link}
-          to="/stores?type=cosmetic"
-          onClick={handleStoresMenuClose}
-          sx={{
-            py: 1.5,
-            px: 2,
-            "&:hover": {
-              backgroundColor:
-                theme.palette.mode === "dark"
-                  ? "rgba(255,255,255,0.08)"
-                  : "rgba(0,0,0,0.04)",
-            },
-          }}
-        >
-          <ListItemIcon>
-            <span style={{ fontSize: "1.2rem" }}>💄</span>
-          </ListItemIcon>
-          <ListItemText
-            primary={t("Cosmetics")}
-            primaryTypographyProps={{
-              fontSize: "0.875rem",
-              fontWeight: 500,
-            }}
-          />
-        </MenuItem>
-      </Menu>
+      {/* Stores Dropdown removed */}
     </>
   );
 };

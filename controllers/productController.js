@@ -192,9 +192,11 @@ const getProductsByStore = async (req, res) => {
 // @access  Public
 const getProductsByCategory = async (req, res) => {
   try {
-    const products = await Product.find({ type: req.params.category })
+    // The param is a Category ID. Match on categoryId, not the legacy `type` field
+    const products = await Product.find({ categoryId: req.params.category })
       .populate("brandId", "name logo")
       .populate("storeId", "name logo")
+      .populate("categoryId", "name types")
       .sort({ name: 1 });
 
     res.json(products);

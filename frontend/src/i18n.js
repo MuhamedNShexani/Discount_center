@@ -1003,7 +1003,10 @@ const resources = {
       "Login Required": "چوونەژوورەوە پێویستە",
       "You must login to like products. Do you want to login?":
         "دەتەوێت بچیتە ژوورەوە ؟",
+      "Beauty & Care": "جوانکارى",
       Yes: "بەڵێ",
+      "Please select a category to view its types.":
+        "تکایە پۆڵێنێک دیاریبکە بۆ بینینی جۆرەکانیان.",
       No: "نەخێر",
       "Load More": "بینینى زیاتر",
       "Guest User": "بەکارهێنەری میوان",

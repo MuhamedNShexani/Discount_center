@@ -257,7 +257,8 @@ const StoreList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const storeType = searchParams.get("type");
+  const storeTypeParam = searchParams.get("type");
+  const [selectedType, setSelectedType] = useState(storeTypeParam || "all");
 
   useEffect(() => {
     fetchStores();
@@ -265,13 +266,13 @@ const StoreList = () => {
 
   useEffect(() => {
     if (stores.length > 0) {
-      if (storeType && storeType !== "all") {
-        setFilteredStores(stores.filter((s) => s.storeType === storeType));
+      if (selectedType && selectedType !== "all") {
+        setFilteredStores(stores.filter((s) => s.storeType === selectedType));
       } else {
         setFilteredStores(stores);
       }
     }
-  }, [stores, storeType]);
+  }, [stores, selectedType]);
 
   const fetchStores = async () => {
     try {
@@ -297,6 +298,30 @@ const StoreList = () => {
 
   return (
     <Box sx={{ py: 6, px: { xs: 1, sm: 2, md: 4 } }}>
+      {/* Store Type Filter - Inline on page */}
+      <Box sx={{ mb: 2, display: "flex", gap: 1, overflowX: "auto" }}>
+        {[
+          { key: "all", label: t("All") },
+          { key: "market", label: t("Market") },
+          { key: "clothes", label: t("Clothes") },
+          { key: "electronic", label: t("Electronics") },
+          { key: "cosmetic", label: t("Cosmetics") },
+        ].map((tItem) => (
+          <Chip
+            key={tItem.key}
+            label={tItem.label}
+            onClick={() => setSelectedType(tItem.key)}
+            color={selectedType === tItem.key ? "primary" : "default"}
+            variant={selectedType === tItem.key ? "filled" : "outlined"}
+            sx={{
+              flexShrink: 0,
+              backgroundColor:
+                selectedType === tItem.key ? "#52b788" : "transparent",
+              color: selectedType === tItem.key ? "white" : "inherit",
+            }}
+          />
+        ))}
+      </Box>
       {/* <Typography
         variant="h4"
         textAlign="center"

@@ -38,6 +38,20 @@ export const categoryAPI = {
   update: (id, data) => api.put(`/categories/${id}`, data),
   delete: (id) => api.delete(`/categories/${id}`),
   getTypes: (id) => api.get(`/categories/${id}/types`),
+  getByStoreType: (storeType) => api.get(`/categories/store-type/${storeType}`),
+  uploadCategoryImage: async (categoryId, file) => {
+    const formData = new FormData();
+    formData.append("image", file);
+    const res = await fetch(`${API_BASE_URL}/categories/${categoryId}/image`, {
+      method: "POST",
+      body: formData,
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text || `Upload failed with status ${res.status}`);
+    }
+    return res.json();
+  },
 };
 
 // Product API calls

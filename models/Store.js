@@ -12,6 +12,7 @@ const storeSchema = new mongoose.Schema({
     default: "market",
   },
   isVip: { type: Boolean, default: false },
+  isActive: { type: Boolean, default: true },
 });
 
 module.exports = mongoose.model("Store", storeSchema);

@@ -10,8 +10,6 @@ import {
   Chip,
   CircularProgress,
   Alert,
-  Tabs,
-  Tab,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -28,10 +26,15 @@ import {
   Divider,
   Avatar,
   Badge,
-  TablePagination,
   IconButton,
   Rating,
   Tooltip,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
 } from "@mui/material";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { productAPI, categoryAPI } from "../services/api";
@@ -41,13 +44,15 @@ import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import BusinessIcon from "@mui/icons-material/Business";
 import StorefrontIcon from "@mui/icons-material/Storefront";
-import SearchIcon from "@mui/icons-material/Search";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import StarIcon from "@mui/icons-material/Star";
+import MenuIcon from "@mui/icons-material/Menu";
+import StoreIcon from "@mui/icons-material/Store";
+import CloseIcon from "@mui/icons-material/Close";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@mui/material/styles";
 import { useUserTracking } from "../hooks/useUserTracking";
@@ -72,6 +77,15 @@ const ProductCategory = () => {
   const [error, setError] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
+  // Mobile layout states
+  const [selectedStoreType, setSelectedStoreType] = useState(() =>
+    typeof window !== "undefined" && window.innerWidth < 900 ? "market" : "all"
+  );
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  // Mobile view mode: 'categories' → list categories, 'products' → show products of selected category
+  const [mobileViewMode, setMobileViewMode] = useState("categories");
+
   // Notification dialog state
   const [loginNotificationOpen, setLoginNotificationOpen] = useState(false);
 
@@ -86,41 +100,39 @@ const ProductCategory = () => {
     brand: "",
     store: "",
     barcode: "",
-    discount: true,
-    storeType: "all",
+    discount: false,
   });
 
   // Pagination states
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(20);
-  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  // Store types for filtering
+  const storeTypes = [
+    // { value: "all", label: "All Store Types", icon: "🏪" },
+    { value: "market", label: t("Market"), icon: "🛒" },
+    { value: "clothes", label: t("Clothes"), icon: "👕" },
+    { value: "electronic", label: t("Electronics"), icon: "📱" },
+    { value: "cosmetic", label: t("Beauty & Care"), icon: "💄" },
+  ];
 
   useEffect(() => {
     fetchCategories();
+  }, [selectedStoreType]);
+
+  // On first mount on mobile, lock the store type to the first option
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.innerWidth < 900) {
+      setSelectedStoreType("market");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Keep filtered list in sync when inputs change
   useEffect(() => {
     applyFilters();
-  }, [products, filters, selectedCategoryType]);
-
-  // Reset pagination when filters change
-  useEffect(() => {
-    setPage(0);
-  }, [filters, selectedCategoryType]);
-
-  // Initialize like states when products change
-  useEffect(() => {
-    const initialLikeCounts = {};
-    const initialLikeStates = {};
-
-    products.forEach((product) => {
-      initialLikeCounts[product._id] = product.likeCount || 0;
-      initialLikeStates[product._id] = isProductLiked(product._id);
-    });
-
-    setLikeCounts(initialLikeCounts);
-    setLikeStates(initialLikeStates);
-  }, [products, isProductLiked]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [products, selectedCategoryType, filters]);
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -134,39 +146,30 @@ const ProductCategory = () => {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const response = await categoryAPI.getAll();
-      const allCategories = response.data;
-      setCategories(allCategories);
-
-      if (allCategories.length > 0) {
-        const incomingCategory = location.state?.category;
-        const incomingCategoryType = location.state?.categoryType;
-        const categoryToSelect =
-          incomingCategory &&
-          allCategories.find((cat) => cat.name === incomingCategory)
-            ? allCategories.find((cat) => cat.name === incomingCategory)
-            : allCategories[0];
-        setSelectedCategory(categoryToSelect);
-        await fetchCategoryTypes(categoryToSelect._id);
-        await fetchProductsByCategory(categoryToSelect._id);
-
-        // If category type is provided, set it after category types are loaded
-        if (incomingCategoryType) {
-          const categoryTypesResponse = await categoryAPI.getTypes(
-            categoryToSelect._id
-          );
-          const categoryTypes = categoryTypesResponse.data;
-          const categoryTypeToSelect = categoryTypes.find(
-            (type) => type.name === incomingCategoryType
-          );
-          if (categoryTypeToSelect) {
-            setSelectedCategoryType(categoryTypeToSelect);
-          }
+      let response;
+      if (selectedStoreType === "all") {
+        response = await categoryAPI.getAll();
+      } else {
+        response = await categoryAPI.getByStoreType(selectedStoreType);
+      }
+      setCategories(response.data);
+      // Mobile: start in categories view; Desktop: preselect first category
+      if (response.data.length > 0) {
+        if (window.innerWidth >= 900) {
+          setSelectedCategory(response.data[0]);
+          await fetchCategoryTypes(response.data[0]._id);
+          await fetchProductsByCategory(response.data[0]._id);
+        } else {
+          setSelectedCategory(null);
+          setCategoryTypes([]);
+          setProducts([]);
+          setFilteredProducts([]);
+          setMobileViewMode("categories");
         }
       }
     } catch (err) {
-      setError("Failed to load categories. Please try again.");
       console.error("Error fetching categories:", err);
+      setError("Failed to fetch categories");
     } finally {
       setLoading(false);
     }
@@ -174,13 +177,8 @@ const ProductCategory = () => {
 
   const fetchCategoryTypes = async (categoryId) => {
     try {
-      if (!categoryId) {
-        setCategoryTypes([]);
-        return;
-      }
       const response = await categoryAPI.getTypes(categoryId);
       setCategoryTypes(response.data);
-      setSelectedCategoryType(null); // Reset selected type when category changes
     } catch (err) {
       console.error("Error fetching category types:", err);
       setCategoryTypes([]);
@@ -189,171 +187,148 @@ const ProductCategory = () => {
 
   const fetchProductsByCategory = async (categoryId) => {
     try {
-      const response = await productAPI.getAll({ category: categoryId });
+      const response = await productAPI.getByCategory(categoryId);
       setProducts(response.data);
+      setFilteredProducts(response.data);
     } catch (err) {
-      console.error("Error fetching products by category:", err);
+      console.error("Error fetching products:", err);
+      setProducts([]);
+      setFilteredProducts([]);
     }
   };
 
-  const handleCategoryChange = async (event, newValue) => {
-    setSelectedCategory(newValue);
-    await fetchCategoryTypes(newValue._id);
-    await fetchProductsByCategory(newValue._id);
+  const handleCategoryChange = async (category) => {
+    setSelectedCategory(category);
+    setSelectedCategoryType(null);
+    await fetchCategoryTypes(category._id);
+    await fetchProductsByCategory(category._id);
+    // On mobile, switch into products view
+    if (window.innerWidth < 900) {
+      setMobileViewMode("products");
+    }
   };
 
-  const handleCategoryTypeChange = (event, newValue) => {
-    setSelectedCategoryType(newValue);
+  const handleCategoryTypeChange = (categoryType) => {
+    setSelectedCategoryType(categoryType);
+  };
+
+  const handleStoreTypeChange = (storeType) => {
+    // Allow selection of any store type (initial default set on mount only)
+    setSelectedStoreType(storeType);
+    setSelectedCategory(null);
+    setSelectedCategoryType(null);
+    setCategoryTypes([]);
+    setProducts([]);
+    setFilteredProducts([]);
   };
 
   const handleProductClick = (product) => {
     setSelectedProduct(product);
     setDialogOpen(true);
-    // Record view when dialog is opened
-    recordView(product._id);
+    if (isAuthenticated) {
+      recordView(product._id);
+    }
   };
 
-  // Handle like button click
   const handleLikeClick = async (productId, e) => {
     e.stopPropagation();
-
     if (!isAuthenticated) {
-      // Show login notification dialog
       setLoginNotificationOpen(true);
       return;
     }
 
-    // Prevent multiple rapid clicks
-    if (likeLoading[productId]) return;
-
-    // Optimistic update
-    const currentLikeState = likeStates[productId];
-    const currentLikeCount = likeCounts[productId];
-
-    setLikeLoading((prev) => ({ ...prev, [productId]: true }));
-    setLikeStates((prev) => ({ ...prev, [productId]: !currentLikeState }));
-    setLikeCounts((prev) => ({
-      ...prev,
-      [productId]: currentLikeState
-        ? currentLikeCount - 1
-        : currentLikeCount + 1,
-    }));
-
     try {
-      const result = await toggleLike(productId);
-
-      if (!result.success) {
-        // Revert optimistic update on failure
-        setLikeStates((prev) => ({ ...prev, [productId]: currentLikeState }));
-        setLikeCounts((prev) => ({ ...prev, [productId]: currentLikeCount }));
-      }
-    } catch (error) {
-      // Revert optimistic update on error
-      setLikeStates((prev) => ({ ...prev, [productId]: currentLikeState }));
-      setLikeCounts((prev) => ({ ...prev, [productId]: currentLikeCount }));
+      setLikeLoading({ ...likeLoading, [productId]: true });
+      await toggleLike(productId);
+      setLikeStates({
+        ...likeStates,
+        [productId]: !likeStates[productId],
+      });
+      setLikeCounts({
+        ...likeCounts,
+        [productId]:
+          (likeCounts[productId] || 0) + (likeStates[productId] ? -1 : 1),
+      });
+    } catch (err) {
+      console.error("Error toggling like:", err);
     } finally {
-      setLikeLoading((prev) => ({ ...prev, [productId]: false }));
+      setLikeLoading({ ...likeLoading, [productId]: false });
     }
   };
 
-  // Helper function to check if a discounted product has expired
   const isDiscountValid = (product) => {
-    if (!product.isDiscount) return false;
-
-    // If no expiry date, discount is always valid
-    if (!product.expireDate) return true;
-
-    // Check if current date is before expiry date
-    const currentDate = new Date();
-    const expiryDate = new Date(product.expireDate);
-
-    return currentDate < expiryDate;
+    const hasPriceDrop =
+      product.previousPrice &&
+      product.newPrice &&
+      parseFloat(product.previousPrice) > parseFloat(product.newPrice);
+    return Boolean(product.isDiscount) || Boolean(hasPriceDrop);
   };
 
-  // Apply filters to products
   const applyFilters = () => {
     let filtered = [...products];
 
-    // Filter by category type
-    if (selectedCategoryType) {
-      filtered = filtered.filter(
-        (product) => product.categoryTypeId === selectedCategoryType._id
-      );
-    }
-
-    // Filter by name
     if (filters.name) {
       filtered = filtered.filter((product) =>
         product.name?.toLowerCase().includes(filters.name.toLowerCase())
       );
     }
 
-    // Filter by brand
     if (filters.brand) {
-      filtered = filtered.filter((product) =>
-        product.brandId?.name
-          ?.toLowerCase()
-          .includes(filters.brand.toLowerCase())
+      filtered = filtered.filter(
+        (product) => product.brandId?.name === filters.brand
       );
     }
 
-    // Filter by store
     if (filters.store) {
-      filtered = filtered.filter((product) =>
-        product.storeId?.name
-          ?.toLowerCase()
-          .includes(filters.store.toLowerCase())
+      filtered = filtered.filter(
+        (product) => product.storeId?.name === filters.store
       );
     }
 
-    // Filter by barcode
     if (filters.barcode) {
       filtered = filtered.filter((product) =>
-        product.barcode?.toLowerCase().includes(filters.barcode.toLowerCase())
+        product.barcode?.includes(filters.barcode)
       );
     }
 
-    // Filter by discount
     if (filters.discount) {
       filtered = filtered.filter((product) => isDiscountValid(product));
     }
 
+    if (selectedCategoryType) {
+      filtered = filtered.filter(
+        (product) => product.categoryTypeId === selectedCategoryType._id
+      );
+    }
+
     setFilteredProducts(filtered);
+    setPage(0);
   };
 
-  // Handle filter changes
   const handleFilterChange = (field, value) => {
-    setFilters((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    setFilters({ ...filters, [field]: value });
   };
 
-  // Toggle filters visibility
   const toggleFilters = () => {
     setFiltersOpen(!filtersOpen);
   };
 
-  // Get unique brands for filter dropdown
   const getBrands = () => {
     const brands = products
       .map((product) => product.brandId?.name)
-      .filter((name) => name)
-      .map((name) => name);
-    return [...new Set(brands)].sort();
+      .filter(Boolean);
+    return [...new Set(brands)];
   };
 
-  // Get unique stores for filter dropdown
   const getStores = () => {
     const stores = products
       .map((product) => product.storeId?.name)
-      .filter((name) => name)
-      .map((name) => name);
-    return [...new Set(stores)].sort();
+      .filter(Boolean);
+    return [...new Set(stores)];
   };
 
   const formatPrice = (price) => {
-    if (typeof price !== "number") return ` ${t("0")} ${t("ID")}`;
+    if (typeof price !== "number") return `${t("ID")} 0`;
     return ` ${price.toLocaleString(undefined, {
       minimumFractionDigits: 0,
       maximumFractionDigits: 2,
@@ -361,220 +336,768 @@ const ProductCategory = () => {
   };
 
   const calculateDiscount = (previousPrice, newPrice) => {
-    if (!previousPrice || !newPrice) return 0;
-    return Math.round(((previousPrice - newPrice) / previousPrice) * 100);
-  };
-
-  // Helper function to get category type name from categoryTypeId
-  const getCategoryTypeName = (categoryTypeId, categoryId) => {
-    // If categoryTypeId is available, try to find the type name
-    if (categoryTypeId && categoryId) {
-      const category = categories.find((cat) => cat._id === categoryId);
-
-      if (category && category.types) {
-        // First try to find by ID (converting ObjectId to string)
-        let type = category.types.find(
-          (t) => t._id.toString() === categoryTypeId
-        );
-
-        // If not found by ID, try to find by name directly
-        if (!type) {
-          type = category.types.find((t) => t.name === categoryTypeId);
-        }
-
-        if (type) {
-          return type.name;
-        }
-      }
+    if (
+      previousPrice === undefined ||
+      previousPrice === null ||
+      newPrice === undefined ||
+      newPrice === null
+    ) {
+      return null;
     }
-
-    // Return N/A if no valid category type found
-    return "N/A";
+    const prev = Number(previousPrice);
+    const next = Number(newPrice);
+    if (
+      !Number.isFinite(prev) ||
+      !Number.isFinite(next) ||
+      prev <= 0 ||
+      prev <= next
+    ) {
+      return null;
+    }
+    const discount = ((prev - next) / prev) * 100;
+    return Math.round(discount);
   };
 
-  // Render filter section
-  const renderFilters = () => (
-    <Paper
-      elevation={0}
-      sx={{
-        p: 1,
-        mb: 1,
-        borderRadius: { xs: 2, md: 3 },
-        background:
-          theme.palette.mode === "dark"
-            ? "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)"
-            : "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
-        border: `1px solid ${
-          theme.palette.mode === "dark" ? "#34495e" : "#e9ecef"
-        }`,
-      }}
-    >
-      {/* Mobile Filter Toggle */}
+  const getCategoryTypeName = (categoryTypeId, categoryId) => {
+    if (!categoryTypeId || !categoryId) return "";
+    const category = categories.find((cat) => cat._id === categoryId);
+    if (!category) return "";
+    const categoryType = category.types.find(
+      (type) => type._id === categoryTypeId
+    );
+    return categoryType ? categoryType.name : "";
+  };
+
+  const renderMobileLayout = () => (
+    <Box sx={{ display: { xs: "block", md: "none" } }}>
+      {/* Left vertical rail: Store types (top bar stays global like other pages) */}
       <Box
-        onClick={toggleFilters}
         sx={{
-          display: { xs: "flex", md: "none" },
-          mb: 2,
-          justifyContent: "space-between",
-          alignItems: "center",
-          cursor: "pointer",
+          position: "fixed",
+          top: 64,
+          left: 0,
+          width: 88,
+          bottom: 0,
+          borderRight: "1px solid #eee",
+          backgroundColor: "#fafafa",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "stretch",
+          py: 2,
+          gap: 1.5,
         }}
       >
-        <Typography
-          variant="h6"
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 1,
-            color: theme.palette.text.primary,
-          }}
-        >
-          <FilterListIcon sx={{ color: "#52b788" }} />
-          {t("Filters")}
-        </Typography>
-      </Box>
-
-      {/* Desktop Filter Header */}
-      <Typography
-        variant="h6"
-        sx={{
-          mb: 3,
-          display: { xs: "none", md: "flex" },
-          alignItems: "center",
-          gap: 1,
-          color: theme.palette.text.primary,
-        }}
-      >
-        <FilterListIcon sx={{ color: "#52b788" }} />
-        {t("Filters")}
-      </Typography>
-
-      <Box
-        sx={{ display: { xs: filtersOpen ? "block" : "none", md: "block" } }}
-      >
-        <Grid container spacing={{ xs: 1, md: 2 }}>
-          <Grid item xs={12} sm={6} md={3}>
-            <TextField
-              fullWidth
-              label={t("Search By Name")}
-              value={filters.name}
-              onChange={(e) => handleFilterChange("name", e.target.value)}
-              onClick={(e) => e.stopPropagation()}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-              }}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <FormControl sx={{ width: { xs: "125px", md: "300px" } }} fullWidth>
-              <InputLabel>{t("Brand")}</InputLabel>
-              <Select
-                value={filters.brand}
-                onChange={(e) => handleFilterChange("brand", e.target.value)}
-                onClick={(e) => e.stopPropagation()}
-                label={t("Brand")}
-              >
-                <MenuItem value="" sx={{ width: "250px" }}>
-                  {t("All Brands")}
-                </MenuItem>
-                {getBrands().map((brand) => (
-                  <MenuItem key={brand} value={brand}>
-                    {brand}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <FormControl sx={{ width: { xs: "125px", md: "300px" } }} fullWidth>
-              <InputLabel>{t("Store")}</InputLabel>
-              <Select
-                value={filters.store}
-                onChange={(e) => handleFilterChange("store", e.target.value)}
-                onClick={(e) => e.stopPropagation()}
-                label={t("Store")}
-              >
-                <MenuItem value="" sx={{ width: "250px" }}>
-                  {t("All Stores")}
-                </MenuItem>
-                {getStores().map((store) => (
-                  <MenuItem key={store} value={store}>
-                    {store}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <TextField
-              fullWidth
-              label={t("Search By Barcode")}
-              value={filters.barcode}
-              onChange={(e) => handleFilterChange("barcode", e.target.value)}
-              onClick={(e) => e.stopPropagation()}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-              }}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={filters.discount}
-                  onChange={(e) =>
-                    handleFilterChange("discount", e.target.checked)
-                  }
-                  onClick={(e) => e.stopPropagation()}
-                  color="primary"
-                />
-              }
-              label={t("Discount Only")}
+        {storeTypes.map((type) => (
+          <Button
+            key={type.value}
+            onClick={() => handleStoreTypeChange(type.value)}
+            variant={selectedStoreType === type.value ? "contained" : "text"}
+            sx={{
+              mx: 1,
+              justifyContent: "flex-start",
+              minWidth: 0,
+              borderRadius: 2,
+              textTransform: "none",
+              backgroundColor:
+                selectedStoreType === type.value ? "#52b788" : "transparent",
+              color: selectedStoreType === type.value ? "white" : "inherit",
+              "&:hover": {
+                backgroundColor:
+                  selectedStoreType === type.value ? "#40916c" : "#f2f2f2",
+              },
+            }}
+          >
+            <Box
               sx={{
-                mt: 1,
-                "& .MuiFormControlLabel-label": {
-                  fontSize: "0.875rem",
-                  color: theme.palette.text.primary,
-                },
-              }}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Button
-              variant="outlined"
-              onClick={(e) => {
-                e.stopPropagation();
-                setFilters({
-                  name: "",
-                  brand: "",
-                  store: "",
-                  barcode: "",
-                  discount: false,
-                });
-              }}
-              sx={{
-                borderColor: "#52b788",
-                color: "#52b788",
-                "&:hover": {
-                  borderColor: "#40916c",
-                  backgroundColor: "rgba(82, 183, 136, 0.1)",
-                },
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                width: "100%",
               }}
             >
-              {t("Clear Filters")}
-            </Button>
-          </Grid>
-        </Grid>
+              <Avatar
+                sx={{
+                  bgcolor:
+                    selectedStoreType === type.value ? "white" : "#e8f5e9",
+                  color: "#2d6a4f",
+                  width: 40,
+                  height: 40,
+                  mb: 0.5,
+                }}
+              >
+                <Typography component="span" role="img" aria-label={type.label}>
+                  {type.icon}
+                </Typography>
+              </Avatar>
+              <Typography variant="caption" sx={{ textAlign: "center" }}>
+                {type.label}
+              </Typography>
+            </Box>
+          </Button>
+        ))}
       </Box>
-    </Paper>
+
+      {/* Right content area */}
+      <Box sx={{ pl: "96px", pt: 8, pr: 2 }}>
+        {mobileViewMode === "categories" && (
+          <>
+            <Typography sx={{ my: 2, fontWeight: 600 }}>
+              {t("Categories")}
+            </Typography>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                gap: 1.5,
+              }}
+            >
+              {categories.map((category) => (
+                <Box key={category._id} sx={{ display: "flex" }}>
+                  <Card
+                    onClick={() => handleCategoryChange(category)}
+                    sx={{
+                      cursor: "pointer",
+                      textAlign: "center",
+                      p: 1.5,
+                      width: "100%",
+                    }}
+                  >
+                    <Avatar
+                      src={
+                        category.image
+                          ? `${process.env.REACT_APP_BACKEND_URL}${category.image}`
+                          : undefined
+                      }
+                      sx={{
+                        width: 64,
+                        height: 64,
+                        bgcolor: "#52b788",
+                        color: "white",
+                        mx: "auto",
+                        mb: 1,
+                      }}
+                    >
+                      {category.icon || category.name?.charAt(0)}
+                    </Avatar>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
+                      {category.name}
+                    </Typography>
+                  </Card>
+                </Box>
+              ))}
+            </Box>
+          </>
+        )}
+
+        {mobileViewMode === "products" && selectedCategory && (
+          <>
+            {/* Simple header with back to categories to mimic other pages' top bar */}
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                mb: 1,
+              }}
+            >
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                {selectedCategory?.name}
+              </Typography>
+              <Button
+                size="small"
+                onClick={() => setMobileViewMode("categories")}
+              >
+                {t("Back")}
+              </Button>
+            </Box>
+            {/* Category Types Filter */}
+            {categoryTypes.length > 0 && (
+              <Box sx={{ mb: 2 }}>
+                {/* <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
+                  Filter by Category Type
+                </Typography> */}
+                <Box sx={{ display: "flex", gap: 1, overflowX: "auto", pb: 1 }}>
+                  <Chip
+                    label={t("All Types")}
+                    onClick={() => setSelectedCategoryType(null)}
+                    variant={
+                      selectedCategoryType === null ? "filled" : "outlined"
+                    }
+                    color="primary"
+                    sx={{
+                      backgroundColor:
+                        selectedCategoryType === null
+                          ? "#52b788"
+                          : "transparent",
+                      color:
+                        selectedCategoryType === null ? "white" : "inherit",
+                    }}
+                  />
+                  {categoryTypes.map((type) => (
+                    <Chip
+                      key={type._id}
+                      label={type.name}
+                      onClick={() => setSelectedCategoryType(type)}
+                      variant={
+                        selectedCategoryType?._id === type._id
+                          ? "filled"
+                          : "outlined"
+                      }
+                      color="primary"
+                      sx={{
+                        backgroundColor:
+                          selectedCategoryType?._id === type._id
+                            ? "#52b788"
+                            : "transparent",
+                        color:
+                          selectedCategoryType?._id === type._id
+                            ? "white"
+                            : "inherit",
+                      }}
+                    />
+                  ))}
+                </Box>
+              </Box>
+            )}
+
+            {/* Products Grid - enforce 2 columns via CSS grid */}
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                gap: 1,
+              }}
+            >
+              {filteredProducts.map((product) => (
+                <Box key={product._id} sx={{ display: "flex" }}>
+                  <Card
+                    onClick={() => handleProductClick(product)}
+                    sx={{
+                      cursor: "pointer",
+                      transition: "transform 0.2s",
+                      "&:hover": { transform: "scale(1.01)" },
+                      display: "flex",
+                      flexDirection: "column",
+                      width: "100%",
+                      height: "100%",
+                    }}
+                  >
+                    {/* Image */}
+                    {product.image ? (
+                      <CardMedia
+                        component="img"
+                        image={`${process.env.REACT_APP_BACKEND_URL}${product.image}`}
+                        alt={product.name || "Product image"}
+                        sx={{
+                          height: 130,
+                          objectFit: "contain",
+                          backgroundColor: theme.palette.grey[100],
+                        }}
+                      />
+                    ) : (
+                      <Box
+                        sx={{
+                          height: 130,
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          backgroundColor: theme.palette.grey[100],
+                        }}
+                      >
+                        <ShoppingCartIcon
+                          sx={{ fontSize: 36, color: theme.palette.grey[400] }}
+                        />
+                      </Box>
+                    )}
+
+                    {/* Content */}
+                    <CardContent
+                      sx={{
+                        p: 1.5,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 0.5,
+                        flexGrow: 1,
+                      }}
+                    >
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontWeight: 600,
+                          textAlign: "center",
+                          minHeight: "2.4em",
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                        }}
+                      >
+                        {product.name || "\u00A0"}
+                      </Typography>
+
+                      {/* Category type chip or N/A */}
+                      {/* <Box sx={{ display: "flex", justifyContent: "center" }}>
+                        <Chip
+                          label={
+                            product.categoryTypeId
+                              ? getCategoryTypeName(
+                                  product.categoryTypeId,
+                                  product.categoryId
+                                )
+                              : "N/A"
+                          }
+                          size="small"
+                          sx={{
+                            height: 20,
+                            fontSize: "0.7rem",
+                            color: "#2d6a4f",
+                            backgroundColor: "rgba(82,183,136,0.12)",
+                          }}
+                        />
+                      </Box> */}
+
+                      {/* Optional meta */}
+                      {product.storeId?.name && (
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ display: "block", textAlign: "center" }}
+                        >
+                          {product.storeId.name}
+                        </Typography>
+                      )}
+
+                      <Box sx={{ mt: "auto" }}>
+                        {/* Price + discount */}
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 1,
+                          }}
+                        >
+                          {isDiscountValid(product) &&
+                            product.previousPrice && (
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  textDecoration: "line-through",
+                                  color: "text.secondary",
+                                }}
+                              >
+                                {formatPrice(product.previousPrice)}
+                              </Typography>
+                            )}
+                          {product.newPrice && (
+                            <Typography
+                              variant="body2"
+                              sx={{ color: "#52b788", fontWeight: 700 }}
+                            >
+                              {formatPrice(product.newPrice)}
+                            </Typography>
+                          )}
+                          {isDiscountValid(product) && (
+                            <Chip
+                              label={(() => {
+                                const off = calculateDiscount(
+                                  product.previousPrice,
+                                  product.newPrice
+                                );
+                                return off === null ? t("Discount") : `${off}%`;
+                              })()}
+                              size="small"
+                              sx={{
+                                backgroundColor: "#e53e3e",
+                                color: "white",
+                                height: 18,
+                                fontSize: "0.65rem",
+                              }}
+                            />
+                          )}
+                        </Box>
+
+                        {/* View details button
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          fullWidth
+                          sx={{
+                            mt: 1,
+                            textTransform: "none",
+                            borderColor: "#52b788",
+                            color: "#2d6a4f",
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleProductClick(product);
+                          }}
+                        >
+                          View details
+                        </Button> */}
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Box>
+              ))}
+            </Box>
+          </>
+        )}
+      </Box>
+    </Box>
+  );
+
+  const renderDesktopLayout = () => (
+    <Box sx={{ display: { xs: "none", md: "block" } }}>
+      {/* Desktop layout - keeping existing design */}
+      <Box sx={{ py: 8, px: 3 }}>
+        {/* Store Type Filter */}
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Filter by Store Type
+          </Typography>
+          <Box sx={{ display: "flex", gap: 2 }}>
+            {storeTypes.map((type) => (
+              <Button
+                key={type.value}
+                variant={
+                  selectedStoreType === type.value ? "contained" : "outlined"
+                }
+                onClick={() => handleStoreTypeChange(type.value)}
+                sx={{
+                  backgroundColor:
+                    selectedStoreType === type.value
+                      ? "#52b788"
+                      : "transparent",
+                  color: selectedStoreType === type.value ? "white" : "#52b788",
+                  borderColor: "#52b788",
+                  "&:hover": {
+                    backgroundColor:
+                      selectedStoreType === type.value
+                        ? "#40916c"
+                        : "rgba(82, 183, 136, 0.1)",
+                  },
+                }}
+              >
+                {type.icon} {type.label}
+              </Button>
+            ))}
+          </Box>
+        </Box>
+
+        {/* Main Category Tabs */}
+        {categories.length > 0 && (
+          <Paper
+            elevation={0}
+            sx={{
+              mb: 3,
+              borderRadius: 3,
+              background: "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
+              border: "1px solid #e9ecef",
+            }}
+          >
+            <Box sx={{ p: 3 }}>
+              <Typography
+                variant="h6"
+                sx={{ mb: 3, display: "flex", alignItems: "center", gap: 1 }}
+              >
+                <CategoryIcon sx={{ color: "#52b788" }} />
+                Categories
+              </Typography>
+              <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                {categories.map((category) => (
+                  <Button
+                    key={category._id}
+                    variant={
+                      selectedCategory?._id === category._id
+                        ? "contained"
+                        : "outlined"
+                    }
+                    onClick={() => handleCategoryChange(category)}
+                    sx={{
+                      backgroundColor:
+                        selectedCategory?._id === category._id
+                          ? "#52b788"
+                          : "transparent",
+                      color:
+                        selectedCategory?._id === category._id
+                          ? "white"
+                          : "#52b788",
+                      borderColor: "#52b788",
+                      "&:hover": {
+                        backgroundColor:
+                          selectedCategory?._id === category._id
+                            ? "#40916c"
+                            : "rgba(82, 183, 136, 0.1)",
+                      },
+                    }}
+                  >
+                    <Avatar
+                      src={
+                        category.image
+                          ? `${process.env.REACT_APP_BACKEND_URL}${category.image}`
+                          : undefined
+                      }
+                      sx={{
+                        width: 24,
+                        height: 24,
+                        bgcolor:
+                          selectedCategory?._id === category._id
+                            ? "white"
+                            : "#52b788",
+                        color:
+                          selectedCategory?._id === category._id
+                            ? "#52b788"
+                            : "white",
+                        fontSize: "0.75rem",
+                        mr: 1,
+                      }}
+                    >
+                      {category.icon || category.name.charAt(0)}
+                    </Avatar>
+                    {category.name}
+                  </Button>
+                ))}
+              </Box>
+            </Box>
+          </Paper>
+        )}
+
+        {/* Category Types Tabs */}
+        {selectedCategory && categoryTypes.length > 0 && (
+          <Paper
+            elevation={0}
+            sx={{
+              mb: 3,
+              borderRadius: 3,
+              background: "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
+              border: "1px solid #e9ecef",
+            }}
+          >
+            <Box sx={{ p: 3 }}>
+              <Typography
+                variant="h6"
+                sx={{ mb: 3, display: "flex", alignItems: "center", gap: 1 }}
+              >
+                <ExpandMoreIcon sx={{ color: "#52b788" }} />
+                Category Types - {selectedCategory.name}
+              </Typography>
+              <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                <Button
+                  variant={
+                    selectedCategoryType === null ? "contained" : "outlined"
+                  }
+                  onClick={() => setSelectedCategoryType(null)}
+                  sx={{
+                    backgroundColor:
+                      selectedCategoryType === null ? "#52b788" : "transparent",
+                    color: selectedCategoryType === null ? "white" : "#52b788",
+                    borderColor: "#52b788",
+                    "&:hover": {
+                      backgroundColor:
+                        selectedCategoryType === null
+                          ? "#40916c"
+                          : "rgba(82, 183, 136, 0.1)",
+                    },
+                  }}
+                >
+                  All Types
+                </Button>
+                {categoryTypes.map((type) => (
+                  <Button
+                    key={type._id}
+                    variant={
+                      selectedCategoryType?._id === type._id
+                        ? "contained"
+                        : "outlined"
+                    }
+                    onClick={() => setSelectedCategoryType(type)}
+                    sx={{
+                      backgroundColor:
+                        selectedCategoryType?._id === type._id
+                          ? "#52b788"
+                          : "transparent",
+                      color:
+                        selectedCategoryType?._id === type._id
+                          ? "white"
+                          : "#52b788",
+                      borderColor: "#52b788",
+                      "&:hover": {
+                        backgroundColor:
+                          selectedCategoryType?._id === type._id
+                            ? "#40916c"
+                            : "rgba(82, 183, 136, 0.1)",
+                      },
+                    }}
+                  >
+                    {type.name}
+                  </Button>
+                ))}
+              </Box>
+            </Box>
+          </Paper>
+        )}
+
+        {selectedCategory && (
+          <>
+            {/* Products Grid - enforce 2 columns via CSS grid */}
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                gap: 2,
+              }}
+            >
+              {filteredProducts.map((product) => (
+                <Box key={product._id} sx={{ display: "flex" }}>
+                  <Card
+                    onClick={() => handleProductClick(product)}
+                    sx={{
+                      cursor: "pointer",
+                      transition: "transform 0.2s",
+                      "&:hover": { transform: "scale(1.01)" },
+                      display: "flex",
+                      flexDirection: "column",
+                      width: "100%",
+                      height: "100%",
+                    }}
+                  >
+                    {product.image ? (
+                      <CardMedia
+                        component="img"
+                        image={`${process.env.REACT_APP_BACKEND_URL}${product.image}`}
+                        alt={product.name || "Product image"}
+                        sx={{
+                          height: 180,
+                          objectFit: "contain",
+                          backgroundColor: theme.palette.grey[100],
+                        }}
+                      />
+                    ) : (
+                      <Box
+                        sx={{
+                          height: 180,
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          backgroundColor: theme.palette.grey[100],
+                        }}
+                      >
+                        <ShoppingCartIcon
+                          sx={{ fontSize: 56, color: theme.palette.grey[400] }}
+                        />
+                      </Box>
+                    )}
+                    <CardContent
+                      sx={{
+                        p: 2,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 0.5,
+                        flexGrow: 1,
+                      }}
+                    >
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          fontWeight: 600,
+                          textAlign: "center",
+                          minHeight: "2.6em",
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                        }}
+                      >
+                        {product.name || "\u00A0"}
+                      </Typography>
+
+                      {/* {product.categoryTypeId && (
+                        <Box sx={{ display: "flex", justifyContent: "center" }}>
+                          <Chip
+                            label={getCategoryTypeName(
+                              product.categoryTypeId,
+                              product.categoryId
+                            )}
+                            size="small"
+                            sx={{
+                              height: 22,
+                              fontSize: "0.75rem",
+                              color: "#2d6a4f",
+                              backgroundColor: "rgba(82,183,136,0.12)",
+                            }}
+                          />
+                        </Box>
+                      )} */}
+
+                      {product.storeId?.name && (
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ display: "block", textAlign: "center" }}
+                        >
+                          {product.storeId.name}
+                        </Typography>
+                      )}
+
+                      <Box sx={{ mt: "auto" }}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 1,
+                          }}
+                        >
+                          {isDiscountValid(product) &&
+                            product.previousPrice && (
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  textDecoration: "line-through",
+                                  color: "text.secondary",
+                                }}
+                              >
+                                {formatPrice(product.previousPrice)}
+                              </Typography>
+                            )}
+                          {product.newPrice && (
+                            <Typography
+                              variant="body1"
+                              sx={{ color: "#52b788", fontWeight: 700 }}
+                            >
+                              {formatPrice(product.newPrice)}
+                            </Typography>
+                          )}
+                          {isDiscountValid(product) && (
+                            <Chip
+                              label={(() => {
+                                const off = calculateDiscount(
+                                  product.previousPrice,
+                                  product.newPrice
+                                );
+                                return off === null ? t("Discount") : `${off}%`;
+                              })()}
+                              size="small"
+                              sx={{
+                                backgroundColor: "#e53e3e",
+                                color: "white",
+                                height: 20,
+                                fontSize: "0.7rem",
+                              }}
+                            />
+                          )}
+                        </Box>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Box>
+              ))}
+            </Box>
+          </>
+        )}
+      </Box>
+    </Box>
   );
 
   if (loading) {
@@ -599,880 +1122,186 @@ const ProductCategory = () => {
   }
 
   return (
-    <Box sx={{ py: 8, px: { xs: 2, sm: 1.5, md: 3 } }}>
-      <Box display="flex" alignItems="center" mb={3}>
-        <CategoryIcon
-          sx={{
-            fontSize: { xs: 32, sm: 36, md: 40 },
-            mr: { xs: 1, sm: 2 },
-            color: theme.palette.mode === "dark" ? "contained" : "#primary",
-          }}
-        />
-        <Box>
-          <Typography
-            variant="h4"
-            component="h1"
-            gutterBottom
-            sx={{
-              color: theme.palette.mode === "dark" ? "contained" : "#primary",
-              fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" },
-            }}
-          >
-            {t("Products")}
-          </Typography>
-          <Typography
-            variant="subtitle1"
-            sx={{
-              color: theme.palette.mode === "dark" ? "contained" : "#primary",
-              fontSize: { xs: "0.875rem", sm: "1rem" },
-            }}
-            gutterBottom
-          >
-            {t("Browse Your favourite products")}
-          </Typography>
-        </Box>
-      </Box>
+    <>
+      {renderMobileLayout()}
+      {renderDesktopLayout()}
 
-      {/* Main Category Tabs */}
-      {categories.length > 0 && (
-        <Paper
-          elevation={0}
-          sx={{
-            mb: 3,
-            borderRadius: { xs: 2, md: 3 },
-            background:
-              theme.palette.mode === "dark"
-                ? "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)"
-                : "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
-            border: `1px solid ${
-              theme.palette.mode === "dark" ? "#34495e" : "#e9ecef"
-            }`,
-          }}
-        >
-          <Box sx={{ p: { xs: 2, md: 3 } }}>
-            <Typography
-              variant="h6"
-              sx={{
-                mb: 3,
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
-                color: theme.palette.text.primary,
-                fontSize: { xs: "1rem", md: "1.25rem" },
-              }}
-            >
-              <CategoryIcon sx={{ color: "#52b788" }} />
-              {t("Categories")}
-            </Typography>
-            <Tabs
-              value={selectedCategory}
-              onChange={handleCategoryChange}
-              variant="scrollable"
-              scrollButtons="auto"
-              sx={{
-                "& .MuiTabs-indicator": {
-                  backgroundColor: "#52b788",
-                  height: 3,
-                  borderRadius: 2,
-                },
-                "& .MuiTab-root": {
-                  minWidth: { xs: "120px", sm: "auto" },
-                  fontSize: { xs: "0.75rem", sm: "0.875rem" },
-                },
-              }}
-            >
-              {categories.map((category) => (
-                <Tab
-                  key={category._id}
-                  label={
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <Avatar
-                        sx={{
-                          width: { xs: 20, md: 24 },
-                          height: { xs: 20, md: 24 },
-                          bgcolor: "#52b788",
-                          color: "#fff",
-                          fontSize: { xs: "0.6rem", md: "0.75rem" },
-                        }}
-                      >
-                        {category.icon || category.name.charAt(0)}
-                      </Avatar>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontWeight:
-                            selectedCategory?._id === category._id ? 600 : 400,
-                          fontSize: { xs: "0.7rem", sm: "0.875rem" },
-                        }}
-                      >
-                        {category.name}
-                      </Typography>
-                    </Box>
-                  }
-                  value={category}
-                  sx={{
-                    minHeight: { xs: 48, sm: 56 },
-                    px: { xs: 1, sm: 2 },
-                  }}
-                />
-              ))}
-            </Tabs>
-          </Box>
-        </Paper>
-      )}
-
-      {/* Category Types Tabs */}
-      {selectedCategory && categoryTypes.length > 0 && (
-        <Paper
-          elevation={0}
-          sx={{
-            mb: 3,
-            borderRadius: { xs: 2, md: 3 },
-            background:
-              theme.palette.mode === "dark"
-                ? "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)"
-                : "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
-            border: `1px solid ${
-              theme.palette.mode === "dark" ? "#34495e" : "#e9ecef"
-            }`,
-          }}
-        >
-          <Box sx={{ p: { xs: 2, md: 3 } }}>
-            <Typography
-              variant="h6"
-              sx={{
-                mb: 3,
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
-                color: theme.palette.text.primary,
-                fontSize: { xs: "1rem", md: "1.25rem" },
-              }}
-            >
-              <ExpandMoreIcon sx={{ color: "#52b788" }} />
-              {t("Category Types")} - {selectedCategory.name}
-            </Typography>
-            <Tabs
-              value={selectedCategoryType}
-              onChange={handleCategoryTypeChange}
-              variant="scrollable"
-              scrollButtons="auto"
-              sx={{
-                "& .MuiTabs-indicator": {
-                  backgroundColor: "#52b788",
-                  height: 3,
-                  borderRadius: 2,
-                },
-                "& .MuiTab-root": {
-                  minWidth: { xs: "100px", sm: "auto" },
-                },
-              }}
-            >
-              <Tab
-                label={
-                  <Chip
-                    label={t("All Types")}
-                    size="small"
-                    variant={
-                      selectedCategoryType === null ? "filled" : "outlined"
-                    }
-                    color="primary"
-                    sx={{
-                      fontWeight: selectedCategoryType === null ? 600 : 400,
-                      backgroundColor:
-                        selectedCategoryType === null
-                          ? "#52b788"
-                          : "transparent",
-                      color: selectedCategoryType === null ? "#fff" : "#52b788",
-                      fontSize: { xs: "0.7rem", sm: "0.875rem" },
-                    }}
-                  />
-                }
-                value={null}
-                sx={{ minHeight: { xs: 32, md: 40 }, px: { xs: 0.5, md: 1 } }}
-              />
-              {categoryTypes.map((type) => (
-                <Tab
-                  key={type._id}
-                  label={
-                    <Chip
-                      label={type.name}
-                      size="small"
-                      variant={
-                        selectedCategoryType?._id === type._id
-                          ? "filled"
-                          : "outlined"
-                      }
-                      color="primary"
-                      sx={{
-                        fontWeight:
-                          selectedCategoryType?._id === type._id ? 600 : 400,
-                        backgroundColor:
-                          selectedCategoryType?._id === type._id
-                            ? "#52b788"
-                            : "transparent",
-                        color:
-                          selectedCategoryType?._id === type._id
-                            ? "#fff"
-                            : "#52b788",
-                        fontSize: { xs: "0.7rem", sm: "0.875rem" },
-                      }}
-                    />
-                  }
-                  value={type}
-                  sx={{ minHeight: { xs: 32, md: 40 }, px: { xs: 0.5, md: 1 } }}
-                />
-              ))}
-            </Tabs>
-          </Box>
-        </Paper>
-      )}
-
-      {selectedCategory && (
-        <>
-          <Box display="flex" alignItems="center" mb={2}>
-            <ShoppingCartIcon
-              sx={{ fontSize: 24, mr: 1, color: theme.palette.primary.main }}
-            />
-            <Typography
-              variant="h5"
-              gutterBottom
-              sx={{
-                color:
-                  theme.palette.mode === "dark"
-                    ? theme.palette.primary.contrastText
-                    : theme.palette.text.primary,
-                backgroundColor:
-                  theme.palette.mode === "dark"
-                    ? theme.palette.primary.main
-                    : "transparent",
-                fontSize: { xs: "1.25rem", sm: "1.5rem", md: "1.75rem" },
-              }}
-            >
-              {selectedCategory.name}
-            </Typography>
-          </Box>
-
-          {/* Filters Section */}
-          {renderFilters()}
-
-          {/* Products Grid */}
-          <Grid
-            container
-            justifyContent="center"
-            gap={3}
-            spacing={{ xs: 1, md: 3 }}
-            sx={{ width: { xs: "100%", md: "100%" } }}
-          >
-            {filteredProducts
-              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-              .map((product) => (
-                <Grid
-                  item
-                  textAlign="center"
-                  xs={6}
-                  sm={4}
-                  md={3}
-                  lg={2}
-                  key={product._id}
-                >
-                  <Card
-                    sx={{
-                      width: { xs: "150px", md: "220px" },
-                      height: { xs: "auto", md: "100%" },
-                      minHeight: { xs: "220px", md: "auto" },
-                      transition: "transform 0.2s",
-                      "&:hover": { transform: "scale(1.02)" },
-                    }}
-                  >
-                    {product.image ? (
-                      <CardMedia
-                        component="img"
-                        height="200"
-                        image={`${process.env.REACT_APP_BACKEND_URL}${product.image}`}
-                        alt={product.name || "Product image"}
-                        sx={{
-                          objectFit: "contain",
-                          height: { xs: 120, sm: 160, md: 200 },
-                        }}
-                      />
-                    ) : (
-                      <Box
-                        sx={{
-                          height: { xs: 120, sm: 160, md: 200 },
-                          display: "flex",
-                          justifyContent: "center",
-                          backgroundColor: theme.palette.grey[200],
-                        }}
-                      >
-                        <ShoppingCartIcon
-                          sx={{
-                            fontSize: { xs: 30, sm: 40, md: 60 },
-                            color: theme.palette.grey[400],
-                          }}
-                        />
-                      </Box>
-                    )}
-                    <CardContent sx={{ p: { xs: 1, md: 2 } }}>
-                      <Typography
-                        variant="h6"
-                        component="div"
-                        gutterBottom
-                        sx={{
-                          minHeight: { xs: 20, md: 28 },
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                          fontSize: { xs: "0.75rem", sm: "1rem", md: "1rem" },
-                        }}
-                      >
-                        {product.name || "\u00A0"}
-                      </Typography>
-
-                      {product.categoryTypeId && (
-                        <Chip
-                          label={getCategoryTypeName(
-                            product.categoryTypeId,
-                            product.categoryId
-                          )}
-                          size="small"
-                          variant="outlined"
-                          sx={{
-                            fontSize: { xs: "0.5rem", sm: "0.7rem" },
-                            mb: 1,
-                            borderColor: "#52b788",
-                            color: "#52b788",
-                            backgroundColor: "rgba(82, 183, 136, 0.05)",
-                            height: { xs: "16px", sm: "24px" },
-                          }}
-                        />
-                      )}
-                      {product.brandId ? (
-                        <Box display="flex" mb={1}>
-                          <BusinessIcon
-                            sx={{
-                              fontSize: { xs: 12, md: 16 },
-                              mr: { xs: 0.5, md: 1 },
-                              color: theme.palette.text.secondary,
-                            }}
-                          />
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              color: theme.palette.text.secondary,
-                              fontSize: { xs: "0.55rem", sm: "0.75rem" },
-                            }}
-                          >
-                            {product.brandId.name ? (
-                              <>
-                                {t("Brand")}: {product.brandId.name}
-                              </>
-                            ) : (
-                              "\u00A0"
-                            )}
-                          </Typography>
-                        </Box>
-                      ) : (
-                        <Box sx={{ height: { xs: 16, md: 24 }, mb: 1 }} />
-                      )}
-                      {product.storeId ? (
-                        <Box display="flex" mb={1}>
-                          <StorefrontIcon
-                            sx={{
-                              fontSize: { xs: 12, md: 16 },
-                              mr: { xs: 0.5, md: 1 },
-                              color: theme.palette.text.secondary,
-                            }}
-                          />
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              color: theme.palette.text.secondary,
-                              fontSize: { xs: "0.55rem", sm: "0.75rem" },
-                            }}
-                          >
-                            {product.storeId.name ? (
-                              <>
-                                {t("Store")}: {product.storeId.name}
-                              </>
-                            ) : (
-                              "\u00A0"
-                            )}
-                          </Typography>
-                        </Box>
-                      ) : (
-                        <Box sx={{ height: { xs: 16, md: 24 }, mb: 1 }} />
-                      )}
-
-                      {/* Weight and Discount Info */}
-                      <Box display="flex" gap={1} mb={1}>
-                        {product.isDiscount && (
-                          <>
-                            <Typography
-                              variant="body2"
-                              sx={{ fontSize: { xs: "0.6rem", md: "0.7rem" } }}
-                              color="text.secondary"
-                            >
-                              {product.expireDate ? (
-                                <>{t("Expires")}: </>
-                              ) : (
-                                "\u00A0"
-                              )}
-                            </Typography>
-                            <Typography
-                              variant="body2"
-                              color="#2c3e50"
-                              sx={{
-                                minHeight: { xs: 16, md: 20 },
-                                fontSize: { xs: "0.5rem", md: "0.7rem" },
-                              }}
-                            >
-                              {product.expireDate
-                                ? new Date(
-                                    product.expireDate
-                                  ).toLocaleDateString("ar-SY", {
-                                    year: "numeric",
-                                    month: "numeric",
-                                    day: "numeric",
-                                  })
-                                : "\u00A0"}
-                            </Typography>
-                          </>
-                        )}
-                      </Box>
-                      {/* Like, View Count, and Rating Section */}
-                      <Box
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="space-between"
-                        mb={1}
-                        sx={{ minHeight: { xs: 24, md: 32 } }}
-                      >
-                        {/* Like Button */}
-                        <Tooltip
-                          title={
-                            isAuthenticated
-                              ? likeStates[product._id]
-                                ? t("Unlike")
-                                : t("Like")
-                              : t("Login to like")
-                          }
-                        >
-                          <IconButton
-                            onClick={(e) => handleLikeClick(product._id, e)}
-                            disabled={likeLoading[product._id]}
-                            size="small"
-                            sx={{
-                              color: likeStates[product._id]
-                                ? "#e91e63"
-                                : theme.palette.text.secondary,
-                              "&:hover": {
-                                color: likeStates[product._id]
-                                  ? "#c2185b"
-                                  : "#e91e63",
-                              },
-                            }}
-                          >
-                            {likeLoading[product._id] ? (
-                              <CircularProgress size={16} />
-                            ) : likeStates[product._id] ? (
-                              <FavoriteIcon
-                                sx={{ fontSize: { xs: 16, md: 18 } }}
-                              />
-                            ) : (
-                              <FavoriteBorderIcon
-                                sx={{ fontSize: { xs: 16, md: 18 } }}
-                              />
-                            )}
-                          </IconButton>
-                        </Tooltip>
-
-                        {/* Like Count */}
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            color: theme.palette.text.secondary,
-                            fontSize: { xs: "0.6rem", md: "0.75rem" },
-                            minWidth: "20px",
-                            textAlign: "center",
-                          }}
-                        >
-                          {likeCounts[product._id] || 0}
-                        </Typography>
-
-                        {/* View Count */}
-                        <Box display="flex" alignItems="center" gap={0.5}>
-                          <VisibilityIcon
-                            sx={{
-                              fontSize: { xs: 12, md: 14 },
-                              color: theme.palette.text.secondary,
-                            }}
-                          />
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              color: theme.palette.text.secondary,
-                              fontSize: { xs: "0.6rem", md: "0.75rem" },
-                            }}
-                          >
-                            {product.viewCount || 0}
-                          </Typography>
-                        </Box>
-
-                        {/* Rating */}
-                        <Box display="flex" alignItems="center" gap={0.5}>
-                          <StarIcon
-                            sx={{
-                              fontSize: { xs: 12, md: 14 },
-                              color: "#ffc107",
-                            }}
-                          />
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              color: theme.palette.text.secondary,
-                              fontSize: { xs: "0.6rem", md: "0.75rem" },
-                            }}
-                          >
-                            {product.averageRating
-                              ? product.averageRating.toFixed(1)
-                              : "0.0"}
-                          </Typography>
-                        </Box>
-                      </Box>
-
-                      {/* Price and Discount Section */}
-                      <Box
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="space-between"
-                        mb={2}
-                      >
-                        <Box>
-                          {product.previousPrice &&
-                          product.previousPrice > product.newPrice ? (
-                            <Typography
-                              variant="body2"
-                              color={
-                                theme.palette.mode === "dark"
-                                  ? "red"
-                                  : "text.secondary"
-                              }
-                              sx={{
-                                textDecoration: "line-through",
-                                minHeight: { xs: 16, md: 20 },
-                                fontSize: { xs: "0.6rem", md: "0.875rem" },
-                              }}
-                            >
-                              {formatPrice(product.previousPrice)}
-                            </Typography>
-                          ) : (
-                            <Typography
-                              variant="body2"
-                              sx={{ minHeight: { xs: 16, md: 20 } }}
-                            >
-                              {"\u00A0"}
-                            </Typography>
-                          )}
-                          <Typography
-                            variant="h6"
-                            sx={{
-                              color:
-                                theme.palette.mode === "dark"
-                                  ? "white"
-                                  : theme.palette.primary.main,
-                              fontWeight: 700,
-                              fontSize: {
-                                xs: "0.875rem",
-                                sm: "1rem",
-                                md: "1.125rem",
-                              },
-                            }}
-                          >
-                            {formatPrice(product.newPrice)}
-                          </Typography>
-                        </Box>
-                        {(product.previousPrice &&
-                          product.previousPrice > product.newPrice) ||
-                        product.isDiscount ? (
-                          <Chip
-                            icon={<LocalOfferIcon />}
-                            label={
-                              product.previousPrice &&
-                              product.previousPrice > product.newPrice
-                                ? `-${calculateDiscount(
-                                    product.previousPrice,
-                                    product.newPrice
-                                  )}%`
-                                : t("Discount")
-                            }
-                            color="error"
-                            size="small"
-                            sx={{
-                              fontSize: { xs: "0.5rem", sm: "0.75rem" },
-                              height: { xs: "20px", sm: "24px" },
-                            }}
-                          />
-                        ) : null}
-                      </Box>
-                      <Button
-                        variant="outlined"
-                        fullWidth
-                        startIcon={<VisibilityIcon />}
-                        onClick={() => handleProductClick(product)}
-                        sx={{
-                          mt: 2,
-                          fontSize: { xs: "0.7rem", sm: "0.875rem" },
-                          py: { xs: 0.5, sm: 1 },
-                          minHeight: { xs: "32px", sm: "36px" },
-                        }}
-                      >
-                        {t("View details")}
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-          </Grid>
-
-          {/* Pagination */}
-          {filteredProducts.length > 0 && (
-            <Box display="flex" justifyContent="center" mt={3}>
-              <TablePagination
-                component="div"
-                count={filteredProducts.length}
-                page={page}
-                onPageChange={handleChangePage}
-                rowsPerPage={rowsPerPage}
-                onRowsPerPageChange={handleChangeRowsPerPage}
-                rowsPerPageOptions={[10, 20, 50, 100]}
-                labelRowsPerPage={t("Products per page")}
-                labelDisplayedRows={({ from, to, count }) =>
-                  `${from}-${to} ${t("of")} ${
-                    count !== -1 ? count : `${t("more than")} ${to}`
-                  }`
-                }
-              />
-            </Box>
-          )}
-
-          {filteredProducts.length === 0 &&
-            selectedCategory &&
-            products.length > 0 && (
-              <Alert severity="info">
-                {t(
-                  "No products match your current filters. Try adjusting your search criteria."
-                )}
-              </Alert>
-            )}
-
-          {products.length === 0 && selectedCategory && (
-            <Alert severity="info">
-              {t("No products found in the")} {selectedCategory.name}{" "}
-              {t("category")}.
-            </Alert>
-          )}
-
-          {categories.length === 0 && (
-            <Alert severity="info">
-              No categories found. Add some products through the admin panel.
-            </Alert>
-          )}
-        </>
-      )}
-
-      {/* Product Details Dialog */}
+      {/* Product Detail Dialog */}
       <Dialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
-        maxWidth="sm"
+        maxWidth="md"
         fullWidth
       >
         <DialogTitle>
-          <Box display="flex" alignItems="center" gap={1}>
-            <ShoppingCartIcon color="primary" />
-            <Typography variant="h6" component="span">
-              {selectedProduct?.name}
-            </Typography>
-          </Box>
+          {selectedProduct?.name}
+          <IconButton
+            onClick={() => setDialogOpen(false)}
+            sx={{ position: "absolute", right: 8, top: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
         </DialogTitle>
         <DialogContent>
           {selectedProduct && (
-            <Paper
-              elevation={2}
-              sx={{ p: 3, borderRadius: 3, bgcolor: "background.default" }}
-            >
-              {selectedProduct.image && (
-                <Box display="flex" justifyContent="center" mb={2}>
-                  <img
-                    src={`${process.env.REACT_APP_BACKEND_URL}${selectedProduct.image}`}
-                    alt={selectedProduct.name || "Product image"}
-                    style={{
-                      maxWidth: 220,
-                      maxHeight: 220,
-                      borderRadius: 16,
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-                      objectFit: "cover",
-                    }}
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                {selectedProduct.image ? (
+                  <CardMedia
+                    component="img"
+                    height="200"
+                    image={`${process.env.REACT_APP_BACKEND_URL}${selectedProduct.image}`}
+                    alt={selectedProduct.name}
+                    sx={{ objectFit: "contain", borderRadius: 1 }}
                   />
-                </Box>
-              )}
-              <Box display="flex" flexDirection="column" gap={1}>
-                <Typography
-                  variant="h6"
-                  color="primary"
-                  align="center"
-                  gutterBottom
-                >
+                ) : (
+                  <Box
+                    sx={{
+                      height: 400,
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      backgroundColor: theme.palette.grey[200],
+                      borderRadius: 1,
+                    }}
+                  >
+                    <ShoppingCartIcon
+                      sx={{ fontSize: 80, color: theme.palette.grey[400] }}
+                    />
+                  </Box>
+                )}
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Typography variant="h5" gutterBottom>
                   {selectedProduct.name}
                 </Typography>
-                <Box display="flex" alignItems="center" gap={1}>
-                  <CategoryIcon fontSize="small" color="action" />
-                  <Typography variant="body2" color="text.secondary">
-                    {t("Category")}: {selectedProduct.categoryId?.name || "N/A"}
+
+                {selectedProduct.description && (
+                  <Typography variant="body1" color="text.secondary" paragraph>
+                    {selectedProduct.description}
                   </Typography>
-                </Box>
-                {selectedProduct.categoryTypeId && (
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <ExpandMoreIcon fontSize="small" color="action" />
-                    <Typography variant="body2" color="text.secondary">
-                      {t("Type")}:{" "}
-                      {getCategoryTypeName(
-                        selectedProduct.categoryTypeId,
-                        selectedProduct.categoryId
-                      )}
-                    </Typography>
-                  </Box>
-                )}
-                {selectedProduct.brandId && (
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <BusinessIcon fontSize="small" color="action" />
-                    <Typography variant="body2" color="text.secondary">
-                      {t("Brand")}: {selectedProduct.brandId.name}
-                    </Typography>
-                  </Box>
-                )}
-                {selectedProduct.storeId && (
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <StorefrontIcon fontSize="small" color="action" />
-                    <Typography variant="body2" color="text.secondary">
-                      {t("Store")}: {selectedProduct.storeId.name}
-                    </Typography>
-                  </Box>
-                )}
-                {selectedProduct.barcode && (
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <Typography variant="body2" color="text.secondary">
-                      {t("Barcode")}: {selectedProduct.barcode}
-                    </Typography>
-                  </Box>
                 )}
 
-                {selectedProduct.expireDate && (
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <LocalOfferIcon fontSize="small" color="action" />
-                    <Typography variant="body2" color="text.secondary">
-                      {t("Expires")}:{" "}
-                      {new Date(selectedProduct.expireDate).toLocaleDateString(
-                        "ar-SY",
-                        {
-                          year: "numeric",
-                          month: "numeric",
-                          day: "numeric",
-                        }
-                      )}
-                    </Typography>
-                  </Box>
+                {selectedProduct.brandId?.name && (
+                  <Typography
+                    variant="body1"
+                    gutterBottom
+                    sx={{ cursor: "pointer" }}
+                    onClick={() => {
+                      setDialogOpen(false);
+                      navigate(`/brands/${selectedProduct.brandId._id}`);
+                    }}
+                  >
+                    <strong>Brand:</strong> {selectedProduct.brandId.name}
+                  </Typography>
                 )}
-                <Box
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="center"
-                  gap={2}
-                  mt={2}
-                >
-                  {selectedProduct.previousPrice &&
-                    selectedProduct.previousPrice >
-                      selectedProduct.newPrice && (
+
+                {selectedProduct.storeId?.name && (
+                  <Typography
+                    variant="body1"
+                    gutterBottom
+                    sx={{ cursor: "pointer" }}
+                    onClick={() => {
+                      setDialogOpen(false);
+                      navigate(`/stores/${selectedProduct.storeId._id}`);
+                    }}
+                  >
+                    <strong>{t("Store")}:</strong>{" "}
+                    {selectedProduct.storeId.name}
+                  </Typography>
+                )}
+
+                {isDiscountValid(selectedProduct) && (
+                  <Box sx={{ mt: 2 }}>
+                    {selectedProduct.previousPrice ? (
                       <Typography
-                        variant="body1"
-                        color="text.secondary"
-                        sx={{ textDecoration: "line-through" }}
+                        variant="h6"
+                        sx={{
+                          textDecoration: "line-through",
+                          color: "text.secondary",
+                        }}
                       >
                         {formatPrice(selectedProduct.previousPrice)}
                       </Typography>
+                    ) : (
+                      ""
                     )}
-                  <Typography variant="h5" color="primary">
-                    {formatPrice(selectedProduct.newPrice)}
-                  </Typography>
-                  {selectedProduct.previousPrice &&
-                    selectedProduct.previousPrice >
-                      selectedProduct.newPrice && (
-                      <Chip
-                        label={`-${calculateDiscount(
+                    <Typography
+                      variant="h4"
+                      sx={{ color: "#52b788", fontWeight: 600 }}
+                    >
+                      {formatPrice(selectedProduct.newPrice)}
+                    </Typography>
+                    <Chip
+                      label={(() => {
+                        const off = calculateDiscount(
                           selectedProduct.previousPrice,
                           selectedProduct.newPrice
-                        )}% OFF`}
-                        color="error"
-                        size="small"
-                      />
+                        );
+                        return off === null ? t("Discount") : `${off}%`;
+                      })()}
+                      size="large"
+                      sx={{
+                        backgroundColor: "#52b788",
+                        color: "white",
+                        fontSize: "1rem",
+                        mt: 1,
+                      }}
+                    />
+                  </Box>
+                )}
+
+                {!isDiscountValid(selectedProduct) &&
+                  selectedProduct.newPrice && (
+                    <Typography
+                      variant="h4"
+                      sx={{ color: "#52b788", fontWeight: 600, mt: 2 }}
+                    >
+                      {formatPrice(selectedProduct.newPrice)}
+                    </Typography>
+                  )}
+
+                <Box sx={{ mt: 3, display: "flex", gap: 2 }}>
+                  <IconButton
+                    onClick={(e) => handleLikeClick(selectedProduct._id, e)}
+                    disabled={likeLoading[selectedProduct._id]}
+                    sx={{
+                      border: "2px solid #52b788",
+                      color: likeStates[selectedProduct._id]
+                        ? "#52b788"
+                        : "inherit",
+                    }}
+                  >
+                    {likeStates[selectedProduct._id] ? (
+                      <FavoriteIcon />
+                    ) : (
+                      <FavoriteBorderIcon />
                     )}
+                  </IconButton>
                 </Box>
-              </Box>
-            </Paper>
+              </Grid>
+            </Grid>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => setDialogOpen(false)}
-            variant="contained"
-            color="primary"
-          >
-            {t("Close")}
-          </Button>
-        </DialogActions>
       </Dialog>
 
       {/* Login Notification Dialog */}
       <Dialog
         open={loginNotificationOpen}
         onClose={() => setLoginNotificationOpen(false)}
-        maxWidth="xs"
-        fullWidth
       >
-        <DialogTitle>
-          <Box display="flex" alignItems="center" gap={1}>
-            <Typography variant="h6" component="span">
-              {t("Login Required")}
-            </Typography>
-          </Box>
-        </DialogTitle>
+        <DialogTitle>Login Required</DialogTitle>
         <DialogContent>
-          <Typography variant="body1" sx={{ mb: 2 }}>
-            {t("You must login to like products. Do you want to login?")}
-          </Typography>
+          <Typography>Please log in to like products.</Typography>
         </DialogContent>
         <DialogActions>
-          <Button
-            onClick={() => setLoginNotificationOpen(false)}
-            variant="outlined"
-            color="primary"
-          >
-            {t("No")}
-          </Button>
-          <Button
-            onClick={() => {
-              setLoginNotificationOpen(false);
-              navigate("/login");
-            }}
-            variant="contained"
-            color="primary"
-          >
-            {t("Yes")}
+          <Button onClick={() => setLoginNotificationOpen(false)}>Close</Button>
+          <Button onClick={() => navigate("/login")} variant="contained">
+            Login
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </>
   );
 };
 

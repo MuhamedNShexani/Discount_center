@@ -1,4 +1,6 @@
 const Category = require("../models/Category");
+const path = require("path");
+const fs = require("fs");
 
 // @desc    Get all categories
 // @route   GET /api/categories
@@ -98,6 +100,23 @@ const getCategoryTypes = async (req, res) => {
   }
 };
 
+// @desc    Get categories by store type
+// @route   GET /api/categories/store-type/:storeType
+const getCategoriesByStoreType = async (req, res) => {
+  try {
+    const { storeType } = req.params;
+    const categories = await Category.find({
+      storeType: storeType,
+      isActive: true,
+    }).sort({ createdAt: 1 });
+
+    res.json(categories);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+};
+
 module.exports = {
   getCategories,
   getCategoryById,
@@ -105,4 +124,5 @@ module.exports = {
   updateCategory,
   deleteCategory,
   getCategoryTypes,
+  getCategoriesByStoreType,
 };

@@ -10,6 +10,10 @@ const categorySchema = new mongoose.Schema({
     type: String,
     required: false,
   },
+  image: {
+    type: String,
+    required: false,
+  },
   icon: {
     type: String,
     required: false,
@@ -26,6 +30,10 @@ const categorySchema = new mongoose.Schema({
         required: true,
       },
       description: {
+        type: String,
+        required: false,
+      },
+      image: {
         type: String,
         required: false,
       },
