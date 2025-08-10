@@ -1005,6 +1005,7 @@ const resources = {
         "دەتەوێت بچیتە ژوورەوە ؟",
       "Beauty & Care": "جوانکارى",
       Yes: "بەڵێ",
+      Types: "جۆرەکان",
       "Please select a category to view its types.":
         "تکایە پۆڵێنێک دیاریبکە بۆ بینینی جۆرەکانیان.",
       No: "نەخێر",

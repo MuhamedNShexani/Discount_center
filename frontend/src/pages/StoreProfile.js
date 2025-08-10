@@ -359,10 +359,7 @@ const StoreProfile = () => {
           width: "100%",
           borderRadius: 2,
           overflow: "hidden",
-          background:
-            theme.palette.mode === "dark"
-              ? "linear-gradient(135deg, #34495e 0%, #2c3e50 100%)"
-              : "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
+          background: "linear-gradient(135deg, #34495e 0%, #2c3e50 100%)",
           border: `1px solid ${
             theme.palette.mode === "dark" ? "#4a5568" : "#e2e8f0"
           }`,
@@ -1026,14 +1023,13 @@ const StoreProfile = () => {
         sx={{
           mb: 3,
           borderRadius: 2,
-          borderColor: theme.palette.mode === "dark" ? "#52b788" : "#40916c",
-          color: theme.palette.mode === "dark" ? "#52b788" : "#40916c",
+          borderColor: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+          color: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
           "&:hover": {
-            borderColor: theme.palette.mode === "dark" ? "#40916c" : "#52b788",
+            borderColor: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
             backgroundColor:
-              theme.palette.mode === "dark"
-                ? "rgba(82, 183, 136, 0.1)"
-                : "rgba(64, 145, 108, 0.1)",
+              theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+            color: theme.palette.mode === "dark" ? "#52b788" : "white",
           },
         }}
       >
@@ -1047,12 +1043,9 @@ const StoreProfile = () => {
           mb: 4,
           borderRadius: 4,
           overflow: "hidden",
-          background:
-            theme.palette.mode === "dark"
-              ? "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)"
-              : "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
+          background: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
           border: `1px solid ${
-            theme.palette.mode === "dark" ? "#34495e" : "#e9ecef"
+            theme.palette.mode === "dark" ? "#40916c" : "#34495e"
           }`,
           boxShadow:
             theme.palette.mode === "dark"
@@ -1063,10 +1056,7 @@ const StoreProfile = () => {
         {/* Header Background */}
         <Box
           sx={{
-            background:
-              theme.palette.mode === "dark"
-                ? "linear-gradient(135deg, #52b788 0%, #40916c 100%)"
-                : "linear-gradient(135deg, #52b788 0%, #40916c 100%)",
+            background: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
             p: { xs: 2, sm: 3, md: 4 },
             color: "white",
             position: "relative",
@@ -1441,7 +1431,7 @@ const StoreProfile = () => {
                 fontSize: { xs: "0.875rem", sm: "1rem" },
                 "&.Mui-selected": {
                   backgroundColor:
-                    theme.palette.mode === "dark" ? "#52b788" : "#52b788",
+                    theme.palette.mode === "dark" ? "#40916c" : "#52b788",
                   color: "white",
                   boxShadow: "0 4px 12px rgba(82, 183, 136, 0.3)",
                 },
@@ -1516,7 +1506,7 @@ const StoreProfile = () => {
                 <Typography
                   variant="body1"
                   sx={{
-                    color: theme.palette.text.secondary,
+                    color: theme.palette.mode === "dark" ? "white" : "black",
                     maxWidth: 500,
                     mx: "auto",
                     lineHeight: 1.6,
@@ -1563,7 +1553,7 @@ const StoreProfile = () => {
                 <Typography
                   variant="body1"
                   sx={{
-                    color: theme.palette.text.secondary,
+                    color: theme.palette.mode === "dark" ? "white" : "black",
                     maxWidth: 500,
                     mx: "auto",
                     lineHeight: 1.6,

@@ -398,12 +398,21 @@ const ProductCategory = () => {
               minWidth: 0,
               borderRadius: 2,
               textTransform: "none",
+
               backgroundColor:
-                selectedStoreType === type.value ? "#52b788" : "transparent",
+                selectedStoreType === type.value
+                  ? theme.palette.mode === "dark"
+                    ? "#40916c"
+                    : "#34495e"
+                  : "transparent",
               color: selectedStoreType === type.value ? "white" : "inherit",
               "&:hover": {
                 backgroundColor:
-                  selectedStoreType === type.value ? "#40916c" : "#f2f2f2",
+                  selectedStoreType === type.value
+                    ? theme.palette.mode === "dark"
+                      ? "#40916c"
+                      : "#34495e"
+                    : "transparent",
               },
             }}
           >
@@ -438,10 +447,23 @@ const ProductCategory = () => {
       </Box>
 
       {/* Right content area */}
-      <Box sx={{ pl: "96px", pt: 8, pr: 2 }}>
+      <Box
+        sx={{
+          pl: "96px",
+          pt: 8,
+          pr: 2,
+          color: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+        }}
+      >
         {mobileViewMode === "categories" && (
           <>
-            <Typography sx={{ my: 2, fontWeight: 600 }}>
+            <Typography
+              sx={{
+                my: 2,
+                fontWeight: 600,
+                color: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+              }}
+            >
               {t("Categories")}
             </Typography>
             <Box
@@ -500,12 +522,21 @@ const ProductCategory = () => {
                 mb: 1,
               }}
             >
-              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 700,
+                  color: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+                }}
+              >
                 {selectedCategory?.name}
               </Typography>
               <Button
                 size="small"
                 onClick={() => setMobileViewMode("categories")}
+                sx={{
+                  color: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+                }}
               >
                 {t("Back")}
               </Button>
@@ -527,7 +558,9 @@ const ProductCategory = () => {
                     sx={{
                       backgroundColor:
                         selectedCategoryType === null
-                          ? "#52b788"
+                          ? theme.palette.mode === "dark"
+                            ? "#40916c"
+                            : "#34495e"
                           : "transparent",
                       color:
                         selectedCategoryType === null ? "white" : "inherit",
@@ -547,7 +580,9 @@ const ProductCategory = () => {
                       sx={{
                         backgroundColor:
                           selectedCategoryType?._id === type._id
-                            ? "#52b788"
+                            ? theme.palette.mode === "dark"
+                              ? "#40916c"
+                              : "#34495e"
                             : "transparent",
                         color:
                           selectedCategoryType?._id === type._id
@@ -591,7 +626,7 @@ const ProductCategory = () => {
                         sx={{
                           height: 130,
                           objectFit: "contain",
-                          backgroundColor: theme.palette.grey[100],
+                          backgroundColor: theme.palette.grey[200],
                         }}
                       />
                     ) : (
@@ -601,11 +636,17 @@ const ProductCategory = () => {
                           display: "flex",
                           justifyContent: "center",
                           alignItems: "center",
-                          backgroundColor: theme.palette.grey[100],
+                          backgroundColor: theme.palette.grey[200],
                         }}
                       >
                         <ShoppingCartIcon
-                          sx={{ fontSize: 36, color: theme.palette.grey[400] }}
+                          sx={{
+                            fontSize: 36,
+                            color:
+                              theme.palette.mode === "dark"
+                                ? "#40916c"
+                                : "#34495e",
+                          }}
                         />
                       </Box>
                     )}
@@ -660,7 +701,7 @@ const ProductCategory = () => {
                       {product.storeId?.name && (
                         <Typography
                           variant="caption"
-                          color="text.secondary"
+                          color="secondarytext."
                           sx={{ display: "block", textAlign: "center" }}
                         >
                           {product.storeId.name}
@@ -753,9 +794,9 @@ const ProductCategory = () => {
       <Box sx={{ py: 8, px: 3 }}>
         {/* Store Type Filter */}
         <Box sx={{ mb: 3 }}>
-          <Typography variant="h6" sx={{ mb: 2 }}>
+          {/* <Typography variant="h6" sx={{ mb: 2 }}>
             Filter by Store Type
-          </Typography>
+          </Typography> */}
           <Box sx={{ display: "flex", gap: 2 }}>
             {storeTypes.map((type) => (
               <Button
@@ -767,14 +808,24 @@ const ProductCategory = () => {
                 sx={{
                   backgroundColor:
                     selectedStoreType === type.value
-                      ? "#52b788"
+                      ? theme.palette.mode === "dark"
+                        ? "#40916c"
+                        : "#34495e"
                       : "transparent",
-                  color: selectedStoreType === type.value ? "white" : "#52b788",
-                  borderColor: "#52b788",
+                  color:
+                    selectedStoreType === type.value
+                      ? "white"
+                      : theme.palette.mode === "dark"
+                      ? "#40916c"
+                      : "#34495e",
+                  borderColor:
+                    theme.palette.mode === "dark" ? "#40916c" : "#34495e",
                   "&:hover": {
                     backgroundColor:
                       selectedStoreType === type.value
-                        ? "#40916c"
+                        ? theme.palette.mode === "dark"
+                          ? "#40916c"
+                          : "#34495e"
                         : "rgba(82, 183, 136, 0.1)",
                   },
                 }}
@@ -799,10 +850,21 @@ const ProductCategory = () => {
             <Box sx={{ p: 3 }}>
               <Typography
                 variant="h6"
-                sx={{ mb: 3, display: "flex", alignItems: "center", gap: 1 }}
+                sx={{
+                  mb: 3,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                  color: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+                }}
               >
-                <CategoryIcon sx={{ color: "#52b788" }} />
-                Categories
+                <CategoryIcon
+                  sx={{
+                    color:
+                      theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+                  }}
+                />
+                {t("Categories")}
               </Typography>
               <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
                 {categories.map((category) => (
@@ -817,17 +879,24 @@ const ProductCategory = () => {
                     sx={{
                       backgroundColor:
                         selectedCategory?._id === category._id
-                          ? "#52b788"
+                          ? theme.palette.mode === "dark"
+                            ? "#40916c"
+                            : "#34495e"
                           : "transparent",
                       color:
                         selectedCategory?._id === category._id
                           ? "white"
-                          : "#52b788",
-                      borderColor: "#52b788",
+                          : theme.palette.mode === "dark"
+                          ? "#40916c"
+                          : "#34495e",
+                      borderColor:
+                        theme.palette.mode === "dark" ? "#40916c" : "#34495e",
                       "&:hover": {
                         backgroundColor:
                           selectedCategory?._id === category._id
-                            ? "#40916c"
+                            ? theme.palette.mode === "dark"
+                              ? "#40916c"
+                              : "#34495e"
                             : "rgba(82, 183, 136, 0.1)",
                       },
                     }}
@@ -844,10 +913,14 @@ const ProductCategory = () => {
                         bgcolor:
                           selectedCategory?._id === category._id
                             ? "white"
-                            : "#52b788",
+                            : theme.palette.mode === "dark"
+                            ? "#40916c"
+                            : "#34495e",
                         color:
                           selectedCategory?._id === category._id
-                            ? "#52b788"
+                            ? theme.palette.mode === "dark"
+                              ? "#40916c"
+                              : "#34495e"
                             : "white",
                         fontSize: "0.75rem",
                         mr: 1,
@@ -877,10 +950,21 @@ const ProductCategory = () => {
             <Box sx={{ p: 3 }}>
               <Typography
                 variant="h6"
-                sx={{ mb: 3, display: "flex", alignItems: "center", gap: 1 }}
+                sx={{
+                  mb: 3,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                  color: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+                }}
               >
-                <ExpandMoreIcon sx={{ color: "#52b788" }} />
-                Category Types - {selectedCategory.name}
+                <ExpandMoreIcon
+                  sx={{
+                    color:
+                      theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+                  }}
+                />
+                {t("Types")} - {selectedCategory.name}
               </Typography>
               <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
                 <Button
@@ -890,9 +974,19 @@ const ProductCategory = () => {
                   onClick={() => setSelectedCategoryType(null)}
                   sx={{
                     backgroundColor:
-                      selectedCategoryType === null ? "#52b788" : "transparent",
-                    color: selectedCategoryType === null ? "white" : "#52b788",
-                    borderColor: "#52b788",
+                      selectedCategoryType === null
+                        ? theme.palette.mode === "dark"
+                          ? "#40916c"
+                          : "#34495e"
+                        : "transparent",
+                    color:
+                      selectedCategoryType === null
+                        ? "white"
+                        : theme.palette.mode === "dark"
+                        ? "#40916c"
+                        : "#34495e",
+                    borderColor:
+                      theme.palette.mode === "dark" ? "#40916c" : "#34495e",
                     "&:hover": {
                       backgroundColor:
                         selectedCategoryType === null
@@ -915,17 +1009,24 @@ const ProductCategory = () => {
                     sx={{
                       backgroundColor:
                         selectedCategoryType?._id === type._id
-                          ? "#52b788"
+                          ? theme.palette.mode === "dark"
+                            ? "#40916c"
+                            : "#34495e"
                           : "transparent",
                       color:
                         selectedCategoryType?._id === type._id
                           ? "white"
-                          : "#52b788",
-                      borderColor: "#52b788",
+                          : theme.palette.mode === "dark"
+                          ? "#40916c"
+                          : "#34495e",
+                      borderColor:
+                        theme.palette.mode === "dark" ? "#40916c" : "#34495e",
                       "&:hover": {
                         backgroundColor:
                           selectedCategoryType?._id === type._id
-                            ? "#40916c"
+                            ? theme.palette.mode === "dark"
+                              ? "#40916c"
+                              : "#34495e"
                             : "rgba(82, 183, 136, 0.1)",
                       },
                     }}
@@ -944,7 +1045,7 @@ const ProductCategory = () => {
             <Box
               sx={{
                 display: "grid",
-                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
                 gap: 2,
               }}
             >
@@ -1007,6 +1108,8 @@ const ProductCategory = () => {
                           WebkitLineClamp: 2,
                           WebkitBoxOrient: "vertical",
                           overflow: "hidden",
+                          color:
+                            theme.palette.mode === "dark" ? "white" : "black",
                         }}
                       >
                         {product.name || "\u00A0"}

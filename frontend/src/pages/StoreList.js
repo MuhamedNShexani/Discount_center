@@ -43,10 +43,12 @@ const StoreCard = ({ store, index, theme, t, onClick }) => {
         sx={{
           cursor: "pointer",
           display: "flex",
-          flexDirection: "column",
+          flexDirection: { xs: "row", sm: "column" },
+          alignItems: { xs: "stretch", sm: "initial" },
           borderRadius: 4,
           overflow: "hidden",
           width: { xs: "100%", sm: 260, md: 280 }, // full width on mobile
+          height: { xs: 180, sm: "auto" },
           transition: "0.35s ease",
           boxShadow: "0 6px 18px rgba(0,0,0,0.1)",
           background:
@@ -56,7 +58,7 @@ const StoreCard = ({ store, index, theme, t, onClick }) => {
           "&:hover": {
             transform: { xs: "none", sm: "translateY(-8px) scale(1.02)" },
             boxShadow: "0 12px 28px rgba(0,0,0,0.2)",
-            "& .store-image": { transform: "scale(1.08)" },
+            "& .store-image": { transform: { xs: "none", sm: "scale(1.08)" } },
             "& .store-arrow": { opacity: 1, transform: "translateX(6px)" },
           },
         }}
@@ -65,11 +67,13 @@ const StoreCard = ({ store, index, theme, t, onClick }) => {
         <Box
           sx={{
             position: "relative",
-            height: { xs: 160, sm: 180 },
+            height: { xs: "100%", sm: 180 },
+            width: { xs: 120, sm: "100%" },
             background:
               theme.palette.mode === "dark"
-                ? "linear-gradient(135deg, #52b788 0%, #40916c 100%)"
-                : "linear-gradient(135deg, #52b788 0%, #40916c 100%)",
+                ? "linear-gradient(135deg,rgb(255, 255, 255) 0%, #34495e 100%)"
+                : "linear-gradient(135deg,rgb(0, 0, 0) 0%, #34495e 100%)",
+            flexShrink: { xs: 0, sm: 1 },
           }}
         >
           {store.logo ? (
@@ -162,11 +166,13 @@ const StoreCard = ({ store, index, theme, t, onClick }) => {
         <CardContent
           align="center"
           sx={{
-            p: { xs: 1.5, sm: 2 },
+            p: { xs: 1.2, sm: 2 },
             display: "flex",
             flexDirection: "column",
             gap: 0.8,
             flexGrow: 1,
+            textAlign: { xs: "left", sm: "center" },
+            justifyContent: { xs: "center", sm: "flex-start" },
           }}
         >
           <Typography
@@ -174,10 +180,9 @@ const StoreCard = ({ store, index, theme, t, onClick }) => {
             component="h2"
             sx={{
               fontWeight: 700,
-              color: theme.palette.text.primary,
-              textAlign: "center",
+              color: theme.palette.mode === "dark" ? "white" : "black",
+              textAlign: { xs: "center", sm: "center" },
               fontSize: { xs: "1rem", sm: "1.1rem" },
-              overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
             }}
@@ -202,13 +207,14 @@ const StoreCard = ({ store, index, theme, t, onClick }) => {
                   theme.palette.mode === "dark"
                     ? "rgba(82, 183, 136, 0.15)"
                     : "rgba(82, 183, 136, 0.1)",
-                color: theme.palette.mode === "dark" ? "#52b788" : "#40916c",
+                color: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
                 border: `1px solid ${
                   theme.palette.mode === "dark"
                     ? "rgba(82, 183, 136, 0.3)"
                     : "rgba(82, 183, 136, 0.2)"
                 }`,
                 fontWeight: 600,
+                alignSelf: { xs: "flex-start", sm: "center" },
               }}
             />
           )}
@@ -218,9 +224,9 @@ const StoreCard = ({ store, index, theme, t, onClick }) => {
             variant="body2"
             sx={{
               color: theme.palette.text.secondary,
-              display: "-webkit-box",
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: "vertical",
+              display: { xs: "block", sm: "-webkit-box" },
+              WebkitLineClamp: { sm: 2 },
+              WebkitBoxOrient: { sm: "vertical" },
               overflow: "hidden",
               fontSize: "0.8rem",
             }}
@@ -299,7 +305,15 @@ const StoreList = () => {
   return (
     <Box sx={{ py: 6, px: { xs: 1, sm: 2, md: 4 } }}>
       {/* Store Type Filter - Inline on page */}
-      <Box sx={{ mb: 2, display: "flex", gap: 1, overflowX: "auto" }}>
+      <Box
+        sx={{
+          mb: 2,
+          display: "flex",
+          gap: 1,
+          overflowX: "auto",
+          color: theme.palette.mode === "dark" ? "white" : "black",
+        }}
+      >
         {[
           { key: "all", label: t("All") },
           { key: "market", label: t("Market") },
@@ -316,7 +330,11 @@ const StoreList = () => {
             sx={{
               flexShrink: 0,
               backgroundColor:
-                selectedType === tItem.key ? "#52b788" : "transparent",
+                selectedType === tItem.key
+                  ? theme.palette.mode === "dark"
+                    ? "#40916c"
+                    : "#34495e"
+                  : "transparent",
               color: selectedType === tItem.key ? "white" : "inherit",
             }}
           />
