@@ -45,6 +45,7 @@ import {
   brandAPI,
   categoryAPI,
   giftAPI,
+  adAPI,
 } from "../services/api";
 import * as XLSX from "xlsx";
 
@@ -77,6 +78,7 @@ const DataEntryForm = () => {
   const [categoryTypes, setCategoryTypes] = useState([]);
   const [products, setProducts] = useState([]);
   const [gifts, setGifts] = useState([]);
+  const [ads, setAds] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
 
@@ -85,6 +87,7 @@ const DataEntryForm = () => {
   const [brandsPage, setBrandsPage] = useState(0);
   const [productsPage, setProductsPage] = useState(0);
   const [giftsPage, setGiftsPage] = useState(0);
+  const [adsPage, setAdsPage] = useState(0);
   const [rowsPerPage] = useState(10);
 
   // Refs for file inputs
@@ -94,6 +97,8 @@ const DataEntryForm = () => {
   const storeLogoFileRef = useRef(null);
   const giftImageFileRef = useRef(null);
   const editGiftImageFileRef = useRef(null);
+  const adImageFileRef = useRef(null);
+  const editAdImageFileRef = useRef(null);
 
   // Brand form state
   const [brandForm, setBrandForm] = useState({
@@ -103,6 +108,7 @@ const DataEntryForm = () => {
     phone: "",
     description: "",
     isVip: false,
+    type: "",
   });
   // Store form state
   const [storeForm, setStoreForm] = useState({
@@ -132,6 +138,22 @@ const DataEntryForm = () => {
     storeType: "market",
     expireDate: "",
   });
+
+  // Ad form state
+  const [adForm, setAdForm] = useState({
+    image: "",
+    brandId: "",
+    storeId: "",
+    giftId: "",
+    startDate: "",
+    endDate: "",
+    linkUrl: "",
+    active: true,
+    priority: 0,
+    pages: ["all"],
+  });
+
+  const [selectedAdImage, setSelectedAdImage] = useState(null);
 
   // Gift form state
   const [giftForm, setGiftForm] = useState({
@@ -178,6 +200,9 @@ const DataEntryForm = () => {
     type: "",
     data: null,
   });
+  const [addDialog, setAddDialog] = useState({ open: false, type: "" });
+  const [bulkDialog, setBulkDialog] = useState({ open: false, type: "" });
+  const showTopAdd = false;
 
   // Edit dialog form state
   const [editForm, setEditForm] = useState({});
@@ -189,6 +214,7 @@ const DataEntryForm = () => {
     fetchBrands();
     fetchCategories();
     fetchGifts();
+    fetchAds();
   }, []);
 
   useEffect(() => {
@@ -243,6 +269,15 @@ const DataEntryForm = () => {
     } catch (err) {
       console.error("Error fetching gifts:", err);
       setGifts([]);
+    }
+  };
+
+  const fetchAds = async () => {
+    try {
+      const response = await adAPI.getAll();
+      setAds(response.data);
+    } catch (err) {
+      console.error("Error fetching ads:", err);
     }
   };
 
@@ -592,6 +627,73 @@ const DataEntryForm = () => {
     }
   };
 
+  const handleAdSubmit = async () => {
+    try {
+      setLoading(true);
+      setMessage({ type: "", text: "" });
+
+      let imageUrl = adForm.image;
+      if (selectedAdImage) {
+        setUploadLoading(true);
+        const formData = new FormData();
+        formData.append("image", selectedAdImage);
+        const resp = await fetch(`${API_URL}/api/ads/upload-image`, {
+          method: "POST",
+          body: formData,
+        });
+        if (!resp.ok) throw new Error("Failed to upload ad image");
+        const data = await resp.json();
+        imageUrl = data.url;
+        setUploadLoading(false);
+      }
+
+      const payload = {
+        image: imageUrl,
+        brandId: adForm.brandId || undefined,
+        storeId: adForm.storeId || undefined,
+        giftId: adForm.giftId || undefined,
+        startDate: adForm.startDate
+          ? new Date(adForm.startDate).toISOString()
+          : undefined,
+        endDate: adForm.endDate
+          ? new Date(adForm.endDate).toISOString()
+          : undefined,
+        linkUrl: adForm.linkUrl || "",
+        active: !!adForm.active,
+        priority: Number(adForm.priority) || 0,
+        pages: (adForm.pages && adForm.pages.length
+          ? adForm.pages
+          : ["all"]
+        ).map((p) => String(p).toLowerCase()),
+      };
+
+      await adAPI.create(payload);
+      setMessage({ type: "success", text: t("Ad created successfully!") });
+      setAdForm({
+        image: "",
+        brandId: "",
+        storeId: "",
+        giftId: "",
+        startDate: "",
+        endDate: "",
+        linkUrl: "",
+        active: true,
+        priority: 0,
+        pages: ["all"],
+      });
+      setSelectedAdImage(null);
+      fetchAds();
+    } catch (err) {
+      setMessage({
+        type: "error",
+        text: t("Failed to create ad. Please try again."),
+      });
+      console.error("Error creating ad:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Process Excel file and create brands
   const handleBrandBulkUpload = async (e) => {
     e.preventDefault();
@@ -799,6 +901,7 @@ const DataEntryForm = () => {
         logo: "",
         address: "",
         phone: "",
+        type: "",
         description: "",
       });
       setSelectedBrandLogo(null);
@@ -1082,6 +1185,8 @@ const DataEntryForm = () => {
         logo: data.logo,
         address: data.address,
         phone: data.phone,
+        isVip: !!data.isVip,
+        type: data.type,
         description: data.description || "",
       });
     } else if (type === "store") {
@@ -1090,7 +1195,17 @@ const DataEntryForm = () => {
         logo: data.logo,
         address: data.address,
         phone: data.phone,
+        isVip: !!data.isVip,
+        storeType: data.storeType || "market",
         description: data.description || "",
+      });
+    } else if (type === "category") {
+      setEditForm({
+        name: data.name || "",
+        storeType: data.storeType || "market",
+        types: Array.isArray(data.types)
+          ? data.types.map((t) => (typeof t === "string" ? t : t.name || ""))
+          : [""],
       });
     } else if (type === "product") {
       setEditForm({
@@ -1121,14 +1236,58 @@ const DataEntryForm = () => {
           ? new Date(data.expireDate).toISOString().split("T")[0]
           : "",
       });
+    } else if (type === "ad") {
+      setEditForm({
+        image: data.image || "",
+        brandId: data.brandId?._id || data.brandId || "",
+        storeId: data.storeId?._id || data.storeId || "",
+        giftId: data.giftId?._id || data.giftId || "",
+        startDate: data.startDate
+          ? new Date(data.startDate).toISOString().split("T")[0]
+          : "",
+        endDate: data.endDate
+          ? new Date(data.endDate).toISOString().split("T")[0]
+          : "",
+        linkUrl: data.linkUrl || "",
+        active: !!data.active,
+        priority: data.priority ?? 0,
+        pages:
+          Array.isArray(data.pages) && data.pages.length
+            ? data.pages
+            : [data.page || "all"],
+      });
     }
 
     setEditDialog({ open: true, type, data });
   };
 
+  // Edit Category Types handlers
+  const handleEditCategoryTypeChange = (index, value) => {
+    setEditForm((prev) => {
+      const updated = [...(prev.types || [""])];
+      updated[index] = value;
+      return { ...prev, types: updated };
+    });
+  };
+
+  const addEditCategoryType = () => {
+    setEditForm((prev) => ({ ...prev, types: [...(prev.types || []), ""] }));
+  };
+
+  const removeEditCategoryType = (index) => {
+    setEditForm((prev) => {
+      const updated = [...(prev.types || [])];
+      if (updated.length <= 1) return prev;
+      updated.splice(index, 1);
+      return { ...prev, types: updated };
+    });
+  };
+
   const handleEditFormChange = (e) => {
     const { name, value } = e.target;
-    setEditForm({ ...editForm, [name]: value });
+    const nextValue =
+      name === "pages" && typeof value === "string" ? value.split(",") : value;
+    setEditForm({ ...editForm, [name]: nextValue });
 
     // If category is selected, fetch its types
     if (name === "categoryId") {
@@ -1175,6 +1334,20 @@ const DataEntryForm = () => {
           text: t("Store updated successfully!"),
         });
         fetchStores();
+      } else if (editDialog.type === "category") {
+        const validTypes = (editForm.types || [])
+          .filter((t) => (t || "").trim() !== "")
+          .map((t) => ({ name: t.trim(), description: "" }));
+        await categoryAPI.update(editDialog.data._id, {
+          name: (editForm.name || "").trim(),
+          storeType: editForm.storeType || "market",
+          types: validTypes,
+        });
+        setMessage({
+          type: "success",
+          text: t("Category updated successfully!"),
+        });
+        fetchCategories();
       } else if (editDialog.type === "product") {
         let imageUrl = editForm.image;
         if (selectedEditImage) {
@@ -1228,6 +1401,47 @@ const DataEntryForm = () => {
           text: t("Gift updated successfully!"),
         });
         fetchGifts();
+      } else if (editDialog.type === "ad") {
+        let imageUrl = editForm.image;
+        if (editAdImageFileRef?.current?.files?.[0]) {
+          // reuse generic upload to /api/ads/upload-image via fetch for consistency
+          setUploadLoading(true);
+          const file = editAdImageFileRef.current.files[0];
+          const formData = new FormData();
+          formData.append("image", file);
+          const resp = await fetch(`${API_URL}/api/ads/upload-image`, {
+            method: "POST",
+            body: formData,
+          });
+          if (!resp.ok) throw new Error("Failed to upload ad image");
+          const data = await resp.json();
+          imageUrl = data.url;
+          setUploadLoading(false);
+        }
+
+        const adUpdate = {
+          image: imageUrl,
+          brandId: editForm.brandId || undefined,
+          storeId: editForm.storeId || undefined,
+          giftId: editForm.giftId || undefined,
+          startDate: editForm.startDate
+            ? new Date(editForm.startDate).toISOString()
+            : undefined,
+          endDate: editForm.endDate
+            ? new Date(editForm.endDate).toISOString()
+            : undefined,
+          linkUrl: editForm.linkUrl || "",
+          active: !!editForm.active,
+          priority: Number(editForm.priority) || 0,
+          pages: (Array.isArray(editForm.pages) && editForm.pages.length
+            ? editForm.pages
+            : [editForm.page || "all"]
+          ).map((p) => String(p).toLowerCase()),
+        };
+
+        await adAPI.update(editDialog.data._id, adUpdate);
+        setMessage({ type: "success", text: t("Ad updated successfully!") });
+        fetchAds();
       }
     } catch (err) {
       setMessage({
@@ -1267,6 +1481,10 @@ const DataEntryForm = () => {
           text: t("Gift deleted successfully!"),
         });
         fetchGifts();
+      } else if (deleteDialog.type === "ad") {
+        await adAPI.delete(deleteDialog.data._id);
+        setMessage({ type: "success", text: t("Ad deleted successfully!") });
+        fetchAds();
       }
       setDeleteDialog({ open: false, type: "", data: null });
     } catch (err) {
@@ -1315,6 +1533,10 @@ const DataEntryForm = () => {
           text: t("Gift deleted successfully!"),
         });
         fetchGifts();
+      } else if (deleteDialog.type === "ad") {
+        await adAPI.delete(deleteDialog.data._id);
+        setMessage({ type: "success", text: t("Ad deleted successfully!") });
+        fetchAds();
       }
       setDeleteDialog({ open: false, type: "", data: null });
     } catch (err) {
@@ -1468,1277 +1690,7 @@ const DataEntryForm = () => {
         </Box>
       </Paper>
 
-      {/* Enhanced Main Content Card */}
-      <Card
-        sx={{
-          borderRadius: 3,
-          overflow: "hidden",
-          background:
-            theme.palette.mode === "dark"
-              ? "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)"
-              : "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
-          border: `1px solid ${
-            theme.palette.mode === "dark" ? "#34495e" : "#e9ecef"
-          }`,
-          boxShadow:
-            theme.palette.mode === "dark"
-              ? "0 8px 32px rgba(0,0,0,0.3)"
-              : "0 8px 32px rgba(0,0,0,0.1)",
-        }}
-      >
-        <CardContent sx={{ p: 4 }}>
-          {/* Enhanced Tabs */}
-          <Paper
-            elevation={0}
-            sx={{
-              mb: 4,
-              borderRadius: 2,
-              backgroundColor:
-                theme.palette.mode === "dark"
-                  ? "rgba(255,255,255,0.05)"
-                  : "rgba(82, 183, 136, 0.05)",
-              border: `1px solid ${
-                theme.palette.mode === "dark"
-                  ? "rgba(255,255,255,0.1)"
-                  : "rgba(82, 183, 136, 0.1)"
-              }`,
-            }}
-          >
-            <Tabs
-              value={activeTab}
-              onChange={handleTabChange}
-              sx={{
-                p: 1,
-                "& .MuiTab-root": {
-                  borderRadius: 2,
-                  mx: 0.5,
-                  transition: "all 0.3s ease",
-                  fontWeight: 600,
-                  "&.Mui-selected": {
-                    backgroundColor:
-                      theme.palette.mode === "dark" ? "#52b788" : "#52b788",
-                    color: "white",
-                    boxShadow: "0 4px 12px rgba(82, 183, 136, 0.3)",
-                  },
-                },
-                "& .MuiTabs-indicator": {
-                  display: "none",
-                },
-              }}
-            >
-              <Tab
-                label={t("Add Store")}
-                icon={<StoreIcon />}
-                iconPosition="start"
-                sx={{ textTransform: "none" }}
-              />
-              <Tab
-                label={t("Add Brand")}
-                icon={<BusinessIcon />}
-                iconPosition="start"
-                sx={{ textTransform: "none" }}
-              />
-              <Tab
-                label={t("Add Product")}
-                icon={<ShoppingCartIcon />}
-                iconPosition="start"
-                sx={{ textTransform: "none" }}
-              />
-              <Tab
-                label={t("Add Gift")}
-                icon={<CardGiftcardIcon />}
-                iconPosition="start"
-                sx={{ textTransform: "none" }}
-              />
-              <Tab
-                label={t("Add Category")}
-                icon={<CategoryIcon />}
-                iconPosition="start"
-                sx={{ textTransform: "none" }}
-              />
-              <Tab
-                label={t("Bulk Upload")}
-                icon={<CloudUploadIcon />}
-                iconPosition="start"
-                sx={{ textTransform: "none" }}
-              />
-            </Tabs>
-          </Paper>
-
-          {message.text && (
-            <Fade in={true}>
-              <Alert
-                severity={message.type}
-                sx={{
-                  mb: 3,
-                  borderRadius: 2,
-                  backgroundColor:
-                    theme.palette.mode === "dark"
-                      ? message.type === "success"
-                        ? "#1b5e20"
-                        : "#d32f2f"
-                      : undefined,
-                }}
-              >
-                {message.text}
-              </Alert>
-            </Fade>
-          )}
-
-          {activeTab === 0 && (
-            <Box component="form" onSubmit={handleStoreSubmit}>
-              <Grid container spacing={2}>
-                {/* Brand Form Fields */}
-                <Grid xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label={t("Store Name")}
-                    name="name"
-                    value={storeForm.name}
-                    onChange={handleStoreFormChange}
-                    required
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <StoreIcon />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </Grid>
-                <Grid xs={12} sm={6}>
-                  <FormControl fullWidth required>
-                    <InputLabel shrink>{t("Store Type")}</InputLabel>
-                    <Select
-                      name="storeType"
-                      value={storeForm.storeType}
-                      onChange={handleStoreFormChange}
-                      label={t("Store Type")}
-                      displayEmpty
-                    >
-                      <MenuItem value="market">{t("Market")}</MenuItem>
-                      <MenuItem value="clothes">{t("Clothes")}</MenuItem>
-                      <MenuItem value="electronic">{t("Electronics")}</MenuItem>
-                      <MenuItem value="cosmetic">{t("Cosmetics")}</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid xs={12}>
-                  <TextField
-                    fullWidth
-                    label={t("Address")}
-                    name="address"
-                    value={storeForm.address}
-                    onChange={handleStoreFormChange}
-                  />
-                </Grid>
-                <Grid xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label={t("Phone")}
-                    name="phone"
-                    value={storeForm.phone}
-                    onChange={handleStoreFormChange}
-                  />
-                </Grid>
-                <Grid xs={12}>
-                  <TextField
-                    fullWidth
-                    label={t("Description")}
-                    name="description"
-                    value={storeForm.description}
-                    onChange={handleStoreFormChange}
-                    multiline
-                    rows={3}
-                  />
-                </Grid>
-                <Grid xs={12}>
-                  <input
-                    accept="image/*"
-                    style={{ display: "none" }}
-                    id="store-logo-file"
-                    type="file"
-                    onChange={handleStoreLogoChange}
-                  />
-                  <label htmlFor="store-logo-file">
-                    <Button
-                      variant="outlined"
-                      component="span"
-                      fullWidth
-                      startIcon={<AddIcon />}
-                    >
-                      {selectedStoreLogo
-                        ? selectedStoreLogo.name
-                        : t("Upload Logo")}
-                    </Button>
-                  </label>
-                </Grid>
-                <Grid xs={12}>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        name="isVip"
-                        checked={storeForm.isVip}
-                        onChange={(e) =>
-                          setStoreForm({
-                            ...storeForm,
-                            isVip: e.target.checked,
-                          })
-                        }
-                      />
-                    }
-                    label={t("VIP Store")}
-                  />
-                </Grid>
-                <Grid xs={12}>
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    disabled={loading || uploadLoading}
-                    startIcon={
-                      loading || uploadLoading ? (
-                        <CircularProgress size={20} />
-                      ) : (
-                        <AddIcon />
-                      )
-                    }
-                    fullWidth
-                  >
-                    {loading
-                      ? t("Creating...")
-                      : uploadLoading
-                      ? t("Uploading...")
-                      : t("Add Store")}
-                  </Button>
-                </Grid>
-              </Grid>
-            </Box>
-          )}
-
-          {/* Store Bulk Upload Section */}
-          {activeTab === 0 && (
-            <Box
-              sx={{ mt: 4, p: 3, backgroundColor: "#f8f9fa", borderRadius: 2 }}
-            >
-              <Typography variant="h6" gutterBottom sx={{ color: "#2c3e50" }}>
-                {t("Bulk Upload Stores")}
-              </Typography>
-              <Typography variant="body2" sx={{ color: "#B08463", mb: 2 }}>
-                {t(
-                  "Upload an Excel file (.xlsx) with store data. The file should have columns: Name, Logo, Address, Phone, Description"
-                )}
-              </Typography>
-              <Grid container spacing={2}>
-                <Grid xs={12}>
-                  <input
-                    accept=".xlsx,.xls"
-                    style={{ display: "none" }}
-                    id="store-excel-file"
-                    type="file"
-                    onChange={handleStoreExcelFileChange}
-                  />
-                  <label htmlFor="store-excel-file">
-                    <Button
-                      variant="outlined"
-                      component="span"
-                      fullWidth
-                      startIcon={<AddIcon />}
-                      sx={{ mb: 2 }}
-                    >
-                      {selectedStoreExcelFile
-                        ? selectedStoreExcelFile.name
-                        : t("Select Excel File")}
-                    </Button>
-                  </label>
-                </Grid>
-                <Grid xs={12}>
-                  <Button
-                    variant="outlined"
-                    onClick={() => {
-                      // Create sample data for template
-                      const sampleData = [
-                        ["Name", "Logo", "Address", "Phone", "Description"],
-                        [
-                          "Sample Store",
-                          "logo_url_here",
-                          "Sample Address",
-                          "+1234567890",
-                          "Sample description",
-                        ],
-                      ];
-
-                      // Convert to CSV format
-                      const csvContent = sampleData
-                        .map((row) => row.join(","))
-                        .join("\n");
-
-                      // Create and download file
-                      const blob = new Blob([csvContent], { type: "text/csv" });
-                      const url = window.URL.createObjectURL(blob);
-                      const a = document.createElement("a");
-                      a.href = url;
-                      a.download = "store_template.csv";
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
-                      window.URL.revokeObjectURL(url);
-                    }}
-                    fullWidth
-                    startIcon={<CloudUploadIcon />}
-                    sx={{ mb: 2 }}
-                  >
-                    {t("Download Template")}
-                  </Button>
-                </Grid>
-                <Grid xs={12}>
-                  <Button
-                    onClick={handleStoreBulkUpload}
-                    variant="contained"
-                    disabled={storeBulkUploadLoading || !selectedStoreExcelFile}
-                    startIcon={
-                      storeBulkUploadLoading ? (
-                        <CircularProgress size={20} />
-                      ) : (
-                        <AddIcon />
-                      )
-                    }
-                    fullWidth
-                  >
-                    {storeBulkUploadLoading
-                      ? t("Uploading...")
-                      : t("Upload Stores")}
-                  </Button>
-                </Grid>
-                <Grid xs={12}>
-                  <Typography variant="body2" sx={{ color: "#B08463", mt: 2 }}>
-                    <strong>{t("Excel Format:")}</strong>
-                    <br />• {t("Column A: Name (required)")}
-                    <br />• {t("Column B: Logo (optional)")}
-                    <br />• {t("Column C: Address (optional)")}
-                    <br />• {t("Column D: Phone (optional)")}
-                    <br />• {t("Column E: Description (optional)")}
-                  </Typography>
-                </Grid>
-              </Grid>
-            </Box>
-          )}
-          {activeTab === 1 && (
-            <Box component="form" onSubmit={handleBrandSubmit}>
-              <Grid container spacing={2}>
-                {/* Brand Form Fields */}
-                <Grid xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label={t("Brand Name")}
-                    name="name"
-                    value={brandForm.name}
-                    onChange={handleBrandFormChange}
-                    required
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <BusinessIcon />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </Grid>
-                <Grid xs={12}>
-                  <TextField
-                    fullWidth
-                    label={t("Address")}
-                    name="address"
-                    value={brandForm.address}
-                    onChange={handleBrandFormChange}
-                  />
-                </Grid>
-                <Grid xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label={t("Phone")}
-                    name="phone"
-                    value={brandForm.phone}
-                    onChange={handleBrandFormChange}
-                  />
-                </Grid>
-                <Grid xs={12}>
-                  <TextField
-                    fullWidth
-                    label={t("Description")}
-                    name="description"
-                    value={brandForm.description}
-                    onChange={handleBrandFormChange}
-                    multiline
-                    rows={3}
-                  />
-                </Grid>
-                <Grid xs={12}>
-                  <input
-                    accept="image/*"
-                    style={{ display: "none" }}
-                    id="brand-logo-file"
-                    type="file"
-                    ref={brandLogoFileRef}
-                    onChange={handleBrandLogoChange}
-                  />
-                  <label htmlFor="brand-logo-file">
-                    <Button
-                      variant="outlined"
-                      component="span"
-                      fullWidth
-                      startIcon={<AddIcon />}
-                    >
-                      {selectedBrandLogo
-                        ? selectedBrandLogo.name
-                        : t("Upload Logo")}
-                    </Button>
-                  </label>
-                </Grid>
-                <Grid xs={12}>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        name="isVip"
-                        checked={brandForm.isVip}
-                        onChange={(e) =>
-                          setBrandForm({
-                            ...brandForm,
-                            isVip: e.target.checked,
-                          })
-                        }
-                      />
-                    }
-                    label={t("VIP Brand")}
-                  />
-                </Grid>
-                <Grid xs={12}>
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    disabled={loading || uploadLoading}
-                    startIcon={
-                      loading || uploadLoading ? (
-                        <CircularProgress size={20} />
-                      ) : (
-                        <AddIcon />
-                      )
-                    }
-                    fullWidth
-                  >
-                    {loading
-                      ? t("Creating...")
-                      : uploadLoading
-                      ? t("Uploading...")
-                      : t("Add Brand")}
-                  </Button>
-                </Grid>
-              </Grid>
-            </Box>
-          )}
-
-          {/* Brand Bulk Upload Section */}
-          {activeTab === 1 && (
-            <Box
-              sx={{ mt: 4, p: 3, backgroundColor: "#f8f9fa", borderRadius: 2 }}
-            >
-              <Typography variant="h6" gutterBottom sx={{ color: "#2c3e50" }}>
-                {t("Bulk Upload Brands")}
-              </Typography>
-              <Typography variant="body2" sx={{ color: "#B08463", mb: 2 }}>
-                {t(
-                  "Upload an Excel file (.xlsx) with brand data. The file should have columns: Name, Logo, Address, Phone, Description"
-                )}
-              </Typography>
-              <Grid container spacing={2}>
-                <Grid xs={12}>
-                  <input
-                    accept=".xlsx,.xls"
-                    style={{ display: "none" }}
-                    id="brand-excel-file"
-                    type="file"
-                    onChange={handleBrandExcelFileChange}
-                  />
-                  <label htmlFor="brand-excel-file">
-                    <Button
-                      variant="outlined"
-                      component="span"
-                      fullWidth
-                      startIcon={<AddIcon />}
-                      sx={{ mb: 2 }}
-                    >
-                      {selectedBrandExcelFile
-                        ? selectedBrandExcelFile.name
-                        : t("Select Excel File")}
-                    </Button>
-                  </label>
-                </Grid>
-                <Grid xs={12}>
-                  <Button
-                    variant="outlined"
-                    onClick={() => {
-                      // Create sample data for template
-                      const sampleData = [
-                        ["Name", "Logo", "Address", "Phone", "Description"],
-                        [
-                          "Sample Brand",
-                          "logo_url_here",
-                          "Sample Address",
-                          "+1234567890",
-                          "Sample description",
-                        ],
-                      ];
-
-                      // Convert to CSV format
-                      const csvContent = sampleData
-                        .map((row) => row.join(","))
-                        .join("\n");
-
-                      // Create and download file
-                      const blob = new Blob([csvContent], { type: "text/csv" });
-                      const url = window.URL.createObjectURL(blob);
-                      const a = document.createElement("a");
-                      a.href = url;
-                      a.download = "brand_template.csv";
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
-                      window.URL.revokeObjectURL(url);
-                    }}
-                    fullWidth
-                    startIcon={<CloudUploadIcon />}
-                    sx={{ mb: 2 }}
-                  >
-                    {t("Download Template")}
-                  </Button>
-                </Grid>
-                <Grid xs={12}>
-                  <Button
-                    onClick={handleBrandBulkUpload}
-                    variant="contained"
-                    disabled={brandBulkUploadLoading || !selectedBrandExcelFile}
-                    startIcon={
-                      brandBulkUploadLoading ? (
-                        <CircularProgress size={20} />
-                      ) : (
-                        <AddIcon />
-                      )
-                    }
-                    fullWidth
-                  >
-                    {brandBulkUploadLoading
-                      ? t("Uploading...")
-                      : t("Upload Brands")}
-                  </Button>
-                </Grid>
-                <Grid xs={12}>
-                  <Typography variant="body2" sx={{ color: "#B08463", mt: 2 }}>
-                    <strong>{t("Excel Format:")}</strong>
-                    <br />• {t("Column A: Name (required)")}
-                    <br />• {t("Column B: Logo (optional)")}
-                    <br />• {t("Column C: Address (optional)")}
-                    <br />• {t("Column D: Phone (optional)")}
-                    <br />• {t("Column E: Description (optional)")}
-                  </Typography>
-                </Grid>
-              </Grid>
-            </Box>
-          )}
-          {activeTab === 2 && (
-            <Box component="form" onSubmit={handleProductSubmit}>
-              <Grid container spacing={2}>
-                {/* Product Form Fields */}
-                <Grid xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label={t("Product Name")}
-                    name="name"
-                    value={productForm.name}
-                    onChange={handleProductFormChange}
-                    required
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <ShoppingCartIcon />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </Grid>
-                <Grid xs={12}>
-                  <TextField
-                    fullWidth
-                    label={t("Description")}
-                    name="description"
-                    value={productForm.description}
-                    onChange={handleProductFormChange}
-                    multiline
-                    rows={3}
-                  />
-                </Grid>
-                <Grid xs={12}>
-                  <TextField
-                    fullWidth
-                    label={t("Barcode")}
-                    name="barcode"
-                    value={productForm.barcode}
-                    onChange={handleProductFormChange}
-                  />
-                </Grid>
-
-                <Grid xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label={t("Previous Price")}
-                    name="previousPrice"
-                    type="number"
-                    value={productForm.previousPrice}
-                    onChange={handleProductFormChange}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">ID</InputAdornment>
-                      ),
-                    }}
-                  />
-                </Grid>
-                <Grid xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label={t("New Price")}
-                    name="newPrice"
-                    type="number"
-                    value={productForm.newPrice}
-                    onChange={handleProductFormChange}
-                    required
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">ID</InputAdornment>
-                      ),
-                    }}
-                  />
-                </Grid>
-                <Grid xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label={t("Weight")}
-                    name="weight"
-                    value={productForm.weight}
-                    onChange={handleProductFormChange}
-                    placeholder="e.g., 500g, 1kg, 2.5kg"
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <InventoryIcon />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </Grid>
-                <Grid xs={12} sm={6}>
-                  <FormControl fullWidth>
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          name="isDiscount"
-                          checked={productForm.isDiscount}
-                          onChange={(e) =>
-                            setProductForm({
-                              ...productForm,
-                              isDiscount: e.target.checked,
-                            })
-                          }
-                        />
-                      }
-                      label={t("Is Discount Product")}
-                    />
-                  </FormControl>
-                </Grid>
-                <Grid xs={12} sm={6}>
-                  <FormControl fullWidth required>
-                    <InputLabel shrink>{t("Store")}</InputLabel>
-                    <Select
-                      name="storeId"
-                      value={productForm.storeId}
-                      onChange={handleProductFormChange}
-                      label={t("Store")}
-                      displayEmpty
-                      labelId="add-product-store-label"
-                    >
-                      <MenuItem value="">
-                        <em>{t("Select Store")}</em>
-                      </MenuItem>
-                      {stores.map((store) => (
-                        <MenuItem key={store._id} value={store._id}>
-                          {store.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid xs={12} sm={6}>
-                  <FormControl fullWidth required>
-                    <InputLabel shrink>{t("Store Type")}</InputLabel>
-                    <Select
-                      name="storeType"
-                      value={productForm.storeType}
-                      onChange={handleProductFormChange}
-                      label={t("Store Type")}
-                      displayEmpty
-                    >
-                      <MenuItem value="market">{t("Market")}</MenuItem>
-                      <MenuItem value="clothes">{t("Clothes")}</MenuItem>
-                      <MenuItem value="electronic">{t("Electronics")}</MenuItem>
-                      <MenuItem value="cosmetic">{t("Cosmetics")}</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid xs={12} sm={6}>
-                  <FormControl fullWidth>
-                    <InputLabel shrink>{t("Brand")}</InputLabel>
-                    <Select
-                      name="brandId"
-                      value={productForm.brandId}
-                      onChange={handleProductFormChange}
-                      label={t("Brand")}
-                      displayEmpty
-                      sx={{
-                        width: "150px",
-                      }}
-                      labelId="add-product-store-label"
-                    >
-                      <MenuItem value="">
-                        <em>{t("Select Brand")}</em>
-                      </MenuItem>
-                      {brands.map((brand) => (
-                        <MenuItem key={brand._id} value={brand._id}>
-                          {brand.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid xs={12} sm={6}>
-                  <FormControl fullWidth required>
-                    <InputLabel shrink>{t("Category")}</InputLabel>
-                    <Select
-                      name="categoryId"
-                      value={productForm.categoryId}
-                      onChange={handleProductFormChange}
-                      label={t("Category")}
-                      displayEmpty
-                      labelId="add-product-category-label"
-                    >
-                      <MenuItem value="">
-                        <em>{t("Select Category")}</em>
-                      </MenuItem>
-                      {categories.map((category) => (
-                        <MenuItem key={category._id} value={category._id}>
-                          {category.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid xs={12} sm={6}>
-                  <FormControl fullWidth required>
-                    <InputLabel shrink>{t("Category Type")}</InputLabel>
-                    <Select
-                      name="categoryTypeId"
-                      value={productForm.categoryTypeId}
-                      onChange={handleProductFormChange}
-                      label={t("Category Type")}
-                      displayEmpty
-                      disabled={!productForm.categoryId}
-                      labelId="add-product-category-type-label"
-                    >
-                      <MenuItem value="">
-                        <em>{t("Select Category Type")}</em>
-                      </MenuItem>
-                      {categoryTypes.map((type) => (
-                        <MenuItem key={type._id} value={type._id}>
-                          {type.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-
-                <Grid xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label={t("Expire Date")}
-                    name="expireDate"
-                    type="date"
-                    value={productForm.expireDate}
-                    onChange={handleProductFormChange}
-                    InputLabelProps={{
-                      shrink: true,
-                    }}
-                  />
-                </Grid>
-                <Grid xs={12}>
-                  <input
-                    accept="image/*"
-                    style={{ display: "none" }}
-                    id="product-image-file"
-                    type="file"
-                    ref={productImageFileRef}
-                    onChange={handleProductImageChange}
-                  />
-                  <label htmlFor="product-image-file">
-                    <Button
-                      variant="outlined"
-                      component="span"
-                      fullWidth
-                      startIcon={<AddIcon />}
-                    >
-                      {selectedProductImage
-                        ? selectedProductImage.name
-                        : t("Upload Image")}
-                    </Button>
-                  </label>
-                </Grid>
-                <Grid xs={12}>
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    disabled={loading || uploadLoading}
-                    startIcon={
-                      loading || uploadLoading ? (
-                        <CircularProgress size={20} />
-                      ) : (
-                        <SaveIcon />
-                      )
-                    }
-                    fullWidth
-                  >
-                    {loading
-                      ? t("Creating...")
-                      : uploadLoading
-                      ? t("Uploading...")
-                      : t("Add Product")}
-                  </Button>
-                </Grid>
-              </Grid>
-            </Box>
-          )}
-
-          {activeTab === 3 && (
-            <Box component="form" onSubmit={handleGiftSubmit}>
-              <Grid container spacing={2}>
-                {/* Gift Form Fields */}
-                <Grid xs={12}>
-                  <Typography
-                    variant="h6"
-                    gutterBottom
-                    sx={{ color: "#714329" }}
-                  >
-                    {t("Add New Gift")}
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: "#B08463", mb: 2 }}>
-                    {t(
-                      "Create a new gift with image, description, and associations"
-                    )}
-                  </Typography>
-                </Grid>
-                <Grid xs={12}>
-                  <input
-                    accept="image/*"
-                    style={{ display: "none" }}
-                    id="gift-image"
-                    type="file"
-                    onChange={handleGiftImageChange}
-                    ref={giftImageFileRef}
-                  />
-                  <label htmlFor="gift-image">
-                    <Button
-                      variant="outlined"
-                      component="span"
-                      fullWidth
-                      startIcon={<AddIcon />}
-                      sx={{ mb: 2 }}
-                    >
-                      {selectedGiftImage
-                        ? selectedGiftImage.name
-                        : t("Select Gift Image")}
-                    </Button>
-                  </label>
-                </Grid>
-                <Grid xs={12}>
-                  <TextField
-                    fullWidth
-                    label={t("Description")}
-                    name="description"
-                    value={giftForm.description}
-                    onChange={handleGiftFormChange}
-                    required
-                    multiline
-                    rows={3}
-                    InputProps={{
-                      style: {
-                        backgroundColor:
-                          theme.palette.mode === "dark"
-                            ? "rgba(255,255,255,0.05)"
-                            : "rgba(255,255,255,0.8)",
-                      },
-                    }}
-                  />
-                </Grid>
-                <Grid xs={12} sm={6}>
-                  <FormControl fullWidth>
-                    <InputLabel>{t("Stores")}</InputLabel>
-                    <Select
-                      multiple
-                      name="storeId"
-                      value={giftForm.storeId}
-                      onChange={handleGiftFormMultiChange}
-                      label={t("Stores")}
-                      renderValue={(selected) => (
-                        <Box
-                          sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}
-                        >
-                          {selected.map((value) => {
-                            const store = stores.find((m) => m._id === value);
-                            return (
-                              <Chip
-                                key={value}
-                                label={store ? store.name : value}
-                                size="small"
-                              />
-                            );
-                          })}
-                        </Box>
-                      )}
-                    >
-                      {stores.map((store) => (
-                        <MenuItem key={store._id} value={store._id}>
-                          {store.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid xs={12} sm={6}>
-                  <FormControl fullWidth>
-                    <InputLabel>{t("Brand")}</InputLabel>
-                    <Select
-                      name="brandId"
-                      value={giftForm.brandId}
-                      onChange={handleGiftFormChange}
-                      label={t("Brand")}
-                    >
-                      <MenuItem value="">
-                        <em>{t("None")}</em>
-                      </MenuItem>
-                      {brands.map((brand) => (
-                        <MenuItem key={brand._id} value={brand._id}>
-                          {brand.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label={t("Product ID (Barcode)")}
-                    name="productId"
-                    value={giftForm.productId}
-                    onChange={handleGiftFormChange}
-                    InputProps={{
-                      style: {
-                        backgroundColor:
-                          theme.palette.mode === "dark"
-                            ? "rgba(255,255,255,0.05)"
-                            : "rgba(255,255,255,0.8)",
-                      },
-                    }}
-                  />
-                </Grid>
-                <Grid xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label={t("Expire Date")}
-                    name="expireDate"
-                    type="date"
-                    value={giftForm.expireDate}
-                    onChange={handleGiftFormChange}
-                    InputLabelProps={{ shrink: true }}
-                    InputProps={{
-                      style: {
-                        backgroundColor:
-                          theme.palette.mode === "dark"
-                            ? "rgba(255,255,255,0.05)"
-                            : "rgba(255,255,255,0.8)",
-                      },
-                    }}
-                  />
-                </Grid>
-                <Grid xs={12}>
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    fullWidth
-                    disabled={loading || uploadLoading}
-                    startIcon={
-                      loading || uploadLoading ? (
-                        <CircularProgress size={20} />
-                      ) : (
-                        <SaveIcon />
-                      )
-                    }
-                    sx={{
-                      mt: 2,
-                      background:
-                        theme.palette.mode === "dark"
-                          ? "linear-gradient(135deg, #52b788 0%, #40916c 100%)"
-                          : "linear-gradient(135deg, #52b788 0%, #40916c 100%)",
-                      color: "white",
-                      "&:hover": {
-                        background:
-                          theme.palette.mode === "dark"
-                            ? "linear-gradient(135deg, #40916c 0%, #2d6a4f 100%)"
-                            : "linear-gradient(135deg, #40916c 0%, #2d6a4f 100%)",
-                      },
-                    }}
-                  >
-                    {loading || uploadLoading
-                      ? t("Creating...")
-                      : t("Create Gift")}
-                  </Button>
-                </Grid>
-              </Grid>
-            </Box>
-          )}
-
-          {activeTab === 4 && (
-            <Box component="form" onSubmit={handleCategorySubmit}>
-              <Grid container spacing={2}>
-                <Grid xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label={t("Category Name")}
-                    name="name"
-                    value={categoryForm.name}
-                    onChange={handleCategoryFormChange}
-                    required
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <CategoryIcon />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </Grid>
-                <Grid xs={12} sm={6}>
-                  <FormControl fullWidth>
-                    <InputLabel>{t("Store Type")}</InputLabel>
-                    <Select
-                      name="storeType"
-                      value={categoryForm.storeType}
-                      onChange={handleCategoryFormChange}
-                      label={t("Store Type")}
-                    >
-                      <MenuItem value="market">{t("Market")}</MenuItem>
-                      <MenuItem value="clothes">{t("Clothes")}</MenuItem>
-                      <MenuItem value="electronic">{t("Electronics")}</MenuItem>
-                      <MenuItem value="cosmetic">{t("Cosmetics")}</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-
-                <Grid xs={12}>
-                  <Typography variant="h6" gutterBottom>
-                    {t("Category Types")}
-                  </Typography>
-                  {categoryForm.types.map((type, index) => (
-                    <Box key={index} sx={{ display: "flex", gap: 1, mb: 1 }}>
-                      <TextField
-                        fullWidth
-                        label={`${t("Category Type")} ${index + 1}`}
-                        value={type}
-                        onChange={(e) =>
-                          handleCategoryTypeChange(index, e.target.value)
-                        }
-                        placeholder={t("Enter category type name")}
-                      />
-                      <IconButton
-                        onClick={() => removeCategoryType(index)}
-                        disabled={categoryForm.types.length === 1}
-                        color="error"
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Box>
-                  ))}
-                  <Button
-                    variant="outlined"
-                    onClick={addCategoryType}
-                    startIcon={<AddIcon />}
-                    sx={{ mt: 1 }}
-                  >
-                    {t("Add Category Type")}
-                  </Button>
-                </Grid>
-
-                <Grid xs={12}>
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    disabled={loading}
-                    startIcon={
-                      loading ? <CircularProgress size={20} /> : <SaveIcon />
-                    }
-                    fullWidth
-                  >
-                    {loading ? t("Creating...") : t("Create Category")}
-                  </Button>
-                </Grid>
-              </Grid>
-            </Box>
-          )}
-
-          {activeTab === 5 && (
-            <Box component="form" onSubmit={handleBulkUpload}>
-              <Grid container spacing={2}>
-                {/* Bulk Upload Fields */}
-                <Grid xs={12}>
-                  <Typography
-                    variant="h6"
-                    gutterBottom
-                    sx={{ color: "#714329" }}
-                  >
-                    {t("Bulk Upload Products")}
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: "#B08463", mb: 2 }}>
-                    {t(
-                      "Upload an Excel file (.xlsx) with product data. The file should have columns: Barcode, Name, Type, Previous Price, New Price, Is Discount, Brand ID, Store ID, Description, Expire Date, Weight"
-                    )}
-                  </Typography>
-                </Grid>
-                <Grid xs={12}>
-                  <input
-                    accept=".xlsx,.xls"
-                    style={{ display: "none" }}
-                    id="excel-file"
-                    type="file"
-                    onChange={handleExcelFileChange}
-                  />
-                  <label htmlFor="excel-file">
-                    <Button
-                      variant="outlined"
-                      component="span"
-                      fullWidth
-                      startIcon={<AddIcon />}
-                      sx={{ mb: 2 }}
-                    >
-                      {selectedExcelFile
-                        ? selectedExcelFile.name
-                        : t("Select Excel File")}
-                    </Button>
-                  </label>
-                </Grid>
-                <Grid xs={12}>
-                  <Button
-                    variant="outlined"
-                    onClick={() => {
-                      // Create sample data for template
-                      const sampleData = [
-                        [
-                          "Barcode",
-                          "Name",
-                          "Type",
-                          "Previous Price",
-                          "New Price",
-                          "Is Discount",
-                          "Brand ID",
-                          "Store ID",
-                          "Description",
-                          "Expire Date",
-                          "Weight",
-                        ],
-                        [
-                          "123456789",
-                          "Sample Product",
-                          "Electronics",
-                          "100",
-                          "80",
-                          "true",
-                          "brand_id_here",
-                          "store_id_here",
-                          "Sample description",
-                          "2024-12-31",
-                          "500g",
-                        ],
-                      ];
-
-                      // Convert to CSV format
-                      const csvContent = sampleData
-                        .map((row) => row.join(","))
-                        .join("\n");
-
-                      // Create and download file
-                      const blob = new Blob([csvContent], { type: "text/csv" });
-                      const url = window.URL.createObjectURL(blob);
-                      const a = document.createElement("a");
-                      a.href = url;
-                      a.download = "product_template.csv";
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
-                      window.URL.revokeObjectURL(url);
-                    }}
-                    fullWidth
-                    startIcon={<CloudUploadIcon />}
-                    sx={{ mb: 2 }}
-                  >
-                    {t("Download Template")}
-                  </Button>
-                </Grid>
-                <Grid xs={12}>
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    disabled={bulkUploadLoading || !selectedExcelFile}
-                    startIcon={
-                      bulkUploadLoading ? (
-                        <CircularProgress size={20} />
-                      ) : (
-                        <AddIcon />
-                      )
-                    }
-                    fullWidth
-                  >
-                    {bulkUploadLoading
-                      ? t("Uploading...")
-                      : t("Upload Products")}
-                  </Button>
-                </Grid>
-                <Grid xs={12}>
-                  <Typography variant="body2" sx={{ color: "#B08463", mt: 2 }}>
-                    <strong>{t("Excel Format:")}</strong>
-                    <br />• {t("Column A: Barcode (optional)")}
-                    <br />• {t("Column B: Name (required)")}
-                    <br />• {t("Column C: Category ID (required)")}
-                    <br />• {t("Column D: Category Type ID (required)")}
-                    <br />• {t("Column E: Previous Price (optional)")}
-                    <br />• {t("Column F: New Price (optional)")}
-                    <br />• {t("Column G: Is Discount (required)")}
-                    <br />• {t("Column H: Brand ID (optional)")}
-                    <br />• {t("Column I: Store ID (required)")}
-                    <br />• {t("Column J: Description (optional)")}
-                    <br />•{" "}
-                    {t("Column K: Expire Date (optional, YYYY-MM-DD format)")}
-                    <br />• {t("Column L: Weight (optional)")}
-                    <br />• {t("Column M: Barcode (optional)")}
-                    <br />• {t("Column N: Discount (optional)")}
-                  </Typography>
-                </Grid>
-              </Grid>
-            </Box>
-          )}
-        </CardContent>
-      </Card>
+      {/* Enhanced Tabs */}
 
       {/* NEW: Tabbed section for lists */}
       <Card sx={{ mt: 5 }}>
@@ -2787,11 +1739,40 @@ const DataEntryForm = () => {
               icon={<CardGiftcardIcon />}
               iconPosition="start"
             />
+            <Tab
+              label={t("Ads")}
+              icon={<DashboardIcon />}
+              iconPosition="start"
+            />
           </Tabs>
 
           {/* Store List Panel */}
           {activeListTab === 0 && (
             <Box>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "flex-start",
+                  mb: 2,
+                }}
+              >
+                <Box sx={{ display: "flex", gap: 1 }}>
+                  <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={() => setAddDialog({ open: true, type: "store" })}
+                  >
+                    {t("New Store")}
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    startIcon={<CloudUploadIcon />}
+                    onClick={() => setBulkDialog({ open: true, type: "store" })}
+                  >
+                    {t("Bulk Upload")}
+                  </Button>
+                </Box>
+              </Box>
               <TableContainer component={Paper}>
                 <Table>
                   <TableHead>
@@ -2840,6 +1821,15 @@ const DataEntryForm = () => {
                         }}
                       >
                         {t("Phone")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Type")}
                       </TableCell>
                       <TableCell
                         sx={{
@@ -2907,6 +1897,7 @@ const DataEntryForm = () => {
                           </TableCell>
                           {/* <TableCell>{store.address}</TableCell> */}
                           <TableCell>{store.phone}</TableCell>
+                          <TableCell>{t(store.storeType)}</TableCell>
                           <TableCell
                             width="100px"
                             height="100px"
@@ -2984,27 +1975,40 @@ const DataEntryForm = () => {
               <Box
                 sx={{
                   display: "flex",
-                  justifyContent: "space-between",
+                  justifyContent: "flex-start",
                   alignItems: "center",
                   mb: 2,
                 }}
               >
-                <Typography variant="h6" sx={{ color: "#2c3e50" }}>
-                  {t("Total Brands")}: {brands.length}
-                </Typography>
-                <Button
-                  variant="contained"
-                  startIcon={<DownloadIcon />}
-                  onClick={exportBrandsToExcel}
-                  sx={{
-                    backgroundColor: "#52b788",
-                    "&:hover": {
-                      backgroundColor: "#40916c",
-                    },
-                  }}
-                >
-                  {t("Export to Excel")}
-                </Button>
+                <Box sx={{ display: "flex", gap: 1 }}>
+                  <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={() => setAddDialog({ open: true, type: "brand" })}
+                  >
+                    {t("New Brand")}
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    startIcon={<CloudUploadIcon />}
+                    onClick={() => setBulkDialog({ open: true, type: "brand" })}
+                  >
+                    {t("Bulk Upload")}
+                  </Button>
+                  <Button
+                    variant="contained"
+                    startIcon={<DownloadIcon />}
+                    onClick={exportBrandsToExcel}
+                    sx={{
+                      backgroundColor: "#52b788",
+                      "&:hover": {
+                        backgroundColor: "#40916c",
+                      },
+                    }}
+                  >
+                    {t("Export to Excel")}
+                  </Button>
+                </Box>
               </Box>
               <TableContainer component={Paper}>
                 <Table>
@@ -3054,6 +2058,15 @@ const DataEntryForm = () => {
                         }}
                       >
                         {t("Phone")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Type")}
                       </TableCell>
                       <TableCell
                         sx={{
@@ -3121,6 +2134,7 @@ const DataEntryForm = () => {
                           </TableCell>
                           {/* <TableCell>{brand.address}</TableCell> */}
                           <TableCell>{brand.phone}</TableCell>
+                          <TableCell>{brand.type || ""}</TableCell>
                           <TableCell
                             width="100px"
                             height="100px"
@@ -3198,12 +2212,41 @@ const DataEntryForm = () => {
               <Box
                 sx={{
                   display: "flex",
-                  justifyContent: "flex-end",
                   alignItems: "center",
+                  justifyContent: "space-between",
                   mb: 2,
                 }}
               >
-                <FormControl sx={{ minWidth: 240 }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    gap: 1,
+                    justifyContent: "flex-start",
+                  }}
+                >
+                  <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={() =>
+                      setAddDialog({ open: true, type: "product" })
+                    }
+                  >
+                    {t("New Product")}
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    sx={{
+                      justifyContent: "flex-start",
+                    }}
+                    startIcon={<CloudUploadIcon />}
+                    onClick={() =>
+                      setBulkDialog({ open: true, type: "product" })
+                    }
+                  >
+                    {t("Bulk Upload")}
+                  </Button>
+                </Box>
+                <FormControl sx={{ minWidth: 240, justifyContent: "flex-end" }}>
                   <InputLabel>{t("Search by Store")}</InputLabel>
                   <Select
                     value={selectedStoreFilter}
@@ -3468,6 +2511,17 @@ const DataEntryForm = () => {
           {/* Categories List Panel (with image upload) */}
           {activeListTab === 3 && (
             <Box>
+              <Box
+                sx={{ display: "flex", justifyContent: "flex-start", mb: 2 }}
+              >
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => setAddDialog({ open: true, type: "category" })}
+                >
+                  {t("New Category")}
+                </Button>
+              </Box>
               <TableContainer component={Paper}>
                 <Table>
                   <TableHead>
@@ -3515,6 +2569,15 @@ const DataEntryForm = () => {
                           color: "primary.contrastText",
                         }}
                       >
+                        {t("Change Image")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
                         {t("Actions")}
                       </TableCell>
                     </TableRow>
@@ -3524,7 +2587,7 @@ const DataEntryForm = () => {
                       <TableRow key={cat._id}>
                         <TableCell>{idx + 1}</TableCell>
                         <TableCell>{cat.name}</TableCell>
-                        <TableCell>{cat.storeType}</TableCell>
+                        <TableCell>{t(cat.storeType)}</TableCell>
                         <TableCell>
                           {cat.image ? (
                             <img
@@ -3539,40 +2602,41 @@ const DataEntryForm = () => {
                           )}
                         </TableCell>
                         <TableCell>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            id={`cat-image-${cat._id}`}
-                            style={{ display: "none" }}
-                            onChange={async (e) => {
-                              const file = e.target.files?.[0];
-                              if (!file) return;
-                              try {
-                                setEditLoading(true);
-                                await categoryAPI.uploadCategoryImage(
-                                  cat._id,
-                                  file
-                                );
-                                await fetchCategories();
-                              } catch (err) {
-                                console.error("Upload failed", err);
-                                alert("Failed to upload image");
-                              } finally {
-                                setEditLoading(false);
-                              }
-                            }}
-                          />
-                          <label htmlFor={`cat-image-${cat._id}`}>
-                            <Button
-                              variant="outlined"
-                              size="small"
-                              component="span"
-                              startIcon={<CloudUploadIcon />}
-                              disabled={editLoading}
-                            >
-                              {t("Upload Image")}
-                            </Button>
-                          </label>
+                          {cat.image ? (
+                            <label htmlFor={`cat-image-${cat._id}`}>
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                component="span"
+                                startIcon={<CloudUploadIcon />}
+                                disabled={editLoading}
+                              >
+                                {t("Upload Image")}
+                              </Button>
+                            </label>
+                          ) : (
+                            <Chip label={t("No Image")} size="small" />
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <IconButton
+                            color="primary"
+                            onClick={() => handleEditOpen("category", cat)}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                          <IconButton
+                            color="error"
+                            onClick={() =>
+                              setDeleteDialog({
+                                open: true,
+                                type: "category",
+                                data: cat,
+                              })
+                            }
+                          >
+                            <DeleteIcon />
+                          </IconButton>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -3585,6 +2649,17 @@ const DataEntryForm = () => {
           {/* Gift List Panel */}
           {activeListTab === 4 && (
             <Box>
+              <Box
+                sx={{ display: "flex", justifyContent: "flex-start", mb: 2 }}
+              >
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => setAddDialog({ open: true, type: "gift" })}
+                >
+                  {t("New Gift")}
+                </Button>
+              </Box>
               <TableContainer component={Paper}>
                 <Table>
                   <TableHead>
@@ -3801,8 +2876,1594 @@ const DataEntryForm = () => {
               />
             </Box>
           )}
+
+          {/* Ads List Panel */}
+          {activeListTab === 5 && (
+            <Box>
+              <Box
+                sx={{ display: "flex", justifyContent: "flex-start", mb: 2 }}
+              >
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => setAddDialog({ open: true, type: "ad" })}
+                >
+                  {t("New Ad")}
+                </Button>
+              </Box>
+              <TableContainer component={Paper}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("No.")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Image")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Page")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Link URL")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Active")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Priority")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Brand")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Store")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Gift")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Start")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("End")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Actions")}
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {ads
+                      .slice(
+                        adsPage * rowsPerPage,
+                        adsPage * rowsPerPage + rowsPerPage
+                      )
+                      .map((ad, idx) => (
+                        <TableRow key={ad._id}>
+                          <TableCell>
+                            {adsPage * rowsPerPage + idx + 1}
+                          </TableCell>
+                          <TableCell>
+                            {ad.image && (
+                              <img
+                                src={
+                                  ad.image.startsWith("http")
+                                    ? ad.image
+                                    : `${API_URL}${ad.image}`
+                                }
+                                alt="ad"
+                                width={80}
+                                height={80}
+                                style={{ objectFit: "cover", borderRadius: 4 }}
+                              />
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {Array.isArray(ad.pages) && ad.pages.length
+                              ? ad.pages
+                                  .map((p) =>
+                                    t(p.charAt(0).toUpperCase() + p.slice(1))
+                                  )
+                                  .join(", ")
+                              : t("All")}
+                          </TableCell>
+                          <TableCell>
+                            <Typography
+                              sx={{
+                                maxWidth: 240,
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
+                              {ad.linkUrl || ""}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            {ad.active ? t("Yes") : t("No")}
+                          </TableCell>
+                          <TableCell>{ad.priority ?? 0}</TableCell>
+                          <TableCell>
+                            {ad.brandId &&
+                              (brands.find((b) => b._id === ad.brandId)?.name ||
+                                ad.brandId)}
+                          </TableCell>
+                          <TableCell>
+                            {ad.storeId &&
+                              (stores.find((s) => s._id === ad.storeId)?.name ||
+                                ad.storeId)}
+                          </TableCell>
+                          <TableCell>
+                            {ad.giftId &&
+                              (gifts.find((g) => g._id === ad.giftId)
+                                ?.description ||
+                                ad.giftId)}
+                          </TableCell>
+                          <TableCell>
+                            {ad.startDate
+                              ? new Date(ad.startDate).toLocaleDateString()
+                              : ""}
+                          </TableCell>
+                          <TableCell>
+                            {ad.endDate
+                              ? new Date(ad.endDate).toLocaleDateString()
+                              : ""}
+                          </TableCell>
+                          <TableCell>
+                            <IconButton
+                              color="primary"
+                              onClick={() => handleEditOpen("ad", ad)}
+                            >
+                              <EditIcon />
+                            </IconButton>
+                            <IconButton
+                              color="error"
+                              onClick={() =>
+                                setDeleteDialog({
+                                  open: true,
+                                  type: "ad",
+                                  data: ad,
+                                })
+                              }
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              <TablePagination
+                component="div"
+                count={ads.length}
+                page={adsPage}
+                onPageChange={(e, p) => setAdsPage(p)}
+                rowsPerPage={rowsPerPage}
+                rowsPerPageOptions={[10]}
+                labelDisplayedRows={({ from, to, count }) =>
+                  `${from}-${to} of ${count !== -1 ? count : `more than ${to}`}`
+                }
+              />
+            </Box>
+          )}
         </CardContent>
       </Card>
+
+      {/* Add Dialog */}
+      <Dialog
+        open={addDialog.open}
+        onClose={() => setAddDialog({ open: false, type: "" })}
+        fullWidth
+        maxWidth="md"
+      >
+        <DialogTitle>
+          {addDialog.type === "brand"
+            ? t("Add Brand")
+            : addDialog.type === "store"
+            ? t("Add Store")
+            : addDialog.type === "gift"
+            ? t("Add Gift")
+            : addDialog.type === "category"
+            ? t("Add Category")
+            : addDialog.type === "ad"
+            ? t("Add Ad")
+            : t("Add Product")}
+        </DialogTitle>
+        <DialogContent dividers>
+          {message.text && (
+            <Fade in={true}>
+              <Alert severity={message.type} sx={{ mb: 3 }}>
+                {message.text}
+              </Alert>
+            </Fade>
+          )}
+
+          {addDialog.type === "store" && (
+            <Box component="form" onSubmit={handleStoreSubmit} sx={{ mt: 1 }}>
+              <Grid container spacing={2}>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("Store Name")}
+                    name="name"
+                    value={storeForm.name}
+                    onChange={handleStoreFormChange}
+                    required
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <StoreIcon />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <FormControl fullWidth required>
+                    <InputLabel shrink>{t("Store Type")}</InputLabel>
+                    <Select
+                      name="storeType"
+                      value={storeForm.storeType}
+                      onChange={handleStoreFormChange}
+                      label={t("Store Type")}
+                      displayEmpty
+                    >
+                      <MenuItem value="market">{t("Market")}</MenuItem>
+                      <MenuItem value="clothes">{t("Clothes")}</MenuItem>
+                      <MenuItem value="electronic">{t("Electronics")}</MenuItem>
+                      <MenuItem value="cosmetic">{t("Cosmetics")}</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid xs={12}>
+                  <TextField
+                    fullWidth
+                    label={t("Address")}
+                    name="address"
+                    value={storeForm.address}
+                    onChange={handleStoreFormChange}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("Phone")}
+                    name="phone"
+                    value={storeForm.phone}
+                    onChange={handleStoreFormChange}
+                  />
+                </Grid>
+                <Grid xs={12}>
+                  <TextField
+                    fullWidth
+                    label={t("Description")}
+                    name="description"
+                    value={storeForm.description}
+                    onChange={handleStoreFormChange}
+                    multiline
+                    rows={3}
+                  />
+                </Grid>
+                <Grid xs={12}>
+                  <input
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    id="dialog-store-logo-file"
+                    type="file"
+                    onChange={handleStoreLogoChange}
+                  />
+                  <label htmlFor="dialog-store-logo-file">
+                    <Button
+                      variant="outlined"
+                      component="span"
+                      fullWidth
+                      startIcon={<AddIcon />}
+                    >
+                      {selectedStoreLogo
+                        ? selectedStoreLogo.name
+                        : t("Upload Logo")}
+                    </Button>
+                  </label>
+                </Grid>
+                <Grid xs={12}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        name="isVip"
+                        checked={storeForm.isVip}
+                        onChange={(e) =>
+                          setStoreForm({
+                            ...storeForm,
+                            isVip: e.target.checked,
+                          })
+                        }
+                      />
+                    }
+                    label={t("VIP Store")}
+                  />
+                </Grid>
+                <Grid xs={12}>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    disabled={loading || uploadLoading}
+                    startIcon={
+                      loading || uploadLoading ? (
+                        <CircularProgress size={20} />
+                      ) : (
+                        <AddIcon />
+                      )
+                    }
+                    fullWidth
+                  >
+                    {loading
+                      ? t("Creating...")
+                      : uploadLoading
+                      ? t("Uploading...")
+                      : t("Add Store")}
+                  </Button>
+                </Grid>
+              </Grid>
+            </Box>
+          )}
+
+          {addDialog.type === "brand" && (
+            <Box component="form" onSubmit={handleBrandSubmit} sx={{ mt: 1 }}>
+              <Grid container spacing={2}>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("Brand Name")}
+                    name="name"
+                    value={brandForm.name}
+                    onChange={handleBrandFormChange}
+                    required
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <BusinessIcon />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Grid>
+                <Grid xs={12}>
+                  <TextField
+                    fullWidth
+                    label={t("Address")}
+                    name="address"
+                    value={brandForm.address}
+                    onChange={handleBrandFormChange}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("Phone")}
+                    name="phone"
+                    value={brandForm.phone}
+                    onChange={handleBrandFormChange}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>{t("Type")}</InputLabel>
+                    <Select
+                      name="type"
+                      value={brandForm.type}
+                      onChange={handleBrandFormChange}
+                      label={t("Type")}
+                    >
+                      <MenuItem value="خۆراک">خۆراک</MenuItem>
+                      <MenuItem value="جل و بەرگ">جل و بەرگ</MenuItem>
+                      <MenuItem value="ئەلیکترۆنى">ئەلیکترۆنى</MenuItem>
+                      <MenuItem value="جوانکارى">جوانکارى</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid xs={12}>
+                  <TextField
+                    fullWidth
+                    label={t("Description")}
+                    name="description"
+                    value={brandForm.description}
+                    onChange={handleBrandFormChange}
+                    multiline
+                    rows={3}
+                  />
+                </Grid>
+                <Grid xs={12}>
+                  <input
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    id="dialog-brand-logo-file"
+                    type="file"
+                    ref={brandLogoFileRef}
+                    onChange={handleBrandLogoChange}
+                  />
+                  <label htmlFor="dialog-brand-logo-file">
+                    <Button
+                      variant="outlined"
+                      component="span"
+                      fullWidth
+                      startIcon={<AddIcon />}
+                    >
+                      {selectedBrandLogo
+                        ? selectedBrandLogo.name
+                        : t("Upload Logo")}
+                    </Button>
+                  </label>
+                </Grid>
+                <Grid xs={12}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        name="isVip"
+                        checked={brandForm.isVip}
+                        onChange={(e) =>
+                          setBrandForm({
+                            ...brandForm,
+                            isVip: e.target.checked,
+                          })
+                        }
+                      />
+                    }
+                    label={t("VIP Brand")}
+                  />
+                </Grid>
+                <Grid xs={12}>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    disabled={loading || uploadLoading}
+                    startIcon={
+                      loading || uploadLoading ? (
+                        <CircularProgress size={20} />
+                      ) : (
+                        <AddIcon />
+                      )
+                    }
+                    fullWidth
+                  >
+                    {loading
+                      ? t("Creating...")
+                      : uploadLoading
+                      ? t("Uploading...")
+                      : t("Add Brand")}
+                  </Button>
+                </Grid>
+              </Grid>
+            </Box>
+          )}
+
+          {addDialog.type === "product" && (
+            <Box component="form" onSubmit={handleProductSubmit} sx={{ mt: 1 }}>
+              <Grid container spacing={2}>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("Product Name")}
+                    name="name"
+                    value={productForm.name}
+                    onChange={handleProductFormChange}
+                    required
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <ShoppingCartIcon />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Grid>
+                <Grid xs={12}>
+                  <TextField
+                    fullWidth
+                    label={t("Description")}
+                    name="description"
+                    value={productForm.description}
+                    onChange={handleProductFormChange}
+                    multiline
+                    rows={3}
+                  />
+                </Grid>
+                <Grid xs={12}>
+                  <TextField
+                    fullWidth
+                    label={t("Barcode")}
+                    name="barcode"
+                    value={productForm.barcode}
+                    onChange={handleProductFormChange}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("Previous Price")}
+                    name="previousPrice"
+                    type="number"
+                    value={productForm.previousPrice}
+                    onChange={handleProductFormChange}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">ID</InputAdornment>
+                      ),
+                    }}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("New Price")}
+                    name="newPrice"
+                    type="number"
+                    value={productForm.newPrice}
+                    onChange={handleProductFormChange}
+                    required
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">ID</InputAdornment>
+                      ),
+                    }}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("Weight")}
+                    name="weight"
+                    value={productForm.weight}
+                    onChange={handleProductFormChange}
+                    placeholder="e.g., 500g, 1kg, 2.5kg"
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <InventoryIcon />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          name="isDiscount"
+                          checked={productForm.isDiscount}
+                          onChange={(e) =>
+                            setProductForm({
+                              ...productForm,
+                              isDiscount: e.target.checked,
+                            })
+                          }
+                        />
+                      }
+                      label={t("Is Discount Product")}
+                    />
+                  </FormControl>
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <FormControl fullWidth required>
+                    <InputLabel shrink>{t("Store")}</InputLabel>
+                    <Select
+                      name="storeId"
+                      value={productForm.storeId}
+                      onChange={handleProductFormChange}
+                      label={t("Store")}
+                      displayEmpty
+                      labelId="dialog-add-product-store-label"
+                    >
+                      <MenuItem value="">
+                        <em>{t("Select Store")}</em>
+                      </MenuItem>
+                      {stores.map((store) => (
+                        <MenuItem key={store._id} value={store._id}>
+                          {store.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <FormControl fullWidth required>
+                    <InputLabel shrink>{t("Store Type")}</InputLabel>
+                    <Select
+                      name="storeType"
+                      value={productForm.storeType}
+                      onChange={handleProductFormChange}
+                      label={t("Store Type")}
+                      displayEmpty
+                    >
+                      <MenuItem value="market">{t("Market")}</MenuItem>
+                      <MenuItem value="clothes">{t("Clothes")}</MenuItem>
+                      <MenuItem value="electronic">{t("Electronics")}</MenuItem>
+                      <MenuItem value="cosmetic">{t("Cosmetics")}</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel shrink>{t("Brand")}</InputLabel>
+                    <Select
+                      name="brandId"
+                      value={productForm.brandId}
+                      onChange={handleProductFormChange}
+                      label={t("Brand")}
+                      displayEmpty
+                    >
+                      <MenuItem value="">
+                        <em>{t("Select Brand")}</em>
+                      </MenuItem>
+                      {brands.map((brand) => (
+                        <MenuItem key={brand._id} value={brand._id}>
+                          {brand.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <FormControl fullWidth required>
+                    <InputLabel shrink>{t("Category")}</InputLabel>
+                    <Select
+                      name="categoryId"
+                      value={productForm.categoryId}
+                      onChange={handleProductFormChange}
+                      label={t("Category")}
+                      displayEmpty
+                    >
+                      <MenuItem value="">
+                        <em>{t("Select Category")}</em>
+                      </MenuItem>
+                      {categories.map((category) => (
+                        <MenuItem key={category._id} value={category._id}>
+                          {category.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <FormControl fullWidth required>
+                    <InputLabel shrink>{t("Category Type")}</InputLabel>
+                    <Select
+                      name="categoryTypeId"
+                      value={productForm.categoryTypeId}
+                      onChange={handleProductFormChange}
+                      label={t("Category Type")}
+                      displayEmpty
+                      disabled={!productForm.categoryId}
+                    >
+                      <MenuItem value="">
+                        <em>{t("Select Category Type")}</em>
+                      </MenuItem>
+                      {categoryTypes.map((type) => (
+                        <MenuItem key={type._id} value={type._id}>
+                          {type.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("Expire Date")}
+                    name="expireDate"
+                    type="date"
+                    value={productForm.expireDate}
+                    onChange={handleProductFormChange}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                </Grid>
+                <Grid xs={12}>
+                  <input
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    id="dialog-product-image-file"
+                    type="file"
+                    ref={productImageFileRef}
+                    onChange={handleProductImageChange}
+                  />
+                  <label htmlFor="dialog-product-image-file">
+                    <Button
+                      variant="outlined"
+                      component="span"
+                      fullWidth
+                      startIcon={<AddIcon />}
+                    >
+                      {selectedProductImage
+                        ? selectedProductImage.name
+                        : t("Upload Image")}
+                    </Button>
+                  </label>
+                </Grid>
+                <Grid xs={12}>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    disabled={loading || uploadLoading}
+                    startIcon={
+                      loading || uploadLoading ? (
+                        <CircularProgress size={20} />
+                      ) : (
+                        <SaveIcon />
+                      )
+                    }
+                    fullWidth
+                  >
+                    {loading
+                      ? t("Creating...")
+                      : uploadLoading
+                      ? t("Uploading...")
+                      : t("Add Product")}
+                  </Button>
+                </Grid>
+              </Grid>
+            </Box>
+          )}
+
+          {addDialog.type === "gift" && (
+            <Box component="form" onSubmit={handleGiftSubmit} sx={{ mt: 1 }}>
+              <Grid container spacing={2}>
+                <Grid xs={12}>
+                  <input
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    id="dialog-gift-image"
+                    type="file"
+                    onChange={handleGiftImageChange}
+                    ref={giftImageFileRef}
+                  />
+                  <label htmlFor="dialog-gift-image">
+                    <Button
+                      variant="outlined"
+                      component="span"
+                      fullWidth
+                      startIcon={<AddIcon />}
+                      sx={{ mb: 2 }}
+                    >
+                      {selectedGiftImage
+                        ? selectedGiftImage.name
+                        : t("Select Gift Image")}
+                    </Button>
+                  </label>
+                </Grid>
+                <Grid xs={12}>
+                  <TextField
+                    fullWidth
+                    label={t("Description")}
+                    name="description"
+                    value={giftForm.description}
+                    onChange={handleGiftFormChange}
+                    required
+                    multiline
+                    rows={3}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>{t("Stores")}</InputLabel>
+                    <Select
+                      multiple
+                      name="storeId"
+                      value={giftForm.storeId}
+                      onChange={handleGiftFormMultiChange}
+                      label={t("Stores")}
+                      renderValue={(selected) => (
+                        <Box
+                          sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}
+                        >
+                          {selected.map((value) => {
+                            const store = stores.find((m) => m._id === value);
+                            return (
+                              <Chip
+                                key={value}
+                                label={store ? store.name : value}
+                                size="small"
+                              />
+                            );
+                          })}
+                        </Box>
+                      )}
+                    >
+                      {stores.map((store) => (
+                        <MenuItem key={store._id} value={store._id}>
+                          {store.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>{t("Brand")}</InputLabel>
+                    <Select
+                      name="brandId"
+                      value={giftForm.brandId}
+                      onChange={handleGiftFormChange}
+                      label={t("Brand")}
+                    >
+                      <MenuItem value="">
+                        <em>{t("None")}</em>
+                      </MenuItem>
+                      {brands.map((brand) => (
+                        <MenuItem key={brand._id} value={brand._id}>
+                          {brand.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("Product ID (Barcode)")}
+                    name="productId"
+                    value={giftForm.productId}
+                    onChange={handleGiftFormChange}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("Expire Date")}
+                    name="expireDate"
+                    type="date"
+                    value={giftForm.expireDate}
+                    onChange={handleGiftFormChange}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                </Grid>
+                <Grid xs={12}>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    fullWidth
+                    disabled={loading || uploadLoading}
+                    startIcon={
+                      loading || uploadLoading ? (
+                        <CircularProgress size={20} />
+                      ) : (
+                        <SaveIcon />
+                      )
+                    }
+                  >
+                    {loading || uploadLoading
+                      ? t("Creating...")
+                      : t("Create Gift")}
+                  </Button>
+                </Grid>
+              </Grid>
+            </Box>
+          )}
+
+          {addDialog.type === "category" && (
+            <Box
+              component="form"
+              onSubmit={handleCategorySubmit}
+              sx={{ mt: 1 }}
+            >
+              <Grid container spacing={2}>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("Category Name")}
+                    name="name"
+                    value={categoryForm.name}
+                    onChange={handleCategoryFormChange}
+                    required
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <CategoryIcon />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>{t("Store Type")}</InputLabel>
+                    <Select
+                      name="storeType"
+                      value={categoryForm.storeType}
+                      onChange={handleCategoryFormChange}
+                      label={t("Store Type")}
+                    >
+                      <MenuItem value="market">{t("Market")}</MenuItem>
+                      <MenuItem value="clothes">{t("Clothes")}</MenuItem>
+                      <MenuItem value="electronic">{t("Electronics")}</MenuItem>
+                      <MenuItem value="cosmetic">{t("Cosmetics")}</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid xs={12}>
+                  <Typography variant="h6" gutterBottom>
+                    {t("Category Types")}
+                  </Typography>
+                  {categoryForm.types.map((type, index) => (
+                    <Box key={index} sx={{ display: "flex", gap: 1, mb: 1 }}>
+                      <TextField
+                        fullWidth
+                        label={`${t("Category Type")} ${index + 1}`}
+                        value={type}
+                        onChange={(e) =>
+                          handleCategoryTypeChange(index, e.target.value)
+                        }
+                        placeholder={t("Enter category type name")}
+                      />
+                      <IconButton
+                        onClick={() => removeCategoryType(index)}
+                        disabled={categoryForm.types.length === 1}
+                        color="error"
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Box>
+                  ))}
+                  <Button
+                    variant="outlined"
+                    onClick={addCategoryType}
+                    startIcon={<AddIcon />}
+                    sx={{ mt: 1 }}
+                  >
+                    {t("Add Category Type")}
+                  </Button>
+                </Grid>
+                <Grid xs={12}>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    disabled={loading}
+                    startIcon={
+                      loading ? <CircularProgress size={20} /> : <SaveIcon />
+                    }
+                    fullWidth
+                  >
+                    {loading ? t("Creating...") : t("Create Category")}
+                  </Button>
+                </Grid>
+              </Grid>
+            </Box>
+          )}
+
+          {addDialog.type === "ad" && (
+            <Box
+              component="form"
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleAdSubmit();
+              }}
+              sx={{ mt: 1 }}
+            >
+              <Grid container spacing={2}>
+                <Grid xs={12}>
+                  <input
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    id="dialog-ad-image-file"
+                    type="file"
+                    ref={adImageFileRef}
+                    onChange={(e) =>
+                      setSelectedAdImage(e.target.files?.[0] || null)
+                    }
+                  />
+                  <label htmlFor="dialog-ad-image-file">
+                    <Button
+                      variant="outlined"
+                      component="span"
+                      fullWidth
+                      startIcon={<AddIcon />}
+                    >
+                      {selectedAdImage
+                        ? selectedAdImage.name
+                        : t("Upload Image")}
+                    </Button>
+                  </label>
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>{t("Pages")}</InputLabel>
+                    <Select
+                      multiple
+                      name="pages"
+                      value={adForm.pages}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setAdForm({
+                          ...adForm,
+                          pages: Array.isArray(val)
+                            ? val
+                            : String(val).split(","),
+                        });
+                      }}
+                      label={t("Pages")}
+                      renderValue={(selected) => (
+                        <Box
+                          sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}
+                        >
+                          {selected.map((value) => (
+                            <Chip
+                              key={value}
+                              label={t(
+                                value.charAt(0).toUpperCase() + value.slice(1)
+                              )}
+                              size="small"
+                            />
+                          ))}
+                        </Box>
+                      )}
+                    >
+                      {["all", "home", "brands", "stores", "gifts"].map((p) => (
+                        <MenuItem key={p} value={p}>
+                          {t(p.charAt(0).toUpperCase() + p.slice(1))}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("Link URL")}
+                    value={adForm.linkUrl}
+                    onChange={(e) =>
+                      setAdForm({ ...adForm, linkUrl: e.target.value })
+                    }
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel shrink>{t("Brand")}</InputLabel>
+                    <Select
+                      name="brandId"
+                      value={adForm.brandId}
+                      onChange={(e) =>
+                        setAdForm({ ...adForm, brandId: e.target.value })
+                      }
+                      label={t("Brand")}
+                      displayEmpty
+                    >
+                      <MenuItem value="">
+                        <em>{t("None")}</em>
+                      </MenuItem>
+                      {brands.map((brand) => (
+                        <MenuItem key={brand._id} value={brand._id}>
+                          {brand.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel shrink>{t("Store")}</InputLabel>
+                    <Select
+                      name="storeId"
+                      value={adForm.storeId}
+                      onChange={(e) =>
+                        setAdForm({ ...adForm, storeId: e.target.value })
+                      }
+                      label={t("Store")}
+                      displayEmpty
+                    >
+                      <MenuItem value="">
+                        <em>{t("None")}</em>
+                      </MenuItem>
+                      {stores.map((s) => (
+                        <MenuItem key={s._id} value={s._id}>
+                          {s.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel shrink>{t("Gift")}</InputLabel>
+                    <Select
+                      name="giftId"
+                      value={adForm.giftId}
+                      onChange={(e) =>
+                        setAdForm({ ...adForm, giftId: e.target.value })
+                      }
+                      label={t("Gift")}
+                      displayEmpty
+                    >
+                      <MenuItem value="">
+                        <em>{t("None")}</em>
+                      </MenuItem>
+                      {gifts.map((g) => (
+                        <MenuItem key={g._id} value={g._id}>
+                          {g.description?.slice(0, 40) || g._id}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    type="date"
+                    label={t("Start Date")}
+                    InputLabelProps={{ shrink: true }}
+                    value={adForm.startDate}
+                    onChange={(e) =>
+                      setAdForm({ ...adForm, startDate: e.target.value })
+                    }
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    type="date"
+                    label={t("End Date")}
+                    InputLabelProps={{ shrink: true }}
+                    value={adForm.endDate}
+                    onChange={(e) =>
+                      setAdForm({ ...adForm, endDate: e.target.value })
+                    }
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    type="number"
+                    label={t("Priority")}
+                    value={adForm.priority}
+                    onChange={(e) =>
+                      setAdForm({ ...adForm, priority: Number(e.target.value) })
+                    }
+                  />
+                </Grid>
+                <Grid xs={12}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={adForm.active}
+                        onChange={(e) =>
+                          setAdForm({ ...adForm, active: e.target.checked })
+                        }
+                      />
+                    }
+                    label={t("Active")}
+                  />
+                </Grid>
+                <Grid xs={12}>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    disabled={loading || uploadLoading}
+                    startIcon={
+                      loading || uploadLoading ? (
+                        <CircularProgress size={20} />
+                      ) : (
+                        <AddIcon />
+                      )
+                    }
+                    fullWidth
+                  >
+                    {loading || uploadLoading ? t("Creating...") : t("Add Ad")}
+                  </Button>
+                </Grid>
+              </Grid>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setAddDialog({ open: false, type: "" })}>
+            {t("Close")}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Bulk Upload Dialog */}
+      <Dialog
+        open={bulkDialog.open}
+        onClose={() => setBulkDialog({ open: false, type: "" })}
+        fullWidth
+        maxWidth="md"
+      >
+        <DialogTitle>
+          {bulkDialog.type === "brand"
+            ? t("Bulk Upload")
+            : bulkDialog.type === "store"
+            ? t("Bulk Upload")
+            : t("Bulk Upload")}
+        </DialogTitle>
+        <DialogContent dividers>
+          {bulkDialog.type === "store" && (
+            <Box sx={{ p: 1 }}>
+              <Grid container spacing={2}>
+                <Grid xs={12}>
+                  <input
+                    accept=".xlsx,.xls"
+                    style={{ display: "none" }}
+                    id="bulk-store-excel-file"
+                    type="file"
+                    onChange={handleStoreExcelFileChange}
+                  />
+                  <label htmlFor="bulk-store-excel-file">
+                    <Button
+                      variant="outlined"
+                      component="span"
+                      fullWidth
+                      startIcon={<AddIcon />}
+                      sx={{ mb: 2 }}
+                    >
+                      {selectedStoreExcelFile
+                        ? selectedStoreExcelFile.name
+                        : t("Select Excel File")}
+                    </Button>
+                  </label>
+                </Grid>
+                <Grid xs={12}>
+                  <Button
+                    variant="outlined"
+                    onClick={() => {
+                      const sampleData = [
+                        ["Name", "Logo", "Address", "Phone", "Description"],
+                        [
+                          "Sample Store",
+                          "logo_url_here",
+                          "Sample Address",
+                          "+1234567890",
+                          "Sample description",
+                        ],
+                      ];
+                      const csvContent = sampleData
+                        .map((row) => row.join(","))
+                        .join("\n");
+                      const blob = new Blob([csvContent], { type: "text/csv" });
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = "store_template.csv";
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      window.URL.revokeObjectURL(url);
+                    }}
+                    fullWidth
+                    startIcon={<CloudUploadIcon />}
+                    sx={{ mb: 2 }}
+                  >
+                    {t("Download Template")}
+                  </Button>
+                </Grid>
+                <Grid xs={12}>
+                  <Button
+                    onClick={handleStoreBulkUpload}
+                    variant="contained"
+                    disabled={storeBulkUploadLoading || !selectedStoreExcelFile}
+                    startIcon={
+                      storeBulkUploadLoading ? (
+                        <CircularProgress size={20} />
+                      ) : (
+                        <AddIcon />
+                      )
+                    }
+                    fullWidth
+                  >
+                    {storeBulkUploadLoading
+                      ? t("Uploading...")
+                      : t("Upload Stores")}
+                  </Button>
+                </Grid>
+                <Grid xs={12}>
+                  <Typography variant="body2" sx={{ color: "#B08463", mt: 2 }}>
+                    <strong>{t("Excel Format:")}</strong>
+                    <br />• {t("Column A: Name (required)")}
+                    <br />• {t("Column B: Logo (optional)")}
+                    <br />• {t("Column C: Address (optional)")}
+                    <br />• {t("Column D: Phone (optional)")}
+                    <br />• {t("Column E: Description (optional)")}
+                  </Typography>
+                </Grid>
+              </Grid>
+            </Box>
+          )}
+
+          {bulkDialog.type === "brand" && (
+            <Box sx={{ p: 1 }}>
+              <Grid container spacing={2}>
+                <Grid xs={12}>
+                  <input
+                    accept=".xlsx,.xls"
+                    style={{ display: "none" }}
+                    id="bulk-brand-excel-file"
+                    type="file"
+                    onChange={handleBrandExcelFileChange}
+                  />
+                  <label htmlFor="bulk-brand-excel-file">
+                    <Button
+                      variant="outlined"
+                      component="span"
+                      fullWidth
+                      startIcon={<AddIcon />}
+                      sx={{ mb: 2 }}
+                    >
+                      {selectedBrandExcelFile
+                        ? selectedBrandExcelFile.name
+                        : t("Select Excel File")}
+                    </Button>
+                  </label>
+                </Grid>
+                <Grid xs={12}>
+                  <Button
+                    variant="outlined"
+                    onClick={() => {
+                      const sampleData = [
+                        ["Name", "Logo", "Address", "Phone", "Description"],
+                        [
+                          "Sample Brand",
+                          "logo_url_here",
+                          "Sample Address",
+                          "+1234567890",
+                          "Sample description",
+                        ],
+                      ];
+                      const csvContent = sampleData
+                        .map((row) => row.join(","))
+                        .join("\n");
+                      const blob = new Blob([csvContent], { type: "text/csv" });
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = "brand_template.csv";
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      window.URL.revokeObjectURL(url);
+                    }}
+                    fullWidth
+                    startIcon={<CloudUploadIcon />}
+                    sx={{ mb: 2 }}
+                  >
+                    {t("Download Template")}
+                  </Button>
+                </Grid>
+                <Grid xs={12}>
+                  <Button
+                    onClick={handleBrandBulkUpload}
+                    variant="contained"
+                    disabled={brandBulkUploadLoading || !selectedBrandExcelFile}
+                    startIcon={
+                      brandBulkUploadLoading ? (
+                        <CircularProgress size={20} />
+                      ) : (
+                        <AddIcon />
+                      )
+                    }
+                    fullWidth
+                  >
+                    {brandBulkUploadLoading
+                      ? t("Uploading...")
+                      : t("Upload Brands")}
+                  </Button>
+                </Grid>
+                <Grid xs={12}>
+                  <Typography variant="body2" sx={{ color: "#B08463", mt: 2 }}>
+                    <strong>{t("Excel Format:")}</strong>
+                    <br />• {t("Column A: Name (required)")}
+                    <br />• {t("Column B: Logo (optional)")}
+                    <br />• {t("Column C: Address (optional)")}
+                    <br />• {t("Column D: Phone (optional)")}
+                    <br />• {t("Column E: Description (optional)")}
+                  </Typography>
+                </Grid>
+              </Grid>
+            </Box>
+          )}
+
+          {bulkDialog.type === "product" && (
+            <Box sx={{ p: 1 }}>
+              <Grid container spacing={2}>
+                <Grid xs={12}>
+                  <input
+                    accept=".xlsx,.xls"
+                    style={{ display: "none" }}
+                    id="bulk-product-excel-file"
+                    type="file"
+                    onChange={handleExcelFileChange}
+                  />
+                  <label htmlFor="bulk-product-excel-file">
+                    <Button
+                      variant="outlined"
+                      component="span"
+                      fullWidth
+                      startIcon={<AddIcon />}
+                      sx={{ mb: 2 }}
+                    >
+                      {selectedExcelFile
+                        ? selectedExcelFile.name
+                        : t("Select Excel File")}
+                    </Button>
+                  </label>
+                </Grid>
+                <Grid xs={12}>
+                  <Button
+                    variant="outlined"
+                    onClick={() => {
+                      const sampleData = [
+                        [
+                          "Barcode",
+                          "Name",
+                          "Type",
+                          "Previous Price",
+                          "New Price",
+                          "Is Discount",
+                          "Brand ID",
+                          "Store ID",
+                          "Description",
+                          "Expire Date",
+                          "Weight",
+                        ],
+                        [
+                          "123456789",
+                          "Sample Product",
+                          "Electronics",
+                          "100",
+                          "80",
+                          "true",
+                          "brand_id_here",
+                          "store_id_here",
+                          "Sample description",
+                          "2024-12-31",
+                          "500g",
+                        ],
+                      ];
+                      const csvContent = sampleData
+                        .map((row) => row.join(","))
+                        .join("\n");
+                      const blob = new Blob([csvContent], { type: "text/csv" });
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = "product_template.csv";
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      window.URL.revokeObjectURL(url);
+                    }}
+                    fullWidth
+                    startIcon={<CloudUploadIcon />}
+                    sx={{ mb: 2 }}
+                  >
+                    {t("Download Template")}
+                  </Button>
+                </Grid>
+                <Grid xs={12}>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    disabled={bulkUploadLoading || !selectedExcelFile}
+                    startIcon={
+                      bulkUploadLoading ? (
+                        <CircularProgress size={20} />
+                      ) : (
+                        <AddIcon />
+                      )
+                    }
+                    fullWidth
+                    onClick={(e) => {
+                      e.preventDefault();
+                      // reuse the existing bulk upload submit handler
+                      const fakeEvent = { preventDefault: () => {} };
+                      handleBulkUpload(fakeEvent);
+                    }}
+                  >
+                    {bulkUploadLoading
+                      ? t("Uploading...")
+                      : t("Upload Products")}
+                  </Button>
+                </Grid>
+                <Grid xs={12}>
+                  <Typography variant="body2" sx={{ color: "#B08463", mt: 2 }}>
+                    <strong>{t("Excel Format:")}</strong>
+                    <br />• {t("Column A: Barcode (optional)")}
+                    <br />• {t("Column B: Name (required)")}
+                    <br />• {t("Column C: Category ID (required)")}
+                    <br />• {t("Column D: Category Type ID (required)")}
+                    <br />• {t("Column E: Previous Price (optional)")}
+                    <br />• {t("Column F: New Price (optional)")}
+                    <br />• {t("Column G: Is Discount (required)")}
+                    <br />• {t("Column H: Brand ID (optional)")}
+                    <br />• {t("Column I: Store ID (required)")}
+                    <br />• {t("Column J: Description (optional)")}
+                    <br />•{" "}
+                    {t("Column K: Expire Date (optional, YYYY-MM-DD format)")}
+                    <br />• {t("Column L: Weight (optional)")}
+                    <br />• {t("Column M: Barcode (optional)")}
+                    <br />• {t("Column N: Discount (optional)")}
+                  </Typography>
+                </Grid>
+              </Grid>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setBulkDialog({ open: false, type: "" })}>
+            {t("Close")}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Edit Dialog */}
       <Dialog
@@ -3873,6 +4534,25 @@ const DataEntryForm = () => {
                   </Box>
                 )}
               </Box>
+              <Grid xs={12} sm={6}>
+                <FormControl fullWidth required>
+                  <InputLabel shrink>{t("Type")}</InputLabel>
+                  <Select
+                    name="type"
+                    value={editForm.type}
+                    onChange={handleEditFormChange}
+                    label={t("Type")}
+                    displayEmpty
+                  >
+                    <MenuItem value="خۆراک">{t("خۆراک")}</MenuItem>
+                    <MenuItem value="جل و بەرگ">{t("جل و بەرگ")}</MenuItem>
+                    <MenuItem value="ئەلیکترۆنیات">
+                      {t("ئەلیکترۆنیات")}
+                    </MenuItem>
+                    <MenuItem value="جوانکارى">{t("جوانکارى")}</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
               <TextField
                 margin="normal"
                 fullWidth
@@ -3967,7 +4647,23 @@ const DataEntryForm = () => {
                   </Box>
                 )}
               </Box>
-
+              <Grid xs={12} sm={6}>
+                <FormControl fullWidth required>
+                  <InputLabel shrink>{t("Store Type")}</InputLabel>
+                  <Select
+                    name="storeType"
+                    value={editForm.storeType}
+                    onChange={handleEditFormChange}
+                    label={t("Store Type")}
+                    displayEmpty
+                  >
+                    <MenuItem value="market">{t("Market")}</MenuItem>
+                    <MenuItem value="clothes">{t("Clothes")}</MenuItem>
+                    <MenuItem value="electronic">{t("Electronics")}</MenuItem>
+                    <MenuItem value="cosmetic">{t("Cosmetics")}</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
               <TextField
                 margin="normal"
                 fullWidth
@@ -4009,6 +4705,69 @@ const DataEntryForm = () => {
                   label={t("VIP Store")}
                 />
               </Box>
+            </Box>
+          ) : editDialog.type === "category" ? (
+            <Box component="form" sx={{ mt: 1 }}>
+              <Grid container spacing={2}>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    margin="normal"
+                    fullWidth
+                    label={t("Category Name")}
+                    name="name"
+                    value={editForm.name || ""}
+                    onChange={handleEditFormChange}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <FormControl fullWidth margin="normal">
+                    <InputLabel>{t("Store Type")}</InputLabel>
+                    <Select
+                      name="storeType"
+                      value={editForm.storeType || "market"}
+                      onChange={handleEditFormChange}
+                      label={t("Store Type")}
+                    >
+                      <MenuItem value="market">{t("Market")}</MenuItem>
+                      <MenuItem value="clothes">{t("Clothes")}</MenuItem>
+                      <MenuItem value="electronic">{t("Electronics")}</MenuItem>
+                      <MenuItem value="cosmetic">{t("Cosmetics")}</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid xs={12}>
+                  <Typography variant="subtitle1" sx={{ mt: 1 }}>
+                    {t("Category Types")}
+                  </Typography>
+                  {(editForm.types || [""]).map((type, index) => (
+                    <Box key={index} sx={{ display: "flex", gap: 1, mb: 1 }}>
+                      <TextField
+                        fullWidth
+                        label={`${t("Category Type")} ${index + 1}`}
+                        value={type}
+                        onChange={(e) =>
+                          handleEditCategoryTypeChange(index, e.target.value)
+                        }
+                      />
+                      <IconButton
+                        onClick={() => removeEditCategoryType(index)}
+                        disabled={(editForm.types || []).length <= 1}
+                        color="error"
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Box>
+                  ))}
+                  <Button
+                    variant="outlined"
+                    onClick={addEditCategoryType}
+                    startIcon={<AddIcon />}
+                  >
+                    {t("Add Category Type")}
+                  </Button>
+                </Grid>
+              </Grid>
             </Box>
           ) : editDialog.type === "gift" ? (
             <Box component="form" sx={{ mt: 1 }}>
@@ -4135,6 +4894,209 @@ const DataEntryForm = () => {
                 onChange={handleEditFormChange}
                 InputLabelProps={{ shrink: true }}
               />
+            </Box>
+          ) : editDialog.type === "ad" ? (
+            <Box component="form" sx={{ mt: 1 }}>
+              {/* Current Image */}
+              {editForm.image && (
+                <Box sx={{ mt: 2, mb: 2 }}>
+                  <Typography variant="subtitle2" gutterBottom>
+                    {t("Current Image:")}
+                  </Typography>
+                  <img
+                    src={
+                      editForm.image.startsWith("http")
+                        ? editForm.image
+                        : `${API_URL}${editForm.image}`
+                    }
+                    alt={t("Current ad")}
+                    style={{
+                      width: 100,
+                      height: 100,
+                      objectFit: "cover",
+                      borderRadius: 8,
+                      border: "1px solid #ddd",
+                    }}
+                  />
+                </Box>
+              )}
+
+              {/* Upload New Image */}
+              <Box sx={{ mt: 2, mb: 2 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  {t("Upload New Image:")}
+                </Typography>
+                <input
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  id="edit-ad-image-upload"
+                  type="file"
+                  ref={editAdImageFileRef}
+                />
+                <label htmlFor="edit-ad-image-upload">
+                  <Button
+                    variant="outlined"
+                    component="span"
+                    startIcon={<CloudUploadIcon />}
+                    sx={{ mb: 1 }}
+                  >
+                    {t("Choose Image")}
+                  </Button>
+                </label>
+              </Box>
+
+              <Grid container spacing={2}>
+                <Grid xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>{t("Pages")}</InputLabel>
+                    <Select
+                      multiple
+                      name="pages"
+                      value={editForm.pages || []}
+                      onChange={handleEditFormChange}
+                      label={t("Pages")}
+                      renderValue={(selected) => (
+                        <Box
+                          sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}
+                        >
+                          {selected.map((value) => (
+                            <Chip
+                              key={value}
+                              label={t(
+                                value.charAt(0).toUpperCase() + value.slice(1)
+                              )}
+                              size="small"
+                            />
+                          ))}
+                        </Box>
+                      )}
+                    >
+                      {["all", "home", "brands", "stores", "gifts"].map((p) => (
+                        <MenuItem key={p} value={p}>
+                          {t(p.charAt(0).toUpperCase() + p.slice(1))}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("Link URL")}
+                    name="linkUrl"
+                    value={editForm.linkUrl || ""}
+                    onChange={handleEditFormChange}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel shrink>{t("Brand")}</InputLabel>
+                    <Select
+                      name="brandId"
+                      value={editForm.brandId || ""}
+                      onChange={handleEditFormChange}
+                      label={t("Brand")}
+                      displayEmpty
+                    >
+                      <MenuItem value="">
+                        <em>{t("None")}</em>
+                      </MenuItem>
+                      {brands.map((brand) => (
+                        <MenuItem key={brand._id} value={brand._id}>
+                          {brand.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel shrink>{t("Store")}</InputLabel>
+                    <Select
+                      name="storeId"
+                      value={editForm.storeId || ""}
+                      onChange={handleEditFormChange}
+                      label={t("Store")}
+                      displayEmpty
+                    >
+                      <MenuItem value="">
+                        <em>{t("None")}</em>
+                      </MenuItem>
+                      {stores.map((s) => (
+                        <MenuItem key={s._id} value={s._id}>
+                          {s.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel shrink>{t("Gift")}</InputLabel>
+                    <Select
+                      name="giftId"
+                      value={editForm.giftId || ""}
+                      onChange={handleEditFormChange}
+                      label={t("Gift")}
+                      displayEmpty
+                    >
+                      <MenuItem value="">
+                        <em>{t("None")}</em>
+                      </MenuItem>
+                      {gifts.map((g) => (
+                        <MenuItem key={g._id} value={g._id}>
+                          {g.description?.slice(0, 40) || g._id}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    type="date"
+                    label={t("Start Date")}
+                    InputLabelProps={{ shrink: true }}
+                    name="startDate"
+                    value={editForm.startDate || ""}
+                    onChange={handleEditFormChange}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    type="date"
+                    label={t("End Date")}
+                    InputLabelProps={{ shrink: true }}
+                    name="endDate"
+                    value={editForm.endDate || ""}
+                    onChange={handleEditFormChange}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    type="number"
+                    label={t("Priority")}
+                    name="priority"
+                    value={editForm.priority ?? 0}
+                    onChange={handleEditFormChange}
+                  />
+                </Grid>
+                <Grid xs={12}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={!!editForm.active}
+                        onChange={(e) =>
+                          setEditForm({ ...editForm, active: e.target.checked })
+                        }
+                      />
+                    }
+                    label={t("Active")}
+                  />
+                </Grid>
+              </Grid>
             </Box>
           ) : (
             <Box component="form" sx={{ mt: 1 }}>
@@ -4384,6 +5346,26 @@ const DataEntryForm = () => {
                 ? handleDeleteBrandConfirm()
                 : deleteDialog.type === "gift"
                 ? handleDeleteBrandConfirm()
+                : deleteDialog.type === "category"
+                ? (async () => {
+                    setDeleteLoading(true);
+                    try {
+                      await categoryAPI.delete(deleteDialog.data._id);
+                      setMessage({
+                        type: "success",
+                        text: t("Category deleted successfully!"),
+                      });
+                      fetchCategories();
+                    } catch (e) {
+                      setMessage({
+                        type: "error",
+                        text: t("Failed to delete category."),
+                      });
+                    } finally {
+                      setDeleteLoading(false);
+                      setDeleteDialog({ open: false, type: "", data: null });
+                    }
+                  })()
                 : handleDeleteStoreConfirm()
             }
             disabled={deleteLoading}

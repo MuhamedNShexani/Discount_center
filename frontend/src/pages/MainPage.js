@@ -25,7 +25,7 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
 import { Link, useNavigate } from "react-router-dom";
-import { storeAPI, productAPI, categoryAPI } from "../services/api";
+import { storeAPI, productAPI, categoryAPI, adAPI } from "../services/api";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import BusinessIcon from "@mui/icons-material/Business";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
@@ -157,7 +157,7 @@ const MainPage = () => {
     }
   };
 
-  const bannerImages = [
+  const fallbackBannerImages = [
     banner1,
     banner2,
     banner3,
@@ -166,6 +166,24 @@ const MainPage = () => {
     banner6,
     banner7,
   ];
+
+  const [bannerAds, setBannerAds] = useState([]);
+
+  const bannerAdsWithImages = useMemo(
+    () =>
+      (bannerAds || [])
+        .filter((a) => !!a.image)
+        .map((a) => ({
+          _id: a._id,
+          src: a.image.startsWith("http")
+            ? a.image
+            : `${process.env.REACT_APP_BACKEND_URL}${a.image}`,
+          brandId: a.brandId,
+          storeId: a.storeId,
+          giftId: a.giftId,
+        })),
+    [bannerAds]
+  );
 
   const bannerSettings = {
     dots: true,
@@ -234,16 +252,22 @@ const MainPage = () => {
       setLoading(true);
 
       // Fetch stores, categories, and all products in parallel
-      const [storesResponse, categoriesResponse, productsResponse] =
-        await Promise.all([
-          storeAPI.getAll(),
-          categoryAPI.getAll(),
-          productAPI.getAll(),
-        ]);
+      const [
+        storesResponse,
+        categoriesResponse,
+        productsResponse,
+        adsResponse,
+      ] = await Promise.all([
+        storeAPI.getAll(),
+        categoryAPI.getAll(),
+        productAPI.getAll(),
+        adAPI.getAll({ page: "home" }),
+      ]);
 
       const storesData = storesResponse.data;
       const categoriesData = categoriesResponse.data;
       const productsData = productsResponse.data;
+      const adsData = adsResponse.data || [];
 
       setStores(storesData);
       setAllCategories(categoriesData);
@@ -265,6 +289,7 @@ const MainPage = () => {
       setProductsByStore(productsMap);
       setLikeCounts(initialLikeCounts);
       setLikeStates(initialLikeStates);
+      setBannerAds(adsData);
     } catch (err) {
       setError(
         err.response
@@ -492,23 +517,37 @@ const MainPage = () => {
           <Box
             sx={{
               width: "100%",
-              height: { xs: "100px", sm: "150px", md: "200px" },
+              height: { xs: "100px", sm: "150px", md: "250px" },
               borderRadius: { xs: 2, md: 3 },
               overflow: "hidden",
               boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
               mb: 3,
+              mt: { xs: 2, md: 10 },
             }}
           >
             <Slider {...bannerSettings}>
-              {bannerImages.map((src, index) => (
-                <div key={index}>
+              {(bannerAdsWithImages.length > 0
+                ? bannerAdsWithImages
+                : fallbackBannerImages.map((src) => ({ src }))
+              ).map((ad, index) => (
+                <div key={ad._id || index}>
                   <img
-                    src={src}
+                    onClick={() =>
+                      ad.brandId
+                        ? navigate(`/brands/${ad.brandId}`)
+                        : ad.storeId
+                        ? navigate(`/stores/${ad.storeId}`)
+                        : ad.giftId
+                        ? navigate(`/gifts/${ad.giftId}`)
+                        : null
+                    }
+                    src={ad.src || ad}
                     alt={`Banner ${index + 1}`}
                     style={{
                       width: "100%",
                       height: "100%",
-                      objectFit: "cover",
+                      objectFit: "contain",
+                      cursor: ad.brandId ? "pointer" : "default",
                     }}
                   />
                 </div>

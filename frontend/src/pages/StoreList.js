@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -11,7 +11,10 @@ import {
   useTheme,
 } from "@mui/material";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { storeAPI } from "../services/api";
+import { storeAPI, adAPI } from "../services/api";
+import Slider from "react-slick";
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import PhoneIcon from "@mui/icons-material/Phone";
@@ -262,12 +265,14 @@ const StoreList = () => {
   const [filteredStores, setFilteredStores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [bannerAds, setBannerAds] = useState([]);
 
   const storeTypeParam = searchParams.get("type");
   const [selectedType, setSelectedType] = useState(storeTypeParam || "all");
 
   useEffect(() => {
     fetchStores();
+    fetchAds();
   }, []);
 
   useEffect(() => {
@@ -297,6 +302,46 @@ const StoreList = () => {
     }
   };
 
+  const fetchAds = async () => {
+    try {
+      const res = await adAPI.getAll({ page: "stores" });
+      setBannerAds(res.data || []);
+    } catch (e) {
+      // fail silently for banner ads
+    }
+  };
+
+  const bannerSettings = {
+    dots: true,
+    infinite: true,
+    speed: 500,
+    slidesToShow: 1,
+    slidesToScroll: 1,
+    autoplay: true,
+    autoplaySpeed: 3000,
+    responsive: [
+      { breakpoint: 1024, settings: { dots: true, arrows: false } },
+      {
+        breakpoint: 600,
+        settings: { dots: true, arrows: false, autoplaySpeed: 4000 },
+      },
+    ],
+  };
+
+  const fallbackBannerImages = [];
+  const bannerImages = useMemo(() => {
+    if (bannerAds && bannerAds.length > 0) {
+      return bannerAds
+        .filter((a) => !!a.image)
+        .map((a) =>
+          a.image.startsWith("http")
+            ? a.image
+            : `${process.env.REACT_APP_BACKEND_URL}${a.image}`
+        );
+    }
+    return fallbackBannerImages;
+  }, [bannerAds]);
+
   const handleStoreClick = (store) => navigate(`/stores/${store._id}`);
 
   if (loading) return <Loader message={t("Loading...")} />;
@@ -304,6 +349,64 @@ const StoreList = () => {
 
   return (
     <Box sx={{ py: 6, px: { xs: 1, sm: 2, md: 4 } }}>
+      {/* Banner Slider Section (from Ads: pages includes stores/all) */}
+      <Box
+        sx={{
+          mb: 2,
+          position: { xs: "sticky", md: "static" },
+          top: { xs: 60, md: "auto" },
+          zIndex: { xs: 1000, md: "auto" },
+        }}
+      >
+        <Box
+          sx={{
+            width: "100%",
+            height: { xs: "100px", sm: "150px", md: "250px" },
+            borderRadius: { xs: 2, md: 3 },
+            overflow: "hidden",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
+            mb: 3,
+            mt: { xs: 2, md: 5 },
+          }}
+        >
+          {bannerImages.length > 0 && (
+            <Slider {...bannerSettings}>
+              {bannerAds
+                .filter((a) => !!a.image)
+                .map((ad, index) => (
+                  <div key={ad._id || index}>
+                    <img
+                      onClick={() =>
+                        ad.brandId
+                          ? navigate(`/brands/${ad.brandId}`)
+                          : ad.storeId
+                          ? navigate(`/stores/${ad.storeId}`)
+                          : ad.giftId
+                          ? navigate(`/gifts/${ad.giftId}`)
+                          : null
+                      }
+                      src={
+                        ad.image.startsWith("http")
+                          ? ad.image
+                          : `${process.env.REACT_APP_BACKEND_URL}${ad.image}`
+                      }
+                      alt={`Banner ${index + 1}`}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "contain",
+                        cursor:
+                          ad.brandId || ad.storeId || ad.giftId
+                            ? "pointer"
+                            : "default",
+                      }}
+                    />
+                  </div>
+                ))}
+            </Slider>
+          )}
+        </Box>
+      </Box>
       {/* Store Type Filter - Inline on page */}
       <Box
         sx={{

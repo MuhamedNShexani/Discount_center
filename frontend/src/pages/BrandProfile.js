@@ -441,7 +441,8 @@ const BrandProfile = () => {
                     sx={{
                       fontSize: { xs: 12, sm: 16, md: 16 },
                       mr: 1,
-                      color: "#52b788",
+                      color:
+                        theme.palette.mode === "dark" ? "#52b788" : "#34495e",
                       flexShrink: 0,
                     }}
                   />
@@ -479,9 +480,7 @@ const BrandProfile = () => {
                         py: 0.5,
                         borderRadius: 1,
                         backgroundColor:
-                          theme.palette.mode === "dark"
-                            ? "rgba(82, 183, 136, 0.1)"
-                            : "rgba(82, 183, 136, 0.05)",
+                          theme.palette.mode === "dark" ? "#52b788" : "#34495e",
                         border: `1px solid ${
                           theme.palette.mode === "dark"
                             ? "rgba(82, 183, 136, 0.2)"
@@ -492,8 +491,8 @@ const BrandProfile = () => {
                           color: "#52b788",
                           backgroundColor:
                             theme.palette.mode === "dark"
-                              ? "rgba(82, 183, 136, 0.2)"
-                              : "rgba(82, 183, 136, 0.1)",
+                              ? "#40916c"
+                              : "#34495e",
                         },
                       }}
                     >
@@ -1062,10 +1061,10 @@ const BrandProfile = () => {
         sx={{
           mb: 3,
           borderRadius: 2,
-          borderColor: theme.palette.mode === "dark" ? "#52b788" : "#40916c",
-          color: theme.palette.mode === "dark" ? "#52b788" : "#40916c",
+          borderColor: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+          color: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
           "&:hover": {
-            borderColor: theme.palette.mode === "dark" ? "#40916c" : "#52b788",
+            borderColor: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
             backgroundColor:
               theme.palette.mode === "dark"
                 ? "rgba(82, 183, 136, 0.1)"
@@ -1099,10 +1098,7 @@ const BrandProfile = () => {
         {/* Header Background */}
         <Box
           sx={{
-            background:
-              theme.palette.mode === "dark"
-                ? "linear-gradient(135deg, #52b788 0%, #40916c 100%)"
-                : "linear-gradient(135deg, #52b788 0%, #40916c 100%)",
+            background: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
             p: { xs: 2, sm: 3, md: 4 },
             color: "white",
             position: "relative",
@@ -1491,7 +1487,7 @@ const BrandProfile = () => {
             backgroundColor:
               theme.palette.mode === "dark"
                 ? "rgba(255,255,255,0.05)"
-                : "rgba(82, 183, 136, 0.05)",
+                : "rgba(64, 145, 108, 0.05)",
             border: `1px solid ${
               theme.palette.mode === "dark"
                 ? "rgba(255,255,255,0.1)"
@@ -1511,13 +1507,14 @@ const BrandProfile = () => {
                 mx: 0.5,
                 transition: "all 0.3s ease",
                 fontWeight: 600,
+                color: "#34495e",
                 width: { xs: "125px", sm: "100px", md: "100%" },
                 fontSize: { xs: "0.875rem", sm: "1rem" },
                 "&.Mui-selected": {
                   backgroundColor:
-                    theme.palette.mode === "dark" ? "#52b788" : "#52b788",
+                    theme.palette.mode === "dark" ? "#40916c" : "#34495e",
                   color: "white",
-                  boxShadow: "0 4px 12px rgba(82, 183, 136, 0.3)",
+                  boxShadow: "0 4px 12px rgba(1, 1, 1, 0.3)",
                 },
               },
               "& .MuiTabs-indicator": {

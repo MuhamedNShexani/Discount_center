@@ -79,6 +79,15 @@ export const giftAPI = {
   getByBrand: (brandId) => api.get(`/gifts/brand/${brandId}`),
 };
 
+// Ad API calls
+export const adAPI = {
+  getAll: (params = {}) => api.get("/ads", { params }),
+  getById: (id) => api.get(`/ads/${id}`),
+  create: (data) => api.post("/ads", data),
+  update: (id, data) => api.put(`/ads/${id}`, data),
+  delete: (id) => api.delete(`/ads/${id}`),
+};
+
 // User API calls
 export const userAPI = {
   getByDevice: (deviceId) => api.get(`/users/device/${deviceId}`),

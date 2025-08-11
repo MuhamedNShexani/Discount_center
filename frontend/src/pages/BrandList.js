@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -11,8 +11,11 @@ import {
   Chip,
   IconButton,
 } from "@mui/material";
-import { useNavigate } from "react-router-dom";
-import { brandAPI } from "../services/api";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { brandAPI, adAPI } from "../services/api";
+import Slider from "react-slick";
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
 import BusinessIcon from "@mui/icons-material/Business";
 import PhoneIcon from "@mui/icons-material/Phone";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
@@ -26,13 +29,32 @@ const BrandList = () => {
   const theme = useTheme();
   const { t } = useTranslation();
 
+  const [searchParams] = useSearchParams();
   const [Brands, setBrands] = useState([]);
+  const [filteredBrands, setFilteredBrands] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [bannerAds, setBannerAds] = useState([]);
+
+  const brandTypeParam = searchParams.get("type");
+  const [selectedType, setSelectedType] = useState(brandTypeParam || "all");
 
   useEffect(() => {
     fetchBrands();
+    fetchAds();
   }, []);
+
+  useEffect(() => {
+    if (Brands.length > 0) {
+      if (selectedType && selectedType !== "all") {
+        setFilteredBrands(Brands.filter((b) => b.type === selectedType));
+      } else {
+        setFilteredBrands(Brands);
+      }
+    } else {
+      setFilteredBrands([]);
+    }
+  }, [Brands, selectedType]);
 
   const fetchBrands = async () => {
     try {
@@ -53,6 +75,48 @@ const BrandList = () => {
     }
   };
 
+  const fetchAds = async () => {
+    try {
+      const res = await adAPI.getAll({ page: "brands" });
+      setBannerAds(res.data || []);
+    } catch (e) {
+      // ignore banner errors
+    }
+  };
+
+  const bannerSettings = {
+    dots: true,
+    infinite: true,
+    speed: 500,
+    slidesToShow: 1,
+    slidesToScroll: 1,
+    autoplay: true,
+    autoplaySpeed: 3000,
+    responsive: [
+      { breakpoint: 1024, settings: { dots: true, arrows: false } },
+      {
+        breakpoint: 600,
+        settings: { dots: true, arrows: false, autoplaySpeed: 4000 },
+      },
+    ],
+  };
+
+  const bannerAdsWithImages = useMemo(
+    () =>
+      (bannerAds || [])
+        .filter((ad) => !!ad.image)
+        .map((ad) => ({
+          _id: ad._id,
+          src: ad.image.startsWith("http")
+            ? ad.image
+            : `${process.env.REACT_APP_BACKEND_URL}${ad.image}`,
+          brandId: ad.brandId,
+          storeId: ad.storeId,
+          giftId: ad.giftId,
+        })),
+    [bannerAds]
+  );
+
   const handleBrandClick = (brand) => {
     navigate(`/brands/${brand._id}`);
   };
@@ -60,80 +124,100 @@ const BrandList = () => {
   if (loading) return <Loader message={t("Loading...")} />;
   if (error) return <Loader message={error} />;
 
+  // Derive unique brand types from data
+  const brandTypes = Array.from(
+    new Set(Brands.map((b) => b.type).filter(Boolean))
+  );
+
+  const capitalize = (s) =>
+    typeof s === "string" && s.length > 0
+      ? s.charAt(0).toUpperCase() + s.slice(1)
+      : s;
+
   return (
-    <Box sx={{ py: 10, px: { xs: 0.5, sm: 1.5, md: 3 } }}>
-      {/* Enhanced Header */}
-      <Box sx={{ mb: 6, textAlign: "center" }}>
+    <Box sx={{ py: { xs: 0, md: 10 }, px: { xs: 0.5, sm: 1.5, md: 3 } }}>
+      {/* Banner Slider Section (from Ads: pages includes brands/all) */}
+      <Box
+        sx={{
+          mb: 2,
+          position: { xs: "sticky", md: "static" },
+          top: { xs: 60, md: "auto" },
+          zIndex: { xs: 1000, md: "auto" },
+        }}
+      >
         <Box
           sx={{
-            background:
-              theme.palette.mode === "dark"
-                ? "linear-gradient(135deg, #52b788 0%, #40916c 100%)"
-                : "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)",
-            borderRadius: 4,
-            p: 4,
-            color: "white",
-            position: "relative",
+            width: "100%",
+            height: { xs: "100px", sm: "150px", md: "250px" },
+            borderRadius: { xs: 2, md: 3 },
             overflow: "hidden",
-            mb: 4,
-            "&::before": {
-              content: '""',
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background:
-                "radial-gradient(circle at 30% 70%, rgba(255,255,255,0.1) 0%, transparent 50%)",
-            },
+            boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
+            mb: 6,
+            mt: { xs: 0, md: 5 },
           }}
         >
-          <Box position="relative" zIndex={1}>
-            <BusinessIcon
-              sx={{ fontSize: { xs: 60, sm: 70, md: 80 }, mb: 2, opacity: 0.9 }}
-            />
-            <Typography
-              variant="h2"
-              component="h1"
-              gutterBottom
-              color="white"
-              sx={{
-                fontWeight: 700,
-                fontSize: { xs: "2rem", sm: "2.5rem", md: "3.5rem" },
-                textShadow: "0 4px 8px rgba(0,0,0,0.3)",
-              }}
-            >
-              {t("Brands")}
-            </Typography>
-            <Typography
-              variant="h5"
-              sx={{
-                opacity: 0.9,
-                fontWeight: 300,
-                textShadow: "0 2px 4px rgba(0,0,0,0.3)",
-                color: "white",
-                fontSize: { xs: "1rem", sm: "1.25rem", md: "1.5rem" },
-              }}
-            >
-              {t("Browse all Brands and their products")}
-            </Typography>
-            <Chip
-              label={`(${Brands.length})${t("Brands Available")}`}
-              sx={{
-                mt: 3,
-                backgroundColor: "rgba(255,255,255,0.2)",
-                color: "white",
-                fontSize: "1rem",
-                fontWeight: 600,
-                px: 2,
-                py: 1,
-                backdropFilter: "blur(10px)",
-              }}
-            />
-          </Box>
+          {bannerAdsWithImages.length > 0 && (
+            <Slider {...bannerSettings}>
+              {bannerAdsWithImages.map((ad, index) => (
+                <div key={ad._id || index}>
+                  <img
+                    onClick={() =>
+                      ad.brandId
+                        ? navigate(`/brands/${ad.brandId}`)
+                        : ad.storeId
+                        ? navigate(`/stores/${ad.storeId}`)
+                        : ad.giftId
+                        ? navigate(`/gifts/${ad.giftId}`)
+                        : null
+                    }
+                    src={ad.src}
+                    alt={`Banner ${index + 1}`}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "contain",
+                      cursor: ad.brandId ? "pointer" : "default",
+                    }}
+                  />
+                </div>
+              ))}
+            </Slider>
+          )}
         </Box>
       </Box>
-
+      {/* Brand Type Filter - Similar to StoreList */}
+      <Box
+        sx={{
+          mb: 2,
+          display: "flex",
+          gap: 1,
+          overflowX: "auto",
+          color: theme.palette.mode === "dark" ? "white" : "black",
+        }}
+      >
+        {[
+          { key: "all", label: t("All") },
+          ...brandTypes.map((bt) => ({ key: bt, label: t(capitalize(bt)) })),
+        ].map((tItem) => (
+          <Chip
+            key={tItem.key}
+            label={tItem.label}
+            onClick={() => setSelectedType(tItem.key)}
+            color={selectedType === tItem.key ? "primary" : "default"}
+            variant={selectedType === tItem.key ? "filled" : "outlined"}
+            sx={{
+              flexShrink: 0,
+              backgroundColor:
+                selectedType === tItem.key
+                  ? theme.palette.mode === "dark"
+                    ? "#40916c"
+                    : "#34495e"
+                  : "transparent",
+              color: selectedType === tItem.key ? "white" : "inherit",
+            }}
+          />
+        ))}
+      </Box>
       {/* Brands Grid */}
       <Box
         sx={{
@@ -148,7 +232,7 @@ const BrandList = () => {
           alignItems: "center",
         }}
       >
-        {Brands.map((brand, index) => (
+        {filteredBrands.map((brand, index) => (
           <Fade in={true} timeout={300 + index * 100} key={brand._id}>
             <Card
               sx={{
@@ -466,7 +550,7 @@ const BrandList = () => {
       </Box>
 
       {/* Empty State */}
-      {Brands.length === 0 && (
+      {filteredBrands.length === 0 && (
         <Box
           sx={{
             textAlign: "center",
