@@ -479,8 +479,6 @@ const BrandProfile = () => {
                         px: 1,
                         py: 0.5,
                         borderRadius: 1,
-                        backgroundColor:
-                          theme.palette.mode === "dark" ? "#52b788" : "#34495e",
                         border: `1px solid ${
                           theme.palette.mode === "dark"
                             ? "rgba(82, 183, 136, 0.2)"
@@ -489,10 +487,6 @@ const BrandProfile = () => {
                         "&:hover": {
                           textDecoration: "underline",
                           color: "#52b788",
-                          backgroundColor:
-                            theme.palette.mode === "dark"
-                              ? "#40916c"
-                              : "#34495e",
                         },
                       }}
                     >

@@ -2886,21 +2886,55 @@ const DataEntryForm = () => {
                           )}
                         </TableCell>
                         <TableCell>
-                          {cat.image ? (
-                            <label htmlFor={`cat-image-${cat._id}`}>
-                              <Button
-                                variant="outlined"
-                                size="small"
-                                component="span"
-                                startIcon={<CloudUploadIcon />}
-                                disabled={editLoading}
-                              >
-                                {t("Upload Image")}
-                              </Button>
-                            </label>
-                          ) : (
-                            <Chip label={t("No Image")} size="small" />
-                          )}
+                          <input
+                            id={`cat-image-${cat._id}`}
+                            type="file"
+                            accept="image/*"
+                            style={{ display: "none" }}
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              try {
+                                const formData = new FormData();
+                                formData.append("image", file);
+                                const res = await fetch(
+                                  `${API_URL}/api/categories/${cat._id}/image`,
+                                  { method: "POST", body: formData }
+                                );
+                                if (!res.ok) {
+                                  const text = await res.text();
+                                  throw new Error(
+                                    text || `Upload failed (${res.status})`
+                                  );
+                                }
+                                const json = await res.json();
+                                setMessage({
+                                  type: "success",
+                                  text: t("Image uploaded"),
+                                });
+                                // refresh categories list
+                                fetchCategories();
+                              } catch (err) {
+                                setMessage({
+                                  type: "error",
+                                  text: err.message || t("Upload failed"),
+                                });
+                              } finally {
+                                e.target.value = "";
+                              }
+                            }}
+                          />
+                          <label htmlFor={`cat-image-${cat._id}`}>
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              component="span"
+                              startIcon={<CloudUploadIcon />}
+                              disabled={editLoading}
+                            >
+                              {t("Upload Image")}
+                            </Button>
+                          </label>
                         </TableCell>
                         <TableCell>
                           <IconButton

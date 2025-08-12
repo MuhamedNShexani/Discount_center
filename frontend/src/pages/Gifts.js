@@ -886,7 +886,16 @@ const Gifts = () => {
                 {selectedGift.brandId && (
                   <Box display="flex" alignItems="center" gap={1}>
                     <Business fontSize="small" color="action" />
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ cursor: "pointer" }}
+                      onClick={() => {
+                        navigate(
+                          `/brands/${selectedGift.brandId._id}?tab=gifts`
+                        );
+                      }}
+                    >
                       {t("Brand")}: {selectedGift.brandId.name}
                     </Typography>
                   </Box>
