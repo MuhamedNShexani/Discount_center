@@ -26,8 +26,8 @@ const getProducts = async (req, res) => {
       .populate("brandId", "name logo")
       .populate("storeId", "name logo")
       .populate("categoryId", "name types")
+      .populate("storeTypeId", "name icon")
       .sort({ name: 1 });
-
     res.json(products);
   } catch (err) {
     console.error(err.message);
@@ -43,7 +43,8 @@ const getProductById = async (req, res) => {
     const product = await Product.findById(req.params.id)
       .populate("brandId", "name logo address phone description")
       .populate("storeId", "name address phone description")
-      .populate("categoryId", "name types description");
+      .populate("categoryId", "name types description")
+      .populate("storeTypeId", "name icon");
 
     if (!product) {
       return res.status(404).json({ msg: "Product not found" });
@@ -79,7 +80,8 @@ const createProduct = async (req, res) => {
     description,
     barcode,
     storeId,
-    storeType,
+    storeTypeId: providedStoreTypeId,
+    storeType: providedStoreTypeName,
     expireDate,
   } = req.body;
 
@@ -124,6 +126,23 @@ const createProduct = async (req, res) => {
       }
     }
 
+    const StoreType = require("../models/StoreType");
+    let storeTypeIdToUse = providedStoreTypeId;
+    if (!storeTypeIdToUse && providedStoreTypeName) {
+      const st = await StoreType.findOne({ name: providedStoreTypeName });
+      if (!st) {
+        return res
+          .status(400)
+          .json({ msg: `Invalid storeType name: ${providedStoreTypeName}` });
+      }
+      storeTypeIdToUse = st._id;
+    }
+    if (!storeTypeIdToUse) {
+      return res.status(400).json({
+        msg: "storeTypeId is required (or provide legacy storeType name)",
+      });
+    }
+
     const newProduct = new Product({
       name,
       type,
@@ -138,7 +157,7 @@ const createProduct = async (req, res) => {
       weight,
       brandId,
       storeId,
-      storeType,
+      storeTypeId: storeTypeIdToUse,
       expireDate,
     });
 
@@ -160,8 +179,8 @@ const getProductsByBrand = async (req, res) => {
       .populate("brandId", "name logo")
       .populate("storeId", "name logo")
       .populate("categoryId", "name types")
+      .populate("storeTypeId", "name icon")
       .sort({ name: 1 });
-
     res.json(products);
   } catch (err) {
     console.error(err.message);
@@ -178,8 +197,8 @@ const getProductsByStore = async (req, res) => {
       .populate("brandId", "name logo")
       .populate("storeId", "name logo")
       .populate("categoryId", "name types")
+      .populate("storeTypeId", "name icon")
       .sort({ name: 1 });
-
     res.json(products);
   } catch (err) {
     console.error(err.message);
@@ -197,8 +216,8 @@ const getProductsByCategory = async (req, res) => {
       .populate("brandId", "name logo")
       .populate("storeId", "name logo")
       .populate("categoryId", "name types")
+      .populate("storeTypeId", "name icon")
       .sort({ name: 1 });
-
     res.json(products);
   } catch (err) {
     console.error(err.message);
@@ -224,9 +243,22 @@ const getCategories = async (req, res) => {
 // @access  Private (Admin)
 const updateProduct = async (req, res) => {
   try {
-    const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
+    const { storeTypeId, storeType: storeTypeName, ...rest } = req.body;
+    const updateDoc = { ...rest };
+    if (!storeTypeId && storeTypeName) {
+      const StoreType = require("../models/StoreType");
+      const st = await StoreType.findOne({ name: storeTypeName });
+      if (!st) return res.status(400).json({ msg: "Invalid storeType name" });
+      updateDoc.storeTypeId = st._id;
+    } else if (storeTypeId) {
+      updateDoc.storeTypeId = storeTypeId;
+    }
+
+    const product = await Product.findByIdAndUpdate(req.params.id, updateDoc, {
       new: true,
-    }).populate("brandId", "name logo");
+    })
+      .populate("brandId", "name logo")
+      .populate("storeTypeId", "name icon");
 
     if (!product) {
       return res.status(404).json({ msg: "Product not found" });

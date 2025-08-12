@@ -359,7 +359,6 @@ const StoreProfile = () => {
           width: "100%",
           borderRadius: 2,
           overflow: "hidden",
-          background: "linear-gradient(135deg, #34495e 0%, #2c3e50 100%)",
           border: `1px solid ${
             theme.palette.mode === "dark" ? "#4a5568" : "#e2e8f0"
           }`,

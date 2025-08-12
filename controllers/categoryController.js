@@ -6,10 +6,9 @@ const fs = require("fs");
 // @route   GET /api/categories
 const getCategories = async (req, res) => {
   try {
-    const categories = await Category.find({ isActive: true }).sort({
-      createdAt: 1,
-    });
-
+    const categories = await Category.find({ isActive: true })
+      .populate("storeTypeId", "name icon")
+      .sort({ createdAt: 1 });
     res.json(categories);
   } catch (err) {
     console.error(err.message);
@@ -21,7 +20,10 @@ const getCategories = async (req, res) => {
 // @route   GET /api/categories/:id
 const getCategoryById = async (req, res) => {
   try {
-    const category = await Category.findById(req.params.id);
+    const category = await Category.findById(req.params.id).populate(
+      "storeTypeId",
+      "name icon"
+    );
     if (!category) return res.status(404).json({ msg: "Category not found" });
     res.json(category);
   } catch (err) {
@@ -34,9 +36,23 @@ const getCategoryById = async (req, res) => {
 // @route   POST /api/categories
 const createCategory = async (req, res) => {
   try {
-    const category = new Category(req.body);
+    const { storeTypeId, storeType: storeTypeName, ...rest } = req.body;
+    let toCreate = { ...rest };
+    if (!storeTypeId && storeTypeName) {
+      const StoreType = require("../models/StoreType");
+      const st = await StoreType.findOne({ name: storeTypeName });
+      if (!st) return res.status(400).json({ msg: "Invalid storeType name" });
+      toCreate.storeTypeId = st._id;
+    } else {
+      toCreate.storeTypeId = storeTypeId;
+    }
+    const category = new Category(toCreate);
     await category.save();
-    res.json(category);
+    const populated = await Category.findById(category._id).populate(
+      "storeTypeId",
+      "name icon"
+    );
+    res.json(populated);
   } catch (err) {
     console.error(err.message);
     res.status(500).send("Server Error");
@@ -47,9 +63,24 @@ const createCategory = async (req, res) => {
 // @route   PUT /api/categories/:id
 const updateCategory = async (req, res) => {
   try {
-    const category = await Category.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-    });
+    const { storeTypeId, storeType: storeTypeName, ...rest } = req.body;
+    const updateDoc = { ...rest };
+    if (!storeTypeId && storeTypeName) {
+      const StoreType = require("../models/StoreType");
+      const st = await StoreType.findOne({ name: storeTypeName });
+      if (!st) return res.status(400).json({ msg: "Invalid storeType name" });
+      updateDoc.storeTypeId = st._id;
+    } else if (storeTypeId) {
+      updateDoc.storeTypeId = storeTypeId;
+    }
+
+    const category = await Category.findByIdAndUpdate(
+      req.params.id,
+      updateDoc,
+      {
+        new: true,
+      }
+    ).populate("storeTypeId", "name icon");
     if (!category) return res.status(404).json({ msg: "Category not found" });
     res.json(category);
   } catch (err) {
@@ -105,11 +136,15 @@ const getCategoryTypes = async (req, res) => {
 const getCategoriesByStoreType = async (req, res) => {
   try {
     const { storeType } = req.params;
+    const StoreType = require("../models/StoreType");
+    const st = await StoreType.findOne({ name: storeType });
+    if (!st) return res.json([]);
     const categories = await Category.find({
-      storeType: storeType,
+      storeTypeId: st._id,
       isActive: true,
-    }).sort({ createdAt: 1 });
-
+    })
+      .populate("storeTypeId", "name icon")
+      .sort({ createdAt: 1 });
     res.json(categories);
   } catch (err) {
     console.error(err.message);

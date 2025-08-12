@@ -37,7 +37,7 @@ import {
   ListItemText,
 } from "@mui/material";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { productAPI, categoryAPI } from "../services/api";
+import { productAPI, categoryAPI, storeTypeAPI } from "../services/api";
 import CategoryIcon from "@mui/icons-material/Category";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
@@ -78,8 +78,9 @@ const ProductCategory = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   // Mobile layout states
-  const [selectedStoreType, setSelectedStoreType] = useState(() =>
-    typeof window !== "undefined" && window.innerWidth < 900 ? "market" : "all"
+  const [storeTypes, setStoreTypes] = useState([]);
+  const [selectedStoreTypeId, setSelectedStoreTypeId] = useState(() =>
+    typeof window !== "undefined" && window.innerWidth < 900 ? "first" : "all"
   );
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -108,23 +109,28 @@ const ProductCategory = () => {
   const [rowsPerPage, setRowsPerPage] = useState(20);
 
   // Store types for filtering
-  const storeTypes = [
-    // { value: "all", label: "All Store Types", icon: "🏪" },
-    { value: "market", label: t("Market"), icon: "🛒" },
-    { value: "clothes", label: t("Clothes"), icon: "👕" },
-    { value: "electronic", label: t("Electronics"), icon: "📱" },
-    { value: "cosmetic", label: t("Beauty & Care"), icon: "💄" },
-  ];
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await storeTypeAPI.getAll();
+        const types = res.data || [];
+        setStoreTypes(types);
+        if (typeof window !== "undefined" && window.innerWidth < 900) {
+          setSelectedStoreTypeId(types[0]?._id || "all");
+        }
+      } catch (e) {
+        setStoreTypes([]);
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     fetchCategories();
-  }, [selectedStoreType]);
+  }, [selectedStoreTypeId, storeTypes]);
 
   // On first mount on mobile, lock the store type to the first option
   useEffect(() => {
-    if (typeof window !== "undefined" && window.innerWidth < 900) {
-      setSelectedStoreType("market");
-    }
+    // mobile default handled after store types load
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -147,10 +153,13 @@ const ProductCategory = () => {
     try {
       setLoading(true);
       let response;
-      if (selectedStoreType === "all") {
+      if (selectedStoreTypeId === "all") {
         response = await categoryAPI.getAll();
       } else {
-        response = await categoryAPI.getByStoreType(selectedStoreType);
+        const st = storeTypes.find((s) => s._id === selectedStoreTypeId);
+        response = st
+          ? await categoryAPI.getByStoreType(st.name)
+          : await categoryAPI.getAll();
       }
       setCategories(response.data);
       // Mobile: start in categories view; Desktop: preselect first category
@@ -212,9 +221,8 @@ const ProductCategory = () => {
     setSelectedCategoryType(categoryType);
   };
 
-  const handleStoreTypeChange = (storeType) => {
-    // Allow selection of any store type (initial default set on mount only)
-    setSelectedStoreType(storeType);
+  const handleStoreTypeChange = (storeTypeId) => {
+    setSelectedStoreTypeId(storeTypeId);
     setSelectedCategory(null);
     setSelectedCategoryType(null);
     setCategoryTypes([]);
@@ -387,11 +395,11 @@ const ProductCategory = () => {
           gap: 1.5,
         }}
       >
-        {storeTypes.map((type) => (
+        {[...storeTypes].map((type) => (
           <Button
-            key={type.value}
-            onClick={() => handleStoreTypeChange(type.value)}
-            variant={selectedStoreType === type.value ? "contained" : "text"}
+            key={type._id}
+            onClick={() => handleStoreTypeChange(type._id)}
+            variant={selectedStoreTypeId === type._id ? "contained" : "text"}
             sx={{
               mx: 1,
               justifyContent: "flex-start",
@@ -400,15 +408,15 @@ const ProductCategory = () => {
               textTransform: "none",
 
               backgroundColor:
-                selectedStoreType === type.value
+                selectedStoreTypeId === type._id
                   ? theme.palette.mode === "dark"
                     ? "#40916c"
                     : "#34495e"
                   : "transparent",
-              color: selectedStoreType === type.value ? "white" : "inherit",
+              color: selectedStoreTypeId === type._id ? "white" : "inherit",
               "&:hover": {
                 backgroundColor:
-                  selectedStoreType === type.value
+                  selectedStoreTypeId === type._id
                     ? theme.palette.mode === "dark"
                       ? "#40916c"
                       : "#34495e"
@@ -427,19 +435,23 @@ const ProductCategory = () => {
               <Avatar
                 sx={{
                   bgcolor:
-                    selectedStoreType === type.value ? "white" : "#e8f5e9",
+                    selectedStoreTypeId === type._id ? "white" : "#e8f5e9",
                   color: "#2d6a4f",
                   width: 40,
                   height: 40,
                   mb: 0.5,
                 }}
               >
-                <Typography component="span" role="img" aria-label={type.label}>
-                  {type.icon}
+                <Typography
+                  component="span"
+                  role="img"
+                  aria-label={t(type.name)}
+                >
+                  {type.icon || "🏪"}
                 </Typography>
               </Avatar>
               <Typography variant="caption" sx={{ textAlign: "center" }}>
-                {type.label}
+                {t(type.name)}
               </Typography>
             </Box>
           </Button>
@@ -798,41 +810,43 @@ const ProductCategory = () => {
             Filter by Store Type
           </Typography> */}
           <Box sx={{ display: "flex", gap: 2 }}>
-            {storeTypes.map((type) => (
-              <Button
-                key={type.value}
-                variant={
-                  selectedStoreType === type.value ? "contained" : "outlined"
-                }
-                onClick={() => handleStoreTypeChange(type.value)}
-                sx={{
-                  backgroundColor:
-                    selectedStoreType === type.value
-                      ? theme.palette.mode === "dark"
-                        ? "#40916c"
-                        : "#34495e"
-                      : "transparent",
-                  color:
-                    selectedStoreType === type.value
-                      ? "white"
-                      : theme.palette.mode === "dark"
-                      ? "#40916c"
-                      : "#34495e",
-                  borderColor:
-                    theme.palette.mode === "dark" ? "#40916c" : "#34495e",
-                  "&:hover": {
+            {[{ _id: "all", name: t("All"), icon: "🏪" }, ...storeTypes].map(
+              (type) => (
+                <Button
+                  key={type._id}
+                  variant={
+                    selectedStoreTypeId === type._id ? "contained" : "outlined"
+                  }
+                  onClick={() => handleStoreTypeChange(type._id)}
+                  sx={{
                     backgroundColor:
-                      selectedStoreType === type.value
+                      selectedStoreTypeId === type._id
                         ? theme.palette.mode === "dark"
                           ? "#40916c"
                           : "#34495e"
-                        : "rgba(82, 183, 136, 0.1)",
-                  },
-                }}
-              >
-                {type.icon} {type.label}
-              </Button>
-            ))}
+                        : "transparent",
+                    color:
+                      selectedStoreTypeId === type._id
+                        ? "white"
+                        : theme.palette.mode === "dark"
+                        ? "#40916c"
+                        : "#34495e",
+                    borderColor:
+                      theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+                    "&:hover": {
+                      backgroundColor:
+                        selectedStoreTypeId === type._id
+                          ? theme.palette.mode === "dark"
+                            ? "#40916c"
+                            : "#34495e"
+                          : "rgba(82, 183, 136, 0.1)",
+                    },
+                  }}
+                >
+                  {type.icon || "🏪"} {t(type.name)}
+                </Button>
+              )
+            )}
           </Box>
         </Box>
 

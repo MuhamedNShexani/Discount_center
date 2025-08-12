@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -30,7 +30,10 @@ import { Search, FilterList, Store, Business } from "@mui/icons-material";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import CardGiftcard from "@mui/icons-material/CardGiftcard";
-import { giftAPI, storeAPI, brandAPI } from "../services/api";
+import { giftAPI, storeAPI, brandAPI, adAPI } from "../services/api";
+import Slider from "react-slick";
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
@@ -49,6 +52,7 @@ const Gifts = () => {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [stores, setStores] = useState([]);
   const [brands, setBrands] = useState([]);
+  const [bannerAds, setBannerAds] = useState([]);
 
   // Filter states
   const [filters, setFilters] = useState({
@@ -68,9 +72,13 @@ const Gifts = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [giftsResponse, storesResponse, brandsResponse] = await Promise.all(
-        [giftAPI.getAll(), storeAPI.getAll(), brandAPI.getAll()]
-      );
+      const [giftsResponse, storesResponse, brandsResponse, adsResponse] =
+        await Promise.all([
+          giftAPI.getAll(),
+          storeAPI.getAll(),
+          brandAPI.getAll(),
+          adAPI.getAll({ page: "gifts" }),
+        ]);
 
       console.log("Gifts response:", giftsResponse);
       console.log("Stores response:", storesResponse);
@@ -90,6 +98,7 @@ const Gifts = () => {
       setGifts(giftsData);
       setStores(storesData);
       setBrands(brandsData);
+      setBannerAds(adsResponse?.data || []);
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -106,6 +115,39 @@ const Gifts = () => {
       setLoading(false);
     }
   };
+
+  const bannerSettings = {
+    dots: true,
+    infinite: true,
+    speed: 500,
+    slidesToShow: 1,
+    slidesToScroll: 1,
+    autoplay: true,
+    autoplaySpeed: 3000,
+    responsive: [
+      { breakpoint: 1024, settings: { dots: true, arrows: false } },
+      {
+        breakpoint: 600,
+        settings: { dots: true, arrows: false, autoplaySpeed: 4000 },
+      },
+    ],
+  };
+
+  const bannerAdsWithImages = useMemo(
+    () =>
+      (bannerAds || [])
+        .filter((ad) => !!ad.image)
+        .map((ad) => ({
+          _id: ad._id,
+          src: ad.image.startsWith("http")
+            ? ad.image
+            : `${process.env.REACT_APP_BACKEND_URL}${ad.image}`,
+          brandId: ad.brandId,
+          storeId: ad.storeId,
+          giftId: ad.giftId,
+        })),
+    [bannerAds]
+  );
 
   const applyFilters = () => {
     // Ensure gifts is always an array
@@ -300,7 +342,7 @@ const Gifts = () => {
         }}
         sx={{
           display: "flex",
-          height: { xs: "150px", sm: "250px", md: "280px" },
+          height: { xs: "100px", sm: "250px", md: "280px" },
           width: "100%",
           borderRadius: 2,
           overflow: "hidden",
@@ -329,8 +371,8 @@ const Gifts = () => {
         {/* Gift Image */}
         <Box
           sx={{
-            width: { xs: "100px", sm: "150px", md: "400px" },
-            height: "100%",
+            width: { xs: "100%", sm: "150px", md: "200px" },
+            height: { xs: "100%", sm: "100%", md: "100%" },
             flexShrink: 0,
             position: "relative",
           }}
@@ -342,7 +384,7 @@ const Gifts = () => {
             sx={{
               width: "100%",
               height: "100%",
-              objectFit: "fill",
+              objectFit: "cover",
             }}
           />
         </Box>
@@ -359,7 +401,7 @@ const Gifts = () => {
           }}
         >
           {/* Main Description */}
-          <Typography
+          {/* <Typography
             variant="body1"
             sx={{
               alignItems: "center",
@@ -375,7 +417,7 @@ const Gifts = () => {
             }}
           >
             {gift.description}
-          </Typography>
+          </Typography> */}
 
           {/* Store and Brand Info */}
           <Box sx={{ mb: 2, flexShrink: 0 }}>
@@ -547,8 +589,58 @@ const Gifts = () => {
 
   return (
     <Box sx={{ py: 8, px: { xs: 0.5, sm: 1.5, md: 3 } }}>
+      {/* Banner Slider Section (from Ads: pages includes gifts/all) */}
+      <Box
+        sx={{
+          mb: 2,
+          top: { xs: 100, md: "auto" },
+          zIndex: { xs: 1000, md: "auto" },
+        }}
+      >
+        <Box
+          sx={{
+            width: "100%",
+            height: { xs: "100px", sm: "150px", md: "220px" },
+            borderRadius: { xs: 2, md: 3 },
+            overflow: "hidden",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
+            mb: 3,
+          }}
+        >
+          {bannerAdsWithImages.length > 0 && (
+            <Slider {...bannerSettings}>
+              {bannerAdsWithImages.map((ad, index) => (
+                <div key={ad._id || index}>
+                  <img
+                    onClick={() =>
+                      ad.brandId
+                        ? navigate(`/brands/${ad.brandId}`)
+                        : ad.storeId
+                        ? navigate(`/stores/${ad.storeId}`)
+                        : ad.giftId
+                        ? navigate(`/gifts/${ad.giftId}`)
+                        : null
+                    }
+                    src={ad.src}
+                    alt={`Banner ${index + 1}`}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "contain",
+                      cursor:
+                        ad.brandId || ad.storeId || ad.giftId
+                          ? "pointer"
+                          : "default",
+                    }}
+                  />
+                </div>
+              ))}
+            </Slider>
+          )}
+        </Box>
+      </Box>
       {/* Header */}
-      <Box display="flex" alignItems="center" mb={4}>
+      {/* <Box display="flex" alignItems="center" mb={4}>
         <CardGiftcard
           sx={{
             fontSize: { xs: 32, sm: 36, md: 40 },
@@ -578,7 +670,7 @@ const Gifts = () => {
             {t("Discover amazing gifts from stores and brands")}
           </Typography>
         </Box>
-      </Box>
+      </Box> */}
 
       {/* Filters */}
       {renderFilters()}
@@ -799,6 +891,42 @@ const Gifts = () => {
                     </Typography>
                   </Box>
                 )}
+
+                {Array.isArray(selectedGift.storeId) &&
+                  selectedGift.storeId.length > 0 && (
+                    <Box sx={{ mt: 1 }}>
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <Store fontSize="small" color="action" />
+                        <Typography variant="body2" color="text.secondary">
+                          {t("Stores")}:
+                        </Typography>
+                      </Box>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: 0.75,
+                          mt: 0.5,
+                        }}
+                      >
+                        {selectedGift.storeId.map((store) => (
+                          <Chip
+                            key={store._id}
+                            label={store.name}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/stores/${store._id}?tab=gifts`);
+                            }}
+                            size="small"
+                            sx={{
+                              cursor: "pointer",
+                              "&:hover": { opacity: 0.9 },
+                            }}
+                          />
+                        ))}
+                      </Box>
+                    </Box>
+                  )}
 
                 {selectedGift.expireDate && (
                   <Box display="flex" alignItems="center" gap={1}>

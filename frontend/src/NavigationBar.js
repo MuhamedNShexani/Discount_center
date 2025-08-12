@@ -23,6 +23,7 @@ import {
   Business as BusinessIcon,
   Category as CategoryIcon,
   AdminPanelSettings as AdminPanelSettingsIcon,
+  Dashboard as DashboardIcon,
   Brightness4 as Brightness4Icon,
   Brightness7 as Brightness7Icon,
   Store as StoreIcon,
@@ -47,6 +48,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
   const lang = i18n.language;
   const location = useLocation();
   const isAuthenticated = !!user;
+  const isAdmin = !!user && user.email === "mshexani45@gmail.com";
   // Profile menu state
   const [profileAnchorEl, setProfileAnchorEl] = useState(null);
 
@@ -644,30 +646,61 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
 
         <Divider />
 
-        {/* Login/Logout */}
+        {/* Admin entry and Logout / Login */}
         {user ? (
-          <MenuItem
-            onClick={handleLogout}
-            sx={{
-              py: 1.5,
-              px: 2,
-              color: "#e53e3e",
-              "&:hover": {
-                backgroundColor: "rgba(229, 62, 62, 0.08)",
-              },
-            }}
-          >
-            <ListItemIcon>
-              <LogoutIcon sx={{ color: "#e53e3e" }} />
-            </ListItemIcon>
-            <ListItemText
-              primary={t("Logout")}
-              primaryTypographyProps={{
-                fontSize: "0.875rem",
-                fontWeight: 500,
+          <>
+            {isAdmin && (
+              <MenuItem
+                component={Link}
+                to="/admin/dashboard"
+                onClick={handleProfileMenuClose}
+                sx={{
+                  py: 1.5,
+                  px: 2,
+                  color: theme.palette.mode === "dark" ? "#e2e8f0" : "#2c3e50",
+                  "&:hover": {
+                    backgroundColor:
+                      theme.palette.mode === "dark"
+                        ? "rgba(255,255,255,0.08)"
+                        : "rgba(0,0,0,0.04)",
+                  },
+                }}
+              >
+                <ListItemIcon>
+                  <DashboardIcon />
+                </ListItemIcon>
+                <ListItemText
+                  primary={t("Admin Dashboard")}
+                  primaryTypographyProps={{
+                    fontSize: "0.875rem",
+                    fontWeight: 500,
+                  }}
+                />
+              </MenuItem>
+            )}
+            <MenuItem
+              onClick={handleLogout}
+              sx={{
+                py: 1.5,
+                px: 2,
+                color: "#e53e3e",
+                "&:hover": {
+                  backgroundColor: "rgba(229, 62, 62, 0.08)",
+                },
               }}
-            />
-          </MenuItem>
+            >
+              <ListItemIcon>
+                <LogoutIcon sx={{ color: "#e53e3e" }} />
+              </ListItemIcon>
+              <ListItemText
+                primary={t("Logout")}
+                primaryTypographyProps={{
+                  fontSize: "0.875rem",
+                  fontWeight: 500,
+                }}
+              />
+            </MenuItem>
+          </>
         ) : (
           <MenuItem
             component={Link}

@@ -46,6 +46,8 @@ import {
   categoryAPI,
   giftAPI,
   adAPI,
+  storeTypeAPI,
+  brandTypeAPI,
 } from "../services/api";
 import * as XLSX from "xlsx";
 
@@ -89,6 +91,8 @@ const DataEntryForm = () => {
   const [giftsPage, setGiftsPage] = useState(0);
   const [adsPage, setAdsPage] = useState(0);
   const [rowsPerPage] = useState(10);
+  const [storeTypes, setStoreTypes] = useState([]);
+  const [brandTypes, setBrandTypes] = useState([]);
 
   // Refs for file inputs
   const brandLogoFileRef = useRef(null);
@@ -108,7 +112,7 @@ const DataEntryForm = () => {
     phone: "",
     description: "",
     isVip: false,
-    type: "",
+    brandTypeId: "",
   });
   // Store form state
   const [storeForm, setStoreForm] = useState({
@@ -118,7 +122,7 @@ const DataEntryForm = () => {
     phone: "",
     description: "",
     isVip: false,
-    storeType: "market",
+    storeTypeId: "",
   });
 
   // Product form state
@@ -135,7 +139,7 @@ const DataEntryForm = () => {
     categoryId: "",
     categoryTypeId: "",
     storeId: "",
-    storeType: "market",
+    storeTypeId: "",
     expireDate: "",
   });
 
@@ -203,6 +207,24 @@ const DataEntryForm = () => {
   const [addDialog, setAddDialog] = useState({ open: false, type: "" });
   const [bulkDialog, setBulkDialog] = useState({ open: false, type: "" });
   const showTopAdd = false;
+
+  // Load store types for dynamic selects
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await storeTypeAPI.getAll();
+        setStoreTypes(res.data || []);
+      } catch (e) {
+        // ignore
+      }
+      try {
+        const res = await brandTypeAPI.getAll();
+        setBrandTypes(res.data || []);
+      } catch (e) {
+        // ignore
+      }
+    })();
+  }, []);
 
   // Edit dialog form state
   const [editForm, setEditForm] = useState({});
@@ -901,7 +923,7 @@ const DataEntryForm = () => {
         logo: "",
         address: "",
         phone: "",
-        type: "",
+        brandTypeId: "",
         description: "",
       });
       setSelectedBrandLogo(null);
@@ -952,7 +974,7 @@ const DataEntryForm = () => {
         phone: "",
         description: "",
         isVip: false,
-        storeType: "market",
+        storeTypeId: "",
       });
       setSelectedStoreLogo(null);
       fetchStores(); // Refresh stores list
@@ -972,22 +994,17 @@ const DataEntryForm = () => {
     setLoading(true);
     setMessage({ type: "", text: "" });
 
-    if (!selectedProductImage) {
-      setMessage({
-        type: "error",
-        text: t("Please select an image file."),
-      });
-      return;
-    }
-
     try {
-      setUploadLoading(true);
-      const imageUrl = await uploadProductImage(selectedProductImage);
-      setUploadLoading(false);
+      let imageUrl = "";
+      if (selectedProductImage) {
+        setUploadLoading(true);
+        imageUrl = await uploadProductImage(selectedProductImage);
+        setUploadLoading(false);
+      }
 
       const productData = {
         ...productForm,
-        image: imageUrl,
+        ...(imageUrl ? { image: imageUrl } : {}),
         previousPrice: parseFloat(productForm.previousPrice) || null,
         newPrice: parseFloat(productForm.newPrice) || null,
         isDiscount: productForm.isDiscount,
@@ -1000,7 +1017,7 @@ const DataEntryForm = () => {
         categoryId: productForm.categoryId,
         categoryTypeId: productForm.categoryTypeId,
         storeId: productForm.storeId,
-        storeType: productForm.storeType,
+        storeTypeId: productForm.storeTypeId,
       };
 
       await productAPI.create(productData);
@@ -1018,7 +1035,7 @@ const DataEntryForm = () => {
         brandId: "",
         categoryId: "",
         categoryTypeId: "",
-        storeType: "market",
+        storeTypeId: "",
         expireDate: "",
       });
       setSelectedProductImage(null);
@@ -1151,7 +1168,7 @@ const DataEntryForm = () => {
 
       const categoryData = {
         name: categoryForm.name.trim(),
-        storeType: categoryForm.storeType,
+        storeTypeId: categoryForm.storeTypeId || "",
         types: validTypes,
       };
 
@@ -1162,7 +1179,7 @@ const DataEntryForm = () => {
       });
       setCategoryForm({
         name: "",
-        storeType: "market",
+        storeTypeId: "",
         types: [""],
       });
       fetchCategories();
@@ -1186,7 +1203,8 @@ const DataEntryForm = () => {
         address: data.address,
         phone: data.phone,
         isVip: !!data.isVip,
-        type: data.type,
+        brandTypeId:
+          (data.brandTypeId && data.brandTypeId._id) || data.brandTypeId || "",
         description: data.description || "",
       });
     } else if (type === "store") {
@@ -1196,13 +1214,15 @@ const DataEntryForm = () => {
         address: data.address,
         phone: data.phone,
         isVip: !!data.isVip,
-        storeType: data.storeType || "market",
+        storeTypeId:
+          (data.storeTypeId && data.storeTypeId._id) || data.storeTypeId || "",
         description: data.description || "",
       });
     } else if (type === "category") {
       setEditForm({
         name: data.name || "",
-        storeType: data.storeType || "market",
+        storeTypeId:
+          (data.storeTypeId && data.storeTypeId._id) || data.storeTypeId || "",
         types: Array.isArray(data.types)
           ? data.types.map((t) => (typeof t === "string" ? t : t.name || ""))
           : [""],
@@ -1340,7 +1360,7 @@ const DataEntryForm = () => {
           .map((t) => ({ name: t.trim(), description: "" }));
         await categoryAPI.update(editDialog.data._id, {
           name: (editForm.name || "").trim(),
-          storeType: editForm.storeType || "market",
+          storeTypeId: editForm.storeTypeId || "",
           types: validTypes,
         });
         setMessage({
@@ -1348,6 +1368,33 @@ const DataEntryForm = () => {
           text: t("Category updated successfully!"),
         });
         fetchCategories();
+      } else if (editDialog.type === "storeType") {
+        // Save store type edit via API
+        await fetch(`${API_URL}/api/store-types/${editForm._id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: (editForm.name || "").trim(),
+            icon: editForm.icon || "",
+          }),
+        });
+        const res = await storeTypeAPI.getAll();
+        setStoreTypes(res.data || []);
+        setMessage({
+          type: "success",
+          text: t("Store Type updated successfully!"),
+        });
+      } else if (editDialog.type === "brandType") {
+        await brandTypeAPI.update(editDialog.data._id, {
+          name: (editForm.name || "").trim(),
+          icon: editForm.icon || "",
+        });
+        const res = await brandTypeAPI.getAll();
+        setBrandTypes(res.data || []);
+        setMessage({
+          type: "success",
+          text: t("Brand Type updated successfully!"),
+        });
       } else if (editDialog.type === "product") {
         let imageUrl = editForm.image;
         if (selectedEditImage) {
@@ -1370,6 +1417,7 @@ const DataEntryForm = () => {
           categoryId: editForm.categoryId,
           categoryTypeId: editForm.categoryTypeId,
           storeId: editForm.storeId,
+          storeTypeId: editForm.storeTypeId,
         };
 
         await productAPI.update(editDialog.data._id, productUpdateData);
@@ -1506,6 +1554,41 @@ const DataEntryForm = () => {
       console.error("Error deleting:", err);
     } finally {
       setDeleteLoading(false);
+    }
+  };
+  const handleDeleteCategoryConfirm = async () => {
+    setDeleteLoading(true);
+    try {
+      await categoryAPI.delete(deleteDialog.data._id);
+      setMessage({
+        type: "success",
+        text: t("Category deleted successfully!"),
+      });
+      fetchCategories();
+    } catch (e) {
+      setMessage({ type: "error", text: t("Failed to delete category.") });
+    } finally {
+      setDeleteLoading(false);
+      setDeleteDialog({ open: false, type: "", data: null });
+    }
+  };
+  const handleDeleteStoreTypeConfirm = async () => {
+    setDeleteLoading(true);
+    try {
+      await fetch(`${API_URL}/api/store-types/${deleteDialog.data._id}`, {
+        method: "DELETE",
+      });
+      const res = await storeTypeAPI.getAll();
+      setStoreTypes(res.data || []);
+      setMessage({
+        type: "success",
+        text: t("Store Type deleted successfully!"),
+      });
+    } catch (e) {
+      setMessage({ type: "error", text: t("Failed to delete store type.") });
+    } finally {
+      setDeleteLoading(false);
+      setDeleteDialog({ open: false, type: "", data: null });
     }
   };
   const handleDeleteStoreConfirm = async () => {
@@ -1744,6 +1827,16 @@ const DataEntryForm = () => {
               icon={<DashboardIcon />}
               iconPosition="start"
             />
+            <Tab
+              label={t("Store Types")}
+              icon={<CategoryIcon />}
+              iconPosition="start"
+            />
+            <Tab
+              label={t("Brand Types")}
+              icon={<CategoryIcon />}
+              iconPosition="start"
+            />
           </Tabs>
 
           {/* Store List Panel */}
@@ -1897,7 +1990,19 @@ const DataEntryForm = () => {
                           </TableCell>
                           {/* <TableCell>{store.address}</TableCell> */}
                           <TableCell>{store.phone}</TableCell>
-                          <TableCell>{t(store.storeType)}</TableCell>
+                          <TableCell>
+                            {store.storeTypeId?.icon || store.storeType?.icon
+                              ? `${
+                                  store.storeTypeId?.icon ||
+                                  store.storeType?.icon
+                                } `
+                              : ""}
+                            {t(
+                              store.storeTypeId?.name ||
+                                store.storeType?.name ||
+                                ""
+                            )}
+                          </TableCell>
                           <TableCell
                             width="100px"
                             height="100px"
@@ -1966,6 +2071,176 @@ const DataEntryForm = () => {
                   `${from}-${to} of ${count !== -1 ? count : `more than ${to}`}`
                 }
               />
+            </Box>
+          )}
+
+          {/* Store Types List Panel */}
+          {activeListTab === 6 && (
+            <Box>
+              <Grid container spacing={2} alignItems="center">
+                <Grid xs={12} sm={6}>
+                  <Typography variant="h6">{t("Store Types")}</Typography>
+                </Grid>
+                <Grid
+                  xs={12}
+                  sm={6}
+                  sx={{ textAlign: { xs: "left", sm: "right" } }}
+                >
+                  <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={() =>
+                      setAddDialog({ open: true, type: "storeType" })
+                    }
+                  >
+                    {t("Add Store Type")}
+                  </Button>
+                </Grid>
+              </Grid>
+
+              <TableContainer component={Paper} sx={{ mt: 2 }}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>{t("No.")}</TableCell>
+                      <TableCell>{t("Name")}</TableCell>
+                      <TableCell>{t("Icon")}</TableCell>
+                      <TableCell>{t("Actions")}</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {(storeTypes || []).map((st, idx) => (
+                      <TableRow key={st._id}>
+                        <TableCell>{idx + 1}</TableCell>
+                        <TableCell>{st.name}</TableCell>
+                        <TableCell style={{ fontSize: 18 }}>
+                          {st.icon || "🏪"}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            sx={{ mr: 1 }}
+                            onClick={() => {
+                              setEditDialog({
+                                open: true,
+                                type: "storeType",
+                                data: st,
+                              });
+                              setEditForm({
+                                _id: st._id,
+                                name: st.name,
+                                icon: st.icon || "",
+                              });
+                            }}
+                          >
+                            <EditIcon />
+                          </Button>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            color="error"
+                            onClick={() =>
+                              setDeleteDialog({
+                                open: true,
+                                type: "storeType",
+                                data: st,
+                              })
+                            }
+                          >
+                            <DeleteIcon />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
+          )}
+
+          {/* Brand Types List Panel */}
+          {activeListTab === 7 && (
+            <Box>
+              <Grid container spacing={2} alignItems="center">
+                <Grid xs={12} sm={6}>
+                  <Typography variant="h6">{t("Brand Types")}</Typography>
+                </Grid>
+                <Grid
+                  xs={12}
+                  sm={6}
+                  sx={{ textAlign: { xs: "left", sm: "right" } }}
+                >
+                  <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={() =>
+                      setAddDialog({ open: true, type: "brandType" })
+                    }
+                  >
+                    {t("Add Brand Type")}
+                  </Button>
+                </Grid>
+              </Grid>
+
+              <TableContainer component={Paper} sx={{ mt: 2 }}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>{t("No.")}</TableCell>
+                      <TableCell>{t("Name")}</TableCell>
+                      <TableCell>{t("Icon")}</TableCell>
+                      <TableCell>{t("Actions")}</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {(brandTypes || []).map((bt, idx) => (
+                      <TableRow key={bt._id}>
+                        <TableCell>{idx + 1}</TableCell>
+                        <TableCell>{bt.name}</TableCell>
+                        <TableCell style={{ fontSize: 18 }}>
+                          {bt.icon || "🏷️"}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            sx={{ mr: 1 }}
+                            onClick={() => {
+                              setEditDialog({
+                                open: true,
+                                type: "brandType",
+                                data: bt,
+                              });
+                              setEditForm({
+                                _id: bt._id,
+                                name: bt.name,
+                                icon: bt.icon || "",
+                              });
+                            }}
+                          >
+                            <EditIcon />
+                          </Button>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            color="error"
+                            onClick={() =>
+                              setDeleteDialog({
+                                open: true,
+                                type: "brandType",
+                                data: bt,
+                              })
+                            }
+                          >
+                            <DeleteIcon />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
             </Box>
           )}
 
@@ -2134,7 +2409,9 @@ const DataEntryForm = () => {
                           </TableCell>
                           {/* <TableCell>{brand.address}</TableCell> */}
                           <TableCell>{brand.phone}</TableCell>
-                          <TableCell>{brand.type || ""}</TableCell>
+                          <TableCell>
+                            {brand.brandTypeId?.name || brand.type || ""}
+                          </TableCell>
                           <TableCell
                             width="100px"
                             height="100px"
@@ -2587,7 +2864,14 @@ const DataEntryForm = () => {
                       <TableRow key={cat._id}>
                         <TableCell>{idx + 1}</TableCell>
                         <TableCell>{cat.name}</TableCell>
-                        <TableCell>{t(cat.storeType)}</TableCell>
+                        <TableCell>
+                          {cat.storeTypeId?.icon || cat.storeType?.icon
+                            ? `${cat.storeTypeId?.icon || cat.storeType?.icon} `
+                            : ""}
+                          {t(
+                            cat.storeTypeId?.name || cat.storeType?.name || ""
+                          )}
+                        </TableCell>
                         <TableCell>
                           {cat.image ? (
                             <img
@@ -3141,6 +3425,10 @@ const DataEntryForm = () => {
             ? t("Add Category")
             : addDialog.type === "ad"
             ? t("Add Ad")
+            : addDialog.type === "storeType"
+            ? t("Add Store Type")
+            : addDialog.type === "brandType"
+            ? t("Add Brand Type")
             : t("Add Product")}
         </DialogTitle>
         <DialogContent dividers>
@@ -3176,16 +3464,20 @@ const DataEntryForm = () => {
                   <FormControl fullWidth required>
                     <InputLabel shrink>{t("Store Type")}</InputLabel>
                     <Select
-                      name="storeType"
-                      value={storeForm.storeType}
+                      name="storeTypeId"
+                      value={storeForm.storeTypeId}
                       onChange={handleStoreFormChange}
                       label={t("Store Type")}
                       displayEmpty
                     >
-                      <MenuItem value="market">{t("Market")}</MenuItem>
-                      <MenuItem value="clothes">{t("Clothes")}</MenuItem>
-                      <MenuItem value="electronic">{t("Electronics")}</MenuItem>
-                      <MenuItem value="cosmetic">{t("Cosmetics")}</MenuItem>
+                      <MenuItem value="">
+                        <em>{t("Select Store Type")}</em>
+                      </MenuItem>
+                      {storeTypes.map((st) => (
+                        <MenuItem key={st._id} value={st._id}>
+                          {st.icon || "🏪"} {t(st.name)}
+                        </MenuItem>
+                      ))}
                     </Select>
                   </FormControl>
                 </Grid>
@@ -3281,6 +3573,96 @@ const DataEntryForm = () => {
             </Box>
           )}
 
+          {addDialog.type === "storeType" && (
+            <Box
+              component="form"
+              sx={{ mt: 1 }}
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const form = new FormData(e.currentTarget);
+                const name = form.get("name");
+                const icon = form.get("icon");
+                try {
+                  await fetch(`${API_URL}/api/store-types`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name, icon }),
+                  });
+                  const res = await storeTypeAPI.getAll();
+                  setStoreTypes(res.data || []);
+                  setAddDialog({ open: false, type: "" });
+                } catch (e) {}
+              }}
+            >
+              <TextField
+                margin="normal"
+                name="name"
+                label={t("Name")}
+                fullWidth
+                required
+              />
+              <TextField
+                margin="normal"
+                name="icon"
+                label={t("Icon")}
+                placeholder="e.g. 🛒"
+                fullWidth
+              />
+              <Box sx={{ mt: 2, textAlign: "right" }}>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  startIcon={<SaveIcon />}
+                >
+                  {t("Save")}
+                </Button>
+              </Box>
+            </Box>
+          )}
+
+          {addDialog.type === "brandType" && (
+            <Box
+              component="form"
+              sx={{ mt: 1 }}
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const form = new FormData(e.currentTarget);
+                const name = form.get("name");
+                const icon = form.get("icon");
+                try {
+                  await brandTypeAPI.create({ name, icon });
+                  const res = await brandTypeAPI.getAll();
+                  setBrandTypes(res.data || []);
+                  setAddDialog({ open: false, type: "" });
+                } catch (e) {}
+              }}
+            >
+              <TextField
+                margin="normal"
+                name="name"
+                label={t("Name")}
+                fullWidth
+                required
+              />
+              <TextField
+                margin="normal"
+                name="icon"
+                label={t("Icon")}
+                placeholder="e.g. 🏷️"
+                fullWidth
+              />
+              <Box sx={{ mt: 2, textAlign: "right" }}>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  startIcon={<SaveIcon />}
+                >
+                  {t("Save")}
+                </Button>
+              </Box>
+            </Box>
+          )}
+
           {addDialog.type === "brand" && (
             <Box component="form" onSubmit={handleBrandSubmit} sx={{ mt: 1 }}>
               <Grid container spacing={2}>
@@ -3320,18 +3702,23 @@ const DataEntryForm = () => {
                   />
                 </Grid>
                 <Grid xs={12} sm={6}>
-                  <FormControl fullWidth>
-                    <InputLabel>{t("Type")}</InputLabel>
+                  <FormControl fullWidth required>
+                    <InputLabel>{t("Brand Type")}</InputLabel>
                     <Select
-                      name="type"
-                      value={brandForm.type}
+                      name="brandTypeId"
+                      value={brandForm.brandTypeId}
                       onChange={handleBrandFormChange}
-                      label={t("Type")}
+                      label={t("Brand Type")}
+                      displayEmpty
                     >
-                      <MenuItem value="خۆراک">خۆراک</MenuItem>
-                      <MenuItem value="جل و بەرگ">جل و بەرگ</MenuItem>
-                      <MenuItem value="ئەلیکترۆنى">ئەلیکترۆنى</MenuItem>
-                      <MenuItem value="جوانکارى">جوانکارى</MenuItem>
+                      <MenuItem value="">
+                        <em>{t("Select Brand Type")}</em>
+                      </MenuItem>
+                      {brandTypes.map((bt) => (
+                        <MenuItem key={bt._id} value={bt._id}>
+                          {bt.icon || "🏷️"} {t(bt.name)}
+                        </MenuItem>
+                      ))}
                     </Select>
                   </FormControl>
                 </Grid>
@@ -3543,16 +3930,20 @@ const DataEntryForm = () => {
                   <FormControl fullWidth required>
                     <InputLabel shrink>{t("Store Type")}</InputLabel>
                     <Select
-                      name="storeType"
-                      value={productForm.storeType}
+                      name="storeTypeId"
+                      value={productForm.storeTypeId}
                       onChange={handleProductFormChange}
                       label={t("Store Type")}
                       displayEmpty
                     >
-                      <MenuItem value="market">{t("Market")}</MenuItem>
-                      <MenuItem value="clothes">{t("Clothes")}</MenuItem>
-                      <MenuItem value="electronic">{t("Electronics")}</MenuItem>
-                      <MenuItem value="cosmetic">{t("Cosmetics")}</MenuItem>
+                      <MenuItem value="">
+                        <em>{t("Select Store Type")}</em>
+                      </MenuItem>
+                      {storeTypes.map((st) => (
+                        <MenuItem key={st._id} value={st._id}>
+                          {st.icon || "🏪"} {t(st.name)}
+                        </MenuItem>
+                      ))}
                     </Select>
                   </FormControl>
                 </Grid>
@@ -3841,15 +4232,19 @@ const DataEntryForm = () => {
                   <FormControl fullWidth>
                     <InputLabel>{t("Store Type")}</InputLabel>
                     <Select
-                      name="storeType"
-                      value={categoryForm.storeType}
+                      name="storeTypeId"
+                      value={categoryForm.storeTypeId || ""}
                       onChange={handleCategoryFormChange}
                       label={t("Store Type")}
                     >
-                      <MenuItem value="market">{t("Market")}</MenuItem>
-                      <MenuItem value="clothes">{t("Clothes")}</MenuItem>
-                      <MenuItem value="electronic">{t("Electronics")}</MenuItem>
-                      <MenuItem value="cosmetic">{t("Cosmetics")}</MenuItem>
+                      <MenuItem value="">
+                        <em>{t("Select Store Type")}</em>
+                      </MenuItem>
+                      {storeTypes.map((st) => (
+                        <MenuItem key={st._id} value={st._id}>
+                          {st.icon || "🏪"} {t(st.name)}
+                        </MenuItem>
+                      ))}
                     </Select>
                   </FormControl>
                 </Grid>
@@ -4478,6 +4873,10 @@ const DataEntryForm = () => {
               ? "Edit Store"
               : editDialog.type === "gift"
               ? "Edit Gift"
+              : editDialog.type === "storeType"
+              ? "Edit Store Type"
+              : editDialog.type === "brandType"
+              ? "Edit Brand Type"
               : "Edit Product"
           )}
         </DialogTitle>
@@ -4492,6 +4891,25 @@ const DataEntryForm = () => {
                 value={editForm.name}
                 onChange={handleEditFormChange}
               />
+              <FormControl fullWidth required sx={{ mt: 2 }}>
+                <InputLabel shrink>{t("Brand Type")}</InputLabel>
+                <Select
+                  name="brandTypeId"
+                  value={editForm.brandTypeId || ""}
+                  onChange={handleEditFormChange}
+                  label={t("Brand Type")}
+                  displayEmpty
+                >
+                  <MenuItem value="">
+                    <em>{t("Select Brand Type")}</em>
+                  </MenuItem>
+                  {brandTypes.map((bt) => (
+                    <MenuItem key={bt._id} value={bt._id}>
+                      {bt.icon || "🏷️"} {t(bt.name)}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
               {/* Image Upload */}
               <Box sx={{ mt: 2, mb: 2 }}>
                 <Typography variant="subtitle2" gutterBottom>
@@ -4534,25 +4952,7 @@ const DataEntryForm = () => {
                   </Box>
                 )}
               </Box>
-              <Grid xs={12} sm={6}>
-                <FormControl fullWidth required>
-                  <InputLabel shrink>{t("Type")}</InputLabel>
-                  <Select
-                    name="type"
-                    value={editForm.type}
-                    onChange={handleEditFormChange}
-                    label={t("Type")}
-                    displayEmpty
-                  >
-                    <MenuItem value="خۆراک">{t("خۆراک")}</MenuItem>
-                    <MenuItem value="جل و بەرگ">{t("جل و بەرگ")}</MenuItem>
-                    <MenuItem value="ئەلیکترۆنیات">
-                      {t("ئەلیکترۆنیات")}
-                    </MenuItem>
-                    <MenuItem value="جوانکارى">{t("جوانکارى")}</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
+              {/* legacy type selector removed in favor of brandTypeId */}
               <TextField
                 margin="normal"
                 fullWidth
@@ -4651,16 +5051,20 @@ const DataEntryForm = () => {
                 <FormControl fullWidth required>
                   <InputLabel shrink>{t("Store Type")}</InputLabel>
                   <Select
-                    name="storeType"
-                    value={editForm.storeType}
+                    name="storeTypeId"
+                    value={editForm.storeTypeId || ""}
                     onChange={handleEditFormChange}
                     label={t("Store Type")}
                     displayEmpty
                   >
-                    <MenuItem value="market">{t("Market")}</MenuItem>
-                    <MenuItem value="clothes">{t("Clothes")}</MenuItem>
-                    <MenuItem value="electronic">{t("Electronics")}</MenuItem>
-                    <MenuItem value="cosmetic">{t("Cosmetics")}</MenuItem>
+                    <MenuItem value="">
+                      <em>{t("Select Store Type")}</em>
+                    </MenuItem>
+                    {storeTypes.map((st) => (
+                      <MenuItem key={st._id} value={st._id}>
+                        {st.icon || "🏪"} {t(st.name)}
+                      </MenuItem>
+                    ))}
                   </Select>
                 </FormControl>
               </Grid>
@@ -5098,6 +5502,86 @@ const DataEntryForm = () => {
                 </Grid>
               </Grid>
             </Box>
+          ) : editDialog.type === "storeType" ? (
+            <Box
+              component="form"
+              sx={{ mt: 1 }}
+              onSubmit={async (e) => {
+                e.preventDefault();
+                try {
+                  await fetch(`${API_URL}/api/store-types/${editForm._id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      name: editForm.name,
+                      icon: editForm.icon || "",
+                    }),
+                  });
+                  const res = await storeTypeAPI.getAll();
+                  setStoreTypes(res.data || []);
+                  setEditDialog({ open: false, type: "", data: null });
+                } catch (e) {}
+              }}
+            >
+              <TextField
+                margin="normal"
+                fullWidth
+                label={t("Name")}
+                name="name"
+                value={editForm.name || ""}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, name: e.target.value })
+                }
+              />
+              <TextField
+                margin="normal"
+                fullWidth
+                label={t("Icon")}
+                name="icon"
+                value={editForm.icon || ""}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, icon: e.target.value })
+                }
+              />
+            </Box>
+          ) : editDialog.type === "brandType" ? (
+            <Box
+              component="form"
+              sx={{ mt: 1 }}
+              onSubmit={async (e) => {
+                e.preventDefault();
+                try {
+                  await brandTypeAPI.update(editForm._id, {
+                    name: (editForm.name || "").trim(),
+                    icon: editForm.icon || "",
+                  });
+                  const res = await brandTypeAPI.getAll();
+                  setBrandTypes(res.data || []);
+                  setEditDialog({ open: false, type: "", data: null });
+                } catch (e) {}
+              }}
+            >
+              <TextField
+                margin="normal"
+                fullWidth
+                label={t("Name")}
+                name="name"
+                value={editForm.name || ""}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, name: e.target.value })
+                }
+              />
+              <TextField
+                margin="normal"
+                fullWidth
+                label={t("Icon")}
+                name="icon"
+                value={editForm.icon || ""}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, icon: e.target.value })
+                }
+              />
+            </Box>
           ) : (
             <Box component="form" sx={{ mt: 1 }}>
               <TextField
@@ -5347,7 +5831,31 @@ const DataEntryForm = () => {
                 : deleteDialog.type === "gift"
                 ? handleDeleteBrandConfirm()
                 : deleteDialog.type === "category"
+                ? handleDeleteCategoryConfirm()
+                : deleteDialog.type === "storeType"
+                ? handleDeleteStoreTypeConfirm()
+                : deleteDialog.type === "brandType"
                 ? (async () => {
+                    setDeleteLoading(true);
+                    try {
+                      await brandTypeAPI.delete(deleteDialog.data._id);
+                      const res = await brandTypeAPI.getAll();
+                      setBrandTypes(res.data || []);
+                      setMessage({
+                        type: "success",
+                        text: t("Brand Type deleted successfully!"),
+                      });
+                    } catch (e) {
+                      setMessage({
+                        type: "error",
+                        text: t("Failed to delete brand type."),
+                      });
+                    } finally {
+                      setDeleteLoading(false);
+                      setDeleteDialog({ open: false, type: "", data: null });
+                    }
+                  })()
+                : (async () => {
                     setDeleteLoading(true);
                     try {
                       await categoryAPI.delete(deleteDialog.data._id);
@@ -5366,7 +5874,8 @@ const DataEntryForm = () => {
                       setDeleteDialog({ open: false, type: "", data: null });
                     }
                   })()
-                : handleDeleteStoreConfirm()
+                ? handleDeleteStoreConfirm()
+                : null
             }
             disabled={deleteLoading}
           >

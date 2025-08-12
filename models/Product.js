@@ -10,15 +10,16 @@ const productSchema = new mongoose.Schema(
       ref: "Category",
       required: true,
     },
-    storeType: {
-      type: String,
+    storeTypeId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "StoreType",
       required: true,
     },
     categoryTypeId: {
       type: String, // This will store the type ID within the category
       required: true,
     },
-    image: { type: String },
+    image: { type: String, required: false },
     previousPrice: { type: Number },
     newPrice: { type: Number },
     isDiscount: { type: Boolean, default: false },
@@ -26,7 +27,7 @@ const productSchema = new mongoose.Schema(
     brandId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Brand",
-      required: true,
+      required: false,
     },
     storeId: {
       type: mongoose.Schema.Types.ObjectId,

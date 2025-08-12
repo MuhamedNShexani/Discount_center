@@ -12,7 +12,7 @@ import {
   IconButton,
 } from "@mui/material";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { brandAPI, adAPI } from "../services/api";
+import { brandAPI, adAPI, brandTypeAPI } from "../services/api";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
@@ -35,6 +35,7 @@ const BrandList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [bannerAds, setBannerAds] = useState([]);
+  const [brandTypes, setBrandTypes] = useState([]);
 
   const brandTypeParam = searchParams.get("type");
   const [selectedType, setSelectedType] = useState(brandTypeParam || "all");
@@ -42,19 +43,32 @@ const BrandList = () => {
   useEffect(() => {
     fetchBrands();
     fetchAds();
+    fetchBrandTypes();
   }, []);
 
   useEffect(() => {
-    if (Brands.length > 0) {
-      if (selectedType && selectedType !== "all") {
-        setFilteredBrands(Brands.filter((b) => b.type === selectedType));
-      } else {
-        setFilteredBrands(Brands);
-      }
-    } else {
+    if (Brands.length === 0) {
       setFilteredBrands([]);
+      return;
     }
-  }, [Brands, selectedType]);
+
+    if (!selectedType || selectedType === "all") {
+      setFilteredBrands(Brands);
+      return;
+    }
+
+    // Support both legacy name-based filter and new id-based filter
+    const isId = typeof selectedType === "string" && selectedType.length >= 12;
+    const next = Brands.filter((b) => {
+      const bt = b.brandTypeId;
+      const btId = bt && (bt._id || bt);
+      const btName = (bt && bt.name) || b.type;
+      return isId
+        ? String(btId) === String(selectedType)
+        : String(btName).toLowerCase() === String(selectedType).toLowerCase();
+    });
+    setFilteredBrands(next);
+  }, [Brands, selectedType, brandTypes]);
 
   const fetchBrands = async () => {
     try {
@@ -72,6 +86,16 @@ const BrandList = () => {
       console.error("Error fetching Brands:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchBrandTypes = async () => {
+    try {
+      const res = await brandTypeAPI.getAll();
+      setBrandTypes(res.data || []);
+    } catch (e) {
+      // ignore
+      setBrandTypes([]);
     }
   };
 
@@ -124,24 +148,19 @@ const BrandList = () => {
   if (loading) return <Loader message={t("Loading...")} />;
   if (error) return <Loader message={error} />;
 
-  // Derive unique brand types from data
-  const brandTypes = Array.from(
-    new Set(Brands.map((b) => b.type).filter(Boolean))
-  );
-
   const capitalize = (s) =>
     typeof s === "string" && s.length > 0
       ? s.charAt(0).toUpperCase() + s.slice(1)
       : s;
 
   return (
-    <Box sx={{ py: { xs: 0, md: 10 }, px: { xs: 0.5, sm: 1.5, md: 3 } }}>
+    <Box sx={{ py: { xs: 5, md: 10 }, px: { xs: 0.5, sm: 1.5, md: 3 } }}>
       {/* Banner Slider Section (from Ads: pages includes brands/all) */}
       <Box
         sx={{
           mb: 2,
-          position: { xs: "sticky", md: "static" },
-          top: { xs: 60, md: "auto" },
+          // position: { xs: "sticky", md: "static" },
+          top: { xs: 100, md: "auto" },
           zIndex: { xs: 1000, md: "auto" },
         }}
       >
@@ -197,7 +216,10 @@ const BrandList = () => {
       >
         {[
           { key: "all", label: t("All") },
-          ...brandTypes.map((bt) => ({ key: bt, label: t(capitalize(bt)) })),
+          ...brandTypes.map((bt) => ({
+            key: bt._id,
+            label: t(capitalize(bt.name)),
+          })),
         ].map((tItem) => (
           <Chip
             key={tItem.key}

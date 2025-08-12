@@ -289,7 +289,7 @@ function App() {
                   }
                 />
                 <Route
-                  path="/admin/specific"
+                  path="/admin/dashboard"
                   element={
                     <ProtectedRoute allowedEmails={["mshexani45@gmail.com"]}>
                       <AdminPage />

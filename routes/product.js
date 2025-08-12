@@ -130,6 +130,14 @@ router.post("/bulk-upload", upload.single("excelFile"), async (req, res) => {
 
         // Create the product
         const Product = require("../models/Product");
+        const StoreType = require("../models/StoreType");
+
+        // Optional legacy storeType name may be in row[12]
+        if (!productData.storeTypeId && row[12]) {
+          const st = await StoreType.findOne({ name: row[12] });
+          if (st) productData.storeTypeId = st._id;
+        }
+
         const newProduct = new Product(productData);
         await newProduct.save();
         createdCount++;

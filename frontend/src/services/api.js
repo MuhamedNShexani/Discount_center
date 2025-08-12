@@ -20,6 +20,19 @@ export const storeAPI = {
   delete: (id) => api.delete(`/stores/${id}`),
 };
 
+// StoreType API calls
+export const storeTypeAPI = {
+  getAll: () => api.get("/store-types"),
+};
+
+// BrandType API calls
+export const brandTypeAPI = {
+  getAll: () => api.get("/brand-types"),
+  create: (data) => api.post("/brand-types", data),
+  update: (id, data) => api.put(`/brand-types/${id}`, data),
+  delete: (id) => api.delete(`/brand-types/${id}`),
+};
+
 // Brand API calls
 
 export const brandAPI = {
@@ -121,6 +134,11 @@ export const authAPI = {
       { headers }
     ),
   logout: (headers) => api.post("/auth/logout", {}, { headers }),
+};
+
+// Admin API calls
+export const adminAPI = {
+  getStats: () => api.get("/admin/stats"),
 };
 
 export default api;

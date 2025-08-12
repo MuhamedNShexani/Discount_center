@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { adminAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import {
@@ -59,6 +60,8 @@ const AdminPage = () => {
     totalStores: 0,
     totalBrands: 0,
     totalGifts: 0,
+    totalViews: 0,
+    totalLikes: 0,
   });
 
   // Check if user is admin
@@ -83,13 +86,16 @@ const AdminPage = () => {
 
   const loadAdminStats = async () => {
     try {
-      // This would be replaced with actual API calls
+      const res = await adminAPI.getStats();
+      const data = res.data || {};
       setStats({
-        totalUsers: 150,
-        totalProducts: 1250,
-        totalStores: 25,
-        totalBrands: 80,
-        totalGifts: 45,
+        totalUsers: data.totalUsers || 0,
+        totalProducts: data.totalProducts || 0,
+        totalStores: data.totalStores || 0,
+        totalBrands: data.totalBrands || 0,
+        totalGifts: data.totalGifts || 0,
+        totalViews: data.totalViews || 0,
+        totalLikes: data.totalLikes || 0,
       });
     } catch (error) {
       console.error("Error loading admin stats:", error);
@@ -200,6 +206,26 @@ const AdminPage = () => {
                 <GiftsIcon sx={{ mr: 1, verticalAlign: "middle" }} />
                 {t("Total Gifts")}
               </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={2.4}>
+          <Card sx={{ bgcolor: "error.light", color: "white" }}>
+            <CardContent>
+              <Typography variant="h4" component="div">
+                {stats.totalViews}
+              </Typography>
+              <Typography variant="body2">{t("Total Views")}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={2.4}>
+          <Card sx={{ bgcolor: "success.dark", color: "white" }}>
+            <CardContent>
+              <Typography variant="h4" component="div">
+                {stats.totalLikes}
+              </Typography>
+              <Typography variant="body2">{t("Total Likes")}</Typography>
             </CardContent>
           </Card>
         </Grid>

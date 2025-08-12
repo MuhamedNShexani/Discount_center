@@ -6,10 +6,10 @@ const storeSchema = new mongoose.Schema({
   address: { type: String },
   phone: { type: String },
   description: { type: String },
-  storeType: {
-    type: String,
-    enum: ["market", "clothes", "electronic", "cosmetic"],
-    default: "market",
+  storeTypeId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "StoreType",
+    required: true,
   },
   isVip: { type: Boolean, default: false },
   isActive: { type: Boolean, default: true },

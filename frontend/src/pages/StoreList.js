@@ -11,7 +11,7 @@ import {
   useTheme,
 } from "@mui/material";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { storeAPI, adAPI } from "../services/api";
+import { storeAPI, adAPI, storeTypeAPI } from "../services/api";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
@@ -24,21 +24,6 @@ import { useTranslation } from "react-i18next";
 
 // ------------------ Reusable StoreCard ------------------
 const StoreCard = ({ store, index, theme, t, onClick }) => {
-  const getStoreTypeIcon = (type) => {
-    switch (type) {
-      case "market":
-        return "🛒";
-      case "clothes":
-        return "👕";
-      case "electronic":
-        return "📱";
-      case "cosmetic":
-        return "💄";
-      default:
-        return "🏪";
-    }
-  };
-
   return (
     <Fade in={true} timeout={300 + index * 100}>
       <Card
@@ -201,7 +186,7 @@ const StoreCard = ({ store, index, theme, t, onClick }) => {
               )}
               icon={
                 <span style={{ fontSize: "1rem" }}>
-                  {getStoreTypeIcon(store.storeType)}
+                  {t(store.storeType.icon) || "🏪"}
                 </span>
               }
               size="small"
@@ -268,22 +253,35 @@ const StoreList = () => {
   const [bannerAds, setBannerAds] = useState([]);
 
   const storeTypeParam = searchParams.get("type");
-  const [selectedType, setSelectedType] = useState(storeTypeParam || "all");
+  const [selectedTypeId, setSelectedTypeId] = useState(storeTypeParam || "all");
+  const [storeTypes, setStoreTypes] = useState([]);
 
   useEffect(() => {
     fetchStores();
+    fetchStoreTypes();
     fetchAds();
   }, []);
 
+  // Helper: safely return a string id from string/Object/populated
+  function getID(id) {
+    if (typeof id === "string") return id;
+    if (id && typeof id === "object") {
+      return id.$oid || String(id._id) || String(id);
+    }
+    return id;
+  }
+
   useEffect(() => {
     if (stores.length > 0) {
-      if (selectedType && selectedType !== "all") {
-        setFilteredStores(stores.filter((s) => s.storeType === selectedType));
+      if (selectedTypeId && selectedTypeId !== "all") {
+        setFilteredStores(
+          stores.filter((s) => getID(s.storeTypeId) === selectedTypeId)
+        );
       } else {
         setFilteredStores(stores);
       }
     }
-  }, [stores, selectedType]);
+  }, [stores, selectedTypeId]);
 
   const fetchStores = async () => {
     try {
@@ -299,6 +297,15 @@ const StoreList = () => {
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchStoreTypes = async () => {
+    try {
+      const res = await storeTypeAPI.getAll();
+      setStoreTypes(res.data || []);
+    } catch (e) {
+      // fail silently for store types
     }
   };
 
@@ -353,7 +360,7 @@ const StoreList = () => {
       <Box
         sx={{
           mb: 2,
-          position: { xs: "sticky", md: "static" },
+          // position: { xs: "sticky", md: "static" },
           top: { xs: 60, md: "auto" },
           zIndex: { xs: 1000, md: "auto" },
         }}
@@ -417,31 +424,27 @@ const StoreList = () => {
           color: theme.palette.mode === "dark" ? "white" : "black",
         }}
       >
-        {[
-          { key: "all", label: t("All") },
-          { key: "market", label: t("Market") },
-          { key: "clothes", label: t("Clothes") },
-          { key: "electronic", label: t("Electronics") },
-          { key: "cosmetic", label: t("Cosmetics") },
-        ].map((tItem) => (
-          <Chip
-            key={tItem.key}
-            label={tItem.label}
-            onClick={() => setSelectedType(tItem.key)}
-            color={selectedType === tItem.key ? "primary" : "default"}
-            variant={selectedType === tItem.key ? "filled" : "outlined"}
-            sx={{
-              flexShrink: 0,
-              backgroundColor:
-                selectedType === tItem.key
-                  ? theme.palette.mode === "dark"
-                    ? "#40916c"
-                    : "#34495e"
-                  : "transparent",
-              color: selectedType === tItem.key ? "white" : "inherit",
-            }}
-          />
-        ))}
+        {[{ _id: "all", name: t("All"), icon: "🏪" }, ...storeTypes].map(
+          (tItem) => (
+            <Chip
+              key={tItem._id}
+              label={`${tItem.icon || "🏪"} ${t(tItem.name)}`}
+              onClick={() => setSelectedTypeId(tItem._id)}
+              color={selectedTypeId === tItem._id ? "primary" : "default"}
+              variant={selectedTypeId === tItem._id ? "filled" : "outlined"}
+              sx={{
+                flexShrink: 0,
+                backgroundColor:
+                  selectedTypeId === tItem._id
+                    ? theme.palette.mode === "dark"
+                      ? "#40916c"
+                      : "#34495e"
+                    : "transparent",
+                color: selectedTypeId === tItem._id ? "white" : "inherit",
+              }}
+            />
+          )
+        )}
       </Box>
       {/* <Typography
         variant="h4"

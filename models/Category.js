@@ -18,10 +18,10 @@ const categorySchema = new mongoose.Schema({
     type: String,
     required: false,
   },
-  storeType: {
-    type: String,
-    enum: ["market", "clothes", "electronic", "cosmetic"],
-    default: "market",
+  storeTypeId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "StoreType",
+    required: true,
   },
   types: [
     {

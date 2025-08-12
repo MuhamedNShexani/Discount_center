@@ -34,6 +34,9 @@ app.use("/api/gifts", require("./routes/gift"));
 app.use("/api/users", require("./routes/user"));
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/ads", require("./routes/ad"));
+app.use("/api/store-types", require("./routes/storeType"));
+app.use("/api/brand-types", require("./routes/brandType"));
+app.use("/api/admin", require("./routes/admin"));
 
 const PORT = process.env.PORT || 5000;
 // app.listen(PORT, () => console.log(`Server started on port ${PORT}`));

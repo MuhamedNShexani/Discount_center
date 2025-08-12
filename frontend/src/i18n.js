@@ -1082,9 +1082,28 @@ const resources = {
       Active: "چاڵاک",
       "Start Date": "ڕێکەوتى دەسپێک",
       "End Date": "ڕێکەوتى کۆتایی",
+      "Store Types": "جۆرەکانی فرۆشگا",
+      "Add Store Type": "زیادکردنی جۆری فرۆشگا",
+      "Store Type deleted successfully!": "جۆری فرۆشگا بە سەرکەوتوویی سڕایەوە",
+      "Failed to delete store type.":
+        "سڕینەوەی جۆری فرۆشگا سەرکەوتوو نەبوو. تکایە دووبارە هەوڵبدەرەوە.",
+      "Store Type updated successfully!":
+        "جۆری فرۆشگا بە سەرکەوتوویی نوێکرایەوە",
+      "Failed to update store type.":
+        "نوێکردنەوەی جۆری فرۆشگا سەرکەوتوو نەبوو. تکایە دووبارە هەوڵبدەرەوە.",
       "Browse market stores and their products":
         "بگەڕێ بۆ مارکێتەکان و کاڵاکانیان",
       "Discounted Products": "کاڵاى داشکێندراو",
+      Food: "خۆراک",
+      "Brand Types": "جۆرەکانی بڕاند",
+      "Add Brand Type": "زیادکردنی جۆری بڕاند",
+      "Brand Type deleted successfully!": "جۆری بڕاند بە سەرکەوتوویی سڕایەوە",
+      "Failed to delete brand type.":
+        "سڕینەوەی جۆری بڕاند سەرکەوتوو نەبوو. تکایە دووبارە هەوڵبدەرەوە.",
+      "Brand Type updated successfully!":
+        "جۆری بڕاند بە سەرکەوتوویی نوێکرایەوە",
+      "Failed to update brand type.":
+        "نوێکردنەوەی جۆری بڕاند سەرکەوتوو نەبوو. تکایە دووبارە هەوڵبدەرەوە.",
     },
   },
 };

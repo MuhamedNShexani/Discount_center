@@ -25,7 +25,13 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
 import { Link, useNavigate } from "react-router-dom";
-import { storeAPI, productAPI, categoryAPI, adAPI } from "../services/api";
+import {
+  storeAPI,
+  productAPI,
+  categoryAPI,
+  adAPI,
+  storeTypeAPI,
+} from "../services/api";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import BusinessIcon from "@mui/icons-material/Business";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
@@ -59,7 +65,8 @@ const MainPage = () => {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedCategoryType, setSelectedCategoryType] = useState(null);
-  const [selectedStoreType, setSelectedStoreType] = useState("all");
+  const [storeTypes, setStoreTypes] = useState([]);
+  const [selectedStoreTypeId, setSelectedStoreTypeId] = useState("all");
   const [priceRange, setPriceRange] = useState([0, 1000000]);
   const [showOnlyDiscount, setShowOnlyDiscount] = useState(true); // Default to showing only discounted products
   const [allCategories, setAllCategories] = useState([]);
@@ -257,11 +264,13 @@ const MainPage = () => {
         categoriesResponse,
         productsResponse,
         adsResponse,
+        storeTypesResponse,
       ] = await Promise.all([
         storeAPI.getAll(),
         categoryAPI.getAll(),
         productAPI.getAll(),
         adAPI.getAll({ page: "home" }),
+        storeTypeAPI.getAll(),
       ]);
 
       const storesData = storesResponse.data;
@@ -272,6 +281,7 @@ const MainPage = () => {
       setStores(storesData);
       setAllCategories(categoriesData);
       setAllProducts(productsData);
+      setStoreTypes(storeTypesResponse?.data || []);
 
       // Group products by store and initialize like counts/states
       const productsMap = {};
@@ -304,13 +314,13 @@ const MainPage = () => {
 
   // Memoized list of categories based on the selected store type
   const filteredCategories = useMemo(() => {
-    if (selectedStoreType === "all") {
+    if (selectedStoreTypeId === "all") {
       return allCategories;
     }
     return allCategories.filter(
-      (category) => category.storeType === selectedStoreType
+      (category) => getID(category.storeTypeId) === selectedStoreTypeId
     );
-  }, [allCategories, selectedStoreType]);
+  }, [allCategories, selectedStoreTypeId]);
 
   // Memoized list of category types based on the selected category
   const categoryTypes = useMemo(() => {
@@ -320,8 +330,8 @@ const MainPage = () => {
     return selectedCategory.types || [];
   }, [selectedCategory]);
 
-  const handleStoreTypeChange = (storeType) => {
-    setSelectedStoreType(storeType);
+  const handleStoreTypeChange = (storeTypeId) => {
+    setSelectedStoreTypeId(storeTypeId);
     setSelectedCategory(null);
     setSelectedCategoryType(null);
   };
@@ -339,20 +349,20 @@ const MainPage = () => {
     setSearch("");
     setSelectedCategory(null);
     setSelectedCategoryType(null);
-    setSelectedStoreType("all");
+    setSelectedStoreTypeId("all");
     setPriceRange([0, 1000000]);
     setShowOnlyDiscount(true);
     setStoresPage(1);
   };
 
-  // Helper to safely get ID from string or object
-  const getID = (id) => {
+  // Helper to safely get ID from string or object (use function declaration so it's hoisted)
+  function getID(id) {
     if (typeof id === "string") return id;
     if (id && typeof id === "object") {
       return id.$oid || String(id._id) || String(id);
     }
     return id;
-  };
+  }
 
   // Helper function to check if a discounted product has expired
   const isDiscountValid = (product) => {
@@ -373,8 +383,8 @@ const MainPage = () => {
     return allProducts.filter((product) => {
       // Filter by Store Type
       if (
-        selectedStoreType !== "all" &&
-        product.storeType !== selectedStoreType
+        selectedStoreTypeId !== "all" &&
+        getID(product.storeTypeId) !== selectedStoreTypeId
       ) {
         return false;
       }
@@ -429,7 +439,7 @@ const MainPage = () => {
     });
   }, [
     allProducts,
-    selectedStoreType,
+    selectedStoreTypeId,
     selectedCategory,
     selectedCategoryType,
     search,
@@ -458,11 +468,12 @@ const MainPage = () => {
 
       // And the store must match the type filter
       const storeTypeMatch =
-        selectedStoreType === "all" || store.storeType === selectedStoreType;
+        selectedStoreTypeId === "all" ||
+        getID(store.storeTypeId) === selectedStoreTypeId;
 
       return (hasMatchingProducts || storeNameMatch) && storeTypeMatch;
     });
-  }, [filteredProducts, stores, search, selectedStoreType]);
+  }, [filteredProducts, stores, search, selectedStoreTypeId]);
 
   // Effect for pagination
   useEffect(() => {
@@ -501,7 +512,7 @@ const MainPage = () => {
       {/* Sticky Banner and Filters Container - Mobile Only */}
       <Box
         sx={{
-          position: { xs: "sticky", md: "static" },
+          // position: { xs: "sticky", md: "static" },
           top: { xs: 20, md: "auto" },
           zIndex: { xs: 1000, md: "auto" },
           backgroundColor: {
@@ -792,22 +803,16 @@ const MainPage = () => {
                 minHeight: "20px",
               }}
             >
-              {[
-                // { key: "all", label: t("All Stores"), icon: "🏪" },
-                { key: "market", label: t("Market"), icon: "🛒" },
-                { key: "clothes", label: t("Clothes"), icon: "👕" },
-                { key: "electronic", label: t("Electronic"), icon: "📱" },
-                { key: "cosmetic", label: t("Cosmetic"), icon: "💄" },
-              ].map((type) => (
+              {[{ _id: "all", name: t("All") }, ...storeTypes].map((type) => (
                 <Button
-                  key={type.key}
+                  key={type._id}
                   variant={
-                    selectedStoreType === type.key ? "contained" : "outlined"
+                    selectedStoreTypeId === type._id ? "contained" : "outlined"
                   }
-                  onClick={() => handleStoreTypeChange(type.key)}
+                  onClick={() => handleStoreTypeChange(type._id)}
                   sx={{
                     backgroundColor:
-                      selectedStoreType === type.key
+                      selectedStoreTypeId === type._id
                         ? theme.palette.mode === "dark"
                           ? "#34495e"
                           : "#40916c"
@@ -822,7 +827,7 @@ const MainPage = () => {
                     minHeight: "32px",
                     "&:hover": {
                       backgroundColor:
-                        selectedStoreType === type.key
+                        selectedStoreTypeId === type._id
                           ? theme.palette.mode === "dark"
                             ? "#34495e"
                             : "#40916c"
@@ -831,8 +836,10 @@ const MainPage = () => {
                     },
                   }}
                 >
-                  <span style={{ marginRight: "4px" }}>{type.icon}</span>
-                  {type.label}
+                  <span style={{ marginRight: "4px" }}>
+                    {type.icon || "🏪"}
+                  </span>
+                  {t(type.name)}
                 </Button>
               ))}
             </Box>
