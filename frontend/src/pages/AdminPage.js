@@ -65,7 +65,8 @@ const AdminPage = () => {
   });
 
   // Check if user is admin
-  const isAdmin = user?.email === "mshexani45@gmail.com";
+  const isAdmin =
+    user?.email === "mshexani45@gmail.com" || user?.email === "admin@gmail.com";
 
   useEffect(() => {
     // Check authentication and admin status
