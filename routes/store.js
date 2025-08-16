@@ -34,43 +34,9 @@ router.get("/all", async (req, res) => {
   }
 });
 
-// @route   PUT /api/stores/:id/toggle-visibility
-// @desc    Toggle store visibility
-router.put("/:id/toggle-visibility", async (req, res) => {
-  try {
-    const Store = require("../models/Store");
-    const store = await Store.findById(req.params.id);
-    if (!store) return res.status(404).json({ msg: "Store not found" });
-
-    store.show = !store.show;
-    await store.save();
-
-    const populated = await Store.findById(store._id).populate(
-      "storeTypeId",
-      "name icon"
-    );
-    res.json(populated);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Server Error");
-  }
-});
-
-// @route   GET /api/stores/:id
-// @desc    Get store by ID
-router.get("/:id", getStoreById);
-
 // @route   POST /api/stores
 // @desc    Add new store
 router.post("/", createStore);
-
-// @route   PUT /api/stores/:id
-// @desc    Update store
-router.put("/:id", updateStore);
-
-// @route   DELETE /api/stores/:id
-// @desc    Delete store
-router.delete("/:id", deleteStore);
 
 // @route   POST /api/stores/upload-logo
 // @desc    Upload store logo
@@ -114,9 +80,7 @@ router.post("/bulk-upload", upload.single("excelFile"), async (req, res) => {
     // Process each row
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
-
-      // Skip empty rows
-      if (!row || row.length === 0 || !row[0]) continue;
+      if (!row[0]) continue; // Skip empty rows
 
       try {
         const storeData = {
@@ -125,59 +89,61 @@ router.post("/bulk-upload", upload.single("excelFile"), async (req, res) => {
           address: row[2] || "",
           phone: row[3] || "",
           description: row[4] || "",
-          show:
-            row[5] !== undefined ? row[5] === "true" || row[5] === true : true,
-          branches: row[6]
-            ? (() => {
-                try {
-                  // Try to parse JSON if it's a string
-                  if (typeof row[6] === "string") {
-                    return JSON.parse(row[6]);
-                  }
-                  // If it's already an object/array, use it directly
-                  return Array.isArray(row[6]) ? row[6] : [];
-                } catch (e) {
-                  console.warn(
-                    `Row ${i + 2}: Invalid branches format, using empty array`
-                  );
-                  return [];
-                }
-              })()
-            : [],
+          show: row[5] !== undefined ? row[5] === "true" : true,
+          branches: row[6] ? JSON.parse(row[6]) : [],
         };
 
-        // Validate required fields
-        if (!storeData.name) {
-          errors.push(`Row ${i + 2}: Missing required field (name)`);
-          continue;
-        }
-
-        // Create the store
-        const Store = require("../models/Store");
-        const newStore = new Store(storeData);
-        await newStore.save();
+        const store = new Store(storeData);
+        await store.save();
         createdCount++;
       } catch (error) {
-        errors.push(`Row ${i + 2}: ${error.message}`);
+        errors.push(`Row ${i + 1}: ${error.message}`);
       }
     }
 
-    // Clean up the uploaded file
-    const fs = require("fs");
-    fs.unlinkSync(req.file.path);
-
     res.json({
-      message: "Bulk upload completed",
+      message: `Successfully created ${createdCount} stores`,
       createdCount,
-      errors: errors.length > 0 ? errors : null,
+      errors,
     });
   } catch (error) {
     console.error("Bulk upload error:", error);
-    res.status(500).json({
-      message: "Error processing Excel file",
-      error: error.message,
-    });
+    res.status(500).json({ message: "Error processing bulk upload" });
   }
 });
+
+// @route   PUT /api/stores/:id/toggle-visibility
+// @desc    Toggle store visibility
+router.put("/:id/toggle-visibility", async (req, res) => {
+  try {
+    const Store = require("../models/Store");
+    const store = await Store.findById(req.params.id);
+    if (!store) return res.status(404).json({ msg: "Store not found" });
+
+    store.show = !store.show;
+    await store.save();
+
+    const populated = await Store.findById(store._id).populate(
+      "storeTypeId",
+      "name icon"
+    );
+    res.json(populated);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+});
+
+// @route   GET /api/stores/:id
+// @desc    Get store by ID
+router.get("/:id", getStoreById);
+
+// @route   PUT /api/stores/:id
+// @desc    Update store
+router.put("/:id", updateStore);
+
+// @route   DELETE /api/stores/:id
+// @desc    Delete store
+router.delete("/:id", deleteStore);
 
 module.exports = router;
