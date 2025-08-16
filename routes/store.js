@@ -3,6 +3,7 @@ const router = express.Router();
 const XLSX = require("xlsx");
 const {
   getStores,
+  getVisibleStores,
   getStoreById,
   createStore,
   updateStore,
@@ -11,8 +12,49 @@ const {
 const upload = require("../middleware/upload");
 
 // @route   GET /api/stores
-// @desc    Get all stores
+// @desc    Get all stores (including hidden ones)
 router.get("/", getStores);
+
+// @route   GET /api/stores/visible
+// @desc    Get only visible stores (for store list page)
+router.get("/visible", getVisibleStores);
+
+// @route   GET /api/stores/all
+// @desc    Get all stores (including hidden ones) - for admin
+router.get("/all", async (req, res) => {
+  try {
+    const Store = require("../models/Store");
+    const stores = await Store.find()
+      .populate("storeTypeId", "name icon")
+      .sort({ isVip: -1, name: 1 });
+    res.json(stores);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+});
+
+// @route   PUT /api/stores/:id/toggle-visibility
+// @desc    Toggle store visibility
+router.put("/:id/toggle-visibility", async (req, res) => {
+  try {
+    const Store = require("../models/Store");
+    const store = await Store.findById(req.params.id);
+    if (!store) return res.status(404).json({ msg: "Store not found" });
+
+    store.show = !store.show;
+    await store.save();
+
+    const populated = await Store.findById(store._id).populate(
+      "storeTypeId",
+      "name icon"
+    );
+    res.json(populated);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+});
 
 // @route   GET /api/stores/:id
 // @desc    Get store by ID
@@ -83,6 +125,25 @@ router.post("/bulk-upload", upload.single("excelFile"), async (req, res) => {
           address: row[2] || "",
           phone: row[3] || "",
           description: row[4] || "",
+          show:
+            row[5] !== undefined ? row[5] === "true" || row[5] === true : true,
+          branches: row[6]
+            ? (() => {
+                try {
+                  // Try to parse JSON if it's a string
+                  if (typeof row[6] === "string") {
+                    return JSON.parse(row[6]);
+                  }
+                  // If it's already an object/array, use it directly
+                  return Array.isArray(row[6]) ? row[6] : [];
+                } catch (e) {
+                  console.warn(
+                    `Row ${i + 2}: Invalid branches format, using empty array`
+                  );
+                  return [];
+                }
+              })()
+            : [],
         };
 
         // Validate required fields

@@ -13,6 +13,13 @@ const storeSchema = new mongoose.Schema({
   },
   isVip: { type: Boolean, default: false },
   isActive: { type: Boolean, default: true },
+  branches: [
+    {
+      name: { type: String },
+      address: { type: String },
+    },
+  ],
+  show: { type: Boolean, default: true },
 });
 
 module.exports = mongoose.model("Store", storeSchema);

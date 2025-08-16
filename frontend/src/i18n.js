@@ -199,6 +199,30 @@ const resources = {
       "VIP Brand": "VIP Brand",
       "Please select an image file.": "Please select an image file.",
       "Please select an Excel file.": "Please select an Excel file.",
+      Branches: "Branches",
+      "Show in Store List": "Show in Store List",
+      "Branch Name": "Branch Name",
+      "Branch Address": "Branch Address",
+      "Add Branch": "Add Branch",
+      "Remove Branch": "Remove Branch",
+      Visible: "Visible",
+      Hidden: "Hidden",
+      "Hide Store": "Hide Store",
+      "Show Store": "Show Store",
+      "Show Branches": "Show Branches",
+      "Hide Branches": "Hide Branches",
+      "Delete Expired Discount Products": "Delete Expired Discount Products",
+      "Are you sure you want to delete all expired discount products? This action cannot be undone.":
+        "Are you sure you want to delete all expired discount products? This action cannot be undone.",
+      "Are you sure you want to delete {{count}} expired discount products? This action cannot be undone.":
+        "Are you sure you want to delete {{count}} expired discount products? This action cannot be undone.",
+      "No expired discount products found.":
+        "No expired discount products found.",
+      "Successfully deleted {{count}} expired discount products.":
+        "Successfully deleted {{count}} expired discount products.",
+      "Failed to delete expired discount products. Please try again.":
+        "Failed to delete expired discount products. Please try again.",
+      "Deleting...": "Deleting...",
       "Successfully uploaded {{count}} products":
         "Successfully uploaded {{count}} products",
       "Upload complete with {{count}} errors":
@@ -513,6 +537,31 @@ const resources = {
       "VIP Brand": "شركة VIP",
       "Please select an image file.": "يرجى اختيار ملف صورة.",
       "Please select an Excel file.": "يرجى اختيار ملف إكسل.",
+      Branches: "الفروع",
+      "Show in Store List": "إظهار في قائمة الأسواق",
+      "Branch Name": "اسم الفرع",
+      "Branch Address": "عنوان الفرع",
+      "Add Branch": "إضافة فرع",
+      "Remove Branch": "إزالة فرع",
+      Visible: "مرئي",
+      Hidden: "مخفي",
+      "Hide Store": "إخفاء السوق",
+      "Show Store": "إظهار السوق",
+      "Show Branches": "إظهار الفروع",
+      "Hide Branches": "إخفاء الفروع",
+      "Delete Expired Discount Products":
+        "حذف المنتجات المخفضة المنتهية الصلاحية",
+      "Are you sure you want to delete all expired discount products? This action cannot be undone.":
+        "هل أنت متأكد من أنك تريد حذف جميع المنتجات المخفضة المنتهية الصلاحية؟ لا يمكن التراجع عن هذا الإجراء.",
+      "Are you sure you want to delete {{count}} expired discount products? This action cannot be undone.":
+        "هل أنت متأكد من أنك تريد حذف {{count}} منتج مخفض منتهي الصلاحية؟ لا يمكن التراجع عن هذا الإجراء.",
+      "No expired discount products found.":
+        "لم يتم العثور على منتجات مخفضة منتهية الصلاحية.",
+      "Successfully deleted {{count}} expired discount products.":
+        "تم حذف {{count}} منتج مخفض منتهي الصلاحية بنجاح.",
+      "Failed to delete expired discount products. Please try again.":
+        "فشل في حذف المنتجات المخفضة المنتهية الصلاحية. يرجى المحاولة مرة أخرى.",
+      "Deleting...": "جاري الحذف...",
       "Successfully uploaded {{count}} products":
         "تم تحميل {{count}} منتج بنجاح",
       "Upload complete with {{count}} errors":
@@ -925,6 +974,30 @@ const resources = {
       "VIP Brand": "بڕاندی VIP",
       "Please select an image file.": "تکایە فایلێکی وێنە هەڵبژێرە.",
       "Please select an Excel file.": "تکایە فایلێکی ئێکسڵ هەڵبژێرە.",
+      Branches: "لقەکان",
+      "Show in Store List": "لە لیستی فرۆشگاکاندا پیشان بدە",
+      "Branch Name": "ناوی لق",
+      "Branch Address": "ناونیشانی لق",
+      "Add Branch": "لق زیاد بکە",
+      "Remove Branch": "لق بسڕەوە",
+      Visible: "نیشاندان",
+      Hidden: "شاراوە",
+      "Hide Store": "فرۆشگا شاراوە بکە",
+      "Show Store": "فرۆشگا پیشان بدە",
+      "Show Branches": "بینینی لقەکان",
+      "Hide Branches": "شاردنەوەى لقەکان",
+      "Delete Expired Discount Products": "سڕینەوەی  داشکاندنە تەواو بووەکان",
+      "Are you sure you want to delete all expired discount products? This action cannot be undone.":
+        "دڵنیای لەوەی دەتەوێت هەموو داشکاندنە تەواو بووەکان بسڕیتەوە؟ ئەم کردارە ناتوانرێت هەڵوەشێنرێتەوە.",
+      "Are you sure you want to delete {{count}} expired discount products? This action cannot be undone.":
+        "دڵنیای لەوەی دەتەوێت {{count}} داشکاندنە تەواو بوو بسڕیتەوە؟ ئەم کردارە ناتوانرێت هەڵوەشێنرێتەوە.",
+      "No expired discount products found.":
+        "هیچ داشکاندنە تەواو بووەکان نەدۆزرایەوە.",
+      "Successfully deleted {{count}} expired discount products.":
+        "بە سەرکەوتوویی {{count}} داشکاندنە تەواو بووەکان سڕایەوە.",
+      "Failed to delete expired discount products. Please try again.":
+        "سڕینەوەی داشکاندنە تەواو بووەکان سەرکەوتوو نەبوو. تکایە دووبارە هەوڵبدەرەوە.",
+      "Deleting...": "سڕینەوە...",
       "Successfully uploaded {{count}} products":
         "بە سەرکەوتوویی {{count}} کاڵا بارکرا",
       "Upload complete with {{count}} errors":

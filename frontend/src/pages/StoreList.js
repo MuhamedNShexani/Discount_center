@@ -286,7 +286,7 @@ const StoreList = () => {
   const fetchStores = async () => {
     try {
       setLoading(true);
-      const response = await storeAPI.getAll();
+      const response = await storeAPI.getVisible();
       setStores(response.data);
     } catch (err) {
       setError(

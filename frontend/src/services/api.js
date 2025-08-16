@@ -14,10 +14,13 @@ const api = axios.create({
 // Store API calls
 export const storeAPI = {
   getAll: () => api.get("/stores"),
+  getVisible: () => api.get("/stores/visible"),
+  getAllIncludingHidden: () => api.get("/stores/all"),
   getById: (id) => api.get(`/stores/${id}`),
   create: (data) => api.post("/stores", data),
   update: (id, data) => api.put(`/stores/${id}`, data),
   delete: (id) => api.delete(`/stores/${id}`),
+  toggleVisibility: (id) => api.put(`/stores/${id}/toggle-visibility`),
 };
 
 // StoreType API calls

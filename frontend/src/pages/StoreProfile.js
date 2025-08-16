@@ -105,6 +105,9 @@ const StoreProfile = () => {
     type: "",
   });
 
+  // Branches toggle state
+  const [showBranches, setShowBranches] = useState(false);
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -1237,6 +1240,110 @@ const StoreProfile = () => {
                   </Typography>
                 )}
 
+                {/* Branches Section */}
+                {store.branches && store.branches.length > 0 && (
+                  <Box sx={{ mt: 3 }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: { xs: "center", md: "flex-start" },
+                        mb: 2,
+                      }}
+                    >
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          fontSize: "1.125rem",
+                          opacity: 0.9,
+                          textShadow: "0 1px 2px rgba(0,0,0,0.3)",
+                          color: "white",
+                          fontWeight: 600,
+                          mr: 2,
+                        }}
+                      >
+                        {t("Branches")}:
+                      </Typography>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => setShowBranches(!showBranches)}
+                        sx={{
+                          color: "white",
+                          borderColor: "rgba(255,255,255,0.3)",
+                          "&:hover": {
+                            borderColor: "rgba(255,255,255,0.6)",
+                            backgroundColor: "rgba(255,255,255,0.1)",
+                          },
+                          textTransform: "none",
+                          fontSize: "0.8rem",
+                          px: 2,
+                          py: 0.5,
+                        }}
+                      >
+                        {showBranches ? t("Hide Branches") : t("Show Branches")}
+                      </Button>
+                    </Box>
+                    {showBranches && (
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 1,
+                          justifyContent: { xs: "center", md: "flex-start" },
+                        }}
+                      >
+                        {store.branches.map((branch, index) => (
+                          <Box
+                            key={index}
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              backgroundColor: "rgba(255,255,255,0.1)",
+                              borderRadius: 1,
+                              p: 1.5,
+                              backdropFilter: "blur(10px)",
+                              border: "1px solid rgba(255,255,255,0.2)",
+                            }}
+                          >
+                            <LocationOn
+                              sx={{ mr: 1, fontSize: 20, opacity: 0.9 }}
+                            />
+                            <Box>
+                              {branch.name && (
+                                <Typography
+                                  variant="body2"
+                                  sx={{
+                                    fontSize: "1rem",
+                                    fontWeight: 600,
+                                    color: "white",
+                                    textShadow: "0 1px 2px rgba(0,0,0,0.3)",
+                                  }}
+                                >
+                                  {branch.name}
+                                </Typography>
+                              )}
+                              {branch.address && (
+                                <Typography
+                                  variant="body2"
+                                  sx={{
+                                    fontSize: "0.875rem",
+                                    opacity: 0.9,
+                                    color: "white",
+                                    textShadow: "0 1px 2px rgba(0,0,0,0.3)",
+                                  }}
+                                >
+                                  {branch.address}
+                                </Typography>
+                              )}
+                            </Box>
+                          </Box>
+                        ))}
+                      </Box>
+                    )}
+                  </Box>
+                )}
+
                 <Box
                   sx={{
                     mt: 3,
@@ -1327,6 +1434,111 @@ const StoreProfile = () => {
                 >
                   {store.description}
                 </Typography>
+              )}
+
+              {/* Mobile Branches Section */}
+              {store.branches && store.branches.length > 0 && (
+                <Box sx={{ mb: 2 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      mb: 1.5,
+                    }}
+                  >
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontSize: "0.875rem",
+                        opacity: 0.9,
+                        textShadow: "0 1px 2px rgba(0,0,0,0.3)",
+                        textAlign: "center",
+                        color: "white",
+                        fontWeight: 600,
+                        mb: 1,
+                      }}
+                    >
+                      {t("Branches")}:
+                    </Typography>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => setShowBranches(!showBranches)}
+                      sx={{
+                        color: "white",
+                        borderColor: "rgba(255,255,255,0.3)",
+                        "&:hover": {
+                          borderColor: "rgba(255,255,255,0.6)",
+                          backgroundColor: "rgba(255,255,255,0.1)",
+                        },
+                        textTransform: "none",
+                        fontSize: "0.7rem",
+                        px: 1.5,
+                        py: 0.3,
+                        minWidth: "auto",
+                      }}
+                    >
+                      {showBranches ? t("Hide Branches") : t("Show Branches")}
+                    </Button>
+                  </Box>
+                  {showBranches && (
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 1,
+                      }}
+                    >
+                      {store.branches.map((branch, index) => (
+                        <Box
+                          key={index}
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            backgroundColor: "rgba(255,255,255,0.1)",
+                            borderRadius: 1,
+                            p: 1,
+                            backdropFilter: "blur(10px)",
+                            border: "1px solid rgba(255,255,255,0.2)",
+                          }}
+                        >
+                          <LocationOn
+                            sx={{ mr: 1, fontSize: 16, opacity: 0.9 }}
+                          />
+                          <Box>
+                            {branch.name && (
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  fontSize: "0.8rem",
+                                  fontWeight: 600,
+                                  color: "white",
+                                  textShadow: "0 1px 2px rgba(0,0,0,0.3)",
+                                }}
+                              >
+                                {branch.name}
+                              </Typography>
+                            )}
+                            {branch.address && (
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  fontSize: "0.75rem",
+                                  opacity: 0.9,
+                                  color: "white",
+                                  textShadow: "0 1px 2px rgba(0,0,0,0.3)",
+                                }}
+                              >
+                                {branch.address}
+                              </Typography>
+                            )}
+                          </Box>
+                        </Box>
+                      ))}
+                    </Box>
+                  )}
+                </Box>
               )}
 
               <Box

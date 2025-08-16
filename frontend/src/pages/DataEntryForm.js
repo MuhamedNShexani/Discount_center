@@ -65,6 +65,8 @@ import StoreIcon from "@mui/icons-material/Store";
 import DownloadIcon from "@mui/icons-material/Download";
 import CardGiftcardIcon from "@mui/icons-material/CardGiftcard";
 import CategoryIcon from "@mui/icons-material/Category";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { useTranslation } from "react-i18next";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
@@ -123,6 +125,8 @@ const DataEntryForm = () => {
     description: "",
     isVip: false,
     storeTypeId: "",
+    branches: [],
+    show: true,
   });
 
   // Product form state
@@ -192,6 +196,7 @@ const DataEntryForm = () => {
   const [selectedStoreExcelFile, setSelectedStoreExcelFile] = useState(null);
   const [brandBulkUploadLoading, setBrandBulkUploadLoading] = useState(false);
   const [storeBulkUploadLoading, setStoreBulkUploadLoading] = useState(false);
+  const [deleteExpiredLoading, setDeleteExpiredLoading] = useState(false);
 
   const [selectedStoreFilter, setSelectedStoreFilter] = useState("");
   const [editDialog, setEditDialog] = useState({
@@ -245,7 +250,7 @@ const DataEntryForm = () => {
 
   const fetchStores = async () => {
     try {
-      const response = await storeAPI.getAll();
+      const response = await storeAPI.getAllIncludingHidden();
       setStores(response.data);
     } catch (err) {
       console.error("Error fetching stores:", err);
@@ -975,6 +980,8 @@ const DataEntryForm = () => {
         description: "",
         isVip: false,
         storeTypeId: "",
+        branches: [],
+        show: true,
       });
       setSelectedStoreLogo(null);
       fetchStores(); // Refresh stores list
@@ -1217,6 +1224,8 @@ const DataEntryForm = () => {
         storeTypeId:
           (data.storeTypeId && data.storeTypeId._id) || data.storeTypeId || "",
         description: data.description || "",
+        branches: data.branches || [],
+        show: data.show !== undefined ? data.show : true,
       });
     } else if (type === "category") {
       setEditForm({
@@ -1677,6 +1686,70 @@ const DataEntryForm = () => {
     }));
   };
 
+  const handleDeleteExpiredDiscountProducts = async () => {
+    try {
+      // Find expired discount products first
+      const expiredDiscountProducts = products.filter((product) => {
+        if (!product.isDiscount || !product.expireDate) return false;
+
+        const currentDate = new Date();
+        const expireDate = new Date(product.expireDate);
+        return currentDate > expireDate;
+      });
+
+      if (expiredDiscountProducts.length === 0) {
+        setMessage({
+          type: "info",
+          text: t("No expired discount products found."),
+        });
+        return;
+      }
+
+      // Show confirmation dialog with count
+      const confirmed = window.confirm(
+        t(
+          "Are you sure you want to delete {{count}} expired discount products? This action cannot be undone.",
+          { count: expiredDiscountProducts.length }
+        )
+      );
+
+      if (!confirmed) return;
+
+      setDeleteExpiredLoading(true);
+
+      // Delete expired discount products
+      let deletedCount = 0;
+      for (const product of expiredDiscountProducts) {
+        try {
+          await productAPI.delete(product._id);
+          deletedCount++;
+        } catch (error) {
+          console.error(`Failed to delete product ${product._id}:`, error);
+        }
+      }
+
+      // Refresh products list
+      await fetchProducts(selectedStoreFilter);
+
+      setMessage({
+        type: "success",
+        text: t("Successfully deleted {{count}} expired discount products.", {
+          count: deletedCount,
+        }),
+      });
+    } catch (error) {
+      console.error("Error deleting expired discount products:", error);
+      setMessage({
+        type: "error",
+        text: t(
+          "Failed to delete expired discount products. Please try again."
+        ),
+      });
+    } finally {
+      setDeleteExpiredLoading(false);
+    }
+  };
+
   return (
     <Box sx={{ py: 10, px: { xs: 0.5, sm: 1.5, md: 3 } }}>
       {/* Enhanced Admin Header */}
@@ -1933,6 +2006,15 @@ const DataEntryForm = () => {
                       >
                         {t("Description")}
                       </TableCell>
+                      {/* <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Branches")}
+                      </TableCell> */}
                       <TableCell
                         sx={{
                           fontWeight: "bold",
@@ -1941,6 +2023,15 @@ const DataEntryForm = () => {
                         }}
                       >
                         VIP
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Status")}
                       </TableCell>
                       <TableCell
                         sx={{
@@ -2014,6 +2105,13 @@ const DataEntryForm = () => {
                           >
                             {store.description}
                           </TableCell>
+                          {/* <TableCell>
+                            {store.branches.map((branch) => (
+                              <Box key={branch.name} sx={{ mb: 1 }}>
+                                {branch.name}
+                              </Box>
+                            ))}
+                          </TableCell> */}
                           <TableCell>
                             {store.isVip && (
                               <Box
@@ -2036,11 +2134,38 @@ const DataEntryForm = () => {
                             )}
                           </TableCell>
                           <TableCell>
+                            {store.show ? t("Visible") : t("Hidden")}
+                          </TableCell>
+                          <TableCell>
                             <IconButton
                               color="primary"
                               onClick={() => handleEditOpen("store", store)}
                             >
                               <EditIcon />
+                            </IconButton>
+                            <IconButton
+                              color={store.show ? "success" : "warning"}
+                              onClick={async () => {
+                                try {
+                                  await storeAPI.toggleVisibility(store._id);
+                                  // Refresh stores list
+                                  fetchStores();
+                                } catch (error) {
+                                  console.error(
+                                    "Error toggling store visibility:",
+                                    error
+                                  );
+                                }
+                              }}
+                              title={
+                                store.show ? t("Hide Store") : t("Show Store")
+                              }
+                            >
+                              {store.show ? (
+                                <VisibilityIcon />
+                              ) : (
+                                <VisibilityOffIcon />
+                              )}
                             </IconButton>
                             <IconButton
                               color="error"
@@ -2521,6 +2646,26 @@ const DataEntryForm = () => {
                     }
                   >
                     {t("Bulk Upload")}
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    color="warning"
+                    disabled={deleteExpiredLoading}
+                    sx={{
+                      justifyContent: "flex-start",
+                    }}
+                    startIcon={
+                      deleteExpiredLoading ? (
+                        <CircularProgress size={20} />
+                      ) : (
+                        <DeleteIcon />
+                      )
+                    }
+                    onClick={handleDeleteExpiredDiscountProducts}
+                  >
+                    {deleteExpiredLoading
+                      ? t("Deleting...")
+                      : t("Delete Expired Discount Products")}
                   </Button>
                 </Box>
                 <FormControl sx={{ minWidth: 240, justifyContent: "flex-end" }}>
@@ -3581,6 +3726,112 @@ const DataEntryForm = () => {
                     }
                     label={t("VIP Store")}
                   />
+                </Grid>
+                <Grid xs={12}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        name="show"
+                        checked={storeForm.show}
+                        onChange={(e) =>
+                          setStoreForm({
+                            ...storeForm,
+                            show: e.target.checked,
+                          })
+                        }
+                      />
+                    }
+                    label={t("Show in Store List")}
+                  />
+                </Grid>
+                <Grid xs={12}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    {t("Branches")}
+                  </Typography>
+                  {storeForm.branches.map((branch, index) => (
+                    <Box
+                      key={index}
+                      sx={{
+                        mb: 2,
+                        p: 2,
+                        border: "1px solid #ddd",
+                        borderRadius: 1,
+                      }}
+                    >
+                      <Grid container spacing={2}>
+                        <Grid xs={12} sm={6}>
+                          <TextField
+                            fullWidth
+                            label={t("Branch Name")}
+                            value={branch.name || ""}
+                            onChange={(e) => {
+                              const newBranches = [...storeForm.branches];
+                              newBranches[index] = {
+                                ...branch,
+                                name: e.target.value,
+                              };
+                              setStoreForm({
+                                ...storeForm,
+                                branches: newBranches,
+                              });
+                            }}
+                          />
+                        </Grid>
+                        <Grid xs={12} sm={6}>
+                          <TextField
+                            fullWidth
+                            label={t("Branch Address")}
+                            value={branch.address || ""}
+                            onChange={(e) => {
+                              const newBranches = [...storeForm.branches];
+                              newBranches[index] = {
+                                ...branch,
+                                address: e.target.value,
+                              };
+                              setStoreForm({
+                                ...storeForm,
+                                branches: newBranches,
+                              });
+                            }}
+                          />
+                        </Grid>
+                        <Grid xs={12}>
+                          <Button
+                            variant="outlined"
+                            color="error"
+                            size="small"
+                            onClick={() => {
+                              const newBranches = storeForm.branches.filter(
+                                (_, i) => i !== index
+                              );
+                              setStoreForm({
+                                ...storeForm,
+                                branches: newBranches,
+                              });
+                            }}
+                          >
+                            {t("Remove Branch")}
+                          </Button>
+                        </Grid>
+                      </Grid>
+                    </Box>
+                  ))}
+                  <Button
+                    variant="outlined"
+                    startIcon={<AddIcon />}
+                    onClick={() => {
+                      setStoreForm({
+                        ...storeForm,
+                        branches: [
+                          ...storeForm.branches,
+                          { name: "", address: "" },
+                        ],
+                      });
+                    }}
+                    sx={{ mt: 1 }}
+                  >
+                    {t("Add Branch")}
+                  </Button>
                 </Grid>
                 <Grid xs={12}>
                   <Button
@@ -4663,6 +4914,14 @@ const DataEntryForm = () => {
                     <br />• {t("Column C: Address (optional)")}
                     <br />• {t("Column D: Phone (optional)")}
                     <br />• {t("Column E: Description (optional)")}
+                    <br />•{" "}
+                    {t(
+                      "Column F: Show in Store List (true/false, default: true)"
+                    )}
+                    <br />•{" "}
+                    {t(
+                      "Column G: Branches (JSON format: [{'name':'Branch1','address':'Address1'}])"
+                    )}
                   </Typography>
                 </Grid>
               </Grid>
@@ -5143,6 +5402,105 @@ const DataEntryForm = () => {
                   label={t("VIP Store")}
                 />
               </Box>
+              <Box sx={{ mt: 2 }}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      name="show"
+                      checked={
+                        editForm.show !== undefined ? editForm.show : true
+                      }
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          show: e.target.checked,
+                        })
+                      }
+                    />
+                  }
+                  label={t("Show in Store List")}
+                />
+              </Box>
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="subtitle1" gutterBottom>
+                  {t("Branches")}
+                </Typography>
+                {(editForm.branches || []).map((branch, index) => (
+                  <Box
+                    key={index}
+                    sx={{
+                      mb: 2,
+                      p: 2,
+                      border: "1px solid #ddd",
+                      borderRadius: 1,
+                    }}
+                  >
+                    <Grid container spacing={2}>
+                      <Grid xs={12} sm={6}>
+                        <TextField
+                          fullWidth
+                          label={t("Branch Name")}
+                          value={branch.name || ""}
+                          onChange={(e) => {
+                            const newBranches = [...(editForm.branches || [])];
+                            newBranches[index] = {
+                              ...branch,
+                              name: e.target.value,
+                            };
+                            setEditForm({ ...editForm, branches: newBranches });
+                          }}
+                        />
+                      </Grid>
+                      <Grid xs={12} sm={6}>
+                        <TextField
+                          fullWidth
+                          label={t("Branch Address")}
+                          value={branch.address || ""}
+                          onChange={(e) => {
+                            const newBranches = [...(editForm.branches || [])];
+                            newBranches[index] = {
+                              ...branch,
+                              address: e.target.value,
+                            };
+                            setEditForm({ ...editForm, branches: newBranches });
+                          }}
+                        />
+                      </Grid>
+                      <Grid xs={12}>
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          size="small"
+                          onClick={() => {
+                            const newBranches = (
+                              editForm.branches || []
+                            ).filter((_, i) => i !== index);
+                            setEditForm({ ...editForm, branches: newBranches });
+                          }}
+                        >
+                          {t("Remove Branch")}
+                        </Button>
+                      </Grid>
+                    </Grid>
+                  </Box>
+                ))}
+                <Button
+                  variant="outlined"
+                  startIcon={<AddIcon />}
+                  onClick={() => {
+                    setEditForm({
+                      ...editForm,
+                      branches: [
+                        ...(editForm.branches || []),
+                        { name: "", address: "" },
+                      ],
+                    });
+                  }}
+                  sx={{ mt: 1 }}
+                >
+                  {t("Add Branch")}
+                </Button>
+              </Box>
             </Box>
           ) : editDialog.type === "category" ? (
             <Box component="form" sx={{ mt: 1 }}>
@@ -5161,7 +5519,7 @@ const DataEntryForm = () => {
                   <FormControl fullWidth margin="normal">
                     <InputLabel>{t("Store Type")}</InputLabel>
                     <Select
-                      name="storeType"
+                      name="storeTypeId"
                       value={editForm.storeType || "market"}
                       onChange={handleEditFormChange}
                       label={t("Store Type")}

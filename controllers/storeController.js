@@ -1,11 +1,25 @@
 const Store = require("../models/Store");
 const Product = require("../models/Product");
 
-// @desc    Get all stores
+// @desc    Get all stores (including hidden ones)
 // @route   GET /api/stores
 const getStores = async (req, res) => {
   try {
     const stores = await Store.find()
+      .populate("storeTypeId", "name icon")
+      .sort({ isVip: -1, name: 1 });
+    res.json(stores);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+};
+
+// @desc    Get visible stores only (for store list page)
+// @route   GET /api/stores/visible
+const getVisibleStores = async (req, res) => {
+  try {
+    const stores = await Store.find({ show: true })
       .populate("storeTypeId", "name icon")
       .sort({ isVip: -1, name: 1 });
     res.json(stores);
@@ -43,7 +57,16 @@ const createStore = async (req, res) => {
       if (!st) return res.status(400).json({ msg: "Invalid storeType name" });
       resolvedStoreTypeId = st._id;
     }
-    const store = new Store({ ...rest, storeTypeId: resolvedStoreTypeId });
+
+    // Set default values for new fields
+    const storeData = {
+      ...rest,
+      storeTypeId: resolvedStoreTypeId,
+      branches: rest.branches || [],
+      show: rest.show !== undefined ? rest.show : true,
+    };
+
+    const store = new Store(storeData);
     await store.save();
     const populated = await Store.findById(store._id).populate(
       "storeTypeId",
@@ -70,6 +93,15 @@ const updateStore = async (req, res) => {
     } else if (storeTypeId) {
       updateDoc.storeTypeId = storeTypeId;
     }
+
+    // Ensure branches and show fields are properly handled
+    if (rest.branches !== undefined) {
+      updateDoc.branches = rest.branches;
+    }
+    if (rest.show !== undefined) {
+      updateDoc.show = rest.show;
+    }
+
     const store = await Store.findByIdAndUpdate(req.params.id, updateDoc, {
       new: true,
     }).populate("storeTypeId", "name icon");
@@ -108,6 +140,7 @@ const deleteStore = async (req, res) => {
 
 module.exports = {
   getStores,
+  getVisibleStores,
   getStoreById,
   createStore,
   updateStore,
