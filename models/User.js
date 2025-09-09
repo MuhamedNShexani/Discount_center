@@ -51,6 +51,11 @@ const userSchema = new mongoose.Schema({
   },
   phone: {
     type: String,
+    required: function () {
+      return !this.deviceId;
+    }, // Only required if no deviceId
+    unique: true,
+    sparse: true, // Allow multiple null values
     trim: true,
   },
   avatar: {
