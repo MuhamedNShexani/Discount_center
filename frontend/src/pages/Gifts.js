@@ -36,6 +36,7 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { useCityFilter } from "../context/CityFilterContext";
 
 const Gifts = () => {
   const theme = useTheme();
@@ -53,6 +54,7 @@ const Gifts = () => {
   const [stores, setStores] = useState([]);
   const [brands, setBrands] = useState([]);
   const [bannerAds, setBannerAds] = useState([]);
+  const { selectedCity } = useCityFilter();
 
   // Filter states
   const [filters, setFilters] = useState({
@@ -67,7 +69,7 @@ const Gifts = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [gifts, filters]);
+  }, [gifts, filters, selectedCity]);
 
   const fetchData = async () => {
     try {
@@ -178,6 +180,18 @@ const Gifts = () => {
     // Brand filter
     if (filters.brand) {
       filtered = filtered.filter((gift) => gift.brandId?._id === filters.brand);
+    }
+
+    // City filter
+    if (Array.isArray(filtered)) {
+      filtered = filtered.filter((gift) => {
+        if (!gift.storeId || gift.storeId.length === 0) {
+          // If a gift is not associated with any store, it should probably be shown in all cities.
+          // Or, depending on requirements, it could be hidden. I'll assume it should be shown.
+          return true;
+        }
+        return gift.storeId.some((store) => store.storecity === selectedCity);
+      });
     }
 
     setFilteredGifts(filtered);

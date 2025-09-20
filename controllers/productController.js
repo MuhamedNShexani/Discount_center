@@ -24,7 +24,7 @@ const getProducts = async (req, res) => {
 
     const products = await Product.find(query)
       .populate("brandId", "name logo")
-      .populate("storeId", "name logo")
+      .populate("storeId", "name logo storecity")
       .populate("categoryId", "name types")
       .populate("storeTypeId", "name icon")
       .sort({ name: 1 });
@@ -177,7 +177,7 @@ const getProductsByBrand = async (req, res) => {
   try {
     const products = await Product.find({ brandId: req.params.brandId })
       .populate("brandId", "name logo")
-      .populate("storeId", "name logo")
+      .populate("storeId", "name logo storecity")
       .populate("categoryId", "name types")
       .populate("storeTypeId", "name icon")
       .sort({ name: 1 });
@@ -195,7 +195,7 @@ const getProductsByStore = async (req, res) => {
   try {
     const products = await Product.find({ storeId: req.params.storeId })
       .populate("brandId", "name logo")
-      .populate("storeId", "name logo")
+      .populate("storeId", "name logo storecity")
       .populate("categoryId", "name types")
       .populate("storeTypeId", "name icon")
       .sort({ name: 1 });
@@ -214,7 +214,7 @@ const getProductsByCategory = async (req, res) => {
     // The param is a Category ID. Match on categoryId, not the legacy `type` field
     const products = await Product.find({ categoryId: req.params.category })
       .populate("brandId", "name logo")
-      .populate("storeId", "name logo")
+      .populate("storeId", "name logo storecity")
       .populate("categoryId", "name types")
       .populate("storeTypeId", "name icon")
       .sort({ name: 1 });

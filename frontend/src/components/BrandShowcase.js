@@ -5,9 +5,11 @@ import { useTheme } from "@mui/material/styles";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import Slider from "react-slick";
+import { useTranslation } from "react-i18next";
 
 const BrandShowcase = ({ brands }) => {
   const theme = useTheme();
+  const { t } = useTranslation();
 
   if (!brands || brands.length === 0) {
     return null;
@@ -49,8 +51,8 @@ const BrandShowcase = ({ brands }) => {
     <Paper
       elevation={4}
       sx={{
-        my: 4,
-        p: 3,
+        my: 2,
+        p: 2,
         borderRadius: 4,
         background:
           theme.palette.mode === "dark"
@@ -65,7 +67,7 @@ const BrandShowcase = ({ brands }) => {
       <Typography
         variant="h5"
         gutterBottom
-        textAlign="center"
+        textAlign="left"
         sx={{
           fontWeight: 700,
           color: theme.palette.text.primary,
@@ -74,7 +76,7 @@ const BrandShowcase = ({ brands }) => {
           mb: 3,
         }}
       >
-        Featured Brands
+        {t("Featured Brands")}
       </Typography>
       <Slider {...settings}>
         {brands.map((brand) => (

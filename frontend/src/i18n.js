@@ -848,6 +848,7 @@ const resources = {
     translation: {
       "Store Products": "ناوەندی داشکاندەکان",
       "Data Lists": "لیستى داتاکان",
+      "Featured Brands": "بڕاندەکان",
       "Please select a logo file.": "تۆمارکردنى لۆگۆ پێویستە",
       "Data Entry": "داتاکان",
       Stores: "فرۆشگاکان",

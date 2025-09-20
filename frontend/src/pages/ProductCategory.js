@@ -199,6 +199,7 @@ const ProductCategory = () => {
   const fetchProductsByCategory = async (categoryId) => {
     try {
       const response = await productAPI.getByCategory(categoryId);
+      console.log("Products received from API:", response.data);
       setProducts(response.data);
       setFilteredProducts(response.data);
     } catch (err) {

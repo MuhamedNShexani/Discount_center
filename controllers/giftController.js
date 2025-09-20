@@ -4,7 +4,7 @@ const Gift = require("../models/Gift");
 const getGifts = async (req, res) => {
   try {
     const gifts = await Gift.find()
-      .populate("storeId", "name logo")
+      .populate("storeId", "name logo storecity")
       .populate("brandId", "name logo")
       .sort({ createdAt: -1 });
 
@@ -25,7 +25,7 @@ const getGifts = async (req, res) => {
 const getGiftById = async (req, res) => {
   try {
     const gift = await Gift.findById(req.params.id)
-      .populate("storeId", "name logo address phone")
+      .populate("storeId", "name logo address phone storecity")
       .populate("brandId", "name logo address phone");
 
     if (!gift) {
@@ -52,7 +52,7 @@ const getGiftById = async (req, res) => {
 const getGiftsByStore = async (req, res) => {
   try {
     const gifts = await Gift.find({ storeId: req.params.storeId })
-      .populate("storeId", "name logo")
+      .populate("storeId", "name logo storecity")
       .populate("brandId", "name logo")
       .sort({ createdAt: -1 });
 
@@ -73,7 +73,7 @@ const getGiftsByStore = async (req, res) => {
 const getGiftsByBrand = async (req, res) => {
   try {
     const gifts = await Gift.find({ brandId: req.params.brandId })
-      .populate("storeId", "name logo")
+      .populate("storeId", "name logo storecity")
       .populate("brandId", "name logo")
       .sort({ createdAt: -1 });
 
@@ -107,7 +107,7 @@ const createGift = async (req, res) => {
 
     const savedGift = await gift.save();
     const populatedGift = await Gift.findById(savedGift._id)
-      .populate("storeId", "name logo")
+      .populate("storeId", "name logo storecity")
       .populate("brandId", "name logo");
 
     res.status(201).json({
@@ -142,7 +142,7 @@ const updateGift = async (req, res) => {
       },
       { new: true }
     )
-      .populate("storeId", "name logo")
+      .populate("storeId", "name logo storecity")
       .populate("brandId", "name logo");
 
     if (!gift) {
