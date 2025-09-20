@@ -1004,7 +1004,7 @@ const StoreProfile = () => {
     </Paper>
   );
 
-  if (loading) return <Loader message="Loading..." />;
+  if (loading) return <Loader message={t("Loading...")} />;
   if (error) return <Loader message={error} />;
   if (!store) return <Alert severity="error">Store not found</Alert>;
 
