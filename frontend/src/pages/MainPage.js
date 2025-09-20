@@ -28,6 +28,7 @@ import {
   categoryAPI,
   adAPI,
   storeTypeAPI,
+  brandAPI, // Added brandAPI
 } from "../services/api";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import BusinessIcon from "@mui/icons-material/Business";
@@ -37,6 +38,7 @@ import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import Loader from "../components/Loader";
+import BrandShowcase from "../components/BrandShowcase"; // Import BrandShowcase
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@mui/material/styles";
 import { useUserTracking } from "../hooks/useUserTracking";
@@ -59,6 +61,7 @@ const MainPage = () => {
   const [priceRange, setPriceRange] = useState([0, 1000000]);
   const [showOnlyDiscount, setShowOnlyDiscount] = useState(true); // Default to showing only discounted products
   const [allCategories, setAllCategories] = useState([]);
+  const [brands, setBrands] = useState([]); // Added brands state
 
   // Notification dialog state
   const [loginNotificationOpen, setLoginNotificationOpen] = useState(false);
@@ -245,23 +248,41 @@ const MainPage = () => {
         productsResponse,
         adsResponse,
         storeTypesResponse,
+        brandsResponse, // Add brandsResponse
       ] = await Promise.all([
         storeAPI.getAll(),
         categoryAPI.getAll(),
         productAPI.getAll(),
         adAPI.getAll({ page: "home" }),
         storeTypeAPI.getAll(),
+        brandAPI.getAll(), // Add brandAPI call
       ]);
 
       const storesData = storesResponse.data;
       const categoriesData = categoriesResponse.data;
       const productsData = productsResponse.data;
       const adsData = adsResponse.data || [];
+      const brandsData = brandsResponse.data || []; // Get brandsData
 
-      setStores(storesData);
+      // Shuffle stores logic
+      const vipStores = storesData
+        .filter((store) => store.isVip)
+        .sort((a, b) => a.name.localeCompare(b.name));
+      const nonVipStores = storesData.filter((store) => !store.isVip);
+
+      // Fisher-Yates shuffle algorithm
+      for (let i = nonVipStores.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [nonVipStores[i], nonVipStores[j]] = [nonVipStores[j], nonVipStores[i]];
+      }
+
+      const shuffledStores = [...vipStores, ...nonVipStores];
+
+      setStores(shuffledStores);
       setAllCategories(categoriesData);
       setAllProducts(productsData);
       setStoreTypes(storeTypesResponse?.data || []);
+      setBrands(brandsData); // Set brands state
 
       // Group products by store and initialize like counts/states
       const productsMap = {};
@@ -1087,7 +1108,7 @@ const MainPage = () => {
           gap: { xs: 2, sm: 2, md: 3 },
         }}
       >
-        {displayedStores.map((store) => {
+        {displayedStores.map((store, index) => {
           // 3. Get the products for this card from the master filtered list
           const productsForCard = filteredProducts
             .filter((p) => getID(p.storeId) === getID(store._id))
@@ -1099,475 +1120,498 @@ const MainPage = () => {
               (p.previousPrice && p.newPrice && p.previousPrice > p.newPrice)
           ).length;
 
+          // Logic to insert BrandShowcase
+          const brandShowcase =
+            (index + 1) % 5 === 0 ? (
+              <BrandShowcase
+                brands={brands.slice(
+                  ((index + 1) / 5 - 1) * 5,
+                  ((index + 1) / 5) * 5
+                )}
+              />
+            ) : null;
+
           return (
-            <Card
-              component={Link}
-              to={`/stores/${store._id}`}
-              key={store._id}
-              style={{ textDecoration: "none" }}
-              sx={{
-                mb: { xs: 0, sm: 2 },
-                mt: { xs: 0, sm: 0 },
-                borderRadius: { xs: 2, md: 3 },
-                overflow: "hidden",
-                background:
-                  theme.palette.mode === "dark"
-                    ? "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)"
-                    : "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
-                border: `1px solid ${
-                  theme.palette.mode === "dark" ? "#34495e" : "#e9ecef"
-                }`,
-                boxShadow:
-                  theme.palette.mode === "dark"
-                    ? "0 8px 32px rgba(0,0,0,0.3)"
-                    : "0 8px 32px rgba(0,0,0,0.1)",
-                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                "&:hover": {
-                  transform: "translateY(-4px)",
+            <React.Fragment key={store._id}>
+              <Card
+                component={Link}
+                to={`/stores/${store._id}`}
+                style={{ textDecoration: "none" }}
+                sx={{
+                  mb: { xs: 0, sm: 2 },
+                  mt: { xs: 0, sm: 0 },
+                  borderRadius: { xs: 2, md: 3 },
+                  overflow: "hidden",
+                  background:
+                    theme.palette.mode === "dark"
+                      ? "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)"
+                      : "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
+                  border: `1px solid ${
+                    theme.palette.mode === "dark" ? "#34495e" : "#e9ecef"
+                  }`,
                   boxShadow:
                     theme.palette.mode === "dark"
-                      ? "0 16px 64px rgba(0,0,0,0.4)"
-                      : "0 16px 64px rgba(0,0,0,0.15)",
-                },
-              }}
-            >
-              {/* Store Header with Gradient Overlay */}
-              <Box
-                sx={{
-                  background:
-                    theme.palette.mode === "dark" ? "#40916c" : "#34495e",
-                  p: { xs: 2, md: 3, lg: 1 },
-                  color: "white",
-                  position: "relative",
-                  overflow: "hidden",
-                  "&::before": {
-                    content: '""',
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background:
-                      'url(\'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>\') repeat',
-                    opacity: 0.1,
+                      ? "0 8px 32px rgba(0,0,0,0.3)"
+                      : "0 8px 32px rgba(0,0,0,0.1)",
+                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                  "&:hover": {
+                    transform: "translateY(-4px)",
+                    boxShadow:
+                      theme.palette.mode === "dark"
+                        ? "0 16px 64px rgba(0,0,0,0.4)"
+                        : "0 16px 64px rgba(0,0,0,0.15)",
                   },
                 }}
               >
-                <Box
-                  display="flex"
-                  alignItems="center"
-                  position="relative"
-                  zIndex={1}
-                  sx={{
-                    flexDirection: "row",
-                    gap: { xs: 2, sm: 3 },
-                  }}
-                >
-                  {store.logo ? (
-                    <Box
-                      sx={{
-                        width: { xs: 60, sm: 80, md: 150 },
-                        height: { xs: 60, sm: 80, md: 150 },
-                        borderRadius: 2,
-                        overflow: "hidden",
-                        border: "3px solid rgba(255,255,255,0.2)",
-                        background: "rgba(255,255,255,0.1)",
-                        backdropFilter: "blur(10px)",
-                        flexShrink: 0,
-                      }}
-                    >
-                      <CardMedia
-                        component="img"
-                        sx={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                        }}
-                        image={`${process.env.REACT_APP_BACKEND_URL}${store.logo}`}
-                        alt={store.name}
-                      />
-                    </Box>
-                  ) : (
-                    <Box
-                      sx={{
-                        width: { xs: 60, sm: 80 },
-                        height: { xs: 60, sm: 80 },
-                        borderRadius: 2,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        background: "rgba(255,255,255,0.1)",
-                        backdropFilter: "blur(10px)",
-                        border: "3px solid rgba(255,255,255,0.2)",
-                        flexShrink: 0,
-                      }}
-                    >
-                      <BusinessIcon
-                        sx={{
-                          fontSize: { xs: 30, sm: 40 },
-                          color: "rgba(255,255,255,0.8)",
-                        }}
-                      />
-                    </Box>
-                  )}
-
-                  <Box flexGrow={1} sx={{ textAlign: "left" }}>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                        flexWrap: "wrap",
-                      }}
-                    >
-                      <Typography
-                        variant="h4"
-                        sx={{
-                          textDecoration: "none",
-                          color: "white",
-                          fontWeight: 700,
-                          fontSize: { xs: "1.1rem", sm: "1.5rem", md: "2rem" },
-                          textShadow: "0 2px 4px rgba(0,0,0,0.3)",
-                          transition: "all 0.2s ease",
-                          "&:hover": {
-                            textShadow: "0 4px 8px rgba(0,0,0,0.4)",
-                            transform: "translateX(4px)",
-                          },
-                        }}
-                      >
-                        {store.name}
-                      </Typography>
-                      {store.isVip && (
-                        <Box
-                          alt={t("sponsor")}
-                          sx={{
-                            position: "absolute",
-                            top: { xs: 2, md: 2 },
-                            left: { xs: -2, md: -2 },
-                            zIndex: { xs: 2, md: 2 },
-                            backgroundColor: "white",
-                            borderRadius: "50%",
-                            width: { xs: 20, sm: 40 },
-                            height: { xs: 20, sm: 40 },
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
-                            "&::before": {
-                              content: '"👑"',
-                              fontSize: { xs: "16px", sm: "25px" },
-                            },
-                          }}
-                        />
-                      )}
-                    </Box>
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        width: { xs: "250px", md: "800px" },
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        color: "rgba(255,255,255,0.9)",
-                        mt: 0.5,
-                        textShadow: "0 1px 2px rgba(0,0,0,0.3)",
-                        fontSize: { xs: "0.7rem", sm: "0.875rem", md: "1rem" },
-                        textAlign: "left",
-                      }}
-                    >
-                      {store.address}
-                    </Typography>
-                    <Chip
-                      label={`${totalDiscountedInStore} ${t(
-                        "Discounted Products"
-                      )}`}
-                      sx={{
-                        mt: 1,
-                        backgroundColor: "rgba(255,255,255,0.2)",
-                        color: "white",
-                        fontWeight: 600,
-                        backdropFilter: "blur(10px)",
-                        fontSize: { xs: "0.65rem", sm: "0.8rem" },
-                        height: { xs: "22px", sm: "28px" },
-                      }}
-                    />
-                  </Box>
-                </Box>
-              </Box>
-
-              {/* Products Grid */}
-              <Box
-                sx={{
-                  p: { xs: 0.7, md: 3 },
-                  width: { xs: "100%", md: "100%" },
-                  height: { xs: "280px", sm: "360px", md: "auto" },
-                }}
-              >
+                {/* Store Header with Gradient Overlay */}
                 <Box
                   sx={{
-                    display: "flex",
-                    overflowX: "auto",
-                    gap: { xs: 0.5, md: 3 },
-                    pb: 2,
-                    "&::-webkit-scrollbar": {
-                      height: 8,
-                    },
-                    "&::-webkit-scrollbar-track": {
-                      backgroundColor:
-                        theme.palette.mode === "dark" ? "#4a5568" : "#f1f1f1",
-                      borderRadius: 4,
-                    },
-                    "&::-webkit-scrollbar-thumb": {
-                      backgroundColor:
-                        theme.palette.mode === "dark" ? "#40916c" : "#34495e",
-                      borderRadius: 4,
-                      "&:hover": {
-                        backgroundColor: "#45a049",
-                      },
+                    background:
+                      theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+                    p: { xs: 1, sm: 2, md: 3, lg: 1 }, // Reduced padding on xs
+                    color: "white",
+                    position: "relative",
+                    overflow: "hidden",
+                    "&::before": {
+                      content: '""',
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      background:
+                        'url(\'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>\') repeat',
+                      opacity: 0.1,
                     },
                   }}
                 >
-                  {productsForCard.map((product) => {
-                    const discount = calculateDiscount(
-                      product.previousPrice,
-                      product.newPrice
-                    );
-                    return (
-                      <Card
-                        key={product._id}
-                        component={Link}
-                        to={`/products/${product._id}`}
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    position="relative"
+                    zIndex={1}
+                    sx={{
+                      flexDirection: "row",
+                      gap: { xs: 2, sm: 3 },
+                    }}
+                  >
+                    {store.logo ? (
+                      <Box
                         sx={{
-                          height: { xs: "320px", sm: "380px" },
-                          width: { xs: "160px", sm: "220px", md: "280px" },
-                          maxWidth: { xs: "160px", sm: "220px", md: "280px" },
-                          minWidth: { xs: "160px", sm: "220px", md: "280px" },
-                          textDecoration: "none",
+                          width: { xs: 50, sm: 80, md: 150 }, // Reduced logo size on xs
+                          height: { xs: 50, sm: 80, md: 150 }, // Reduced logo size on xs
                           borderRadius: 2,
                           overflow: "hidden",
-                          display: "flex",
-                          flexDirection: "column",
+                          border: "3px solid rgba(255,255,255,0.2)",
+                          background: "rgba(255,255,255,0.1)",
+                          backdropFilter: "blur(10px)",
                           flexShrink: 0,
-                          background: "white",
-                          border: "1px solid #e2e8f0",
-                          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                          "&:hover": {
-                            transform: "translateY(-4px)",
-                            boxShadow: "0 12px 24px rgba(0,0,0,0.15)",
-                          },
                         }}
                       >
-                        {/* Product Image */}
-                        <Box
+                        <CardMedia
+                          component="img"
                           sx={{
-                            position: "relative",
-                            overflow: "hidden",
-                            height: { xs: "120px", sm: "180px" },
-                            flexShrink: 0,
-                            backgroundColor: "#f8f9fa",
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                          }}
+                          image={`${process.env.REACT_APP_BACKEND_URL}${store.logo}`}
+                          alt={store.name}
+                        />
+                      </Box>
+                    ) : (
+                      <Box
+                        sx={{
+                          width: { xs: 60, sm: 80 },
+                          height: { xs: 60, sm: 80 },
+                          borderRadius: 2,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          background: "rgba(255,255,255,0.1)",
+                          backdropFilter: "blur(10px)",
+                          border: "3px solid rgba(255,255,255,0.2)",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <BusinessIcon
+                          sx={{
+                            fontSize: { xs: 30, sm: 40 },
+                            color: "rgba(255,255,255,0.8)",
+                          }}
+                        />
+                      </Box>
+                    )}
+
+                    <Box flexGrow={1} sx={{ textAlign: "left" }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        <Typography
+                          variant="h4"
+                          sx={{
+                            textDecoration: "none",
+                            color: "white",
+                            fontWeight: 700,
+                            fontSize: {
+                              xs: "1.1rem",
+                              sm: "1.5rem",
+                              md: "2rem",
+                            },
+                            textShadow: "0 2px 4px rgba(0,0,0,0.3)",
+                            transition: "all 0.2s ease",
+                            "&:hover": {
+                              textShadow: "0 4px 8px rgba(0,0,0,0.4)",
+                              transform: "translateX(4px)",
+                            },
                           }}
                         >
-                          {product.image ? (
-                            <CardMedia
-                              component="img"
-                              height="180"
-                              image={`${process.env.REACT_APP_BACKEND_URL}${product.image}`}
-                              alt={product.name}
-                              sx={{
-                                objectFit: "contain",
-                                width: "100%",
-                                height: {
-                                  xs: "100px",
-                                  sm: "150px",
-                                  md: "200px",
-                                },
-                                transition: "transform 0.3s ease",
-                                "&:hover": { transform: "scale(1.05)" },
-                              }}
-                            />
-                          ) : (
-                            <Box
-                              sx={{
-                                height: {
-                                  xs: "100px",
-                                  sm: "150px",
-                                  md: "200px",
-                                },
-                                width: "100%",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                background: "#f8f9fa",
-                              }}
-                            >
-                              <StorefrontIcon
-                                sx={{
-                                  fontSize: 60,
-                                  color: "#a0aec0",
-                                }}
-                              />
-                            </Box>
-                          )}
-                          <IconButton
-                            onClick={(e) => handleLikeClick(product._id, e)}
-                            disabled={likeLoading[product._id]}
-                            sx={{
-                              position: "absolute",
-                              top: 8,
-                              right: 8,
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 0.5,
-                              backgroundColor: "rgba(0, 0, 0, 0.7)",
-                              px: 1,
-                              py: 0.5,
-                              borderRadius: 1,
-                              fontSize: "0.7rem",
-                              bgcolor: "white",
-                              color:
-                                likeStates[product._id] ||
-                                isProductLiked(product._id)
-                                  ? "#e53e3e"
-                                  : "#666",
-                              "&:hover": {
-                                color: "#e53e3e",
-                                transform: "scale(1.1)",
-                              },
-                              transition: "all 0.2s ease",
-                              p: 0.5,
-                            }}
-                            size="small"
-                          >
-                            {likeStates[product._id] ||
-                            isProductLiked(product._id) ? (
-                              <FavoriteIcon sx={{ fontSize: "1.2rem" }} />
-                            ) : (
-                              <FavoriteBorderIcon sx={{ fontSize: "1.2rem" }} />
-                            )}
-                          </IconButton>
-                          {/* View Count Badge - Top Right */}
-                          {/* {product.viewCount > 0 && (
+                          {store.name}
+                        </Typography>
+                        {store.isVip && (
                           <Box
+                            alt={t("sponsor")}
                             sx={{
                               position: "absolute",
-                              top: 8,
-                              right: 8,
+                              top: { xs: 2, md: 2 },
+                              left: { xs: -2, md: -2 },
+                              zIndex: { xs: 2, md: 2 },
+                              backgroundColor: "white",
+                              borderRadius: "50%",
+                              width: { xs: 20, sm: 40 },
+                              height: { xs: 20, sm: 40 },
                               display: "flex",
                               alignItems: "center",
-                              gap: 0.5,
-                              backgroundColor: "rgba(0, 0, 0, 0.7)",
-                              color: "white",
-                              px: 1,
-                              py: 0.5,
-                              borderRadius: 1,
-                              fontSize: "0.7rem",
+                              justifyContent: "center",
+                              boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+                              "&::before": {
+                                content: '"👑"',
+                                fontSize: { xs: "16px", sm: "25px" },
+                              },
                             }}
-                          >
-                            <VisibilityIcon sx={{ fontSize: "0.8rem" }} />
-                            {product.viewCount}
-                          </Box>
-                        )} */}
-                        </Box>
+                          />
+                        )}
+                      </Box>
+                      <Typography
+                        variant="body1"
+                        sx={{
+                          width: { xs: "250px", md: "800px" },
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          color: "rgba(255,255,255,0.9)",
+                          mt: 0.5,
+                          textShadow: "0 1px 2px rgba(0,0,0,0.3)",
+                          fontSize: {
+                            xs: "0.7rem",
+                            sm: "0.875rem",
+                            md: "1rem",
+                          },
+                          textAlign: "left",
+                        }}
+                      >
+                        {store.address}
+                      </Typography>
+                      <Chip
+                        label={`${totalDiscountedInStore} ${t(
+                          "Discounted Products"
+                        )}`}
+                        sx={{
+                          mt: 1,
+                          backgroundColor: "rgba(255,255,255,0.2)",
+                          color: "white",
+                          fontWeight: 600,
+                          backdropFilter: "blur(10px)",
+                          fontSize: { xs: "0.65rem", sm: "0.8rem" },
+                          height: { xs: "22px", sm: "28px" },
+                        }}
+                      />
+                    </Box>
+                  </Box>
+                </Box>
 
-                        {/* Product Content */}
-                        <CardContent
+                {/* Products Grid */}
+                <Box
+                  sx={{
+                    p: { xs: 0.5, sm: 0.7, md: 3 }, // Reduced padding on xs and sm
+                    width: { xs: "100%", md: "100%" },
+                    height: { xs: "240px", sm: "320px", md: "auto" }, // Reduced height on xs and sm
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: "flex",
+                      overflowX: "auto",
+                      gap: { xs: 0.5, md: 3 },
+                      pb: 2,
+                      "&::-webkit-scrollbar": {
+                        height: 8,
+                      },
+                      "&::-webkit-scrollbar-track": {
+                        backgroundColor:
+                          theme.palette.mode === "dark" ? "#4a5568" : "#f1f1f1",
+                        borderRadius: 4,
+                      },
+                      "&::-webkit-scrollbar-thumb": {
+                        backgroundColor:
+                          theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+                        borderRadius: 4,
+                        "&:hover": {
+                          backgroundColor: "#45a049",
+                        },
+                      },
+                    }}
+                  >
+                    {productsForCard.map((product) => {
+                      const discount = calculateDiscount(
+                        product.previousPrice,
+                        product.newPrice
+                      );
+                      return (
+                        <Card
+                          key={product._id}
+                          component={Link}
+                          to={`/products/${product._id}`}
                           sx={{
-                            p: { xs: 0, md: 2 },
-                            flex: 1,
+                            height: { xs: "280px", sm: "320px" }, // Reduced height on xs and sm
+                            width: { xs: "140px", sm: "200px", md: "280px" }, // Reduced width on xs
+                            maxWidth: { xs: "140px", sm: "200px", md: "280px" }, // Reduced width on xs
+                            minWidth: { xs: "140px", sm: "200px", md: "280px" }, // Reduced width on xs
+                            textDecoration: "none",
+                            borderRadius: 2,
+                            overflow: "hidden",
                             display: "flex",
                             flexDirection: "column",
-                            position: "relative",
+                            flexShrink: 0,
+                            background: "white",
+                            border: "1px solid #e2e8f0",
+                            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                            "&:hover": {
+                              transform: "translateY(-4px)",
+                              boxShadow: "0 12px 24px rgba(0,0,0,0.15)",
+                            },
                           }}
                         >
-                          {/* Product Name */}
-                          <Typography
-                            variant="h6"
+                          {/* Product Image */}
+                          <Box
                             sx={{
-                              color: "#000000",
-                              fontWeight: 600,
-                              fontSize: { xs: "0.9rem", sm: "1rem" },
-                              textAlign: "center",
-                              mb: 0,
-                              lineHeight: 1,
-                              minHeight: "2em",
-                              display: "-webkit-box",
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: "vertical",
+                              position: "relative",
                               overflow: "hidden",
+                              height: { xs: "100px", sm: "150px" }, // Reduced height on xs
+                              flexShrink: 0,
+                              backgroundColor: "#f8f9fa",
                             }}
                           >
-                            {product.name}
-                          </Typography>
-
-                          {/* Pricing Section */}
-                          <Box
-                            sx={{
-                              display: "flex",
-                              flexDirection: "column",
-                              alignItems: "center",
-                              mb: 0,
-                            }}
-                          >
-                            {product.previousPrice &&
-                              product.previousPrice > product.newPrice && (
-                                <Typography
-                                  variant="body2"
-                                  sx={{
-                                    textDecoration: "line-through",
-                                    color: "red",
-                                    fontSize: { xs: "0.8rem", sm: "0.9rem" },
-                                    fontWeight: 500,
-                                  }}
-                                >
-                                  {formatPrice(product.previousPrice)}
-                                </Typography>
-                              )}
-                            <Typography
-                              variant="h6"
-                              sx={{
-                                color: "#52b788",
-                                fontWeight: 700,
-                                fontSize: { xs: "1.1rem", sm: "1.3rem" },
-                              }}
-                            >
-                              {formatPrice(product.newPrice)}
-                            </Typography>
-                          </Box>
-
-                          {/* Bottom Section with Discount Badge and Like Button */}
-                          <Box
-                            sx={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "flex-end",
-                              mt: { xs: "1px", sm: "auto", md: "auto" },
-                            }}
-                          >
-                            {/* Discount Badge - Bottom Left */}
-                            {(discount > 0 || product.isDiscount) && (
-                              <Chip
-                                label={
-                                  discount > 0 ? `-${discount}%` : t("Discount")
-                                }
+                            {product.image ? (
+                              <CardMedia
+                                component="img"
+                                height="180"
+                                image={`${process.env.REACT_APP_BACKEND_URL}${product.image}`}
+                                alt={product.name}
                                 sx={{
-                                  backgroundColor: "#e53e3e",
-                                  color: "white",
-                                  fontWeight: 700,
-                                  fontSize: "0.75rem",
-                                  height: "24px",
+                                  objectFit: "contain",
+                                  width: "100%",
+                                  height: {
+                                    xs: "90px", // Reduced height
+                                    sm: "140px", // Reduced height
+                                    md: "200px",
+                                  },
+                                  transition: "transform 0.3s ease",
+                                  "&:hover": { transform: "scale(1.05)" },
                                 }}
                               />
+                            ) : (
+                              <Box
+                                sx={{
+                                  height: {
+                                    xs: "100px",
+                                    sm: "150px",
+                                    md: "200px",
+                                  },
+                                  width: "100%",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  background: "#f8f9fa",
+                                }}
+                              >
+                                <StorefrontIcon
+                                  sx={{
+                                    fontSize: 60,
+                                    color: "#a0aec0",
+                                  }}
+                                />
+                              </Box>
                             )}
-
-                            {/* Like Button and Count - Bottom Right */}
-                            <Box
+                            <IconButton
+                              onClick={(e) => handleLikeClick(product._id, e)}
+                              disabled={likeLoading[product._id]}
                               sx={{
+                                position: "absolute",
+                                top: 8,
+                                right: 8,
                                 display: "flex",
                                 alignItems: "center",
                                 gap: 0.5,
+                                backgroundColor: "rgba(0, 0, 0, 0.7)",
+                                px: 1,
+                                py: 0.5,
+                                borderRadius: 1,
+                                fontSize: "0.7rem",
+                                bgcolor: "white",
+                                color:
+                                  likeStates[product._id] ||
+                                  isProductLiked(product._id)
+                                    ? "#e53e3e"
+                                    : "#666",
+                                "&:hover": {
+                                  color: "#e53e3e",
+                                  transform: "scale(1.1)",
+                                },
+                                transition: "all 0.2s ease",
+                                p: 0.5,
+                              }}
+                              size="small"
+                            >
+                              {likeStates[product._id] ||
+                              isProductLiked(product._id) ? (
+                                <FavoriteIcon sx={{ fontSize: "1.2rem" }} />
+                              ) : (
+                                <FavoriteBorderIcon
+                                  sx={{ fontSize: "1.2rem" }}
+                                />
+                              )}
+                            </IconButton>
+                            {/* View Count Badge - Top Right */}
+                            {/* {product.viewCount > 0 && (
+                            <Box
+                              sx={{
+                                position: "absolute",
+                                top: 8,
+                                right: 8,
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 0.5,
+                                backgroundColor: "rgba(0, 0, 0, 0.7)",
+                                color: "white",
+                                px: 1,
+                                py: 0.5,
+                                borderRadius: 1,
+                                fontSize: "0.7rem",
                               }}
                             >
-                              {/* <Typography
+                              <VisibilityIcon sx={{ fontSize: "0.8rem" }} />
+                              {product.viewCount}
+                            </Box>
+                          )} */}
+                          </Box>
+
+                          {/* Product Content */}
+                          <CardContent
+                            sx={{
+                              p: { xs: 0, md: 2 },
+                              flex: 1,
+                              display: "flex",
+                              flexDirection: "column",
+                              position: "relative",
+                            }}
+                          >
+                            {/* Product Name */}
+                            <Typography
+                              variant="h6"
+                              sx={{
+                                color: "#000000",
+                                fontWeight: 600,
+                                fontSize: { xs: "0.9rem", sm: "1rem" },
+                                textAlign: "center",
+                                mb: 0,
+                                lineHeight: 1,
+                                minHeight: "2em",
+                                display: "-webkit-box",
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: "vertical",
+                                overflow: "hidden",
+                              }}
+                            >
+                              {product.name}
+                            </Typography>
+
+                            {/* Pricing Section */}
+                            <Box
+                              sx={{
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                mb: 0,
+                              }}
+                            >
+                              {product.previousPrice &&
+                                product.previousPrice > product.newPrice && (
+                                  <Typography
+                                    variant="body2"
+                                    sx={{
+                                      textDecoration: "line-through",
+                                      color: "red",
+                                      fontSize: { xs: "0.8rem", sm: "0.9rem" },
+                                      fontWeight: 500,
+                                    }}
+                                  >
+                                    {formatPrice(product.previousPrice)}
+                                  </Typography>
+                                )}
+                              <Typography
+                                variant="h6"
+                                sx={{
+                                  color: "#52b788",
+                                  fontWeight: 700,
+                                  fontSize: { xs: "1.1rem", sm: "1.3rem" },
+                                }}
+                              >
+                                {formatPrice(product.newPrice)}
+                              </Typography>
+                            </Box>
+
+                            {/* Bottom Section with Discount Badge and Like Button */}
+                            <Box
+                              sx={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "flex-end",
+                                mt: { xs: "1px", sm: "auto", md: "auto" },
+                              }}
+                            >
+                              {/* Discount Badge - Bottom Left */}
+                              {(discount > 0 || product.isDiscount) && (
+                                <Chip
+                                  label={
+                                    discount > 0
+                                      ? `-${discount}%`
+                                      : t("Discount")
+                                  }
+                                  sx={{
+                                    backgroundColor: "#e53e3e",
+                                    color: "white",
+                                    fontWeight: 700,
+                                    fontSize: "0.75rem",
+                                    height: "24px",
+                                  }}
+                                />
+                              )}
+
+                              {/* Like Button and Count - Bottom Right */}
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 0.5,
+                                }}
+                              >
+                                {/* <Typography
                               variant="caption"
                               sx={{
                                 color: "#666",
@@ -1579,39 +1623,40 @@ const MainPage = () => {
                                 product.likeCount ||
                                 0}
                             </Typography> */}
+                              </Box>
                             </Box>
-                          </Box>
 
-                          {/* Expiry Date - Bottom */}
-                          {product.expireDate && (
-                            <Typography
-                              variant="caption"
-                              sx={{
-                                color: "red",
-                                fontSize: { xs: "0.7rem", sm: "0.8rem" },
-                                textAlign: "center",
-                                mt: 0,
-                                fontWeight: 400,
-                              }}
-                            >
-                              {t("Expire Date")}:{" "}
-                              {new Date(product.expireDate).toLocaleDateString(
-                                "ar-SY",
-                                {
+                            {/* Expiry Date - Bottom */}
+                            {product.expireDate && (
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  color: "red",
+                                  fontSize: { xs: "0.7rem", sm: "0.8rem" },
+                                  textAlign: "center",
+                                  mt: 0,
+                                  fontWeight: 400,
+                                }}
+                              >
+                                {t("Expire Date")}:{" "}
+                                {new Date(
+                                  product.expireDate
+                                ).toLocaleDateString("ar-SY", {
                                   year: "numeric",
                                   month: "numeric",
                                   day: "numeric",
-                                }
-                              )}
-                            </Typography>
-                          )}
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
+                                })}
+                              </Typography>
+                            )}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </Box>
                 </Box>
-              </Box>
-            </Card>
+              </Card>
+              {brandShowcase}
+            </React.Fragment>
           );
         })}
       </Box>
