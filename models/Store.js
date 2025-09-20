@@ -11,6 +11,11 @@ const storeSchema = new mongoose.Schema({
     ref: "StoreType",
     required: true,
   },
+  storecity: {
+    type: String,
+    enum: ["Erbil", "Sulaimani", "Duhok", "Kerkuk", "Halabja"],
+    required: true,
+  },
   isVip: { type: Boolean, default: false },
   isActive: { type: Boolean, default: true },
   branches: [

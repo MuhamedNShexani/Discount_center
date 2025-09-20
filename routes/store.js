@@ -89,8 +89,9 @@ router.post("/bulk-upload", upload.single("excelFile"), async (req, res) => {
           address: row[2] || "",
           phone: row[3] || "",
           description: row[4] || "",
-          show: row[5] !== undefined ? row[5] === "true" : true,
-          branches: row[6] ? JSON.parse(row[6]) : [],
+          storecity: row[5] || "Erbil", // Default to Erbil if not provided
+          show: row[6] !== undefined ? row[6] === "true" : true,
+          branches: row[7] ? JSON.parse(row[7]) : [],
         };
 
         const store = new Store(storeData);

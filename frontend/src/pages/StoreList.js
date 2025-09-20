@@ -21,6 +21,7 @@ import PhoneIcon from "@mui/icons-material/Phone";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import Loader from "../components/Loader";
 import { useTranslation } from "react-i18next";
+import { useCityFilter } from "../context/CityFilterContext";
 
 // ------------------ Reusable StoreCard ------------------
 const StoreCard = ({ store, index, theme, t, onClick }) => {
@@ -245,6 +246,7 @@ const StoreList = () => {
   const [searchParams] = useSearchParams();
   const theme = useTheme();
   const { t } = useTranslation();
+  const { selectedCity } = useCityFilter();
 
   const [stores, setStores] = useState([]);
   const [filteredStores, setFilteredStores] = useState([]);
@@ -273,15 +275,21 @@ const StoreList = () => {
 
   useEffect(() => {
     if (stores.length > 0) {
+      let filtered = stores;
+
+      // Filter by store type
       if (selectedTypeId && selectedTypeId !== "all") {
-        setFilteredStores(
-          stores.filter((s) => getID(s.storeTypeId) === selectedTypeId)
+        filtered = filtered.filter(
+          (s) => getID(s.storeTypeId) === selectedTypeId
         );
-      } else {
-        setFilteredStores(stores);
       }
+
+      // Filter by city
+      filtered = filtered.filter((s) => s.storecity === selectedCity);
+
+      setFilteredStores(filtered);
     }
-  }, [stores, selectedTypeId]);
+  }, [stores, selectedTypeId, selectedCity]);
 
   const fetchStores = async () => {
     try {

@@ -30,6 +30,7 @@ import AdminPage from "./pages/AdminPage";
 import NavigationBar from "./NavigationBar";
 import BottomNavigationBar from "./components/BottomNavigation";
 import { AuthProvider } from "./context/AuthContext";
+import { CityFilterProvider } from "./context/CityFilterContext";
 import LoginPage from "./pages/LoginPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ScrollToTop from "./components/ScrollToTop";
@@ -312,10 +313,12 @@ function App() {
 // Root component remains the same
 const Root = () => (
   <AuthProvider>
-    <Router>
-      <ScrollToTop />
-      <App />
-    </Router>
+    <CityFilterProvider>
+      <Router>
+        <ScrollToTop />
+        <App />
+      </Router>
+    </CityFilterProvider>
   </AuthProvider>
 );
 

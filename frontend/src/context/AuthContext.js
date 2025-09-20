@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }) => {
           headers: { Authorization: `Bearer ${savedToken}` },
         });
         if (response.data.success) {
-          const updatedUser = response.data.data;
+          const updatedUser = response.data.data.user;
           setUser(updatedUser);
           localStorage.setItem("user", JSON.stringify(updatedUser));
           console.log("Profile refreshed successfully");

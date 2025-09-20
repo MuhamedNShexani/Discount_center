@@ -40,13 +40,14 @@ import Loader from "../components/Loader";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@mui/material/styles";
 import { useUserTracking } from "../hooks/useUserTracking";
+import { useCityFilter } from "../context/CityFilterContext";
 
 const MainPage = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const [stores, setStores] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
-  const [setProductsByStore] = useState({});
+  const [productsByStore, setProductsByStore] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const { t } = useTranslation();
@@ -76,6 +77,9 @@ const MainPage = () => {
 
   // User tracking hook
   const { toggleLike, isProductLiked, isAuthenticated } = useUserTracking();
+
+  // City filter hook
+  const { selectedCity } = useCityFilter();
 
   // State for tracking like counts locally
   const [likeCounts, setLikeCounts] = useState({});
@@ -447,9 +451,14 @@ const MainPage = () => {
         selectedStoreTypeId === "all" ||
         getID(store.storeTypeId) === selectedStoreTypeId;
 
-      return (hasMatchingProducts || storeNameMatch) && storeTypeMatch;
+      // And the store must match the city filter
+      const cityMatch = store.storecity === selectedCity;
+
+      return (
+        (hasMatchingProducts || storeNameMatch) && storeTypeMatch && cityMatch
+      );
     });
-  }, [filteredProducts, stores, search, selectedStoreTypeId]);
+  }, [filteredProducts, stores, search, selectedStoreTypeId, selectedCity]);
 
   // Effect for pagination
   useEffect(() => {

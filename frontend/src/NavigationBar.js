@@ -39,11 +39,13 @@ import {
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "./context/AuthContext";
+import { useCityFilter } from "./context/CityFilterContext";
 
 const NavigationBar = ({ darkMode, setDarkMode }) => {
   const theme = useTheme();
   const { t, i18n } = useTranslation();
   const { user, logout } = useAuth();
+  const { selectedCity, changeCity, cities } = useCityFilter();
   const isSmUp = useMediaQuery(theme.breakpoints.up("sm"));
   const lang = i18n.language;
   const location = useLocation();
@@ -423,6 +425,43 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   </Select>
                 </Paper>
 
+                {/* City Selector */}
+                <Paper
+                  elevation={0}
+                  sx={{
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    backdropFilter: "blur(10px)",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    borderRadius: 2,
+                  }}
+                >
+                  <Select
+                    value={selectedCity}
+                    onChange={(e) => changeCity(e.target.value)}
+                    size="small"
+                    variant="standard"
+                    disableUnderline
+                    sx={{
+                      color: "white",
+                      minWidth: { xs: 80, sm: 100 },
+                      px: { xs: 0.5, sm: 1 },
+                      "& .MuiSvgIcon-root": {
+                        color: "white",
+                      },
+                      "& .MuiSelect-select": {
+                        py: 0.5,
+                        fontSize: { xs: "0.8rem", sm: "0.9rem" },
+                      },
+                    }}
+                  >
+                    {cities.map((city) => (
+                      <MenuItem key={city.value} value={city.value}>
+                        {city.flag} {city.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </Paper>
+
                 {/* Dark Mode Toggle */}
                 <IconButton
                   onClick={() => setDarkMode(!darkMode)}
@@ -480,6 +519,43 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                     <MenuItem value="en">🇺🇸 EN</MenuItem>
                     <MenuItem value="ar">🇸🇦 AR</MenuItem>
                     <MenuItem value="ku">🏳️ KU</MenuItem>
+                  </Select>
+                </Paper>
+
+                {/* Mobile City Selector */}
+                <Paper
+                  elevation={0}
+                  sx={{
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    backdropFilter: "blur(10px)",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    borderRadius: 2,
+                  }}
+                >
+                  <Select
+                    value={selectedCity}
+                    onChange={(e) => changeCity(e.target.value)}
+                    size="small"
+                    variant="standard"
+                    disableUnderline
+                    sx={{
+                      color: "white",
+                      minWidth: 80,
+                      px: 0.5,
+                      "& .MuiSvgIcon-root": {
+                        color: "white",
+                      },
+                      "& .MuiSelect-select": {
+                        py: 0.5,
+                        fontSize: "0.8rem",
+                      },
+                    }}
+                  >
+                    {cities.map((city) => (
+                      <MenuItem key={city.value} value={city.value}>
+                        {city.flag} {city.label}
+                      </MenuItem>
+                    ))}
                   </Select>
                 </Paper>
 

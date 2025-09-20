@@ -125,6 +125,7 @@ const DataEntryForm = () => {
     description: "",
     isVip: false,
     storeTypeId: "",
+    storecity: "Erbil",
     branches: [],
     show: true,
   });
@@ -980,6 +981,7 @@ const DataEntryForm = () => {
         description: "",
         isVip: false,
         storeTypeId: "",
+        storecity: "Erbil",
         branches: [],
         show: true,
       });
@@ -1223,6 +1225,7 @@ const DataEntryForm = () => {
         isVip: !!data.isVip,
         storeTypeId:
           (data.storeTypeId && data.storeTypeId._id) || data.storeTypeId || "",
+        storecity: data.storecity || "Erbil",
         description: data.description || "",
         branches: data.branches || [],
         show: data.show !== undefined ? data.show : true,
@@ -1970,15 +1973,6 @@ const DataEntryForm = () => {
                       >
                         {t("Logo")}
                       </TableCell>
-                      {/* <TableCell
-                      sx={{
-                        fontWeight: "bold",
-                        backgroundColor: "primary.light",
-                        color: "primary.contrastText",
-                      }}
-                    >
-                      {t("Address")}
-                    </TableCell> */}
                       <TableCell
                         sx={{
                           fontWeight: "bold",
@@ -1995,7 +1989,16 @@ const DataEntryForm = () => {
                           color: "primary.contrastText",
                         }}
                       >
-                        {t("Type")}
+                        {t("Store Type")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("City")}
                       </TableCell>
                       <TableCell
                         sx={{
@@ -2006,15 +2009,6 @@ const DataEntryForm = () => {
                       >
                         {t("Description")}
                       </TableCell>
-                      {/* <TableCell
-                        sx={{
-                          fontWeight: "bold",
-                          backgroundColor: "primary.light",
-                          color: "primary.contrastText",
-                        }}
-                      >
-                        {t("Branches")}
-                      </TableCell> */}
                       <TableCell
                         sx={{
                           fontWeight: "bold",
@@ -2079,7 +2073,6 @@ const DataEntryForm = () => {
                               />
                             )}
                           </TableCell>
-                          {/* <TableCell>{store.address}</TableCell> */}
                           <TableCell>{store.phone}</TableCell>
                           <TableCell>
                             {store.storeTypeId?.icon || store.storeType?.icon
@@ -2094,6 +2087,7 @@ const DataEntryForm = () => {
                                 ""
                             )}
                           </TableCell>
+                          <TableCell>{store.storecity}</TableCell>
                           <TableCell
                             width="100px"
                             height="100px"
@@ -2105,13 +2099,6 @@ const DataEntryForm = () => {
                           >
                             {store.description}
                           </TableCell>
-                          {/* <TableCell>
-                            {store.branches.map((branch) => (
-                              <Box key={branch.name} sx={{ mb: 1 }}>
-                                {branch.name}
-                              </Box>
-                            ))}
-                          </TableCell> */}
                           <TableCell>
                             {store.isVip && (
                               <Box
@@ -2441,15 +2428,6 @@ const DataEntryForm = () => {
                       >
                         {t("Logo")}
                       </TableCell>
-                      {/* <TableCell
-                      sx={{
-                        fontWeight: "bold",
-                        backgroundColor: "primary.light",
-                        color: "primary.contrastText",
-                      }}
-                    >
-                      {t("Address")}
-                    </TableCell> */}
                       <TableCell
                         sx={{
                           fontWeight: "bold",
@@ -2532,7 +2510,6 @@ const DataEntryForm = () => {
                               />
                             )}
                           </TableCell>
-                          {/* <TableCell>{brand.address}</TableCell> */}
                           <TableCell>{brand.phone}</TableCell>
                           <TableCell>
                             {brand.brandTypeId?.name || brand.type || ""}
@@ -3657,6 +3634,23 @@ const DataEntryForm = () => {
                           {st.icon || "🏪"} {t(st.name)}
                         </MenuItem>
                       ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>{t("Store City")}</InputLabel>
+                    <Select
+                      name="storecity"
+                      value={storeForm.storecity}
+                      onChange={handleStoreFormChange}
+                      label={t("Store City")}
+                    >
+                      <MenuItem value="Erbil">🏛️ Erbil</MenuItem>
+                      <MenuItem value="Sulaimani">🏔️ Sulaimani</MenuItem>
+                      <MenuItem value="Duhok">🏞️ Duhok</MenuItem>
+                      <MenuItem value="Kerkuk">🛢️ Kerkuk</MenuItem>
+                      <MenuItem value="Halabja">🌸 Halabja</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
@@ -5358,6 +5352,23 @@ const DataEntryForm = () => {
                         {st.icon || "🏪"} {t(st.name)}
                       </MenuItem>
                     ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid xs={12} sm={6}>
+                <FormControl fullWidth>
+                  <InputLabel>{t("Store City")}</InputLabel>
+                  <Select
+                    name="storecity"
+                    value={editForm.storecity}
+                    onChange={handleEditFormChange}
+                    label={t("Store City")}
+                  >
+                    <MenuItem value="Erbil">🏛️ Erbil</MenuItem>
+                    <MenuItem value="Sulaimani">🏔️ Sulaimani</MenuItem>
+                    <MenuItem value="Duhok">🏞️ Duhok</MenuItem>
+                    <MenuItem value="Kerkuk">🛢️ Kerkuk</MenuItem>
+                    <MenuItem value="Halabja">🌸 Halabja</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>

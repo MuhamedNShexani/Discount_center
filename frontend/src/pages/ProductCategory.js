@@ -57,6 +57,7 @@ import { useTranslation } from "react-i18next";
 import { useTheme } from "@mui/material/styles";
 import { useUserTracking } from "../hooks/useUserTracking";
 import { useAuth } from "../context/AuthContext";
+import { useCityFilter } from "../context/CityFilterContext";
 
 const ProductCategory = () => {
   const theme = useTheme();
@@ -65,6 +66,7 @@ const ProductCategory = () => {
   const { t } = useTranslation();
   const { isAuthenticated } = useAuth();
   const { toggleLike, isProductLiked, recordView } = useUserTracking();
+  const { selectedCity } = useCityFilter();
 
   const [categories, setCategories] = useState([]);
   const [categoryTypes, setCategoryTypes] = useState([]);
@@ -138,7 +140,7 @@ const ProductCategory = () => {
   useEffect(() => {
     applyFilters();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [products, selectedCategoryType, filters]);
+  }, [products, selectedCategoryType, filters, selectedCity]);
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -308,6 +310,11 @@ const ProductCategory = () => {
         (product) => product.categoryTypeId === selectedCategoryType._id
       );
     }
+
+    // Filter by city
+    filtered = filtered.filter(
+      (product) => product.storeId?.storecity === selectedCity
+    );
 
     setFilteredProducts(filtered);
     setPage(0);

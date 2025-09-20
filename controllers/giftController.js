@@ -99,11 +99,7 @@ const createGift = async (req, res) => {
     const gift = new Gift({
       image,
       description,
-      storeId: storeId
-        ? Array.isArray(storeId)
-          ? storeId
-          : [storeId]
-        : [],
+      storeId: storeId ? (Array.isArray(storeId) ? storeId : [storeId]) : [],
       brandId,
       productId,
       expireDate,
@@ -139,11 +135,7 @@ const updateGift = async (req, res) => {
       {
         image,
         description,
-        storeId: storeId
-          ? Array.isArray(storeId)
-            ? storeId
-            : [storeId]
-          : [],
+        storeId: storeId ? (Array.isArray(storeId) ? storeId : [storeId]) : [],
         brandId,
         productId,
         expireDate,
