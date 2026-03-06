@@ -115,7 +115,7 @@ export const userAPI = {
     api.post(
       "/users/review-product",
       { productId, rating, comment },
-      { headers }
+      { headers },
     ),
   getLikedProducts: (deviceId, headers = {}) =>
     api.get("/users/liked-products", { headers }),
@@ -126,7 +126,7 @@ export const userAPI = {
 // Auth API calls
 export const authAPI = {
   register: (userData) => api.post("/auth/register", userData),
-  login: (email, password) => api.post("/auth/login", { email, password }),
+  login: (phone, password) => api.post("/auth/login", { phone, password }),
   getProfile: (headers) => api.get("/auth/profile", { headers }),
   updateProfile: (profileData, headers) =>
     api.put("/auth/profile", profileData, { headers }),
@@ -134,7 +134,7 @@ export const authAPI = {
     api.put(
       "/auth/change-password",
       { currentPassword, newPassword },
-      { headers }
+      { headers },
     ),
   logout: (headers) => api.post("/auth/logout", {}, { headers }),
 };

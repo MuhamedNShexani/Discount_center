@@ -22,7 +22,7 @@ export const AuthProvider = ({ children }) => {
       refreshUserProfile().catch((error) => {
         console.log(
           "Profile refresh failed on startup, but keeping user logged in:",
-          error.message
+          error.message,
         );
       });
     }
@@ -49,14 +49,14 @@ export const AuthProvider = ({ children }) => {
       // Don't logout users on profile refresh errors
       // Just log the error and continue with existing user data
       console.log(
-        "Profile refresh failed, but keeping user logged in with existing data"
+        "Profile refresh failed, but keeping user logged in with existing data",
       );
     }
   };
 
-  const login = async (email, password) => {
+  const login = async (phone, password) => {
     try {
-      const response = await authAPI.login(email, password);
+      const response = await authAPI.login(phone, password);
       if (response.data.success) {
         const { user, token } = response.data.data;
         setUser(user);
@@ -126,7 +126,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authAPI.changePassword(
         currentPassword,
-        newPassword
+        newPassword,
       );
       if (response.data.success) {
         return { success: true };

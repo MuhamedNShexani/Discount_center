@@ -38,7 +38,7 @@ const LoginPage = () => {
 
   // Form states
   const [loginForm, setLoginForm] = useState({
-    email: "",
+    phone: "",
     password: "",
   });
 
@@ -60,19 +60,32 @@ const LoginPage = () => {
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
 
+    // Frontend validation - phone required
+    if (!loginForm.phone?.trim()) {
+      setError("Phone is required");
+      return;
+    }
+    if (loginForm.phone.trim().length < 2) {
+      setError("Phone must be at least 2 characters");
+      return;
+    }
+    if (!loginForm.password) {
+      setError("Password is required");
+      return;
+    }
+
+    setLoading(true);
     try {
-      const result = await login(loginForm.email, loginForm.password);
+      const result = await login(loginForm.phone, loginForm.password);
       if (result.success) {
-        // Redirect to the page they were trying to access, or home
         const from = location.state?.from?.pathname || "/";
         navigate(from, { replace: true });
       } else {
-        setError(result.message);
+        setError(result.message || "Login failed");
       }
-    } catch (error) {
-      setError("Login failed. Please try again.");
+    } catch (err) {
+      setError(err?.response?.data?.message || err?.message || "Login failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -82,20 +95,41 @@ const LoginPage = () => {
     e.preventDefault();
     setError("");
 
-    // Validate passwords match
+    // Frontend validation - match backend rules
+    if (!registerForm.username?.trim()) {
+      setError("Username is required");
+      return;
+    }
+    if (registerForm.username.trim().length < 3) {
+      setError("Username must be at least 3 characters long");
+      return;
+    }
+    if (!registerForm.email?.trim()) {
+      setError("Email is required");
+      return;
+    }
+    if (!registerForm.firstName?.trim()) {
+      setError("First name is required");
+      return;
+    }
+    if (!registerForm.lastName?.trim()) {
+      setError("Last name is required");
+      return;
+    }
+    if (!registerForm.phone?.trim()) {
+      setError("Phone is required");
+      return;
+    }
     if (registerForm.password !== registerForm.confirmPassword) {
       setError("Passwords do not match");
       return;
     }
-
-    // Validate password length
     if (registerForm.password.length < 6) {
       setError("Password must be at least 6 characters long");
       return;
     }
 
     setLoading(true);
-
     try {
       const userData = {
         username: registerForm.username,
@@ -108,14 +142,13 @@ const LoginPage = () => {
 
       const result = await register(userData);
       if (result.success) {
-        // Redirect to the page they were trying to access, or home
         const from = location.state?.from?.pathname || "/";
         navigate(from, { replace: true });
       } else {
-        setError(result.message);
+        setError(result.message || "Registration failed");
       }
-    } catch (error) {
-      setError("Registration failed. Please try again.");
+    } catch (err) {
+      setError(err?.response?.data?.message || err?.message || "Registration failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -190,17 +223,17 @@ const LoginPage = () => {
               <TextField
                 fullWidth
                 margin="normal"
-                label={t("Email")}
-                type="email"
-                value={loginForm.email}
+                label={t("Phone")}
+                type="tel"
+                value={loginForm.phone}
                 onChange={(e) =>
-                  handleInputChange("login", "email", e.target.value)
+                  handleInputChange("login", "phone", e.target.value)
                 }
                 required
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Email />
+                      <Phone />
                     </InputAdornment>
                   ),
                 }}
@@ -319,10 +352,12 @@ const LoginPage = () => {
                 fullWidth
                 margin="normal"
                 label={t("Phone")}
+                type="tel"
                 value={registerForm.phone}
                 onChange={(e) =>
                   handleInputChange("register", "phone", e.target.value)
                 }
+                required
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -369,7 +404,7 @@ const LoginPage = () => {
                   handleInputChange(
                     "register",
                     "confirmPassword",
-                    e.target.value
+                    e.target.value,
                   )
                 }
                 required

@@ -16,23 +16,32 @@ const register = async (req, res) => {
     const { username, email, password, firstName, lastName, phone } = req.body;
 
     // Validate required fields
-    if (!username || !email || !password || !firstName || !lastName) {
+    if (!username || !email || !password || !firstName || !lastName || !phone) {
       return res.status(400).json({
         success: false,
         message:
-          "Username, email, password, first name, and last name are required",
+          "Username, email, password, first name, last name, and phone are required",
+      });
+    }
+
+    // Validate username length (min 3 characters to match User model)
+    if (username.trim().length < 3) {
+      return res.status(400).json({
+        success: false,
+        message: "Username must be at least 3 characters long",
       });
     }
 
     // Check if user already exists
     const existingUser = await User.findOne({
-      $or: [{ email }, { username }],
+      $or: [{ email }, { username }, { phone }],
     });
 
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: "User with this email or username already exists",
+        message:
+          "User with this email or username or phone number already exists",
       });
     }
 
@@ -85,22 +94,22 @@ const register = async (req, res) => {
 // @access  Public
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { phone, password } = req.body;
 
     // Validate required fields
-    if (!email || !password) {
+    if (!phone || !password) {
       return res.status(400).json({
         success: false,
-        message: "Email and password are required",
+        message: "Phone and password are required",
       });
     }
 
-    // Find user by email
-    const user = await User.findOne({ email });
+    // Find user by phone
+    const user = await User.findOne({ phone });
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: "Invalid email or password",
+        message: "Invalid phone or password",
       });
     }
 
@@ -117,7 +126,7 @@ const login = async (req, res) => {
     if (!isPasswordValid) {
       return res.status(401).json({
         success: false,
-        message: "Invalid email or password",
+        message: "Invalid phone or password",
       });
     }
 
