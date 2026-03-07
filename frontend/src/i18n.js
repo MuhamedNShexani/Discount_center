@@ -1352,6 +1352,22 @@ const resources = {
         "لایکی کاڵا دڵخوازەکانت بکە بۆ ئەوەى  بێتە نێو لیستى داشکاندنە دڵخوازەکانت",
       "days left": "ڕۆژ ماوە",
       "Expires today": "ئەمڕۆ تەواو دەبێت",
+      "No data to display": "هیچ داتایەک نییە بۆ پیشاندان",
+      "No brands found": "هیچ بڕاندێک نەدۆزرایەوە",
+      "No brands found. Add some brands through the admin panel.":
+        "هیچ بڕاندێک نەدۆزرایەوە. لە ئێستادا هیچ بڕاندێک تۆمارنەکراوە.",
+      "No stores found": "هیچ فرۆشگاکان نەدۆزرایەوە",
+      "No stores found. Add some stores through the admin panel.":
+        "هیچ فرۆشگایەک نەدۆزرایەوە. لە ئێستادا هیچ فرۆشگایەک تۆمارنەکراوە.",
+      "No products found": "هیچ کاڵایەک نەدۆزرایەوە",
+      "No products found. Add some products through the admin panel.":
+        "هیچ کاڵایەک نەدۆزرایەوە. لە ئێستادا هیچ کاڵایەک تۆمارنەکراوە.",
+      "No gifts found": "هیچ خەڵات و دیاریەک نەدۆزرایەوە",
+      "No gifts found. Add some gifts through the admin panel.":
+        "هیچ خەڵات و دیاریەک نەدۆزرایەوە. لە ئێستادا هیچ خەڵات و دیاریەک تۆمارنەکراوە.",
+      "No ads found": "هیچ ریکلامەکان نەدۆزرایەوە",
+      "No ads found. Add some ads through the admin panel.":
+        "هیچ ریکلامەکان نەدۆزرایەوە. لە ئێستادا هیچ ریکلامەکان تۆمارنەکراوە.",
       "Most liked Products list": "زۆرترین بەدڵ بوو",
       "Most viewed products list": "زۆرترین بینراو",
       "Report for stores": "ڕاپۆرتی فرۆشگاکان",
