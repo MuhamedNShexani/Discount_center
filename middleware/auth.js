@@ -6,12 +6,14 @@ const protect = async (req, res, next) => {
   try {
     let token;
 
-    // Get token from header
+    // Get token from header (Authorization or X-Auth-Token - some proxies strip Authorization)
     if (
       req.headers.authorization &&
       req.headers.authorization.startsWith("Bearer")
     ) {
       token = req.headers.authorization.split(" ")[1];
+    } else if (req.headers["x-auth-token"]) {
+      token = req.headers["x-auth-token"];
     }
 
     // Check if token exists
@@ -70,12 +72,14 @@ const optionalAuth = async (req, res, next) => {
   try {
     let token;
 
-    // Get token from header
+    // Get token from Authorization or X-Auth-Token
     if (
       req.headers.authorization &&
       req.headers.authorization.startsWith("Bearer")
     ) {
       token = req.headers.authorization.split(" ")[1];
+    } else if (req.headers["x-auth-token"]) {
+      token = req.headers["x-auth-token"];
     }
 
     if (token) {

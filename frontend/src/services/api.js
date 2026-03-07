@@ -12,13 +12,35 @@ const api = axios.create({
 });
 
 // Attach auth token from localStorage when available (fixes "Access denied" for deployed app)
+// Sends both Authorization and X-Auth-Token (some reverse proxies strip Authorization)
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token && !config.headers.Authorization) {
-    config.headers.Authorization = `Bearer ${token}`;
+  try {
+    config.headers = config.headers || {};
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+      config.headers["X-Auth-Token"] = token;
+    }
+  } catch (_) {
+    // localStorage may be restricted (e.g. private browsing, iframe)
   }
   return config;
 });
+
+// On 401, clear invalid token so user can continue as guest
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error?.response?.status === 401) {
+      try {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.dispatchEvent(new CustomEvent("auth:cleared"));
+      } catch (_) {}
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Store API calls
 export const storeAPI = {
@@ -142,21 +164,15 @@ export const userAPI = {
     }),
 };
 
-// Auth API calls
+// Auth API calls (token from interceptor + localStorage)
 export const authAPI = {
   register: (userData) => api.post("/auth/register", userData),
   login: (email, password) => api.post("/auth/login", { email, password }),
-  getProfile: (authHeaders) =>
-    api.get("/auth/profile", { headers: authHeaders }),
-  updateProfile: (profileData, authHeaders) =>
-    api.put("/auth/profile", profileData, { headers: authHeaders }),
-  changePassword: (currentPassword, newPassword, authHeaders) =>
-    api.put(
-      "/auth/change-password",
-      { currentPassword, newPassword },
-      { headers: authHeaders },
-    ),
-  logout: (authHeaders) => api.post("/auth/logout", {}, { headers: authHeaders }),
+  getProfile: () => api.get("/auth/profile"),
+  updateProfile: (profileData) => api.put("/auth/profile", profileData),
+  changePassword: (currentPassword, newPassword) =>
+    api.put("/auth/change-password", { currentPassword, newPassword }),
+  logout: () => api.post("/auth/logout", {}),
 };
 
 // Admin API calls
