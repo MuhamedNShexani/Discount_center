@@ -39,8 +39,9 @@ export const useUserTracking = () => {
   // Toggle product like (works for both logged-in and anonymous/device users)
   const toggleLike = useCallback(
     async (productId) => {
-      // Need either auth or deviceId to like
-      if (!isAuthenticated && !deviceId) {
+      // Need either auth or deviceId to like (use getDeviceId() fallback for race condition / PWA)
+      const effectiveDeviceId = isAuthenticated ? null : (deviceId || getDeviceId());
+      if (!isAuthenticated && !effectiveDeviceId) {
         return {
           success: false,
           message: "Please wait for app to load",
@@ -51,31 +52,26 @@ export const useUserTracking = () => {
       try {
         const headers = getAuthHeaders();
         const response = await userAPI.toggleLike(
-          isAuthenticated ? null : deviceId,
+          effectiveDeviceId,
           productId,
           headers
         );
 
         if (response.data.success) {
-          // Update local user state for anonymous users
+          // Update local user state for anonymous users (handle null prevUser when getByDevice failed)
           if (!isAuthenticated) {
             setUser((prevUser) => {
-              if (!prevUser) return prevUser;
-              const isCurrentlyLiked = prevUser.likedProducts?.some(
+              const isCurrentlyLiked = prevUser?.likedProducts?.some(
                 (id) => id.toString() === productId || id === productId
               );
               if (isCurrentlyLiked) {
-                return {
-                  ...prevUser,
-                  likedProducts: prevUser.likedProducts.filter(
-                    (id) => id.toString() !== productId && id !== productId
-                  ),
-                };
+                const filtered = (prevUser?.likedProducts || []).filter(
+                  (id) => id.toString() !== productId && id !== productId
+                );
+                return prevUser ? { ...prevUser, likedProducts: filtered } : { likedProducts: filtered };
               }
-              return {
-                ...prevUser,
-                likedProducts: [...(prevUser.likedProducts || []), productId],
-              };
+              const added = [...(prevUser?.likedProducts || []), productId];
+              return prevUser ? { ...prevUser, likedProducts: added } : { likedProducts: added };
             });
           } else {
             // Update localStorage for authenticated users
@@ -99,7 +95,12 @@ export const useUserTracking = () => {
         return response.data;
       } catch (error) {
         console.error("Error toggling like:", error);
-        return { success: false, message: "Failed to toggle like" };
+        const apiMessage =
+          error?.response?.data?.message ||
+          (error?.response?.status === 400
+            ? "Please login or wait for app to load"
+            : "Failed to toggle like");
+        return { success: false, message: apiMessage };
       }
     },
     [isAuthenticated, deviceId, getAuthHeaders]
@@ -113,12 +114,14 @@ export const useUserTracking = () => {
         return { success: false, message: "View already being recorded" };
       }
 
+      const effectiveDeviceId = isAuthenticated ? null : (deviceId || getDeviceId());
+
       try {
         // Add to recording set
         setViewRecording((prev) => new Set(prev).add(productId));
 
         const headers = getAuthHeaders();
-        const response = await userAPI.recordView(deviceId, productId, headers);
+        const response = await userAPI.recordView(effectiveDeviceId, productId, headers);
 
         // Remove from recording set after a delay
         setTimeout(() => {
@@ -145,7 +148,7 @@ export const useUserTracking = () => {
         return { success: false, message: "Failed to record view" };
       }
     },
-    [deviceId, getAuthHeaders, viewRecording]
+    [isAuthenticated, deviceId, getAuthHeaders, viewRecording]
   );
 
   // Add product review (requires authentication)
@@ -200,14 +203,15 @@ export const useUserTracking = () => {
 
   // Get user's liked products (works for both logged-in and device users)
   const getLikedProducts = useCallback(async () => {
-    if (!isAuthenticated && !deviceId) {
+    const effectiveDeviceId = isAuthenticated ? null : (deviceId || getDeviceId());
+    if (!isAuthenticated && !effectiveDeviceId) {
       return { success: false, message: "Please wait for app to load", requiresAuth: false };
     }
 
     try {
       const headers = getAuthHeaders();
       const response = await userAPI.getLikedProducts(
-        isAuthenticated ? null : deviceId,
+        effectiveDeviceId,
         headers
       );
       return response.data;
@@ -219,14 +223,15 @@ export const useUserTracking = () => {
 
   // Get user's viewed products (works for both logged-in and device users)
   const getViewedProducts = useCallback(async () => {
-    if (!isAuthenticated && !deviceId) {
+    const effectiveDeviceId = isAuthenticated ? null : (deviceId || getDeviceId());
+    if (!isAuthenticated && !effectiveDeviceId) {
       return { success: false, message: "Please wait for app to load", requiresAuth: false };
     }
 
     try {
       const headers = getAuthHeaders();
       const response = await userAPI.getViewedProducts(
-        isAuthenticated ? null : deviceId,
+        effectiveDeviceId,
         headers
       );
       return response.data;
