@@ -8,7 +8,7 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Check for existing token on app load (skip profile refresh to avoid "Access denied")
+  // Check for existing token on app load
   useEffect(() => {
     const savedToken = localStorage.getItem("token");
     const savedUser = localStorage.getItem("user");
@@ -16,25 +16,27 @@ export const AuthProvider = ({ children }) => {
     if (savedToken && savedUser) {
       setToken(savedToken);
       setUser(JSON.parse(savedUser));
-    }
-    setLoading(false);
-  }, []);
 
-  // Sync state when 401 interceptor clears token
-  useEffect(() => {
-    const handleAuthCleared = () => {
-      setToken(null);
-      setUser(null);
-    };
-    window.addEventListener("auth:cleared", handleAuthCleared);
-    return () => window.removeEventListener("auth:cleared", handleAuthCleared);
+      // Try to refresh user data from server, but don't fail if it doesn't work
+      // This is optional and shouldn't cause logout on failure
+      refreshUserProfile().catch((error) => {
+        console.log(
+          "Profile refresh failed on startup, but keeping user logged in:",
+          error.message,
+        );
+      });
+    }
+
+    setLoading(false);
   }, []);
 
   const refreshUserProfile = async () => {
     try {
       const savedToken = localStorage.getItem("token");
       if (savedToken) {
-        const response = await authAPI.getProfile();
+        const response = await authAPI.getProfile({
+          headers: { Authorization: `Bearer ${savedToken}` },
+        });
         if (response.data.success) {
           const updatedUser = response.data.data.user;
           setUser(updatedUser);
@@ -124,7 +126,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authAPI.changePassword(
         currentPassword,
-        newPassword
+        newPassword,
       );
       if (response.data.success) {
         return { success: true };

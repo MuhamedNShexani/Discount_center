@@ -245,22 +245,35 @@ const ProductCategory = () => {
     e.stopPropagation();
     // Like works for both logged-in and guest/device users
 
+    const prevLikeState = likeStates[productId];
+    const prevLikeCount = likeCounts[productId] || 0;
+
     try {
-      setLikeLoading({ ...likeLoading, [productId]: true });
-      await toggleLike(productId);
-      setLikeStates({
-        ...likeStates,
-        [productId]: !likeStates[productId],
-      });
-      setLikeCounts({
-        ...likeCounts,
-        [productId]:
-          (likeCounts[productId] || 0) + (likeStates[productId] ? -1 : 1),
-      });
+      setLikeLoading((prev) => ({ ...prev, [productId]: true }));
+      const result = await toggleLike(productId);
+
+      if (!result.success) {
+        setLikeStates((prev) => ({ ...prev, [productId]: prevLikeState }));
+        setLikeCounts((prev) => ({ ...prev, [productId]: prevLikeCount }));
+        alert(result.message || "Failed to toggle like");
+        return;
+      }
+
+      setLikeStates((prev) => ({
+        ...prev,
+        [productId]: !prevLikeState,
+      }));
+      setLikeCounts((prev) => ({
+        ...prev,
+        [productId]: prevLikeCount + (prevLikeState ? -1 : 1),
+      }));
     } catch (err) {
       console.error("Error toggling like:", err);
+      setLikeStates((prev) => ({ ...prev, [productId]: prevLikeState }));
+      setLikeCounts((prev) => ({ ...prev, [productId]: prevLikeCount }));
+      alert("Failed to toggle like");
     } finally {
-      setLikeLoading({ ...likeLoading, [productId]: false });
+      setLikeLoading((prev) => ({ ...prev, [productId]: false }));
     }
   };
 

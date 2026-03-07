@@ -11,37 +11,6 @@ const api = axios.create({
   },
 });
 
-// Attach auth token from localStorage when available (fixes "Access denied" for deployed app)
-// Sends both Authorization and X-Auth-Token (some reverse proxies strip Authorization)
-api.interceptors.request.use((config) => {
-  try {
-    config.headers = config.headers || {};
-    const token = localStorage.getItem("token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-      config.headers["X-Auth-Token"] = token;
-    }
-  } catch (_) {
-    // localStorage may be restricted (e.g. private browsing, iframe)
-  }
-  return config;
-});
-
-// On 401, clear invalid token so user can continue as guest
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error?.response?.status === 401) {
-      try {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        window.dispatchEvent(new CustomEvent("auth:cleared"));
-      } catch (_) {}
-    }
-    return Promise.reject(error);
-  }
-);
-
 // Store API calls
 export const storeAPI = {
   getAll: () => api.get("/stores"),
@@ -164,15 +133,20 @@ export const userAPI = {
     }),
 };
 
-// Auth API calls (token from interceptor + localStorage)
+// Auth API calls
 export const authAPI = {
   register: (userData) => api.post("/auth/register", userData),
   login: (email, password) => api.post("/auth/login", { email, password }),
-  getProfile: () => api.get("/auth/profile"),
-  updateProfile: (profileData) => api.put("/auth/profile", profileData),
-  changePassword: (currentPassword, newPassword) =>
-    api.put("/auth/change-password", { currentPassword, newPassword }),
-  logout: () => api.post("/auth/logout", {}),
+  getProfile: (headers) => api.get("/auth/profile", { headers }),
+  updateProfile: (profileData, headers) =>
+    api.put("/auth/profile", profileData, { headers }),
+  changePassword: (currentPassword, newPassword, headers) =>
+    api.put(
+      "/auth/change-password",
+      { currentPassword, newPassword },
+      { headers },
+    ),
+  logout: (headers) => api.post("/auth/logout", {}, { headers }),
 };
 
 // Admin API calls

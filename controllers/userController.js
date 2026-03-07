@@ -70,7 +70,10 @@ const toggleProductLike = async (req, res) => {
       });
     }
 
-    const isLiked = user.likedProducts.includes(productId);
+    // Compare as strings (productId from body is string; likedProducts may be ObjectIds)
+    const isLiked = user.likedProducts.some(
+      (id) => id.toString() === productId || id === productId
+    );
 
     let updatedProduct;
     if (isLiked) {
