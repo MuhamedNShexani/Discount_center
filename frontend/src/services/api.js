@@ -1,8 +1,8 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:5000/api";
-// const API_BASE_URL =
-//   process.env.REACT_APP_API_BASE_URL || "http://localhost:5000/api";
+// const API_BASE_URL = "http://localhost:5000/api";
+const API_BASE_URL =
+  process.env.REACT_APP_API_BASE_URL || "http://localhost:5000/api";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -111,7 +111,7 @@ export const userAPI = {
     api.post(
       "/users/like-product",
       { productId, ...(deviceId && { deviceId }) },
-      { headers }
+      { headers },
     ),
   recordView: (deviceId, productId, headers = {}) =>
     api.post("/users/view-product", { deviceId, productId }, { headers }),
@@ -154,10 +154,8 @@ export const adminAPI = {
   getStats: () => api.get("/admin/stats"),
   getMostLikedProducts: () => api.get("/admin/products/most-liked"),
   getMostViewedProducts: () => api.get("/admin/products/most-viewed"),
-  getStoreReport: (params = {}) =>
-    api.get("/admin/reports/stores", { params }),
-  getBrandReport: (params = {}) =>
-    api.get("/admin/reports/brands", { params }),
+  getStoreReport: (params = {}) => api.get("/admin/reports/stores", { params }),
+  getBrandReport: (params = {}) => api.get("/admin/reports/brands", { params }),
 };
 
 export default api;
