@@ -35,7 +35,7 @@ export const AuthProvider = ({ children }) => {
       const savedToken = localStorage.getItem("token");
       if (savedToken) {
         const response = await authAPI.getProfile({
-          headers: { Authorization: `Bearer ${savedToken}` },
+          Authorization: `Bearer ${savedToken}`,
         });
         if (response.data.success) {
           const updatedUser = response.data.data.user;
@@ -105,7 +105,10 @@ export const AuthProvider = ({ children }) => {
 
   const updateProfile = async (profileData) => {
     try {
-      const response = await authAPI.updateProfile(profileData);
+      const response = await authAPI.updateProfile(
+        profileData,
+        token ? { Authorization: `Bearer ${token}` } : {}
+      );
       if (response.data.success) {
         const updatedUser = response.data.data.user;
         setUser(updatedUser);
@@ -127,6 +130,7 @@ export const AuthProvider = ({ children }) => {
       const response = await authAPI.changePassword(
         currentPassword,
         newPassword,
+        token ? { Authorization: `Bearer ${token}` } : {}
       );
       if (response.data.success) {
         return { success: true };

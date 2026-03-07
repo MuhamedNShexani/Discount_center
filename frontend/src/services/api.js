@@ -11,6 +11,15 @@ const api = axios.create({
   },
 });
 
+// Attach auth token from localStorage when available (fixes "Access denied" for deployed app)
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token && !config.headers.Authorization) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 // Store API calls
 export const storeAPI = {
   getAll: () => api.get("/stores"),
@@ -137,16 +146,17 @@ export const userAPI = {
 export const authAPI = {
   register: (userData) => api.post("/auth/register", userData),
   login: (email, password) => api.post("/auth/login", { email, password }),
-  getProfile: (headers) => api.get("/auth/profile", { headers }),
-  updateProfile: (profileData, headers) =>
-    api.put("/auth/profile", profileData, { headers }),
-  changePassword: (currentPassword, newPassword, headers) =>
+  getProfile: (authHeaders) =>
+    api.get("/auth/profile", { headers: authHeaders }),
+  updateProfile: (profileData, authHeaders) =>
+    api.put("/auth/profile", profileData, { headers: authHeaders }),
+  changePassword: (currentPassword, newPassword, authHeaders) =>
     api.put(
       "/auth/change-password",
       { currentPassword, newPassword },
-      { headers },
+      { headers: authHeaders },
     ),
-  logout: (headers) => api.post("/auth/logout", {}, { headers }),
+  logout: (authHeaders) => api.post("/auth/logout", {}, { headers: authHeaders }),
 };
 
 // Admin API calls
