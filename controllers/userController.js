@@ -8,8 +8,8 @@ const getUserByDevice = async (req, res) => {
   try {
     const { deviceId } = req.params;
 
-    // Find the first user with this deviceId (should be only one)
-    let user = await User.findOne({ deviceId }).populate("likedProducts");
+    // Find user by deviceId (don't populate - we need raw IDs for like state checks)
+    let user = await User.findOne({ deviceId });
 
     if (!user) {
       // Create new anonymous user with deviceId
@@ -24,13 +24,13 @@ const getUserByDevice = async (req, res) => {
   }
 };
 
-// @desc    Like/unlike a product (requires authentication)
+// @desc    Like/unlike a product (works with auth token OR deviceId for anonymous)
 // @route   POST /api/users/like-product
-// @access  Private
+// @access  Public (optionalAuth - supports both logged-in and anonymous users)
 const toggleProductLike = async (req, res) => {
   try {
-    const { productId } = req.body;
-    const userId = req.userId; // From auth middleware
+    const { productId, deviceId } = req.body;
+    const userId = req.userId;
 
     if (!productId) {
       return res.status(400).json({
@@ -39,7 +39,22 @@ const toggleProductLike = async (req, res) => {
       });
     }
 
-    const user = await User.findById(userId);
+    let user;
+    if (userId) {
+      user = await User.findById(userId);
+    } else if (deviceId) {
+      user = await User.findOne({ deviceId });
+      if (!user) {
+        user = new User({ deviceId });
+        await user.save();
+      }
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Either login or provide device ID to like products",
+      });
+    }
+
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -291,14 +306,31 @@ const addProductReview = async (req, res) => {
   }
 };
 
-// @desc    Get user's liked products (requires authentication)
+// @desc    Get user's liked products (works with auth token OR deviceId for anonymous)
 // @route   GET /api/users/liked-products
-// @access  Private
+// @access  Public (optionalAuth - supports both logged-in and anonymous users)
 const getLikedProducts = async (req, res) => {
   try {
-    const userId = req.userId; // From auth middleware
+    const userId = req.userId;
+    const deviceId = req.query.deviceId;
 
-    const user = await User.findById(userId).populate({
+    let user;
+    if (userId) {
+      user = await User.findById(userId);
+    } else if (deviceId) {
+      user = await User.findOne({ deviceId });
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Either login or provide device ID to view liked products",
+      });
+    }
+
+    if (!user) {
+      return res.json({ success: true, data: [] });
+    }
+
+    const populatedUser = await User.findById(user._id).populate({
       path: "likedProducts",
       populate: [
         { path: "brandId", select: "name logo" },
@@ -316,7 +348,7 @@ const getLikedProducts = async (req, res) => {
 
     res.json({
       success: true,
-      data: user.likedProducts,
+      data: populatedUser.likedProducts,
     });
   } catch (error) {
     console.error("Error getting liked products:", error);
@@ -324,14 +356,31 @@ const getLikedProducts = async (req, res) => {
   }
 };
 
-// @desc    Get user's viewed products (requires authentication)
+// @desc    Get user's viewed products (works with auth token OR deviceId for anonymous)
 // @route   GET /api/users/viewed-products
-// @access  Private
+// @access  Public (optionalAuth - supports both logged-in and anonymous users)
 const getViewedProducts = async (req, res) => {
   try {
-    const userId = req.userId; // From auth middleware
+    const userId = req.userId;
+    const deviceId = req.query.deviceId;
 
-    const user = await User.findById(userId).populate({
+    let user;
+    if (userId) {
+      user = await User.findById(userId);
+    } else if (deviceId) {
+      user = await User.findOne({ deviceId });
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Either login or provide device ID to view history",
+      });
+    }
+
+    if (!user) {
+      return res.json({ success: true, data: [] });
+    }
+
+    const populatedUser = await User.findById(user._id).populate({
       path: "viewedProducts.productId",
       populate: [
         { path: "brandId", select: "name logo" },
@@ -349,7 +398,7 @@ const getViewedProducts = async (req, res) => {
 
     res.json({
       success: true,
-      data: user.viewedProducts,
+      data: populatedUser?.viewedProducts || [],
     });
   } catch (error) {
     console.error("Error getting viewed products:", error);

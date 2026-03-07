@@ -14,10 +14,10 @@ const { protect, optionalAuth } = require("../middleware/auth");
 router.get("/device/:deviceId", getUserByDevice);
 router.post("/view-product", optionalAuth, recordProductView);
 
-// Protected routes (require authentication)
-router.post("/like-product", protect, toggleProductLike);
+// Like/product routes - work with auth OR deviceId (anonymous)
+router.post("/like-product", optionalAuth, toggleProductLike);
 router.post("/review-product", protect, addProductReview);
-router.get("/liked-products", protect, getLikedProducts);
-router.get("/viewed-products", protect, getViewedProducts);
+router.get("/liked-products", optionalAuth, getLikedProducts);
+router.get("/viewed-products", optionalAuth, getViewedProducts);
 
 module.exports = router;

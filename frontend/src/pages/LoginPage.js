@@ -38,7 +38,7 @@ const LoginPage = () => {
 
   // Form states
   const [loginForm, setLoginForm] = useState({
-    phone: "",
+    email: "",
     password: "",
   });
 
@@ -57,17 +57,18 @@ const LoginPage = () => {
     setError("");
   };
 
+  const handleContinueAsGuest = () => {
+    const from = location.state?.from?.pathname || "/";
+    navigate(from, { replace: true });
+  };
+
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    // Frontend validation - phone required
-    if (!loginForm.phone?.trim()) {
-      setError("Phone is required");
-      return;
-    }
-    if (loginForm.phone.trim().length < 2) {
-      setError("Phone must be at least 2 characters");
+    // Frontend validation - email or username required
+    if (!loginForm.email?.trim()) {
+      setError("Email or username is required");
       return;
     }
     if (!loginForm.password) {
@@ -77,7 +78,10 @@ const LoginPage = () => {
 
     setLoading(true);
     try {
-      const result = await login(loginForm.phone, loginForm.password);
+      const result = await login(
+        loginForm.email.trim(),
+        loginForm.password?.trim() || loginForm.password,
+      );
       if (result.success) {
         const from = location.state?.from?.pathname || "/";
         navigate(from, { replace: true });
@@ -85,7 +89,11 @@ const LoginPage = () => {
         setError(result.message || "Login failed");
       }
     } catch (err) {
-      setError(err?.response?.data?.message || err?.message || "Login failed. Please try again.");
+      setError(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Login failed. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
@@ -148,7 +156,11 @@ const LoginPage = () => {
         setError(result.message || "Registration failed");
       }
     } catch (err) {
-      setError(err?.response?.data?.message || err?.message || "Registration failed. Please try again.");
+      setError(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Registration failed. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
@@ -194,12 +206,12 @@ const LoginPage = () => {
             >
               <Person sx={{ fontSize: 40 }} />
             </Avatar>
-            <Typography variant="h4" component="h1" gutterBottom>
+            {/* <Typography variant="h4" component="h1" gutterBottom>
               {t("Welcome Back")}
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
+            </Typography> */}
+            {/* <Typography variant="body1" color="text.secondary">
               {t("Sign in to your account or create a new one")}
-            </Typography>
+            </Typography> */}
           </Box>
 
           {error && (
@@ -207,6 +219,29 @@ const LoginPage = () => {
               {error}
             </Alert>
           )}
+
+          <Button
+            fullWidth
+            variant="outlined"
+            size="large"
+            onClick={() =>
+              navigate(location.state?.from?.pathname || "/", { replace: true })
+            }
+            sx={{
+              mb: 3,
+              py: 1.5,
+              borderWidth: 2,
+              "&:hover": {
+                borderWidth: 2,
+              },
+            }}
+          >
+            {t("Continue as Guest")}
+          </Button>
+
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            {t("Or sign in to sync across devices")}
+          </Typography>
 
           <Tabs
             value={activeTab}
@@ -223,17 +258,18 @@ const LoginPage = () => {
               <TextField
                 fullWidth
                 margin="normal"
-                label={t("Phone")}
-                type="tel"
-                value={loginForm.phone}
+                label={t("Email or Username")}
+                type="text"
+                autoComplete="username"
+                value={loginForm.email}
                 onChange={(e) =>
-                  handleInputChange("login", "phone", e.target.value)
+                  handleInputChange("login", "email", e.target.value)
                 }
                 required
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Phone />
+                      <Email />
                     </InputAdornment>
                   ),
                 }}

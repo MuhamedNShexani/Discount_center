@@ -13,6 +13,7 @@ import {
   Store as StoreIcon,
   Business as BusinessIcon,
   CardGiftcard as CardGiftcardIcon,
+  Favorite as FavoriteIcon,
   AdminPanelSettings as AdminPanelSettingsIcon,
 } from "@mui/icons-material";
 import { Link, useLocation } from "react-router-dom";
@@ -33,6 +34,7 @@ const BottomNavigationBar = () => {
 
     // Check for exact matches first
     if (pathname === "/") return "/";
+    // if (pathname === "/favourites") return "/favourites";
     if (pathname === "/categories") return "/categories";
     if (pathname === "/gifts") return "/gifts";
 
@@ -51,6 +53,7 @@ const BottomNavigationBar = () => {
 
   const navItems = [
     { name: t("Home"), path: "/", icon: <HomeIcon /> },
+    // { name: t("Favourites"), path: "/favourites", icon: <FavoriteIcon /> },
     { name: t("Categories"), path: "/categories", icon: <CategoryIcon /> },
     { name: t("Stores"), path: "/stores", icon: <StoreIcon /> },
     { name: t("Brands"), path: "/brands", icon: <BusinessIcon /> },

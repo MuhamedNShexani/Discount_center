@@ -78,8 +78,9 @@ const MainPage = () => {
   const [storesPerPage] = useState(8);
   const [hasMoreStores, setHasMoreStores] = useState(true);
 
-  // User tracking hook
-  const { toggleLike, isProductLiked, isAuthenticated } = useUserTracking();
+  // User tracking hook (user = device user for guests)
+  const { toggleLike, isProductLiked, isAuthenticated, user } =
+    useUserTracking();
 
   // City filter hook
   const { selectedCity } = useCityFilter();
@@ -89,15 +90,10 @@ const MainPage = () => {
   const [likeStates, setLikeStates] = useState({}); // Track like state per product
   const [likeLoading, setLikeLoading] = useState({}); // Track loading state per product
 
-  // Handle like button click
+  // Handle like button click (works for both logged-in and guest/device users)
   const handleLikeClick = async (productId, e) => {
     e.preventDefault();
     e.stopPropagation();
-
-    if (!isAuthenticated) {
-      setLoginNotificationOpen(true);
-      return;
-    }
 
     if (likeLoading[productId]) {
       return;
@@ -172,7 +168,7 @@ const MainPage = () => {
           storeId: a.storeId,
           giftId: a.giftId,
         })),
-    [bannerAds]
+    [bannerAds],
   );
 
   const bannerSettings = {
@@ -226,16 +222,16 @@ const MainPage = () => {
     });
   };
 
-  // Update like states when user data changes
+  // Update like states when user data changes (works for both logged-in and guest users)
   useEffect(() => {
-    if (isAuthenticated && allProducts.length > 0) {
+    if ((isAuthenticated || user) && allProducts.length > 0) {
       const updatedLikeStates = {};
       allProducts.forEach((product) => {
         updatedLikeStates[product._id] = isProductLiked(product._id);
       });
       setLikeStates(updatedLikeStates);
     }
-  }, [isAuthenticated, allProducts, isProductLiked]);
+  }, [isAuthenticated, user, allProducts, isProductLiked]);
 
   const fetchData = async () => {
     try {
@@ -305,7 +301,7 @@ const MainPage = () => {
       setError(
         err.response
           ? "Server error. Please try again later."
-          : "Network error. Please check your connection."
+          : "Network error. Please check your connection.",
       );
       console.error("Error fetching data:", err);
     } finally {
@@ -319,7 +315,7 @@ const MainPage = () => {
       return allCategories;
     }
     return allCategories.filter(
-      (category) => getID(category.storeTypeId) === selectedStoreTypeId
+      (category) => getID(category.storeTypeId) === selectedStoreTypeId,
     );
   }, [allCategories, selectedStoreTypeId]);
 
@@ -551,10 +547,10 @@ const MainPage = () => {
                         ad.brandId
                           ? navigate(`/brands/${ad.brandId}`)
                           : ad.storeId
-                          ? navigate(`/stores/${ad.storeId}`)
-                          : ad.giftId
-                          ? navigate(`/gifts/${ad.giftId}`)
-                          : null
+                            ? navigate(`/stores/${ad.storeId}`)
+                            : ad.giftId
+                              ? navigate(`/gifts/${ad.giftId}`)
+                              : null
                       }
                       src={ad.src || ad}
                       alt={`Banner ${index + 1}`}
@@ -566,7 +562,7 @@ const MainPage = () => {
                       }}
                     />
                   </div>
-                )
+                ),
               )}
             </Slider>
           </Box>
@@ -796,16 +792,12 @@ const MainPage = () => {
               sx={{
                 display: "flex",
                 gap: { xs: 0.5, sm: 1 },
-                flexWrap: "nowrap",
+                flexWrap: "wrap",
                 alignItems: "center",
-                overflowX: "auto",
-                overflowY: "hidden",
-                scrollbarWidth: "none",
-                "&::-webkit-scrollbar": {
-                  display: "none",
-                },
                 pb: 0,
                 minHeight: "20px",
+                width: "100%",
+                overflow: "hidden",
               }}
             >
               {[{ _id: "all", name: t("All") }, ...storeTypes].map((type) => (
@@ -830,6 +822,14 @@ const MainPage = () => {
                     fontSize: { xs: "0.75rem", md: "0.875rem" },
                     textTransform: "none",
                     minHeight: "32px",
+                    maxWidth: "min(105px, 100%)",
+                    whiteSpace: "normal",
+                    textAlign: "center",
+                    lineHeight: 1.4,
+                    display: "inline-flex",
+                    flexWrap: "wrap",
+                    justifyContent: "center",
+                    alignItems: "center",
                     "&:hover": {
                       backgroundColor:
                         selectedStoreTypeId === type._id
@@ -841,17 +841,26 @@ const MainPage = () => {
                     },
                   }}
                 >
-                  <span style={{ marginRight: "4px" }}>
+                  <span style={{ marginRight: "4px", flexShrink: 0 }}>
                     {type.icon || "🏪"}
                   </span>
-                  {t(type.name)}
+                  <span
+                    style={{
+                      flex: "1 1 0",
+                      minWidth: 0,
+                      overflowWrap: "break-word",
+                      wordBreak: "break-word",
+                    }}
+                  >
+                    {t(type.name)}
+                  </span>
                 </Button>
               ))}
             </Box>
           </Box>
 
           {/* Categories Filter */}
-          <Box sx={{ mb: 0 }}>
+          <Box sx={{ mt: 2, mb: 0 }}>
             <Typography
               variant="subtitle2"
               sx={{
@@ -1117,7 +1126,7 @@ const MainPage = () => {
           const totalDiscountedInStore = productsForCard.filter(
             (p) =>
               p.isDiscount ||
-              (p.previousPrice && p.newPrice && p.previousPrice > p.newPrice)
+              (p.previousPrice && p.newPrice && p.previousPrice > p.newPrice),
           ).length;
 
           // Logic to insert BrandShowcase
@@ -1126,7 +1135,7 @@ const MainPage = () => {
               <BrandShowcase
                 brands={brands.slice(
                   ((index + 1) / 5 - 1) * 5,
-                  ((index + 1) / 5) * 5
+                  ((index + 1) / 5) * 5,
                 )}
               />
             ) : null;
@@ -1319,7 +1328,7 @@ const MainPage = () => {
                       </Typography>
                       <Chip
                         label={`${totalDiscountedInStore} ${t(
-                          "Discounted Products"
+                          "Discounted Products",
                         )}`}
                         sx={{
                           mt: 1,
@@ -1370,7 +1379,7 @@ const MainPage = () => {
                     {productsForCard.map((product) => {
                       const discount = calculateDiscount(
                         product.previousPrice,
-                        product.newPrice
+                        product.newPrice,
                       );
                       return (
                         <Card
@@ -1640,7 +1649,7 @@ const MainPage = () => {
                               >
                                 {t("Expire Date")}:{" "}
                                 {new Date(
-                                  product.expireDate
+                                  product.expireDate,
                                 ).toLocaleDateString("ar-SY", {
                                   year: "numeric",
                                   month: "numeric",

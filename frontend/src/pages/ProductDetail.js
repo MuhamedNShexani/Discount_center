@@ -53,8 +53,8 @@ const ProductDetail = () => {
   const { t } = useTranslation();
   const theme = useTheme();
 
-  // User tracking hook
-  const { toggleLike, recordView, addReview, isProductLiked, isAuthenticated } =
+  // User tracking hook (user = device user for guests)
+  const { toggleLike, recordView, addReview, isProductLiked, isAuthenticated, user } =
     useUserTracking();
 
   // State for tracking like count locally
@@ -63,16 +63,12 @@ const ProductDetail = () => {
   const [likeLoading, setLikeLoading] = useState(false);
   const viewRecordedRef = useRef(false); // Use ref to track if view has been recorded for this product
 
-  // Notification dialog state
+  // Notification dialog state (reason: "like" | "review")
   const [loginNotificationOpen, setLoginNotificationOpen] = useState(false);
+  const [loginNotificationReason, setLoginNotificationReason] = useState("like");
 
-  // Handle like button click
+  // Handle like button click (works for both logged-in and guest/device users)
   const handleLikeClick = async () => {
-    if (!isAuthenticated) {
-      // Show login notification dialog
-      setLoginNotificationOpen(true);
-      return;
-    }
 
     // Prevent multiple rapid clicks
     if (likeLoading) {
@@ -157,12 +153,12 @@ const ProductDetail = () => {
     }
   };
 
-  // Update like state when user data changes
+  // Update like state when user data changes (works for both logged-in and guest users)
   useEffect(() => {
-    if (product && isAuthenticated) {
+    if (product && (isAuthenticated || user)) {
       setLocalLikeState(isProductLiked(product._id));
     }
-  }, [product, isAuthenticated, isProductLiked]);
+  }, [product, isAuthenticated, user, isProductLiked]);
 
   // Handle review submission
   const handleReviewSubmit = async () => {
@@ -907,7 +903,8 @@ const ProductDetail = () => {
                     variant="outlined"
                     onClick={() => {
                       if (!isAuthenticated) {
-                        alert(t("Please log in to leave reviews."));
+                        setLoginNotificationReason("review");
+                        setLoginNotificationOpen(true);
                         return;
                       }
                       setReviewDialogOpen(true);
@@ -1375,7 +1372,9 @@ const ProductDetail = () => {
         </DialogTitle>
         <DialogContent>
           <Typography variant="body1" sx={{ mb: 2 }}>
-            {t("You must login to like products. Do you want to login?")}
+            {loginNotificationReason === "review"
+              ? t("You must login to leave reviews. Do you want to login?")
+              : t("You must login to like products. Do you want to login?")}
           </Typography>
         </DialogContent>
         <DialogActions>
@@ -1389,7 +1388,7 @@ const ProductDetail = () => {
           <Button
             onClick={() => {
               setLoginNotificationOpen(false);
-              navigate("/login");
+              navigate("/login", { state: { from: { pathname: `/products/${id}` } } });
             }}
             variant="contained"
             color="primary"

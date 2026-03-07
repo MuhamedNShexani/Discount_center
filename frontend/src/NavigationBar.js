@@ -32,6 +32,7 @@ import {
   CardGiftcard as CardGiftcardIcon,
   Person as PersonIcon,
   Language as LanguageIcon,
+  Favorite as FavoriteIcon,
   Settings as SettingsIcon,
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
@@ -53,6 +54,9 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
   const isAdmin = !!user && user.email === "mshexani45@gmail.com";
   // Profile menu state
   const [profileAnchorEl, setProfileAnchorEl] = useState(null);
+
+  // Admin dropdown state
+  const [adminAnchorEl, setAdminAnchorEl] = useState(null);
 
   // Stores dropdown state
   const [storesAnchorEl, setStoresAnchorEl] = useState(null);
@@ -77,6 +81,14 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
     setStoresAnchorEl(null);
   };
 
+  const handleAdminMenuOpen = (event) => {
+    setAdminAnchorEl(event.currentTarget);
+  };
+
+  const handleAdminMenuClose = () => {
+    setAdminAnchorEl(null);
+  };
+
   const handleLogout = () => {
     logout();
     handleProfileMenuClose();
@@ -85,10 +97,11 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
   const navItems = [
     { name: t("Main Page"), path: "/", icon: <HomeIcon /> },
     { name: t("Products"), path: "/categories", icon: <CategoryIcon /> },
+    { name: t("Favourites"), path: "/favourites", icon: <FavoriteIcon /> },
     { name: t("Brands"), path: "/brands", icon: <BusinessIcon /> },
     { name: t("Gifts"), path: "/gifts", icon: <CardGiftcardIcon /> },
-    // Show Data Entry link for authenticated users
-    ...(user && isAuthenticated
+    // Show Data Entry for authenticated non-admin (admin users get Admin dropdown)
+    ...(user && isAuthenticated && !isAdmin
       ? [
           {
             name: t("Data Entry"),
@@ -331,6 +344,79 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   {item.name}
                 </Button>
               ))}
+              {/* Admin dropdown (Data Entry + Dashboard) - for admin users only */}
+              {isAdmin && (
+                <>
+                  <Button
+                    onClick={handleAdminMenuOpen}
+                    startIcon={<AdminPanelSettingsIcon />}
+                    endIcon={<ExpandMoreIcon />}
+                    sx={{
+                      color: "white",
+                      textTransform: "none",
+                      fontSize: "1.3rem",
+                      px: 2,
+                      py: 1,
+                      borderRadius: 2,
+                      minWidth: "auto",
+                      backgroundColor:
+                        location.pathname.startsWith("/admin")
+                          ? "rgba(255,255,255,0.2)"
+                          : "transparent",
+                      border:
+                        location.pathname.startsWith("/admin")
+                          ? "1px solid rgba(255,255,255,0.3)"
+                          : "1px solid transparent",
+                      "&:hover": {
+                        backgroundColor: "rgba(255,255,255,0.15)",
+                        borderColor: "rgba(255,255,255,0.5)",
+                      },
+                    }}
+                  >
+                    {t("Admin")}
+                  </Button>
+                  <Menu
+                    anchorEl={adminAnchorEl}
+                    open={Boolean(adminAnchorEl)}
+                    onClose={handleAdminMenuClose}
+                    anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+                    transformOrigin={{ vertical: "top", horizontal: "center" }}
+                    PaperProps={{
+                      sx: {
+                        mt: 1.5,
+                        minWidth: 180,
+                        backgroundColor:
+                          theme.palette.mode === "dark" ? "#2c3e50" : "#fff",
+                        border: `1px solid ${theme.palette.divider}`,
+                        borderRadius: 2,
+                      },
+                    }}
+                  >
+                    <MenuItem
+                      component={Link}
+                      to="/admin"
+                      onClick={handleAdminMenuClose}
+                      selected={location.pathname === "/admin"}
+                    >
+                      <ListItemIcon>
+                        <AdminPanelSettingsIcon fontSize="small" />
+                      </ListItemIcon>
+                      <ListItemText primary={t("Data Entry")} />
+                    </MenuItem>
+                    <MenuItem
+                      component={Link}
+                      to="/admin/dashboard"
+                      onClick={handleAdminMenuClose}
+                      selected={location.pathname === "/admin/dashboard"}
+                    >
+                      <ListItemIcon>
+                        <DashboardIcon fontSize="small" />
+                      </ListItemIcon>
+                      <ListItemText primary={t("Admin Dashboard")} />
+                    </MenuItem>
+                  </Menu>
+                </>
+              )}
               {/* Login/Logout Button */}
               {user ? (
                 <Button
@@ -487,41 +573,6 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
             {/* Mobile Controls */}
             {!isSmUp && (
               <>
-                {/* Mobile Language Selector */}
-                <Paper
-                  elevation={0}
-                  sx={{
-                    backgroundColor: "rgba(255,255,255,0.1)",
-                    backdropFilter: "blur(10px)",
-                    border: "1px solid rgba(255,255,255,0.2)",
-                    borderRadius: 2,
-                  }}
-                >
-                  <Select
-                    value={lang}
-                    onChange={handleLangChange}
-                    size="small"
-                    variant="standard"
-                    disableUnderline
-                    sx={{
-                      color: "white",
-                      minWidth: 60,
-                      px: 0.5,
-                      "& .MuiSvgIcon-root": {
-                        color: "white",
-                      },
-                      "& .MuiSelect-select": {
-                        py: 0.5,
-                        fontSize: "0.8rem",
-                      },
-                    }}
-                  >
-                    <MenuItem value="en">🇺🇸 EN</MenuItem>
-                    <MenuItem value="ar">🇸🇦 AR</MenuItem>
-                    <MenuItem value="ku">🏳️ KU</MenuItem>
-                  </Select>
-                </Paper>
-
                 {/* Mobile City Selector */}
                 <Paper
                   elevation={0}
@@ -558,6 +609,26 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                     ))}
                   </Select>
                 </Paper>
+                {/* Mobile Favourites Link (replaces language selector) */}
+                <IconButton
+                  component={Link}
+                  to="/favourites"
+                  sx={{
+                    color: "white",
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    backdropFilter: "blur(10px)",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    transition: "all 0.3s ease",
+                    width: 40,
+                    height: 40,
+                    "&:hover": {
+                      backgroundColor: "rgba(255,255,255,0.2)",
+                      transform: "scale(1.1)",
+                    },
+                  }}
+                >
+                  <FavoriteIcon />
+                </IconButton>
 
                 {/* Mobile Profile Icon */}
                 <IconButton
@@ -691,6 +762,57 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
           )}
         </Box>
 
+        {/* Language options (mobile - inside profile) */}
+        {!isSmUp && (
+          <>
+            <Box sx={{ px: 2, py: 1 }}>
+              <Typography variant="caption" color="text.secondary">
+                {t("Language")}
+              </Typography>
+            </Box>
+            <MenuItem
+              onClick={() => {
+                i18n.changeLanguage("en");
+                handleProfileMenuClose();
+              }}
+              selected={lang === "en"}
+              sx={{ py: 1, px: 2 }}
+            >
+              <ListItemText
+                primary="🇺🇸 English"
+                primaryTypographyProps={{ fontSize: "0.875rem" }}
+              />
+            </MenuItem>
+            <MenuItem
+              onClick={() => {
+                i18n.changeLanguage("ar");
+                handleProfileMenuClose();
+              }}
+              selected={lang === "ar"}
+              sx={{ py: 1, px: 2 }}
+            >
+              <ListItemText
+                primary="🇸🇦 العربية"
+                primaryTypographyProps={{ fontSize: "0.875rem" }}
+              />
+            </MenuItem>
+            <MenuItem
+              onClick={() => {
+                i18n.changeLanguage("ku");
+                handleProfileMenuClose();
+              }}
+              selected={lang === "ku"}
+              sx={{ py: 1, px: 2 }}
+            >
+              <ListItemText
+                primary="🏳️ کوردی"
+                primaryTypographyProps={{ fontSize: "0.875rem" }}
+              />
+            </MenuItem>
+            <Divider />
+          </>
+        )}
+
         {/* Theme Toggle */}
         <MenuItem
           onClick={() => {
@@ -722,37 +844,66 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
 
         <Divider />
 
-        {/* Admin entry and Logout / Login */}
+        {/* Admin group (Data Entry + Dashboard) and Logout / Login */}
         {user ? (
           <>
             {isAdmin && (
-              <MenuItem
-                component={Link}
-                to="/admin/dashboard"
-                onClick={handleProfileMenuClose}
-                sx={{
-                  py: 1.5,
-                  px: 2,
-                  color: theme.palette.mode === "dark" ? "#e2e8f0" : "#2c3e50",
-                  "&:hover": {
-                    backgroundColor:
-                      theme.palette.mode === "dark"
-                        ? "rgba(255,255,255,0.08)"
-                        : "rgba(0,0,0,0.04)",
-                  },
-                }}
-              >
-                <ListItemIcon>
-                  <DashboardIcon />
-                </ListItemIcon>
-                <ListItemText
-                  primary={t("Admin Dashboard")}
-                  primaryTypographyProps={{
-                    fontSize: "0.875rem",
-                    fontWeight: 500,
+              <>
+                <MenuItem
+                  component={Link}
+                  to="/admin"
+                  onClick={handleProfileMenuClose}
+                  sx={{
+                    py: 1.5,
+                    px: 2,
+                    color: theme.palette.mode === "dark" ? "#e2e8f0" : "#2c3e50",
+                    "&:hover": {
+                      backgroundColor:
+                        theme.palette.mode === "dark"
+                          ? "rgba(255,255,255,0.08)"
+                          : "rgba(0,0,0,0.04)",
+                    },
                   }}
-                />
-              </MenuItem>
+                >
+                  <ListItemIcon>
+                    <AdminPanelSettingsIcon />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={t("Data Entry")}
+                    primaryTypographyProps={{
+                      fontSize: "0.875rem",
+                      fontWeight: 500,
+                    }}
+                  />
+                </MenuItem>
+                <MenuItem
+                  component={Link}
+                  to="/admin/dashboard"
+                  onClick={handleProfileMenuClose}
+                  sx={{
+                    py: 1.5,
+                    px: 2,
+                    color: theme.palette.mode === "dark" ? "#e2e8f0" : "#2c3e50",
+                    "&:hover": {
+                      backgroundColor:
+                        theme.palette.mode === "dark"
+                          ? "rgba(255,255,255,0.08)"
+                          : "rgba(0,0,0,0.04)",
+                    },
+                  }}
+                >
+                  <ListItemIcon>
+                    <DashboardIcon />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={t("Admin Dashboard")}
+                    primaryTypographyProps={{
+                      fontSize: "0.875rem",
+                      fontWeight: 500,
+                    }}
+                  />
+                </MenuItem>
+              </>
             )}
             <MenuItem
               onClick={handleLogout}

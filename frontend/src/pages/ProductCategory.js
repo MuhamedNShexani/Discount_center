@@ -243,10 +243,7 @@ const ProductCategory = () => {
 
   const handleLikeClick = async (productId, e) => {
     e.stopPropagation();
-    if (!isAuthenticated) {
-      setLoginNotificationOpen(true);
-      return;
-    }
+    // Like works for both logged-in and guest/device users
 
     try {
       setLikeLoading({ ...likeLoading, [productId]: true });

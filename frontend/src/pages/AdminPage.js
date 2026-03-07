@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from "react";
+import * as XLSX from "xlsx";
 import { adminAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
+  Button,
   Container,
   Typography,
   Paper,
   Grid,
   Card,
   CardContent,
-  CardActions,
-  Button,
   Alert,
   CircularProgress,
   Tabs,
@@ -22,29 +22,19 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Chip,
 } from "@mui/material";
 import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Visibility as ViewIcon,
   Dashboard as DashboardIcon,
   People as PeopleIcon,
   ShoppingCart as ProductsIcon,
   Store as StoresIcon,
   Business as BrandsIcon,
   CardGiftcard as GiftsIcon,
+  Favorite as FavoriteIcon,
+  Visibility as VisibilityIcon,
+  Star as StarIcon,
+  FileDownload as FileDownloadIcon,
 } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 
@@ -64,26 +54,62 @@ const AdminPage = () => {
     totalLikes: 0,
   });
 
-  // Check if user is admin
+  // Tab data
+  const [mostLikedProducts, setMostLikedProducts] = useState([]);
+  const [mostViewedProducts, setMostViewedProducts] = useState([]);
+  const [storeReport, setStoreReport] = useState([]);
+  const [brandReport, setBrandReport] = useState([]);
+  const [storeNameFilter, setStoreNameFilter] = useState("");
+  const [storeFromDate, setStoreFromDate] = useState("");
+  const [storeToDate, setStoreToDate] = useState("");
+  const [brandNameFilter, setBrandNameFilter] = useState("");
+  const [brandFromDate, setBrandFromDate] = useState("");
+  const [brandToDate, setBrandToDate] = useState("");
+  const [tabLoading, setTabLoading] = useState(false);
+
   const isAdmin =
     user?.email === "mshexani45@gmail.com" || user?.email === "admin@gmail.com";
 
   useEffect(() => {
-    // Check authentication and admin status
     if (!isAuthenticated) {
       navigate("/login");
       return;
     }
-
     if (!isAdmin) {
       navigate("/");
       return;
     }
-
     setLoading(false);
-    // Load admin stats here
     loadAdminStats();
   }, [isAuthenticated, isAdmin, navigate]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    if (activeTab === 0) loadMostLiked();
+    else if (activeTab === 1) loadMostViewed();
+    else if (activeTab === 2) {
+      loadStoreReport({
+        storeName: storeNameFilter.trim() || undefined,
+        fromDate: storeFromDate || undefined,
+        toDate: storeToDate || undefined,
+      });
+    } else if (activeTab === 3) {
+      loadBrandReport({
+        brandName: brandNameFilter.trim() || undefined,
+        fromDate: brandFromDate || undefined,
+        toDate: brandToDate || undefined,
+      });
+    }
+  }, [
+    activeTab,
+    isAdmin,
+    storeNameFilter,
+    storeFromDate,
+    storeToDate,
+    brandNameFilter,
+    brandFromDate,
+    brandToDate,
+  ]);
 
   const loadAdminStats = async () => {
     try {
@@ -103,18 +129,147 @@ const AdminPage = () => {
     }
   };
 
+  const loadMostLiked = async () => {
+    setTabLoading(true);
+    try {
+      const res = await adminAPI.getMostLikedProducts();
+      setMostLikedProducts(Array.isArray(res.data) ? res.data : []);
+    } catch (error) {
+      console.error("Error loading most liked:", error);
+      setMostLikedProducts([]);
+    } finally {
+      setTabLoading(false);
+    }
+  };
+
+  const loadMostViewed = async () => {
+    setTabLoading(true);
+    try {
+      const res = await adminAPI.getMostViewedProducts();
+      setMostViewedProducts(Array.isArray(res.data) ? res.data : []);
+    } catch (error) {
+      console.error("Error loading most viewed:", error);
+      setMostViewedProducts([]);
+    } finally {
+      setTabLoading(false);
+    }
+  };
+
+  const loadStoreReport = async (params) => {
+    setTabLoading(true);
+    try {
+      const res = await adminAPI.getStoreReport(params || {});
+      setStoreReport(Array.isArray(res.data) ? res.data : []);
+    } catch (error) {
+      console.error("Error loading store report:", error);
+      setStoreReport([]);
+    } finally {
+      setTabLoading(false);
+    }
+  };
+
+  const loadBrandReport = async (params) => {
+    setTabLoading(true);
+    try {
+      const res = await adminAPI.getBrandReport(params || {});
+      setBrandReport(Array.isArray(res.data) ? res.data : []);
+    } catch (error) {
+      console.error("Error loading brand report:", error);
+      setBrandReport([]);
+    } finally {
+      setTabLoading(false);
+    }
+  };
+
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
 
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "-";
+    return new Date(dateStr).toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  const formatDateForExcel = (dateStr) => {
+    if (!dateStr) return "";
+    return new Date(dateStr).toISOString().split("T")[0];
+  };
+
+  const exportToExcel = (products, showStore, showBrand, sheetName) => {
+    const headers = [];
+    if (showStore) headers.push(t("Store Name"));
+    if (showBrand) headers.push(t("Brand Name"));
+    headers.push(t("Product Name"), t("Expire Date"), t("Like"), t("Viewed"), t("Review"));
+
+    const rows = products.map((p) => {
+      const row = {};
+      if (showStore) row[t("Store Name")] = p.storeId?.name || "-";
+      if (showBrand) row[t("Brand Name")] = p.brandId?.name || "-";
+      row[t("Product Name")] = p.name;
+      row[t("Expire Date")] = formatDateForExcel(p.expireDate);
+      row[t("Like")] = p.likeCount || 0;
+      row[t("Viewed")] = p.viewCount || 0;
+      row[t("Review")] = p.reviewCount || 0;
+      return row;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+    const date = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(workbook, `${sheetName}_${date}.xlsx`);
+  };
+
+  const ProductTable = ({ products, showStore, showBrand }) => (
+    <TableContainer component={Paper} variant="outlined">
+      <Table size="small">
+        <TableHead>
+          <TableRow sx={{ bgcolor: "action.hover" }}>
+            {showStore && <TableCell>{t("Store Name")}</TableCell>}
+            {showBrand && <TableCell>{t("Brand Name")}</TableCell>}
+            <TableCell>{t("Product Name")}</TableCell>
+            <TableCell>{t("Expire Date")}</TableCell>
+            <TableCell align="center">{t("Like")}</TableCell>
+            <TableCell align="center">{t("Viewed")}</TableCell>
+            <TableCell align="center">{t("Review")}</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {products.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={showStore || showBrand ? 7 : 5} align="center">
+                {t("No data to display")}
+              </TableCell>
+            </TableRow>
+          ) : (
+            products.map((p) => (
+              <TableRow key={p._id} hover>
+                {showStore && (
+                  <TableCell>{p.storeId?.name || "-"}</TableCell>
+                )}
+                {showBrand && (
+                  <TableCell>{p.brandId?.name || "-"}</TableCell>
+                )}
+                <TableCell>{p.name}</TableCell>
+                <TableCell>{formatDate(p.expireDate)}</TableCell>
+                <TableCell align="center">{p.likeCount || 0}</TableCell>
+                <TableCell align="center">{p.viewCount || 0}</TableCell>
+                <TableCell align="center">{p.reviewCount || 0}</TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
+
   if (loading) {
     return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="100vh"
-      >
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
         <CircularProgress />
       </Box>
     );
@@ -132,7 +287,6 @@ const AdminPage = () => {
 
   return (
     <Container maxWidth="xl" sx={{ mt: 2, mb: 4 }}>
-      {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h3" component="h1" gutterBottom>
           <DashboardIcon sx={{ mr: 2, verticalAlign: "middle" }} />
@@ -143,14 +297,11 @@ const AdminPage = () => {
         </Typography>
       </Box>
 
-      {/* Stats Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} md={2.4}>
           <Card sx={{ bgcolor: "primary.light", color: "white" }}>
             <CardContent>
-              <Typography variant="h4" component="div">
-                {stats.totalUsers}
-              </Typography>
+              <Typography variant="h4">{stats.totalUsers}</Typography>
               <Typography variant="body2">
                 <PeopleIcon sx={{ mr: 1, verticalAlign: "middle" }} />
                 {t("Total Users")}
@@ -161,9 +312,7 @@ const AdminPage = () => {
         <Grid item xs={12} sm={6} md={2.4}>
           <Card sx={{ bgcolor: "secondary.light", color: "white" }}>
             <CardContent>
-              <Typography variant="h4" component="div">
-                {stats.totalProducts}
-              </Typography>
+              <Typography variant="h4">{stats.totalProducts}</Typography>
               <Typography variant="body2">
                 <ProductsIcon sx={{ mr: 1, verticalAlign: "middle" }} />
                 {t("Total Products")}
@@ -174,9 +323,7 @@ const AdminPage = () => {
         <Grid item xs={12} sm={6} md={2.4}>
           <Card sx={{ bgcolor: "success.light", color: "white" }}>
             <CardContent>
-              <Typography variant="h4" component="div">
-                {stats.totalStores}
-              </Typography>
+              <Typography variant="h4">{stats.totalStores}</Typography>
               <Typography variant="body2">
                 <StoresIcon sx={{ mr: 1, verticalAlign: "middle" }} />
                 {t("Total Stores")}
@@ -187,9 +334,7 @@ const AdminPage = () => {
         <Grid item xs={12} sm={6} md={2.4}>
           <Card sx={{ bgcolor: "warning.light", color: "white" }}>
             <CardContent>
-              <Typography variant="h4" component="div">
-                {stats.totalBrands}
-              </Typography>
+              <Typography variant="h4">{stats.totalBrands}</Typography>
               <Typography variant="body2">
                 <BrandsIcon sx={{ mr: 1, verticalAlign: "middle" }} />
                 {t("Total Brands")}
@@ -200,9 +345,7 @@ const AdminPage = () => {
         <Grid item xs={12} sm={6} md={2.4}>
           <Card sx={{ bgcolor: "info.light", color: "white" }}>
             <CardContent>
-              <Typography variant="h4" component="div">
-                {stats.totalGifts}
-              </Typography>
+              <Typography variant="h4">{stats.totalGifts}</Typography>
               <Typography variant="body2">
                 <GiftsIcon sx={{ mr: 1, verticalAlign: "middle" }} />
                 {t("Total Gifts")}
@@ -210,29 +353,8 @@ const AdminPage = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} sm={6} md={2.4}>
-          <Card sx={{ bgcolor: "error.light", color: "white" }}>
-            <CardContent>
-              <Typography variant="h4" component="div">
-                {stats.totalViews}
-              </Typography>
-              <Typography variant="body2">{t("Total Views")}</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={2.4}>
-          <Card sx={{ bgcolor: "success.dark", color: "white" }}>
-            <CardContent>
-              <Typography variant="h4" component="div">
-                {stats.totalLikes}
-              </Typography>
-              <Typography variant="body2">{t("Total Likes")}</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
       </Grid>
 
-      {/* Admin Tabs */}
       <Paper sx={{ width: "100%" }}>
         <Tabs
           value={activeTab}
@@ -242,144 +364,158 @@ const AdminPage = () => {
           variant="scrollable"
           scrollButtons="auto"
         >
-          <Tab label={t("Dashboard")} />
-          <Tab label={t("Users")} />
-          <Tab label={t("Products")} />
-          <Tab label={t("Stores")} />
-          <Tab label={t("Brands")} />
-          <Tab label={t("Gifts")} />
+          <Tab label={t("Most liked Products list")} />
+          <Tab label={t("Most viewed products list")} />
+          <Tab label={t("Report for stores")} />
+          <Tab label={t("Report for brands")} />
         </Tabs>
 
-        {/* Tab Content */}
         <Box sx={{ p: 3 }}>
           {activeTab === 0 && (
             <Box>
-              <Typography variant="h5" gutterBottom>
-                {t("System Overview")}
-              </Typography>
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <Card>
-                    <CardContent>
-                      <Typography variant="h6" gutterBottom>
-                        {t("Recent Activity")}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {t("No recent activity to display")}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Card>
-                    <CardContent>
-                      <Typography variant="h6" gutterBottom>
-                        {t("System Status")}
-                      </Typography>
-                      <Chip label={t("Online")} color="success" />
-                    </CardContent>
-                  </Card>
-                </Grid>
-              </Grid>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2, mb: 2 }}>
+                <Typography variant="h5">{t("Most liked Products list")}</Typography>
+                <Button
+                  variant="outlined"
+                  startIcon={<FileDownloadIcon />}
+                  onClick={() => exportToExcel(mostLikedProducts, true, true, "MostLikedProducts")}
+                  disabled={tabLoading || mostLikedProducts.length === 0}
+                >
+                  {t("Export to Excel")}
+                </Button>
+              </Box>
+              {tabLoading ? (
+                <Box display="flex" justifyContent="center" py={4}>
+                  <CircularProgress />
+                </Box>
+              ) : (
+                <ProductTable products={mostLikedProducts} showStore showBrand />
+              )}
             </Box>
           )}
 
           {activeTab === 1 && (
             <Box>
-              <Box
-                sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}
-              >
-                <Typography variant="h5">{t("User Management")}</Typography>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2, mb: 2 }}>
+                <Typography variant="h5">{t("Most viewed products list")}</Typography>
                 <Button
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  onClick={() => {
-                    /* Add user logic */
-                  }}
+                  variant="outlined"
+                  startIcon={<FileDownloadIcon />}
+                  onClick={() => exportToExcel(mostViewedProducts, true, true, "MostViewedProducts")}
+                  disabled={tabLoading || mostViewedProducts.length === 0}
                 >
-                  {t("Add User")}
+                  {t("Export to Excel")}
                 </Button>
               </Box>
-              <TableContainer component={Paper}>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>{t("Name")}</TableCell>
-                      <TableCell>{t("Email")}</TableCell>
-                      <TableCell>{t("Status")}</TableCell>
-                      <TableCell>{t("Actions")}</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell>John Doe</TableCell>
-                      <TableCell>john@example.com</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={t("Active")}
-                          color="success"
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <IconButton size="small">
-                          <ViewIcon />
-                        </IconButton>
-                        <IconButton size="small">
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton size="small" color="error">
-                          <DeleteIcon />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </TableContainer>
+              {tabLoading ? (
+                <Box display="flex" justifyContent="center" py={4}>
+                  <CircularProgress />
+                </Box>
+              ) : (
+                <ProductTable products={mostViewedProducts} showStore showBrand />
+              )}
             </Box>
           )}
 
           {activeTab === 2 && (
             <Box>
-              <Typography variant="h5" gutterBottom>
-                {t("Product Management")}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {t("Product management interface will be implemented here")}
-              </Typography>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2, mb: 2 }}>
+                <Typography variant="h5">{t("Report for stores")}</Typography>
+                <Button
+                  variant="outlined"
+                  startIcon={<FileDownloadIcon />}
+                  onClick={() => exportToExcel(storeReport, true, false, "StoreReport")}
+                  disabled={tabLoading || storeReport.length === 0}
+                >
+                  {t("Export to Excel")}
+                </Button>
+              </Box>
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 2 }}>
+                <TextField
+                  size="small"
+                  label={t("Filter by store name")}
+                  value={storeNameFilter}
+                  onChange={(e) => setStoreNameFilter(e.target.value)}
+                  sx={{ minWidth: 220 }}
+                  placeholder={t("Search by store name...")}
+                />
+                <TextField
+                  size="small"
+                  label={t("From date")}
+                  type="date"
+                  value={storeFromDate}
+                  onChange={(e) => setStoreFromDate(e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                  sx={{ minWidth: 160 }}
+                />
+                <TextField
+                  size="small"
+                  label={t("To date")}
+                  type="date"
+                  value={storeToDate}
+                  onChange={(e) => setStoreToDate(e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                  sx={{ minWidth: 160 }}
+                />
+              </Box>
+              {tabLoading ? (
+                <Box display="flex" justifyContent="center" py={4}>
+                  <CircularProgress />
+                </Box>
+              ) : (
+                <ProductTable products={storeReport} showStore />
+              )}
             </Box>
           )}
 
           {activeTab === 3 && (
             <Box>
-              <Typography variant="h5" gutterBottom>
-                {t("Store Management")}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {t("Store management interface will be implemented here")}
-              </Typography>
-            </Box>
-          )}
-
-          {activeTab === 4 && (
-            <Box>
-              <Typography variant="h5" gutterBottom>
-                {t("Brand Management")}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {t("Brand management interface will be implemented here")}
-              </Typography>
-            </Box>
-          )}
-
-          {activeTab === 5 && (
-            <Box>
-              <Typography variant="h5" gutterBottom>
-                {t("Gift Management")}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {t("Gift management interface will be implemented here")}
-              </Typography>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2, mb: 2 }}>
+                <Typography variant="h5">{t("Report for brands")}</Typography>
+                <Button
+                  variant="outlined"
+                  startIcon={<FileDownloadIcon />}
+                  onClick={() => exportToExcel(brandReport, false, true, "BrandReport")}
+                  disabled={tabLoading || brandReport.length === 0}
+                >
+                  {t("Export to Excel")}
+                </Button>
+              </Box>
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 2 }}>
+                <TextField
+                  size="small"
+                  label={t("Filter by brand name")}
+                  value={brandNameFilter}
+                  onChange={(e) => setBrandNameFilter(e.target.value)}
+                  sx={{ minWidth: 220 }}
+                  placeholder={t("Search by brand name...")}
+                />
+                <TextField
+                  size="small"
+                  label={t("From date")}
+                  type="date"
+                  value={brandFromDate}
+                  onChange={(e) => setBrandFromDate(e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                  sx={{ minWidth: 160 }}
+                />
+                <TextField
+                  size="small"
+                  label={t("To date")}
+                  type="date"
+                  value={brandToDate}
+                  onChange={(e) => setBrandToDate(e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                  sx={{ minWidth: 160 }}
+                />
+              </Box>
+              {tabLoading ? (
+                <Box display="flex" justifyContent="center" py={4}>
+                  <CircularProgress />
+                </Box>
+              ) : (
+                <ProductTable products={brandReport} showBrand />
+              )}
             </Box>
           )}
         </Box>

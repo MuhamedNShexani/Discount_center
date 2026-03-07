@@ -94,22 +94,42 @@ const register = async (req, res) => {
 // @access  Public
 const login = async (req, res) => {
   try {
-    const { phone, password } = req.body;
+    const emailOrUsername = (req.body.email || "").trim();
+    const password = (req.body.password || "").trim();
 
     // Validate required fields
-    if (!phone || !password) {
+    if (!emailOrUsername || !password) {
       return res.status(400).json({
         success: false,
-        message: "Phone and password are required",
+        message: "Email and password are required",
       });
     }
 
-    // Find user by phone
-    const user = await User.findOne({ phone });
+    // Find user by email (lowercase) or username
+    const isEmail = emailOrUsername.includes("@");
+    const user = await User.findOne(
+      isEmail
+        ? { email: emailOrUsername.toLowerCase() }
+        : { username: emailOrUsername }
+    );
+
     if (!user) {
+      console.log(
+        "[Login] User not found:",
+        isEmail ? "email" : "username",
+        isEmail ? emailOrUsername.toLowerCase().slice(0, 3) + "..." : emailOrUsername.slice(0, 3) + "..."
+      );
       return res.status(401).json({
         success: false,
-        message: "Invalid phone or password",
+        message: "Invalid email or password",
+      });
+    }
+
+    if (!user.password) {
+      console.log("[Login] User has no password (possibly anonymous account)");
+      return res.status(401).json({
+        success: false,
+        message: "Invalid email or password",
       });
     }
 
@@ -121,12 +141,13 @@ const login = async (req, res) => {
       });
     }
 
-    // Check password
-    const isPasswordValid = await user.comparePassword(password);
+    // Check password (trim to avoid accidental spaces)
+    const isPasswordValid = await user.comparePassword((password || "").trim());
     if (!isPasswordValid) {
+      console.log("[Login] Wrong password for user:", user.email || user.username);
       return res.status(401).json({
         success: false,
-        message: "Invalid phone or password",
+        message: "Invalid email or password",
       });
     }
 

@@ -1,8 +1,8 @@
 import axios from "axios";
 
-// const API_BASE_URL = "http://localhost:5000/api";
-const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL || "http://localhost:5000/api";
+const API_BASE_URL = "http://localhost:5000/api";
+// const API_BASE_URL =
+//   process.env.REACT_APP_API_BASE_URL || "http://localhost:5000/api";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -104,11 +104,15 @@ export const adAPI = {
   delete: (id) => api.delete(`/ads/${id}`),
 };
 
-// User API calls
+// User API calls (work with auth token OR deviceId for anonymous users)
 export const userAPI = {
   getByDevice: (deviceId) => api.get(`/users/device/${deviceId}`),
   toggleLike: (deviceId, productId, headers = {}) =>
-    api.post("/users/like-product", { productId }, { headers }),
+    api.post(
+      "/users/like-product",
+      { productId, ...(deviceId && { deviceId }) },
+      { headers }
+    ),
   recordView: (deviceId, productId, headers = {}) =>
     api.post("/users/view-product", { deviceId, productId }, { headers }),
   addReview: (deviceId, productId, rating, comment, headers = {}) =>
@@ -118,15 +122,21 @@ export const userAPI = {
       { headers },
     ),
   getLikedProducts: (deviceId, headers = {}) =>
-    api.get("/users/liked-products", { headers }),
+    api.get("/users/liked-products", {
+      params: deviceId ? { deviceId } : {},
+      headers,
+    }),
   getViewedProducts: (deviceId, headers = {}) =>
-    api.get("/users/viewed-products", { headers }),
+    api.get("/users/viewed-products", {
+      params: deviceId ? { deviceId } : {},
+      headers,
+    }),
 };
 
 // Auth API calls
 export const authAPI = {
   register: (userData) => api.post("/auth/register", userData),
-  login: (phone, password) => api.post("/auth/login", { phone, password }),
+  login: (email, password) => api.post("/auth/login", { email, password }),
   getProfile: (headers) => api.get("/auth/profile", { headers }),
   updateProfile: (profileData, headers) =>
     api.put("/auth/profile", profileData, { headers }),
@@ -142,6 +152,12 @@ export const authAPI = {
 // Admin API calls
 export const adminAPI = {
   getStats: () => api.get("/admin/stats"),
+  getMostLikedProducts: () => api.get("/admin/products/most-liked"),
+  getMostViewedProducts: () => api.get("/admin/products/most-viewed"),
+  getStoreReport: (params = {}) =>
+    api.get("/admin/reports/stores", { params }),
+  getBrandReport: (params = {}) =>
+    api.get("/admin/reports/brands", { params }),
 };
 
 export default api;

@@ -301,16 +301,10 @@ const StoreProfile = () => {
     }));
   };
 
-  // Handle like button click
+  // Handle like button click (works for both logged-in and guest/device users)
   const handleLikeClick = async (productId, e) => {
     e.preventDefault();
     e.stopPropagation();
-
-    if (!isAuthenticated) {
-      // Show login notification dialog
-      setLoginNotificationOpen(true);
-      return;
-    }
 
     // Prevent multiple rapid clicks
     if (likeLoading[productId]) return;

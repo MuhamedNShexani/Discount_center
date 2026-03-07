@@ -26,6 +26,7 @@ import DataEntryForm from "./pages/DataEntryForm";
 import ProductDetail from "./pages/ProductDetail";
 import StoreProfile from "./pages/StoreProfile";
 import Gifts from "./pages/Gifts";
+import FavouritesPage from "./pages/FavouritesPage";
 import AdminPage from "./pages/AdminPage";
 import NavigationBar from "./NavigationBar";
 import BottomNavigationBar from "./components/BottomNavigation";
@@ -281,6 +282,7 @@ function App() {
                 <Route path="/brands" element={<BrandList />} />
                 <Route path="/brands/:id" element={<BrandProfile />} />
                 <Route path="/gifts" element={<Gifts />} />
+                <Route path="/favourites" element={<FavouritesPage />} />
                 <Route
                   path="/admin"
                   element={
