@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Grid,
   Card,
@@ -76,13 +76,14 @@ const ProductCategory = () => {
   const [selectedCategoryType, setSelectedCategoryType] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [categoryProductsLoading, setCategoryProductsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
   // Mobile layout states
   const [storeTypes, setStoreTypes] = useState([]);
   const [selectedStoreTypeId, setSelectedStoreTypeId] = useState(() =>
-    typeof window !== "undefined" && window.innerWidth < 900 ? "first" : "all"
+    typeof window !== "undefined" && window.innerWidth < 900 ? "first" : "all",
   );
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -109,6 +110,9 @@ const ProductCategory = () => {
   // Pagination states
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(20);
+
+  // Track if we've applied nav state (category/categoryType from MainPage or ProductDetail link)
+  const stateAppliedRef = useRef(false);
 
   // Store types for filtering
   useEffect(() => {
@@ -164,18 +168,80 @@ const ProductCategory = () => {
           : await categoryAPI.getAll();
       }
       setCategories(response.data);
-      // Mobile: start in categories view; Desktop: preselect first category
+      const state = location.state;
+      const fromNavState = state?.category && !stateAppliedRef.current;
+
       if (response.data.length > 0) {
-        if (window.innerWidth >= 900) {
-          setSelectedCategory(response.data[0]);
-          await fetchCategoryTypes(response.data[0]._id);
-          await fetchProductsByCategory(response.data[0]._id);
-        } else {
-          setSelectedCategory(null);
-          setCategoryTypes([]);
-          setProducts([]);
-          setFilteredProducts([]);
-          setMobileViewMode("categories");
+        if (fromNavState) {
+          const categoryName =
+            typeof state.category === "string"
+              ? state.category
+              : state.category?.name;
+          let matchedCategory = response.data.find(
+            (c) =>
+              c.name === categoryName ||
+              c.name?.toLowerCase() === categoryName?.toLowerCase(),
+          );
+          if (!matchedCategory && selectedStoreTypeId !== "all") {
+            const allRes = await categoryAPI.getAll();
+            const allCats = allRes.data || [];
+            matchedCategory = allCats.find(
+              (c) =>
+                c.name === categoryName ||
+                c.name?.toLowerCase() === categoryName?.toLowerCase(),
+            );
+            if (matchedCategory) {
+              setCategories(allCats);
+            }
+          }
+          if (matchedCategory) {
+            stateAppliedRef.current = true;
+            setSelectedCategory(matchedCategory);
+            const types = await fetchCategoryTypes(matchedCategory._id);
+            await fetchProductsByCategory(matchedCategory._id);
+            if (state.categoryType && types?.length > 0) {
+              const typeName =
+                typeof state.categoryType === "string"
+                  ? state.categoryType
+                  : state.categoryType?.name;
+              const matchedType = types.find(
+                (t) =>
+                  t.name === typeName ||
+                  t.name?.toLowerCase() === typeName?.toLowerCase(),
+              );
+              if (matchedType) {
+                setSelectedCategoryType(matchedType);
+              }
+            }
+            if (window.innerWidth < 900) {
+              setMobileViewMode("products");
+            }
+            navigate(location.pathname, { replace: true, state: {} });
+          } else {
+            if (window.innerWidth >= 900) {
+              setSelectedCategory(response.data[0]);
+              await fetchCategoryTypes(response.data[0]._id);
+              await fetchProductsByCategory(response.data[0]._id);
+            } else {
+              setSelectedCategory(null);
+              setCategoryTypes([]);
+              setProducts([]);
+              setFilteredProducts([]);
+              setMobileViewMode("categories");
+            }
+          }
+        } else if (!stateAppliedRef.current) {
+          if (window.innerWidth >= 900) {
+            setSelectedCategory(response.data[0]);
+            await fetchCategoryTypes(response.data[0]._id);
+            await fetchProductsByCategory(response.data[0]._id);
+          } else {
+            setSelectedCategory(null);
+            setCategoryTypes([]);
+            setProducts([]);
+            setFilteredProducts([]);
+            setMobileViewMode("categories");
+          }
         }
       }
     } catch (err) {
@@ -189,10 +255,13 @@ const ProductCategory = () => {
   const fetchCategoryTypes = async (categoryId) => {
     try {
       const response = await categoryAPI.getTypes(categoryId);
-      setCategoryTypes(response.data);
+      const types = response.data || [];
+      setCategoryTypes(types);
+      return types;
     } catch (err) {
       console.error("Error fetching category types:", err);
       setCategoryTypes([]);
+      return [];
     }
   };
 
@@ -212,11 +281,15 @@ const ProductCategory = () => {
   const handleCategoryChange = async (category) => {
     setSelectedCategory(category);
     setSelectedCategoryType(null);
-    await fetchCategoryTypes(category._id);
-    await fetchProductsByCategory(category._id);
-    // On mobile, switch into products view
+    setCategoryProductsLoading(true);
     if (window.innerWidth < 900) {
       setMobileViewMode("products");
+    }
+    try {
+      await fetchCategoryTypes(category._id);
+      await fetchProductsByCategory(category._id);
+    } finally {
+      setCategoryProductsLoading(false);
     }
   };
 
@@ -290,25 +363,25 @@ const ProductCategory = () => {
 
     if (filters.name) {
       filtered = filtered.filter((product) =>
-        product.name?.toLowerCase().includes(filters.name.toLowerCase())
+        product.name?.toLowerCase().includes(filters.name.toLowerCase()),
       );
     }
 
     if (filters.brand) {
       filtered = filtered.filter(
-        (product) => product.brandId?.name === filters.brand
+        (product) => product.brandId?.name === filters.brand,
       );
     }
 
     if (filters.store) {
       filtered = filtered.filter(
-        (product) => product.storeId?.name === filters.store
+        (product) => product.storeId?.name === filters.store,
       );
     }
 
     if (filters.barcode) {
       filtered = filtered.filter((product) =>
-        product.barcode?.includes(filters.barcode)
+        product.barcode?.includes(filters.barcode),
       );
     }
 
@@ -318,13 +391,13 @@ const ProductCategory = () => {
 
     if (selectedCategoryType) {
       filtered = filtered.filter(
-        (product) => product.categoryTypeId === selectedCategoryType._id
+        (product) => product.categoryTypeId === selectedCategoryType._id,
       );
     }
 
     // Filter by city
     filtered = filtered.filter(
-      (product) => product.storeId?.storecity === selectedCity
+      (product) => product.storeId?.storecity === selectedCity,
     );
 
     setFilteredProducts(filtered);
@@ -389,7 +462,7 @@ const ProductCategory = () => {
     const category = categories.find((cat) => cat._id === categoryId);
     if (!category) return "";
     const categoryType = category.types.find(
-      (type) => type._id === categoryTypeId
+      (type) => type._id === categoryTypeId,
     );
     return categoryType ? categoryType.name : "";
   };
@@ -544,6 +617,21 @@ const ProductCategory = () => {
         {mobileViewMode === "products" && selectedCategory && (
           <>
             {/* Simple header with back to categories to mimic other pages' top bar */}
+            {categoryProductsLoading ? (
+              <Box
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+                minHeight={280}
+              >
+                <CircularProgress
+                  sx={{
+                    color: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+                  }}
+                />
+              </Box>
+            ) : (
+              <>
             <Box
               sx={{
                 display: "flex",
@@ -626,6 +714,21 @@ const ProductCategory = () => {
             )}
 
             {/* Products Grid - enforce 2 columns via CSS grid */}
+            {filteredProducts.length === 0 ? (
+              <Box
+                display="flex"
+                flexDirection="column"
+                alignItems="center"
+                justifyContent="center"
+                minHeight={200}
+                sx={{ color: "text.secondary" }}
+              >
+                <ShoppingCartIcon
+                  sx={{ fontSize: 64, mb: 2, opacity: 0.5 }}
+                />
+                <Typography variant="h6">{t("No products found")}</Typography>
+              </Box>
+            ) : (
             <Box
               sx={{
                 display: "grid",
@@ -749,12 +852,15 @@ const ProductCategory = () => {
                           }}
                         >
                           {isDiscountValid(product) &&
-                            product.previousPrice && (
+                            product.previousPrice &&
+                            product.previousPrice > product.newPrice && (
                               <Typography
-                                variant="caption"
+                                variant="body2"
                                 sx={{
                                   textDecoration: "line-through",
-                                  color: "text.secondary",
+                                  color: "red",
+                                  fontSize: { xs: "0.8rem", sm: "0.9rem" },
+                                  fontWeight: 500,
                                 }}
                               >
                                 {formatPrice(product.previousPrice)}
@@ -762,8 +868,12 @@ const ProductCategory = () => {
                             )}
                           {product.newPrice && (
                             <Typography
-                              variant="body2"
-                              sx={{ color: "#52b788", fontWeight: 700 }}
+                              variant="h6"
+                              sx={{
+                                color: "#52b788",
+                                fontWeight: 700,
+                                fontSize: { xs: "1.1rem", sm: "1.3rem" },
+                              }}
                             >
                               {formatPrice(product.newPrice)}
                             </Typography>
@@ -773,7 +883,7 @@ const ProductCategory = () => {
                               label={(() => {
                                 const off = calculateDiscount(
                                   product.previousPrice,
-                                  product.newPrice
+                                  product.newPrice,
                                 );
                                 return off === null ? t("Discount") : `${off}%`;
                               })()}
@@ -812,6 +922,9 @@ const ProductCategory = () => {
                 </Box>
               ))}
             </Box>
+            )}
+              </>
+            )}
           </>
         )}
       </Box>
@@ -847,8 +960,8 @@ const ProductCategory = () => {
                       selectedStoreTypeId === type._id
                         ? "white"
                         : theme.palette.mode === "dark"
-                        ? "#40916c"
-                        : "#34495e",
+                          ? "#40916c"
+                          : "#34495e",
                     borderColor:
                       theme.palette.mode === "dark" ? "#40916c" : "#34495e",
                     "&:hover": {
@@ -863,7 +976,7 @@ const ProductCategory = () => {
                 >
                   {type.icon || "🏪"} {t(type.name)}
                 </Button>
-              )
+              ),
             )}
           </Box>
         </Box>
@@ -919,8 +1032,8 @@ const ProductCategory = () => {
                         selectedCategory?._id === category._id
                           ? "white"
                           : theme.palette.mode === "dark"
-                          ? "#40916c"
-                          : "#34495e",
+                            ? "#40916c"
+                            : "#34495e",
                       borderColor:
                         theme.palette.mode === "dark" ? "#40916c" : "#34495e",
                       "&:hover": {
@@ -946,8 +1059,8 @@ const ProductCategory = () => {
                           selectedCategory?._id === category._id
                             ? "white"
                             : theme.palette.mode === "dark"
-                            ? "#40916c"
-                            : "#34495e",
+                              ? "#40916c"
+                              : "#34495e",
                         color:
                           selectedCategory?._id === category._id
                             ? theme.palette.mode === "dark"
@@ -1015,8 +1128,8 @@ const ProductCategory = () => {
                       selectedCategoryType === null
                         ? "white"
                         : theme.palette.mode === "dark"
-                        ? "#40916c"
-                        : "#34495e",
+                          ? "#40916c"
+                          : "#34495e",
                     borderColor:
                       theme.palette.mode === "dark" ? "#40916c" : "#34495e",
                     "&:hover": {
@@ -1049,8 +1162,8 @@ const ProductCategory = () => {
                         selectedCategoryType?._id === type._id
                           ? "white"
                           : theme.palette.mode === "dark"
-                          ? "#40916c"
-                          : "#34495e",
+                            ? "#40916c"
+                            : "#34495e",
                       borderColor:
                         theme.palette.mode === "dark" ? "#40916c" : "#34495e",
                       "&:hover": {
@@ -1073,6 +1186,35 @@ const ProductCategory = () => {
 
         {selectedCategory && (
           <>
+            {categoryProductsLoading ? (
+              <Box
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+                minHeight={320}
+              >
+                <CircularProgress
+                  sx={{
+                    color: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+                  }}
+                />
+              </Box>
+            ) : filteredProducts.length === 0 ? (
+              <Box
+                display="flex"
+                flexDirection="column"
+                alignItems="center"
+                justifyContent="center"
+                minHeight={320}
+                sx={{ color: "text.secondary" }}
+              >
+                <ShoppingCartIcon
+                  sx={{ fontSize: 80, mb: 2, opacity: 0.5 }}
+                />
+                <Typography variant="h6">{t("No products found")}</Typography>
+              </Box>
+            ) : (
+              <>
             {/* Products Grid - enforce 2 columns via CSS grid */}
             <Box
               sx={{
@@ -1185,12 +1327,15 @@ const ProductCategory = () => {
                           }}
                         >
                           {isDiscountValid(product) &&
-                            product.previousPrice && (
+                            product.previousPrice &&
+                            product.previousPrice > product.newPrice && (
                               <Typography
                                 variant="body2"
                                 sx={{
                                   textDecoration: "line-through",
-                                  color: "text.secondary",
+                                  color: "red",
+                                  fontSize: { xs: "0.8rem", sm: "0.9rem" },
+                                  fontWeight: 500,
                                 }}
                               >
                                 {formatPrice(product.previousPrice)}
@@ -1198,8 +1343,12 @@ const ProductCategory = () => {
                             )}
                           {product.newPrice && (
                             <Typography
-                              variant="body1"
-                              sx={{ color: "#52b788", fontWeight: 700 }}
+                              variant="h6"
+                              sx={{
+                                color: "#52b788",
+                                fontWeight: 700,
+                                fontSize: { xs: "1.1rem", sm: "1.3rem" },
+                              }}
                             >
                               {formatPrice(product.newPrice)}
                             </Typography>
@@ -1209,7 +1358,7 @@ const ProductCategory = () => {
                               label={(() => {
                                 const off = calculateDiscount(
                                   product.previousPrice,
-                                  product.newPrice
+                                  product.newPrice,
                                 );
                                 return off === null ? t("Discount") : `${off}%`;
                               })()}
@@ -1229,6 +1378,8 @@ const ProductCategory = () => {
                 </Box>
               ))}
             </Box>
+              </>
+            )}
           </>
         )}
       </Box>
@@ -1348,22 +1499,27 @@ const ProductCategory = () => {
 
                 {isDiscountValid(selectedProduct) && (
                   <Box sx={{ mt: 2 }}>
-                    {selectedProduct.previousPrice ? (
+                    {selectedProduct.previousPrice &&
+                    selectedProduct.previousPrice > selectedProduct.newPrice ? (
                       <Typography
-                        variant="h6"
+                        variant="body1"
                         sx={{
                           textDecoration: "line-through",
-                          color: "text.secondary",
+                          color: "red",
+                          fontSize: { xs: "0.8rem", sm: "0.9rem" },
+                          fontWeight: 500,
                         }}
                       >
                         {formatPrice(selectedProduct.previousPrice)}
                       </Typography>
-                    ) : (
-                      ""
-                    )}
+                    ) : null}
                     <Typography
-                      variant="h4"
-                      sx={{ color: "#52b788", fontWeight: 600 }}
+                      variant="h6"
+                      sx={{
+                        color: "#52b788",
+                        fontWeight: 700,
+                        fontSize: { xs: "1.1rem", sm: "1.3rem" },
+                      }}
                     >
                       {formatPrice(selectedProduct.newPrice)}
                     </Typography>
@@ -1371,7 +1527,7 @@ const ProductCategory = () => {
                       label={(() => {
                         const off = calculateDiscount(
                           selectedProduct.previousPrice,
-                          selectedProduct.newPrice
+                          selectedProduct.newPrice,
                         );
                         return off === null ? t("Discount") : `${off}%`;
                       })()}
@@ -1389,8 +1545,13 @@ const ProductCategory = () => {
                 {!isDiscountValid(selectedProduct) &&
                   selectedProduct.newPrice && (
                     <Typography
-                      variant="h4"
-                      sx={{ color: "#52b788", fontWeight: 600, mt: 2 }}
+                      variant="h6"
+                      sx={{
+                        color: "#52b788",
+                        fontWeight: 700,
+                        fontSize: { xs: "1.1rem", sm: "1.3rem" },
+                        mt: 2,
+                      }}
                     >
                       {formatPrice(selectedProduct.newPrice)}
                     </Typography>

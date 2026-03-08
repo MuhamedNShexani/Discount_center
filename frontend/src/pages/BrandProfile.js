@@ -150,7 +150,7 @@ const BrandProfile = () => {
         err.response?.data?.message ||
           err.response?.data?.msg ||
           err.message ||
-          "Network error. Please check your connection."
+          "Network error. Please check your connection.",
       );
       console.error("Error fetching brand data:", err);
     } finally {
@@ -194,6 +194,24 @@ const BrandProfile = () => {
     return currentDate < expiryDate;
   };
 
+  // Get product category type name from categoryId (populated) and categoryTypeId
+  const getProductCategoryTypeName = (product) => {
+    if (!product.categoryId || !product.categoryTypeId) {
+      return product.categoryId?.name || t("Uncategorized");
+    }
+    const category = product.categoryId;
+    if (!category.types || !Array.isArray(category.types)) {
+      return category.name || t("Uncategorized");
+    }
+    const categoryType =
+      category.types.find(
+        (type) => type._id?.toString() === product.categoryTypeId?.toString(),
+      ) || category.types.find((type) => type.name === product.categoryTypeId);
+    return categoryType
+      ? categoryType.name
+      : category.name || t("Uncategorized");
+  };
+
   // Filter products based on current filters
   const getFilteredProducts = () => {
     return products.filter((product) => {
@@ -213,9 +231,10 @@ const BrandProfile = () => {
           product.barcode
             .toLowerCase()
             .includes(filters.barcode.toLowerCase()));
+      const typeName = getProductCategoryTypeName(product);
       const matchesType =
         !filters.type ||
-        product.type.toLowerCase().includes(filters.type.toLowerCase());
+        typeName.toLowerCase().includes(filters.type.toLowerCase());
 
       return matchesName && matchesStore && matchesBarcode && matchesType;
     });
@@ -230,22 +249,27 @@ const BrandProfile = () => {
     return getFilteredProducts().filter((product) => !product.isDiscount);
   };
 
-  // Group products by type
+  // Group products by category type name
   const groupProductsByType = (productList) => {
     const grouped = {};
     productList.forEach((product) => {
-      if (!grouped[product.type]) {
-        grouped[product.type] = [];
+      const typeName = getProductCategoryTypeName(product);
+      if (!grouped[typeName]) {
+        grouped[typeName] = [];
       }
-      grouped[product.type].push(product);
+      grouped[typeName].push(product);
     });
     return grouped;
   };
 
-  // Get unique product types for filter dropdown
+  // Get unique product category types for filter dropdown
   const getProductTypes = () => {
-    const types = [...new Set(products.map((product) => product.type))];
-    return types.sort();
+    const types = [
+      ...new Set(
+        products.map((product) => getProductCategoryTypeName(product)),
+      ),
+    ];
+    return types.filter(Boolean).sort();
   };
 
   // Get unique stores for filter dropdown
@@ -848,7 +872,7 @@ const BrandProfile = () => {
             }}
           >
             {displayProducts.map((product, index) =>
-              renderProductCard(product, index, showPrice)
+              renderProductCard(product, index, showPrice),
             )}
           </Box>
 
@@ -971,7 +995,7 @@ const BrandProfile = () => {
               }}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          {/* <Grid item xs={12} sm={6} md={3}>
             <FormControl sx={{ width: "200px" }} fullWidth>
               <InputLabel>{t("Store")}</InputLabel>
               <Select
@@ -988,8 +1012,8 @@ const BrandProfile = () => {
                 ))}
               </Select>
             </FormControl>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          </Grid> */}
+          {/* <Grid item xs={12} sm={6} md={3}>
             <TextField
               fullWidth
               label={t("Search by Barcode")}
@@ -1004,7 +1028,7 @@ const BrandProfile = () => {
                 ),
               }}
             />
-          </Grid>
+          </Grid> */}
           <Grid item xs={12} sm={6} md={3}>
             <FormControl sx={{ width: "200px" }} fullWidth>
               <InputLabel>{t("Product Type")}</InputLabel>

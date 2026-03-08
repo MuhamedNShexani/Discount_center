@@ -54,8 +54,14 @@ const ProductDetail = () => {
   const theme = useTheme();
 
   // User tracking hook (user = device user for guests)
-  const { toggleLike, recordView, addReview, isProductLiked, isAuthenticated, user } =
-    useUserTracking();
+  const {
+    toggleLike,
+    recordView,
+    addReview,
+    isProductLiked,
+    isAuthenticated,
+    user,
+  } = useUserTracking();
 
   // State for tracking like count locally
   const [localLikeCount, setLocalLikeCount] = useState(0);
@@ -65,11 +71,11 @@ const ProductDetail = () => {
 
   // Notification dialog state (reason: "like" | "review")
   const [loginNotificationOpen, setLoginNotificationOpen] = useState(false);
-  const [loginNotificationReason, setLoginNotificationReason] = useState("like");
+  const [loginNotificationReason, setLoginNotificationReason] =
+    useState("like");
 
   // Handle like button click (works for both logged-in and guest/device users)
   const handleLikeClick = async () => {
-
     // Prevent multiple rapid clicks
     if (likeLoading) {
       return;
@@ -238,7 +244,7 @@ const ProductDetail = () => {
 
           // Exclude products already in sameCategoryProducts
           const isAlreadyInCategory = sameCategoryProducts.some(
-            (catProduct) => catProduct._id === p._id
+            (catProduct) => catProduct._id === p._id,
           );
           if (isAlreadyInCategory) return false;
 
@@ -272,7 +278,7 @@ const ProductDetail = () => {
       if (category && category.types) {
         // First try to find by ID (converting ObjectId to string)
         let type = category.types.find(
-          (t) => t._id.toString() === categoryTypeId
+          (t) => t._id.toString() === categoryTypeId,
         );
 
         // If not found by ID, try to find by name directly
@@ -438,7 +444,7 @@ const ProductDetail = () => {
               <Chip
                 label={getCategoryTypeName(
                   product.categoryTypeId,
-                  product.categoryId?._id || product.categoryId
+                  product.categoryId?._id || product.categoryId,
                 )}
                 color="primary"
                 sx={{
@@ -453,7 +459,7 @@ const ProductDetail = () => {
                   category: product.categoryId?.name || "All Categories",
                   categoryType: getCategoryTypeName(
                     product.categoryTypeId,
-                    product.categoryId?._id || product.categoryId
+                    product.categoryId?._id || product.categoryId,
                   ),
                 }}
                 clickable
@@ -569,7 +575,7 @@ const ProductDetail = () => {
                 <Box display="flex" alignItems="center" mb={2}>
                   {(() => {
                     const remainingDays = calculateRemainingDays(
-                      product.expireDate
+                      product.expireDate,
                     );
                     if (remainingDays !== null) {
                       if (remainingDays > 0) {
@@ -666,26 +672,18 @@ const ProductDetail = () => {
                 <Box display="flex" alignItems="center" mb={2}>
                   <Typography
                     variant="h4"
-                    color="primary"
                     gutterBottom
                     sx={{
                       fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" },
+                      color:
+                        theme.palette.mode === "dark" ? "white" : "black",
                     }}
                   >
+                    {t("Price")}:{" "}
                     <span
                       style={{
-                        color:
-                          theme.palette.mode === "dark" ? "white" : "black",
-                      }}
-                    >
-                      {t("Price")}:
-                    </span>{" "}
-                    <span
-                      style={{
-                        color:
-                          theme.palette.mode === "dark"
-                            ? "text.main"
-                            : "text.primary",
+                        color: "#52b788",
+                        fontWeight: 700,
                       }}
                     >
                       {formatPrice(product.newPrice)}
@@ -704,15 +702,12 @@ const ProductDetail = () => {
                       }}
                     >
                       <Typography
-                        variant="h6"
-                        color="text.secondary"
+                        variant="body1"
                         sx={{
                           textDecoration: "line-through",
-                          fontSize: {
-                            xs: "1rem",
-                            sm: "1.25rem",
-                            md: "1.25rem",
-                          },
+                          color: "red",
+                          fontSize: { xs: "0.8rem", sm: "0.9rem" },
+                          fontWeight: 500,
                         }}
                       >
                         {formatPrice(product.previousPrice)}
@@ -725,7 +720,7 @@ const ProductDetail = () => {
                         }
                         label={`-${calculateDiscount(
                           product.previousPrice,
-                          product.newPrice
+                          product.newPrice,
                         )}% OFF`}
                         color="error"
                         size="large"
@@ -931,82 +926,6 @@ const ProductDetail = () => {
                 </Box>
               </Box>
 
-              <Divider sx={{ my: { xs: 2, md: 3 } }} />
-
-              {/* Product Details Section */}
-              <Box sx={{ mb: { xs: 2, md: 3 } }}>
-                <Typography
-                  variant="h6"
-                  gutterBottom
-                  sx={{
-                    mb: 2,
-                    fontSize: { xs: "1rem", sm: "1.25rem", md: "1.25rem" },
-                  }}
-                >
-                  {t("Product Details")}
-                </Typography>
-                {/* Description */}
-
-                {/* Barcode */}
-                {product.barcode && (
-                  <Box display="flex" alignItems="center" mb={1}>
-                    <Typography
-                      variant="body1"
-                      sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
-                    >
-                      <strong>{t("Barcode")}:</strong> {product.barcode}
-                    </Typography>
-                  </Box>
-                )}
-
-                {/* Weight */}
-                {product.weight && (
-                  <Box display="flex" alignItems="center" mb={1}>
-                    <Typography
-                      variant="body1"
-                      sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
-                    >
-                      <strong>{t("Weight")}:</strong> {product.weight}
-                    </Typography>
-                  </Box>
-                )}
-                {product.description && (
-                  <Box display="flex" alignItems="center" mb={1}>
-                    <DescriptionIcon
-                      sx={{
-                        fontSize: { xs: 14, sm: 16 },
-                        mr: { xs: 0.5, md: 1 },
-                        color: "text.secondary",
-                      }}
-                    />
-                    <Typography
-                      variant="body1"
-                      sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
-                    >
-                      <strong>{t("Description")}:</strong> {product.description}
-                    </Typography>
-                  </Box>
-                )}
-
-                {/* Discount Status */}
-                {/* <Box display="flex" alignItems="center" mb={1}>
-                  <LocalOfferIcon
-                    sx={{
-                      fontSize: { xs: 14, sm: 16 },
-                      mr: { xs: 0.5, md: 1 },
-                      color: "text.secondary",
-                    }}
-                  />
-                  <Typography
-                    variant="body1"
-                    sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
-                  >
-                    <strong>{t("Discount Status")}:</strong>{" "}
-                    {(product.isDiscount && isDiscountValid(product)) ? t("Discounted") : t("Regular Price")}
-                  </Typography>
-                </Box> */}
-              </Box>
-
               {/* Action Buttons */}
               {/* <Box sx={{ mt: 4 }}>
                 {product.storeId && product.storeId._id && (
@@ -1178,7 +1097,7 @@ const ProductDetail = () => {
                         <Chip
                           label={getCategoryTypeName(
                             relatedProduct.categoryTypeId,
-                            relatedProduct.categoryId
+                            relatedProduct.categoryId,
                           )}
                           size="small"
                           variant="outlined"
@@ -1249,10 +1168,11 @@ const ProductDetail = () => {
                             relatedProduct.newPrice ? (
                             <Typography
                               variant="body2"
-                              color="text.secondary"
                               sx={{
                                 textDecoration: "line-through",
-                                fontSize: { xs: "0.7rem", sm: "0.75rem" },
+                                color: "red",
+                                fontSize: { xs: "0.8rem", sm: "0.9rem" },
+                                fontWeight: 500,
                               }}
                             >
                               {formatPrice(relatedProduct.previousPrice)}
@@ -1261,12 +1181,11 @@ const ProductDetail = () => {
                           <Typography
                             variant="h6"
                             sx={{
-                              color: "primary.main",
+                              color: "#52b788",
                               fontWeight: 700,
                               fontSize: {
-                                xs: "0.875rem",
-                                sm: "1rem",
-                                md: "1.125rem",
+                                xs: "1.1rem",
+                                sm: "1.3rem",
                               },
                             }}
                           >
@@ -1290,7 +1209,7 @@ const ProductDetail = () => {
                                 relatedProduct.newPrice
                                 ? `-${calculateDiscount(
                                     relatedProduct.previousPrice,
-                                    relatedProduct.newPrice
+                                    relatedProduct.newPrice,
                                   )}%`
                                 : t("Discount")
                             }
@@ -1388,7 +1307,9 @@ const ProductDetail = () => {
           <Button
             onClick={() => {
               setLoginNotificationOpen(false);
-              navigate("/login", { state: { from: { pathname: `/products/${id}` } } });
+              navigate("/login", {
+                state: { from: { pathname: `/products/${id}` } },
+              });
             }}
             variant="contained"
             color="primary"
