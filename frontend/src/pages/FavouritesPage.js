@@ -75,6 +75,15 @@ const FavouritesPage = () => {
     setLikeStates(states);
   }, [products, user]);
 
+  const formatPrice = (price) => {
+    const num = typeof price === "number" ? price : parseFloat(price);
+    if (!Number.isFinite(num)) return `${t("ID")} 0`;
+    return ` ${num.toLocaleString(undefined, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    })} ${t("ID")}`;
+  };
+
   const handleLikeClick = async (productId, e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -348,37 +357,39 @@ const FavouritesPage = () => {
                   <Box
                     sx={{
                       display: "flex",
-                      gap: 1,
+                      flexDirection: "column",
                       alignItems: "center",
+                      gap: 0.5,
                       mt: 0.5,
                     }}
                   >
-                    {product.previousPrice && product.newPrice && (
-                      <>
+                    {product.previousPrice &&
+                      product.newPrice &&
+                      product.previousPrice > product.newPrice && (
                         <Typography
                           variant="body2"
                           sx={{
                             textDecoration: "line-through",
-                            color: "text.secondary",
+                            color: "red",
+                            fontSize: { xs: "0.8rem", sm: "0.9rem" },
+                            fontWeight: 500,
                           }}
                         >
-                          {product.previousPrice}
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          fontWeight={700}
-                          color="primary"
-                        >
-                          {product.newPrice}
-                        </Typography>
-                      </>
-                    )}
-                    {(!product.previousPrice || !product.newPrice) &&
-                      product.newPrice && (
-                        <Typography variant="body2" fontWeight={600}>
-                          {product.newPrice}
+                          {formatPrice(product.previousPrice)}
                         </Typography>
                       )}
+                    {product.newPrice && (
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          color: "#52b788",
+                          fontWeight: 700,
+                          fontSize: { xs: "1.1rem", sm: "1.3rem" },
+                        }}
+                      >
+                        {formatPrice(product.newPrice)}
+                      </Typography>
+                    )}
                   </Box>
                 </CardContent>
               </Card>
