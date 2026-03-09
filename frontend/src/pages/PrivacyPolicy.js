@@ -240,7 +240,7 @@ const PrivacyPolicy = () => {
               gutterBottom
               sx={{ mt: 4, mb: 2 }}
             >
-              {t("Contact Us")}
+              Contact Us
             </Typography>
             <Typography variant="body1" paragraph>
               {t("Privacy Contact intro")}
