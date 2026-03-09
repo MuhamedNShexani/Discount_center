@@ -1,12 +1,15 @@
 /**
  * Register the service worker for push notifications
+ * Safe on iOS - will not throw; returns null if unsupported
  */
 export const registerServiceWorker = async () => {
-  if (!("serviceWorker" in navigator)) return null;
   try {
-    const reg = await navigator.serviceWorker.register("/sw.js", {
-      scope: "/",
-    });
+    if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) {
+      return null;
+    }
+    const base = (process.env.PUBLIC_URL || "").replace(/\/$/, "") || "";
+    const swPath = base ? `${base}/sw.js` : "/sw.js";
+    const reg = await navigator.serviceWorker.register(swPath, { scope: "/" });
     return reg;
   } catch (err) {
     console.warn("Service worker registration failed:", err);
@@ -19,7 +22,12 @@ export const registerServiceWorker = async () => {
  */
 export const subscribePush = async (vapidPublicKey) => {
   if (!vapidPublicKey) throw new Error("VAPID public key required");
-  const reg = await navigator.serviceWorker.ready;
+  const reg = await Promise.race([
+    navigator.serviceWorker.ready,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Service worker timeout")), 10000)
+    ),
+  ]);
   const sub = await reg.pushManager.subscribe({
     userVisibleOnly: true,
     applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
@@ -38,10 +46,26 @@ function urlBase64ToUint8Array(base64String) {
   return outputArray;
 }
 
-export const isPushSupported = () =>
-  "Notification" in window &&
-  "serviceWorker" in navigator &&
-  "PushManager" in window;
+export const isPushSupported = () => {
+  try {
+    return (
+      typeof window !== "undefined" &&
+      "Notification" in window &&
+      "serviceWorker" in navigator &&
+      "PushManager" in window
+    );
+  } catch (e) {
+    return false;
+  }
+};
 
-export const getPermissionState = () =>
-  Notification.permission; // "granted" | "denied" | "default"
+export const getPermissionState = () => {
+  try {
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      return "denied";
+    }
+    return Notification.permission;
+  } catch (e) {
+    return "denied";
+  }
+};

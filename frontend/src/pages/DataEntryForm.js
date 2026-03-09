@@ -2546,11 +2546,18 @@ const DataEntryForm = () => {
                           type: notificationType,
                         });
                         if (res.data.success) {
+                          const msg =
+                            res.data.pushSent > 0
+                              ? t("Notification sent to {{count}} users ({{push}} to notification center)", {
+                                  count: res.data.count,
+                                  push: res.data.pushSent,
+                                })
+                              : t("Notification sent to {{count}} users", {
+                                  count: res.data.count,
+                                });
                           setMessage({
                             type: "success",
-                            text: t("Notification sent to {{count}} users", {
-                              count: res.data.count,
-                            }),
+                            text: msg,
                           });
                           setNotificationTitle("");
                           setNotificationBody("");

@@ -38,6 +38,7 @@ import LoginPage from "./pages/LoginPage";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ScrollToTop from "./components/ScrollToTop";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 // Footer component remains the same
 const Footer = () => (
@@ -318,18 +319,20 @@ function App() {
 
 // Root component remains the same
 const Root = () => (
-  <AuthProvider>
-    <CityFilterProvider>
-      <AppSettingsProvider>
-        <NotificationProvider>
-          <Router>
-          <ScrollToTop />
-          <App />
-          </Router>
-        </NotificationProvider>
-      </AppSettingsProvider>
-    </CityFilterProvider>
-  </AuthProvider>
+  <ErrorBoundary>
+    <AuthProvider>
+      <CityFilterProvider>
+        <AppSettingsProvider>
+          <NotificationProvider>
+            <Router>
+              <ScrollToTop />
+              <App />
+            </Router>
+          </NotificationProvider>
+        </AppSettingsProvider>
+      </CityFilterProvider>
+    </AuthProvider>
+  </ErrorBoundary>
 );
 
 export default Root;

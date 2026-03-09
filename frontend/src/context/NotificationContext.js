@@ -49,9 +49,14 @@ export const NotificationProvider = ({ children }) => {
   }, [fetchNotifications]);
 
   useEffect(() => {
-    setPushSupported(isPushSupported());
-    setPushPermission(getPermissionState());
-    registerServiceWorker();
+    try {
+      setPushSupported(isPushSupported());
+      setPushPermission(getPermissionState());
+      registerServiceWorker().catch(() => {});
+    } catch (e) {
+      setPushSupported(false);
+      setPushPermission("denied");
+    }
   }, []);
 
   const enablePushNotifications = useCallback(async () => {
@@ -80,10 +85,14 @@ export const NotificationProvider = ({ children }) => {
 
   const requestPushPermission = useCallback(async () => {
     if (!pushSupported || pushPermission !== "default") return false;
-    const permission = await Notification.requestPermission();
-    setPushPermission(permission);
-    if (permission === "granted") {
-      return await enablePushNotifications();
+    try {
+      const permission = await Notification.requestPermission();
+      setPushPermission(permission);
+      if (permission === "granted") {
+        return await enablePushNotifications();
+      }
+    } catch (e) {
+      setPushPermission("denied");
     }
     return false;
   }, [pushSupported, pushPermission, enablePushNotifications]);

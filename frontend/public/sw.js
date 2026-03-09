@@ -15,6 +15,10 @@ self.addEventListener("push", function (event) {
     badge: "/favicon.ico",
     data: data,
     tag: "discount-app-" + Date.now(),
+    renotify: true,
+    silent: false,
+    requireInteraction: false,
+    vibrate: [200, 100, 200],
   };
   event.waitUntil(self.registration.showNotification(title, options));
 });

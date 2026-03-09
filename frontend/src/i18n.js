@@ -469,6 +469,8 @@ const resources = {
       "Send to All Users": "Send to All Users",
       "Sending...": "Sending...",
       "Notification sent to {{count}} users": "Notification sent to {{count}} users",
+      "Notification sent to {{count}} users ({{push}} to notification center)":
+        "Notification sent to {{count}} users ({{push}} to notification center)",
       "Failed to send notification": "Failed to send notification",
       "e.g. New deals available!": "e.g. New deals available!",
       "Optional message body...": "Optional message body...",
@@ -1037,6 +1039,8 @@ const resources = {
       "Send to All Users": "إرسال لجميع المستخدمين",
       "Sending...": "جاري الإرسال...",
       "Notification sent to {{count}} users": "تم إرسال الإشعار إلى {{count}} مستخدم",
+      "Notification sent to {{count}} users ({{push}} to notification center)":
+        "تم إرسال الإشعار إلى {{count}} مستخدم ({{push}} إلى مركز الإشعارات)",
       "Failed to send notification": "فشل إرسال الإشعار",
       "e.g. New deals available!": "مثال: عروض جديدة متاحة!",
       "Optional message body...": "نص الرسالة (اختياري)...",
@@ -1576,6 +1580,8 @@ const resources = {
       "Send to All Users": "ناردن بۆ هەموو بەکارهێنەران",
       "Sending...": "دەنێردرێت...",
       "Notification sent to {{count}} users": "ئاگاداری نێردرا بۆ {{count}} بەکارهێنەر",
+      "Notification sent to {{count}} users ({{push}} to notification center)":
+        "ئاگاداری نێردرا بۆ {{count}} بەکارهێنەر ({{push}} بۆ ناوەندی ئاگاداریەکان)",
       "Failed to send notification": "ناردنی ئاگاداری سەرکەوتوو نەبوو",
       "e.g. New deals available!": "نموونە: دامەزرێنە نوێیەکان بەردەستن!",
       "Optional message body...": "ناوەڕۆکی نامە (ئارەزوومەندانە)...",
