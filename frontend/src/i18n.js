@@ -458,6 +458,9 @@ const resources = {
       "Compose a notification that will be sent to all users (both registered and anonymous).":
         "Compose a notification that will be sent to all users (both registered and anonymous).",
       "No notifications": "No notifications",
+      "Notifications on": "Notifications on",
+      "Notifications off": "Notifications off",
+      "Notifications are off": "Notifications are off",
       "Mark all read": "Mark all read",
       Title: "Title",
       Message: "Message",
@@ -1036,6 +1039,9 @@ const resources = {
       "Compose a notification that will be sent to all users (both registered and anonymous).":
         "اكتب إشعاراً سيُرسل لجميع المستخدمين (المسجلين والزوار).",
       "No notifications": "لا توجد إشعارات",
+      "Notifications on": "الإشعارات مفعلة",
+      "Notifications off": "الإشعارات معطلة",
+      "Notifications are off": "الإشعارات معطلة",
       "Mark all read": "تحديد الكل كمقروء",
       Title: "العنوان",
       Message: "الرسالة",
@@ -1585,6 +1591,9 @@ const resources = {
       "Compose a notification that will be sent to all users (both registered and anonymous).":
         "ئاگاداریێک بنووسە کە دەنێردرێت بۆ هەموو بەکارهێنەران (تۆمارکراو ).",
       "No notifications": "هیچ ئاگادارییەک نییە",
+      "Notifications on": "ئاگادارییەکان چالاکن",
+      "Notifications off": "ئاگادارییەکان ناچالاکن",
+      "Notifications are off": "ئاگادارییەکان ناچالاکن",
       "Mark all read": "هەموویان وەک خوێنراوەتەوە نیشانە بکە",
       Title: "ناونیشان",
       Message: "نامە",

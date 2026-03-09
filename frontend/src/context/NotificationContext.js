@@ -15,11 +15,32 @@ import {
   getPermissionState,
 } from "../utils/pushNotifications";
 
+const NOTIFICATIONS_ENABLED_KEY = "notifications-enabled";
+
+const getStoredNotificationsEnabled = () => {
+  try {
+    const stored = localStorage.getItem(NOTIFICATIONS_ENABLED_KEY);
+    return stored === null || stored === "true";
+  } catch {
+    return true;
+  }
+};
+
 const NotificationContext = createContext(null);
 
 export const NotificationProvider = ({ children }) => {
   const { isAuthenticated } = useAuth();
   const [notifications, setNotifications] = useState([]);
+  const [notificationsEnabled, setNotificationsEnabledState] = useState(
+    getStoredNotificationsEnabled
+  );
+
+  const setNotificationsEnabled = useCallback((enabled) => {
+    setNotificationsEnabledState(enabled);
+    try {
+      localStorage.setItem(NOTIFICATIONS_ENABLED_KEY, String(enabled));
+    } catch {}
+  }, []);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [pushSupported, setPushSupported] = useState(false);
@@ -27,6 +48,7 @@ export const NotificationProvider = ({ children }) => {
   const [pushSubscribing, setPushSubscribing] = useState(false);
 
   const fetchNotifications = useCallback(async () => {
+    if (!notificationsEnabled) return;
     setLoading(true);
     try {
       const deviceId = isAuthenticated ? null : getDeviceId();
@@ -40,7 +62,7 @@ export const NotificationProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, notificationsEnabled]);
 
   useEffect(() => {
     fetchNotifications();
@@ -157,6 +179,8 @@ export const NotificationProvider = ({ children }) => {
         pushPermission,
         pushSubscribing,
         requestPushPermission,
+        notificationsEnabled,
+        setNotificationsEnabled,
       }}
     >
       {children}

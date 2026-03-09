@@ -19,6 +19,8 @@ import {
   ClickAwayListener,
   Badge,
   ListItemButton,
+  Switch,
+  FormControlLabel,
 } from "@mui/material";
 import {
   Home as HomeIcon,
@@ -67,6 +69,8 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
     pushPermission,
     pushSubscribing,
     requestPushPermission,
+    notificationsEnabled,
+    setNotificationsEnabled,
   } = useNotifications();
   const isSmUp = useMediaQuery(theme.breakpoints.up("sm"));
   const lang = i18n.language;
@@ -84,6 +88,9 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
 
   // Stores dropdown state
   const [storesAnchorEl, setStoresAnchorEl] = useState(null);
+
+  // City submenu state (desktop profile)
+  const [cityAnchorEl, setCityAnchorEl] = useState(null);
 
   const handleLangChange = (event) => {
     i18n.changeLanguage(event.target.value);
@@ -469,7 +476,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   },
                 }}
               >
-                <Badge badgeContent={unreadCount} color="error">
+                <Badge badgeContent={notificationsEnabled ? unreadCount : 0} color="error">
                   <NotificationsIcon />
                 </Badge>
               </IconButton>
@@ -560,45 +567,6 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
             {/* Mobile Controls */}
             {!isSmUp && (
               <>
-                {/* Mobile City Selector */}
-                <Paper
-                  elevation={0}
-                  sx={{
-                    backgroundColor: "rgba(255,255,255,0.1)",
-                    backdropFilter: "blur(10px)",
-                    border: "1px solid rgba(255,255,255,0.2)",
-                    borderRadius: 2,
-                  }}
-                >
-                  <Select
-                    value={selectedCity}
-                    onChange={(e) => changeCity(e.target.value)}
-                    size="small"
-                    variant="standard"
-                    disableUnderline
-                    sx={{
-                      color: "white",
-                      minWidth: 80,
-                      px: 0.5,
-                      "& .MuiSvgIcon-root": {
-                        color: "white",
-                      },
-                      "& .MuiSelect-select": {
-                        py: 0.5,
-                        fontSize: "0.8rem",
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      },
-                    }}
-                  >
-                    {cities.map((city) => (
-                      <MenuItem key={city.value} value={city.value}>
-                        {city.flag} {city.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </Paper>
                 {/* Mobile Favourites Link */}
                 <IconButton
                   component={Link}
@@ -636,7 +604,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                     },
                   }}
                 >
-                  <Badge badgeContent={unreadCount} color="error">
+                  <Badge badgeContent={notificationsEnabled ? unreadCount : 0} color="error">
                     <NotificationsIcon />
                   </Badge>
                 </IconButton>
@@ -691,7 +659,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
             <Typography variant="subtitle1" fontWeight={600}>
               {t("Notifications")}
             </Typography>
-            {unreadCount > 0 && (
+            {unreadCount > 0 && notificationsEnabled && (
               <Button
                 size="small"
                 onClick={() => markAllAsRead()}
@@ -702,7 +670,24 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
             )}
           </Box>
         </Box>
-        {pushSupported && pushPermission === "default" && (
+        <Box sx={{ px: 2, py: 1, borderBottom: 1, borderColor: "divider" }}>
+          <FormControlLabel
+            control={
+              <Switch
+                size="small"
+                checked={notificationsEnabled}
+                onChange={(e) => setNotificationsEnabled(e.target.checked)}
+                color="primary"
+              />
+            }
+            label={
+              <Typography variant="body2">
+                {notificationsEnabled ? t("Notifications on") : t("Notifications off")}
+              </Typography>
+            }
+          />
+        </Box>
+        {notificationsEnabled && pushSupported && pushPermission === "default" && (
           <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: "divider" }}>
             <Button
               fullWidth
@@ -719,7 +704,11 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
           </Box>
         )}
         <Box sx={{ maxHeight: 280, overflow: "auto" }}>
-          {notifications.length === 0 ? (
+          {!notificationsEnabled ? (
+            <Typography variant="body2" color="text.secondary" sx={{ p: 2, textAlign: "center" }}>
+              {t("Notifications are off")}
+            </Typography>
+          ) : notifications.length === 0 ? (
             <Typography variant="body2" color="text.secondary" sx={{ p: 2, textAlign: "center" }}>
               {t("No notifications")}
             </Typography>
@@ -895,42 +884,85 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
           </MenuItem>
         )}
 
-        {/* City Selector - desktop (in profile) */}
-        {isSmUp && (
+        {/* City Selector - in profile (desktop & mobile) - single button with submenu */}
+        {(
           <>
-            <Box sx={{ px: 2, py: 0.5 }}>
-              <Typography variant="caption" color="text.secondary">
-                {t("City")}
-              </Typography>
-            </Box>
-            {cities.map((city) => (
-              <MenuItem
-                key={city.value}
-                onClick={() => {
-                  changeCity(city.value);
-                  handleProfileMenuClose();
-                }}
-                selected={selectedCity === city.value}
-                sx={{
-                  py: 1,
-                  px: 2,
-                  "&:hover": {
-                    backgroundColor:
-                      theme.palette.mode === "dark"
-                        ? "rgba(255,255,255,0.08)"
-                        : "rgba(0,0,0,0.04)",
-                  },
-                }}
-              >
-                <ListItemIcon>
-                  <LocationOnIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText
-                  primary={`${city.flag} ${city.label}`}
-                  primaryTypographyProps={{ fontSize: "0.875rem" }}
-                />
-              </MenuItem>
-            ))}
+            <ListItemButton
+              onClick={(e) => setCityAnchorEl(cityAnchorEl ? null : e.currentTarget)}
+              sx={{
+                py: 1.5,
+                px: 2,
+                "&:hover": {
+                  backgroundColor:
+                    theme.palette.mode === "dark"
+                      ? "rgba(255,255,255,0.08)"
+                      : "rgba(0,0,0,0.04)",
+                },
+              }}
+            >
+              <ListItemIcon>
+                <LocationOnIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText
+                primary={t("City")}
+                secondary={
+                  (() => {
+                    const city = cities.find((c) => c.value === selectedCity);
+                    return city ? `${city.flag} ${city.label}` : "";
+                  })()
+                }
+                primaryTypographyProps={{ fontSize: "0.875rem", fontWeight: 500 }}
+                secondaryTypographyProps={{ fontSize: "0.8rem", color: "text.secondary" }}
+              />
+              {cityAnchorEl ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+            </ListItemButton>
+            <Menu
+              anchorEl={cityAnchorEl}
+              open={Boolean(cityAnchorEl)}
+              onClose={() => setCityAnchorEl(null)}
+              anchorOrigin={{ vertical: "top", horizontal: "right" }}
+              transformOrigin={{ vertical: "top", horizontal: "left" }}
+              PaperProps={{
+                sx: {
+                  mt: -1,
+                  ml: 0.5,
+                  minWidth: 160,
+                  backgroundColor:
+                    theme.palette.mode === "dark" ? "#2c3e50" : "#fff",
+                  border: `1px solid ${theme.palette.divider}`,
+                  borderRadius: 2,
+                },
+              }}
+            >
+              {cities.map((city) => (
+                <MenuItem
+                  key={city.value}
+                  onClick={() => {
+                    changeCity(city.value);
+                    setCityAnchorEl(null);
+                  }}
+                  selected={selectedCity === city.value}
+                  sx={{
+                    py: 1,
+                    px: 2,
+                    "&:hover": {
+                      backgroundColor:
+                        theme.palette.mode === "dark"
+                          ? "rgba(255,255,255,0.08)"
+                          : "rgba(0,0,0,0.04)",
+                    },
+                  }}
+                >
+                  <ListItemIcon>
+                    <LocationOnIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={`${city.flag} ${city.label}`}
+                    primaryTypographyProps={{ fontSize: "0.875rem" }}
+                  />
+                </MenuItem>
+              ))}
+            </Menu>
             <Divider />
           </>
         )}
