@@ -39,6 +39,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ScrollToTop from "./components/ScrollToTop";
 import ErrorBoundary from "./components/ErrorBoundary";
+import NotificationEnableBanner from "./components/NotificationEnableBanner";
 
 // Footer component remains the same
 const Footer = () => (
@@ -311,6 +312,7 @@ function App() {
           </Box>
           <Footer />
           <BottomNavigationBar />
+          <NotificationEnableBanner />
         </Box>
       </ThemeProvider>
     </CacheProvider>

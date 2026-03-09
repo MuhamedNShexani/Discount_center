@@ -48,16 +48,36 @@ export const NotificationProvider = ({ children }) => {
     return () => clearInterval(interval);
   }, [fetchNotifications]);
 
+  const ensurePushSubscription = useCallback(async () => {
+    if (!isPushSupported() || getPermissionState() !== "granted") return;
+    try {
+      const res = await notificationAPI.getVapidPublic();
+      if (!res.data?.success || !res.data?.vapidPublicKey) return;
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) return;
+      const subscription = await subscribePush(res.data.vapidPublicKey);
+      const deviceId = isAuthenticated ? null : getDeviceId();
+      await userAPI.pushSubscribe(subscription, deviceId);
+    } catch (e) {
+      console.warn("Ensure push subscription:", e);
+    }
+  }, [isAuthenticated]);
+
   useEffect(() => {
     try {
       setPushSupported(isPushSupported());
       setPushPermission(getPermissionState());
-      registerServiceWorker().catch(() => {});
+      registerServiceWorker().then((reg) => {
+        if (reg && getPermissionState() === "granted") {
+          ensurePushSubscription();
+        }
+      }).catch(() => {});
     } catch (e) {
       setPushSupported(false);
       setPushPermission("denied");
     }
-  }, []);
+  }, [ensurePushSubscription]);
 
   const enablePushNotifications = useCallback(async () => {
     if (!pushSupported || pushPermission === "granted") return;
@@ -103,14 +123,14 @@ export const NotificationProvider = ({ children }) => {
         const deviceId = isAuthenticated ? null : getDeviceId();
         await notificationAPI.markAsRead(id, deviceId);
         setNotifications((prev) =>
-          prev.map((n) => (n._id === id ? { ...n, read: true } : n))
+          prev.map((n) => (n._id === id ? { ...n, read: true } : n)),
         );
         setUnreadCount((c) => Math.max(0, c - 1));
       } catch (err) {
         console.error("Mark read error:", err);
       }
     },
-    [isAuthenticated]
+    [isAuthenticated],
   );
 
   const markAllAsRead = useCallback(async () => {

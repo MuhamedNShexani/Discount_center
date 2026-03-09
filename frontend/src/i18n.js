@@ -476,6 +476,13 @@ const resources = {
       "Optional message body...": "Optional message body...",
       "Enable system notifications": "Enable system notifications",
       "Enabling...": "Enabling...",
+      "Get notifications when app is closed or in background":
+        "Get notifications when app is closed or in background",
+      "Not now": "Not now",
+      Enable: "Enable",
+      "For notifications when app is closed: tap Share → Add to Home Screen":
+        "For notifications when app is closed: tap Share → Add to Home Screen",
+      "Got it": "Got it",
       "Failed to save settings": "Failed to save settings",
       "Privacy Contact intro":
         "If you have any questions about this Privacy Policy, you can contact us:",
@@ -1046,6 +1053,13 @@ const resources = {
       "Optional message body...": "نص الرسالة (اختياري)...",
       "Enable system notifications": "تفعيل إشعارات النظام",
       "Enabling...": "جاري التفعيل...",
+      "Get notifications when app is closed or in background":
+        "احصل على الإشعارات عند إغلاق التطبيق أو وضعه في الخلفية",
+      "Not now": "ليس الآن",
+      Enable: "تفعيل",
+      "For notifications when app is closed: tap Share → Add to Home Screen":
+        "للإشعارات عند إغلاق التطبيق: اضغط مشاركة → إضافة إلى الشاشة الرئيسية",
+      "Got it": "فهمت",
       "Contact WhatsApp Number": "رقم واتساب للتواصل",
       "WhatsApp number for Contact Us (with country code, e.g. +9647503683478)":
         "رقم واتساب للتواصل (مع رمز البلد، مثال: +9647503683478)",
@@ -1587,6 +1601,13 @@ const resources = {
       "Optional message body...": "ناوەڕۆکی نامە (ئارەزوومەندانە)...",
       "Enable system notifications": "چالاککردنی ئاگادارییەکانی سیستەم",
       "Enabling...": "چالاککردن...",
+      "Get notifications when app is closed or in background":
+        "ئاگاداری وەربگرە کاتێک ئەپ دەخرێتەوە یان لە پاشەوەیە",
+      "Not now": "ئێستا نا",
+      Enable: "چالاککردن",
+      "For notifications when app is closed: tap Share → Add to Home Screen":
+        "بۆ ئاگاداری کاتێک ئەپ دادەخرێت: تاپ بکە بۆ هاوبەشکردن → زیادکردن بۆ سەرەوەی ماڵەوە",
+      "Got it": "تێگەیشتم",
       "Contact WhatsApp Number": "ژمارەی واتساپ بۆ پەیوەندی",
       "WhatsApp number for Contact Us (with country code, e.g. +9647503683478)":
         "ژمارەی واتساپ بۆ پەیوەندی (لەگەڵ کۆدی وڵات، وەک +9647503683478)",

@@ -1,5 +1,29 @@
 # Web Push Notifications - Setup & Troubleshooting
 
+## Notifications When App Is Closed or in Background
+
+### What we added
+1. **Enable banner** – A banner appears at the bottom asking users to enable notifications. Tap "Enable" and allow when the browser prompts.
+2. **iOS "Add to Home Screen"** – On iOS, after enabling, you'll see a hint: "Tap Share → Add to Home Screen". **This is required** for push when the app is closed.
+3. **Auto-subscribe** – If you previously allowed notifications but didn't complete setup, we retry subscribing on next visit.
+
+### Steps for users
+
+**Android:**
+1. Open the site in Chrome
+2. Tap "Enable" when the banner appears
+3. Tap "Allow" in the browser prompt
+4. Close the app or put it in background
+5. Admin sends a notification → it appears in the system tray
+
+**iOS (16.4+):**
+1. Open the site in Safari
+2. Tap "Enable" when the banner appears
+3. Tap "Allow" in the prompt
+4. **Important:** Tap Share (□↑) → "Add to Home Screen"
+5. Open the app from the home screen icon
+6. Now notifications work when the app is closed
+
 ## iOS White Screen Fix
 The app now guards against iOS issues:
 - **Notification API** may not exist on iOS &lt; 16.4 or in some WebViews

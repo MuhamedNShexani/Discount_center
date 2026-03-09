@@ -25,7 +25,7 @@ export const subscribePush = async (vapidPublicKey) => {
   const reg = await Promise.race([
     navigator.serviceWorker.ready,
     new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("Service worker timeout")), 10000)
+      setTimeout(() => reject(new Error("Service worker timeout")), 10000),
     ),
   ]);
   const sub = await reg.pushManager.subscribe({
