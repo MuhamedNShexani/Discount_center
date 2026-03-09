@@ -18,8 +18,24 @@ if (!process.env.MONGO_URI) {
 
 connectDB();
 
-// Middleware
-app.use(cors());
+// Middleware - CORS: allow known frontends + localhost; mobile needs explicit origins
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://dashkan.net",
+  "https://www.dashkan.net",
+  "https://idiscount.vercel.app",
+];
+app.use(
+  cors({
+    origin: (origin, cb) => {
+      if (!origin) return cb(null, true);
+      if (allowedOrigins.includes(origin) || origin.endsWith(".vercel.app"))
+        return cb(null, true);
+      return cb(null, true);
+    },
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 // Serve static files from uploads directory

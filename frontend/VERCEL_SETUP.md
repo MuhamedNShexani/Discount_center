@@ -1,6 +1,6 @@
 # Vercel Deployment – Notifications Checklist
 
-Your frontend is at **https://idiscount.vercel.app/** and the service worker loads correctly. For notifications when the app is closed, all items below must be set.
+Your frontend is at **https://dashkan.net** (or https://idiscount.vercel.app). For notifications when the app is closed, all items below must be set.
 
 ## 1. Vercel environment variables
 
@@ -34,25 +34,26 @@ VAPID_PUBLIC_KEY=<from: npm run generate-vapid>
 VAPID_PRIVATE_KEY=<from: npm run generate-vapid>
 ```
 
-**CORS** must allow `https://idiscount.vercel.app`:
-
-```js
-// In server.js or cors config
-app.use(cors({
-  origin: ['https://idiscount.vercel.app', 'http://localhost:3000'],
-  credentials: true
-}));
-```
+**CORS** allows `https://dashkan.net`, `https://www.dashkan.net`, and `*.vercel.app` (see server.js).
 
 ## 4. Quick test
 
-1. Open https://idiscount.vercel.app/
+1. Open https://dashkan.net/ (or your deployed URL)
 2. Tap **Enable** → **Allow** in the browser prompt
 3. In Admin → Notifications, send a test notification
 4. If you see “(X to notification center)” with X > 0, push is being sent
 5. Close the tab or app, then send another notification – it should appear on the lock screen or notification shade
 
-## 5. If it still fails
+## 5. Mobile "Network Error" – Troubleshooting
+
+If the app works on laptop but shows "Network error" on mobile:
+
+1. **HTTPS only**: `REACT_APP_API_BASE_URL` and `REACT_APP_BACKEND_URL` must use **HTTPS** (not `http://`). Mixed content (HTTPS page + HTTP API) is blocked on mobile.
+2. **Env vars**: In Vercel → Settings → Environment Variables, set both for Production. Redeploy after changing.
+3. **Backend reachable**: Test the API URL directly on mobile (e.g. open `https://YOUR-BACKEND/api/stores` in the mobile browser).
+4. **Slow networks**: The app retries failed requests once after 1.5s and uses a 30s timeout to help with slow mobile connections.
+
+## 6. If it still fails
 
 - Confirm backend URL in Vercel env vars and that the backend is reachable.
 - Open DevTools → Application → Service Workers: check that the service worker is active.

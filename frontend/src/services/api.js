@@ -8,6 +8,7 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  timeout: 30000,
 });
 
 // Add auth token to requests when available
@@ -18,6 +19,25 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Retry failed requests once (helps with flaky mobile networks)
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    const isNetworkError =
+      !error.response &&
+      (error.message === "Network Error" ||
+        error.code === "ERR_NETWORK" ||
+        error.code === "ECONNABORTED");
+    if (isNetworkError && !originalRequest._retry) {
+      originalRequest._retry = true;
+      await new Promise((r) => setTimeout(r, 1500));
+      return api(originalRequest);
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Store API calls
 export const storeAPI = {
