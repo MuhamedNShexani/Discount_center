@@ -473,96 +473,6 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   <NotificationsIcon />
                 </Badge>
               </IconButton>
-              <Menu
-                anchorEl={notificationAnchorEl}
-                open={Boolean(notificationAnchorEl)}
-                onClose={handleNotificationMenuClose}
-                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-                transformOrigin={{ vertical: "top", horizontal: "right" }}
-                PaperProps={{
-                  sx: {
-                    mt: 1.5,
-                    minWidth: 320,
-                    maxWidth: 380,
-                    maxHeight: 400,
-                    backgroundColor:
-                      theme.palette.mode === "dark" ? "#2c3e50" : "#fff",
-                    border: `1px solid ${theme.palette.divider}`,
-                    borderRadius: 2,
-                  },
-                }}
-              >
-                <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: "divider" }}>
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Typography variant="subtitle1" fontWeight={600}>
-                      {t("Notifications")}
-                    </Typography>
-                    {unreadCount > 0 && (
-                      <Button
-                        size="small"
-                        onClick={() => markAllAsRead()}
-                        sx={{ textTransform: "none" }}
-                      >
-                        {t("Mark all read")}
-                      </Button>
-                    )}
-                  </Box>
-                </Box>
-                {pushSupported && pushPermission === "default" && (
-                  <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: "divider" }}>
-                    <Button
-                      fullWidth
-                      variant="outlined"
-                      size="small"
-                      disabled={pushSubscribing}
-                      onClick={() => requestPushPermission()}
-                      sx={{ textTransform: "none" }}
-                    >
-                      {pushSubscribing
-                        ? t("Enabling...")
-                        : t("Enable system notifications")}
-                    </Button>
-                  </Box>
-                )}
-                <Box sx={{ maxHeight: 280, overflow: "auto" }}>
-                  {notifications.length === 0 ? (
-                    <Typography variant="body2" color="text.secondary" sx={{ p: 2, textAlign: "center" }}>
-                      {t("No notifications")}
-                    </Typography>
-                  ) : (
-                    notifications.map((n) => (
-                      <ListItemButton
-                        key={n._id}
-                        onClick={() => {
-                          markAsRead(n._id);
-                        }}
-                        sx={{
-                          py: 1.5,
-                          px: 2,
-                          backgroundColor: n.read ? "transparent" : "action.hover",
-                          borderBottom: "1px solid",
-                          borderColor: "divider",
-                        }}
-                      >
-                        <Box>
-                          <Typography
-                            variant="body2"
-                            fontWeight={n.read ? 400 : 600}
-                            sx={{ mb: 0.25 }}
-                          >
-                            {n.title}
-                          </Typography>
-                          {n.body && (
-                            <Typography variant="caption" color="text.secondary" display="block">
-                              {n.body.length > 80 ? `${n.body.slice(0, 80)}...` : n.body}
-                            </Typography>
-                          )}
-                        </Box>
-                      </ListItemButton>
-                    ))
-                  )}
-                </Box>
-              </Menu>
               {/* Desktop Profile Icon (contains Favourites, Login/Logout, City, Mode) */}
               <IconButton
                 onClick={handleProfileMenuOpen}
@@ -755,6 +665,98 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
           </Box>
         </Toolbar>
       </AppBar>
+
+      {/* Notification Menu - shared by desktop and mobile */}
+      <Menu
+        anchorEl={notificationAnchorEl}
+        open={Boolean(notificationAnchorEl)}
+        onClose={handleNotificationMenuClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
+        PaperProps={{
+          sx: {
+            mt: 1.5,
+            minWidth: 320,
+            maxWidth: 380,
+            maxHeight: 400,
+            backgroundColor:
+              theme.palette.mode === "dark" ? "#2c3e50" : "#fff",
+            border: `1px solid ${theme.palette.divider}`,
+            borderRadius: 2,
+          },
+        }}
+      >
+        <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: "divider" }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <Typography variant="subtitle1" fontWeight={600}>
+              {t("Notifications")}
+            </Typography>
+            {unreadCount > 0 && (
+              <Button
+                size="small"
+                onClick={() => markAllAsRead()}
+                sx={{ textTransform: "none" }}
+              >
+                {t("Mark all read")}
+              </Button>
+            )}
+          </Box>
+        </Box>
+        {pushSupported && pushPermission === "default" && (
+          <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: "divider" }}>
+            <Button
+              fullWidth
+              variant="outlined"
+              size="small"
+              disabled={pushSubscribing}
+              onClick={() => requestPushPermission()}
+              sx={{ textTransform: "none" }}
+            >
+              {pushSubscribing
+                ? t("Enabling...")
+                : t("Enable system notifications")}
+            </Button>
+          </Box>
+        )}
+        <Box sx={{ maxHeight: 280, overflow: "auto" }}>
+          {notifications.length === 0 ? (
+            <Typography variant="body2" color="text.secondary" sx={{ p: 2, textAlign: "center" }}>
+              {t("No notifications")}
+            </Typography>
+          ) : (
+            notifications.map((n) => (
+              <ListItemButton
+                key={n._id}
+                onClick={() => {
+                  markAsRead(n._id);
+                }}
+                sx={{
+                  py: 1.5,
+                  px: 2,
+                  backgroundColor: n.read ? "transparent" : "action.hover",
+                  borderBottom: "1px solid",
+                  borderColor: "divider",
+                }}
+              >
+                <Box>
+                  <Typography
+                    variant="body2"
+                    fontWeight={n.read ? 400 : 600}
+                    sx={{ mb: 0.25 }}
+                  >
+                    {n.title}
+                  </Typography>
+                  {n.body && (
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      {n.body.length > 80 ? `${n.body.slice(0, 80)}...` : n.body}
+                    </Typography>
+                  )}
+                </Box>
+              </ListItemButton>
+            ))
+          )}
+        </Box>
+      </Menu>
 
       {/* Mobile Profile Menu */}
       <Menu
