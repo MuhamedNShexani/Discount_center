@@ -46,7 +46,6 @@ import StarIcon from "@mui/icons-material/Star";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
-import CloseIcon from "@mui/icons-material/Close";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import Loader from "../components/Loader";
 import BrandShowcase from "../components/BrandShowcase"; // Import BrandShowcase
@@ -1930,21 +1929,6 @@ const MainPage = () => {
           },
         }}
       >
-        <DialogTitle sx={{ m: 0, p: 2, pb: 0 }}>
-          <Box
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
-          >
-            <Typography variant="h6" component="span" sx={{ flex: 1 }} />
-            <IconButton
-              onClick={() => setProductDialogOpen(false)}
-              sx={{ position: "absolute", right: 8, top: 8 }}
-            >
-              <CloseIcon />
-            </IconButton>
-          </Box>
-        </DialogTitle>
         <DialogContent sx={{ p: 0 }}>
           {selectedProduct && (
             <Paper elevation={0} sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
@@ -1998,6 +1982,7 @@ const MainPage = () => {
                         variant="h4"
                         component="h1"
                         sx={{
+                          color: "black",
                           fontSize: { xs: "1rem", sm: "1.5rem", md: "1.75rem" },
                           lineHeight: 1.3,
                         }}
@@ -2059,7 +2044,7 @@ const MainPage = () => {
                         />
                         <Typography
                           variant="body1"
-                          color="text.secondary"
+                          color="black"
                           sx={{
                             fontWeight: "bold",
                             fontSize: { xs: "0.875rem", sm: "1rem" },
@@ -2092,7 +2077,7 @@ const MainPage = () => {
                         />
                         <Typography
                           variant="body1"
-                          color="text.secondary"
+                          color="black"
                           sx={{
                             fontWeight: "bold",
                             fontSize: { xs: "0.875rem", sm: "1rem" },
@@ -2124,7 +2109,7 @@ const MainPage = () => {
                         />
                         <Typography
                           variant="body1"
-                          color="text.secondary"
+                          color="black"
                           sx={{
                             fontWeight: "bold",
                             fontSize: { xs: "0.875rem", sm: "1rem" },
@@ -2147,7 +2132,7 @@ const MainPage = () => {
                         />
                         <Typography
                           variant="body1"
-                          color="text.secondary"
+                          color="black"
                           sx={{
                             fontWeight: "bold",
                             fontSize: { xs: "0.875rem", sm: "1rem" },
@@ -2405,6 +2390,20 @@ const MainPage = () => {
                     >
                       {t("View details")}
                     </Button> */}
+
+                    {/* Close Button - at end of popup */}
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      onClick={() => setProductDialogOpen(false)}
+                      sx={{
+                        mt: 2,
+                        py: 1.5,
+                        borderRadius: 2,
+                      }}
+                    >
+                      {t("Close")}
+                    </Button>
                   </Box>
                 </Grid>
               </Grid>

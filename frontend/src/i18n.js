@@ -1451,6 +1451,9 @@ const resources = {
       "All Category Types": "هەموو جۆرە کاڵاکان",
       "All Categories": "All Categories",
       "Select Store Type": "هەڵبژاردنی جۆری دوکان",
+      City: "شار",
+      "You must login to leave reviews. Do you want to login?":
+        "بۆ نووسینى پێشنیار پێویستە خۆت تۆمار بکە ، دەتەوێ خۆت تۆماربکەى ؟",
       "Data Entry": "تۆمارکردنى داتا",
       "Add Category": "زیادکردنی پۆڵێن",
       "Category Name": "ناوی پۆڵێن",

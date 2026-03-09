@@ -268,7 +268,6 @@ const ProductCategory = () => {
   const fetchProductsByCategory = async (categoryId) => {
     try {
       const response = await productAPI.getByCategory(categoryId);
-      console.log("Products received from API:", response.data);
       setProducts(response.data);
       setFilteredProducts(response.data);
     } catch (err) {
@@ -626,191 +625,198 @@ const ProductCategory = () => {
               >
                 <CircularProgress
                   sx={{
-                    color: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+                    color:
+                      theme.palette.mode === "dark" ? "#40916c" : "#34495e",
                   }}
                 />
               </Box>
             ) : (
               <>
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                mb: 1,
-              }}
-            >
-              <Typography
-                variant="h6"
-                sx={{
-                  fontWeight: 700,
-                  color: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
-                }}
-              >
-                {selectedCategory?.name}
-              </Typography>
-              <Button
-                size="small"
-                onClick={() => setMobileViewMode("categories")}
-                sx={{
-                  color: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
-                }}
-              >
-                {t("Back")}
-              </Button>
-            </Box>
-            {/* Category Types Filter */}
-            {categoryTypes.length > 0 && (
-              <Box sx={{ mb: 2 }}>
-                {/* <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
-                  Filter by Category Type
-                </Typography> */}
-                <Box sx={{ display: "flex", gap: 1, overflowX: "auto", pb: 1 }}>
-                  <Chip
-                    label={t("All Types")}
-                    onClick={() => setSelectedCategoryType(null)}
-                    variant={
-                      selectedCategoryType === null ? "filled" : "outlined"
-                    }
-                    color="primary"
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    mb: 1,
+                  }}
+                >
+                  <Typography
+                    variant="h6"
                     sx={{
-                      backgroundColor:
-                        selectedCategoryType === null
-                          ? theme.palette.mode === "dark"
-                            ? "#40916c"
-                            : "#34495e"
-                          : "transparent",
+                      fontWeight: 700,
                       color:
-                        selectedCategoryType === null ? "white" : "inherit",
-                    }}
-                  />
-                  {categoryTypes.map((type) => (
-                    <Chip
-                      key={type._id}
-                      label={type.name}
-                      onClick={() => setSelectedCategoryType(type)}
-                      variant={
-                        selectedCategoryType?._id === type._id
-                          ? "filled"
-                          : "outlined"
-                      }
-                      color="primary"
-                      sx={{
-                        backgroundColor:
-                          selectedCategoryType?._id === type._id
-                            ? theme.palette.mode === "dark"
-                              ? "#40916c"
-                              : "#34495e"
-                            : "transparent",
-                        color:
-                          selectedCategoryType?._id === type._id
-                            ? "white"
-                            : "inherit",
-                      }}
-                    />
-                  ))}
-                </Box>
-              </Box>
-            )}
-
-            {/* Products Grid - enforce 2 columns via CSS grid */}
-            {filteredProducts.length === 0 ? (
-              <Box
-                display="flex"
-                flexDirection="column"
-                alignItems="center"
-                justifyContent="center"
-                minHeight={200}
-                sx={{ color: "text.secondary" }}
-              >
-                <ShoppingCartIcon
-                  sx={{ fontSize: 64, mb: 2, opacity: 0.5 }}
-                />
-                <Typography variant="h6">{t("No products found")}</Typography>
-              </Box>
-            ) : (
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-                gap: 1,
-              }}
-            >
-              {filteredProducts.map((product) => (
-                <Box key={product._id} sx={{ display: "flex" }}>
-                  <Card
-                    onClick={() => handleProductClick(product)}
-                    sx={{
-                      cursor: "pointer",
-                      transition: "transform 0.2s",
-                      "&:hover": { transform: "scale(1.01)" },
-                      display: "flex",
-                      flexDirection: "column",
-                      width: "100%",
-                      height: "100%",
+                        theme.palette.mode === "dark" ? "#40916c" : "#34495e",
                     }}
                   >
-                    {/* Image */}
-                    {product.image ? (
-                      <CardMedia
-                        component="img"
-                        image={`${process.env.REACT_APP_BACKEND_URL}${product.image}`}
-                        alt={product.name || "Product image"}
+                    {selectedCategory?.name}
+                  </Typography>
+                  <Button
+                    size="small"
+                    onClick={() => setMobileViewMode("categories")}
+                    sx={{
+                      color:
+                        theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+                    }}
+                  >
+                    {t("Back")}
+                  </Button>
+                </Box>
+                {/* Category Types Filter */}
+                {categoryTypes.length > 0 && (
+                  <Box sx={{ mb: 2 }}>
+                    {/* <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
+                  Filter by Category Type
+                </Typography> */}
+                    <Box
+                      sx={{ display: "flex", gap: 1, overflowX: "auto", pb: 1 }}
+                    >
+                      <Chip
+                        label={t("All Types")}
+                        onClick={() => setSelectedCategoryType(null)}
+                        variant={
+                          selectedCategoryType === null ? "filled" : "outlined"
+                        }
+                        color="primary"
                         sx={{
-                          height: 130,
-                          objectFit: "contain",
-                          backgroundColor: theme.palette.grey[200],
+                          backgroundColor:
+                            selectedCategoryType === null
+                              ? theme.palette.mode === "dark"
+                                ? "#40916c"
+                                : "#34495e"
+                              : "transparent",
+                          color:
+                            selectedCategoryType === null ? "white" : "inherit",
                         }}
                       />
-                    ) : (
-                      <Box
-                        sx={{
-                          height: 130,
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          backgroundColor: theme.palette.grey[200],
-                        }}
-                      >
-                        <ShoppingCartIcon
+                      {categoryTypes.map((type) => (
+                        <Chip
+                          key={type._id}
+                          label={type.name}
+                          onClick={() => setSelectedCategoryType(type)}
+                          variant={
+                            selectedCategoryType?._id === type._id
+                              ? "filled"
+                              : "outlined"
+                          }
+                          color="primary"
                           sx={{
-                            fontSize: 36,
+                            backgroundColor:
+                              selectedCategoryType?._id === type._id
+                                ? theme.palette.mode === "dark"
+                                  ? "#40916c"
+                                  : "#34495e"
+                                : "transparent",
                             color:
-                              theme.palette.mode === "dark"
-                                ? "#40916c"
-                                : "#34495e",
+                              selectedCategoryType?._id === type._id
+                                ? "white"
+                                : "inherit",
                           }}
                         />
-                      </Box>
-                    )}
+                      ))}
+                    </Box>
+                  </Box>
+                )}
 
-                    {/* Content */}
-                    <CardContent
-                      sx={{
-                        p: 1.5,
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 0.5,
-                        flexGrow: 1,
-                      }}
-                    >
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontWeight: 600,
-                          textAlign: "center",
-                          minHeight: "2.4em",
-                          display: "-webkit-box",
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: "vertical",
-                          overflow: "hidden",
-                        }}
-                      >
-                        {product.name || "\u00A0"}
-                      </Typography>
+                {/* Products Grid - enforce 2 columns via CSS grid */}
+                {filteredProducts.length === 0 ? (
+                  <Box
+                    display="flex"
+                    flexDirection="column"
+                    alignItems="center"
+                    justifyContent="center"
+                    minHeight={200}
+                    sx={{ color: "text.secondary" }}
+                  >
+                    <ShoppingCartIcon
+                      sx={{ fontSize: 64, mb: 2, opacity: 0.5 }}
+                    />
+                    <Typography variant="h6">
+                      {t("No products found")}
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Box
+                    sx={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                      gap: 1,
+                    }}
+                  >
+                    {filteredProducts.map((product) => (
+                      <Box key={product._id} sx={{ display: "flex" }}>
+                        <Card
+                          onClick={() => handleProductClick(product)}
+                          sx={{
+                            cursor: "pointer",
+                            transition: "transform 0.2s",
+                            "&:hover": { transform: "scale(1.01)" },
+                            display: "flex",
+                            flexDirection: "column",
+                            width: "100%",
+                            height: "100%",
+                          }}
+                        >
+                          {/* Image */}
+                          {product.image ? (
+                            <CardMedia
+                              component="img"
+                              image={`${process.env.REACT_APP_BACKEND_URL}${product.image}`}
+                              alt={product.name || "Product image"}
+                              sx={{
+                                height: 130,
+                                objectFit: "contain",
+                                backgroundColor: theme.palette.grey[200],
+                              }}
+                            />
+                          ) : (
+                            <Box
+                              sx={{
+                                height: 130,
+                                display: "flex",
+                                justifyContent: "center",
+                                alignItems: "center",
+                                backgroundColor: theme.palette.grey[200],
+                              }}
+                            >
+                              <ShoppingCartIcon
+                                sx={{
+                                  fontSize: 36,
+                                  color:
+                                    theme.palette.mode === "dark"
+                                      ? "#40916c"
+                                      : "#34495e",
+                                }}
+                              />
+                            </Box>
+                          )}
 
-                      {/* Category type chip or N/A */}
-                      {/* <Box sx={{ display: "flex", justifyContent: "center" }}>
+                          {/* Content */}
+                          <CardContent
+                            sx={{
+                              p: 1.5,
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: 0.5,
+                              flexGrow: 1,
+                            }}
+                          >
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                fontWeight: 600,
+                                textAlign: "center",
+                                minHeight: "2.4em",
+                                display: "-webkit-box",
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: "vertical",
+                                overflow: "hidden",
+                              }}
+                            >
+                              {product.name || "\u00A0"}
+                            </Typography>
+
+                            {/* Category type chip or N/A */}
+                            {/* <Box sx={{ display: "flex", justifyContent: "center" }}>
                         <Chip
                           label={
                             product.categoryTypeId
@@ -830,75 +836,80 @@ const ProductCategory = () => {
                         />
                       </Box> */}
 
-                      {/* Optional meta */}
-                      {product.storeId?.name && (
-                        <Typography
-                          variant="caption"
-                          color="secondarytext."
-                          sx={{ display: "block", textAlign: "center" }}
-                        >
-                          {product.storeId.name}
-                        </Typography>
-                      )}
-
-                      <Box sx={{ mt: "auto" }}>
-                        {/* Price + discount */}
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            gap: 1,
-                          }}
-                        >
-                          {isDiscountValid(product) &&
-                            product.previousPrice &&
-                            product.previousPrice > product.newPrice && (
+                            {/* Optional meta */}
+                            {product.storeId?.name && (
                               <Typography
-                                variant="body2"
-                                sx={{
-                                  textDecoration: "line-through",
-                                  color: "red",
-                                  fontSize: { xs: "0.8rem", sm: "0.9rem" },
-                                  fontWeight: 500,
-                                }}
+                                variant="caption"
+                                color="secondarytext."
+                                sx={{ display: "block", textAlign: "center" }}
                               >
-                                {formatPrice(product.previousPrice)}
+                                {product.storeId.name}
                               </Typography>
                             )}
-                          {product.newPrice && (
-                            <Typography
-                              variant="h6"
-                              sx={{
-                                color: "#52b788",
-                                fontWeight: 700,
-                                fontSize: { xs: "1.1rem", sm: "1.3rem" },
-                              }}
-                            >
-                              {formatPrice(product.newPrice)}
-                            </Typography>
-                          )}
-                          {isDiscountValid(product) && (
-                            <Chip
-                              label={(() => {
-                                const off = calculateDiscount(
-                                  product.previousPrice,
-                                  product.newPrice,
-                                );
-                                return off === null ? t("Discount") : `${off}%`;
-                              })()}
-                              size="small"
-                              sx={{
-                                backgroundColor: "#e53e3e",
-                                color: "white",
-                                height: 18,
-                                fontSize: "0.65rem",
-                              }}
-                            />
-                          )}
-                        </Box>
 
-                        {/* View details button
+                            <Box sx={{ mt: "auto" }}>
+                              {/* Price + discount */}
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  gap: 1,
+                                }}
+                              >
+                                {isDiscountValid(product) &&
+                                  product.previousPrice &&
+                                  product.previousPrice > product.newPrice && (
+                                    <Typography
+                                      variant="body2"
+                                      sx={{
+                                        textDecoration: "line-through",
+                                        color: "red",
+                                        fontSize: {
+                                          xs: "0.8rem",
+                                          sm: "0.9rem",
+                                        },
+                                        fontWeight: 500,
+                                      }}
+                                    >
+                                      {formatPrice(product.previousPrice)}
+                                    </Typography>
+                                  )}
+                                {product.newPrice && (
+                                  <Typography
+                                    variant="h6"
+                                    sx={{
+                                      color: "#52b788",
+                                      fontWeight: 700,
+                                      fontSize: { xs: "1.1rem", sm: "1.3rem" },
+                                    }}
+                                  >
+                                    {formatPrice(product.newPrice)}
+                                  </Typography>
+                                )}
+                                {isDiscountValid(product) && (
+                                  <Chip
+                                    label={(() => {
+                                      const off = calculateDiscount(
+                                        product.previousPrice,
+                                        product.newPrice,
+                                      );
+                                      return off === null
+                                        ? t("Discount")
+                                        : `${off}%`;
+                                    })()}
+                                    size="small"
+                                    sx={{
+                                      backgroundColor: "#e53e3e",
+                                      color: "white",
+                                      height: 18,
+                                      fontSize: "0.65rem",
+                                    }}
+                                  />
+                                )}
+                              </Box>
+
+                              {/* View details button
                         <Button
                           variant="outlined"
                           size="small"
@@ -916,13 +927,13 @@ const ProductCategory = () => {
                         >
                           View details
                         </Button> */}
+                            </Box>
+                          </CardContent>
+                        </Card>
                       </Box>
-                    </CardContent>
-                  </Card>
-                </Box>
-              ))}
-            </Box>
-            )}
+                    ))}
+                  </Box>
+                )}
               </>
             )}
           </>
@@ -1195,7 +1206,8 @@ const ProductCategory = () => {
               >
                 <CircularProgress
                   sx={{
-                    color: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+                    color:
+                      theme.palette.mode === "dark" ? "#40916c" : "#34495e",
                   }}
                 />
               </Box>
@@ -1208,88 +1220,91 @@ const ProductCategory = () => {
                 minHeight={320}
                 sx={{ color: "text.secondary" }}
               >
-                <ShoppingCartIcon
-                  sx={{ fontSize: 80, mb: 2, opacity: 0.5 }}
-                />
+                <ShoppingCartIcon sx={{ fontSize: 80, mb: 2, opacity: 0.5 }} />
                 <Typography variant="h6">{t("No products found")}</Typography>
               </Box>
             ) : (
               <>
-            {/* Products Grid - enforce 2 columns via CSS grid */}
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-                gap: 2,
-              }}
-            >
-              {filteredProducts.map((product) => (
-                <Box key={product._id} sx={{ display: "flex" }}>
-                  <Card
-                    onClick={() => handleProductClick(product)}
-                    sx={{
-                      cursor: "pointer",
-                      transition: "transform 0.2s",
-                      "&:hover": { transform: "scale(1.01)" },
-                      display: "flex",
-                      flexDirection: "column",
-                      width: "100%",
-                      height: "100%",
-                    }}
-                  >
-                    {product.image ? (
-                      <CardMedia
-                        component="img"
-                        image={`${process.env.REACT_APP_BACKEND_URL}${product.image}`}
-                        alt={product.name || "Product image"}
+                {/* Products Grid - enforce 2 columns via CSS grid */}
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+                    gap: 2,
+                  }}
+                >
+                  {filteredProducts.map((product) => (
+                    <Box key={product._id} sx={{ display: "flex" }}>
+                      <Card
+                        onClick={() => handleProductClick(product)}
                         sx={{
-                          height: 180,
-                          objectFit: "contain",
-                          backgroundColor: theme.palette.grey[100],
-                        }}
-                      />
-                    ) : (
-                      <Box
-                        sx={{
-                          height: 180,
+                          cursor: "pointer",
+                          transition: "transform 0.2s",
+                          "&:hover": { transform: "scale(1.01)" },
                           display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          backgroundColor: theme.palette.grey[100],
+                          flexDirection: "column",
+                          width: "100%",
+                          height: "100%",
                         }}
                       >
-                        <ShoppingCartIcon
-                          sx={{ fontSize: 56, color: theme.palette.grey[400] }}
-                        />
-                      </Box>
-                    )}
-                    <CardContent
-                      sx={{
-                        p: 2,
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 0.5,
-                        flexGrow: 1,
-                      }}
-                    >
-                      <Typography
-                        variant="h6"
-                        sx={{
-                          fontWeight: 600,
-                          textAlign: "center",
-                          minHeight: "2.6em",
-                          display: "-webkit-box",
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: "vertical",
-                          overflow: "hidden",
-                          color:
-                            theme.palette.mode === "dark" ? "white" : "black",
-                        }}
-                      >
-                        {product.name || "\u00A0"}
-                      </Typography>
+                        {product.image ? (
+                          <CardMedia
+                            component="img"
+                            image={`${process.env.REACT_APP_BACKEND_URL}${product.image}`}
+                            alt={product.name || "Product image"}
+                            sx={{
+                              height: 180,
+                              objectFit: "contain",
+                              backgroundColor: theme.palette.grey[100],
+                            }}
+                          />
+                        ) : (
+                          <Box
+                            sx={{
+                              height: 180,
+                              display: "flex",
+                              justifyContent: "center",
+                              alignItems: "center",
+                              backgroundColor: theme.palette.grey[100],
+                            }}
+                          >
+                            <ShoppingCartIcon
+                              sx={{
+                                fontSize: 56,
+                                color: theme.palette.grey[400],
+                              }}
+                            />
+                          </Box>
+                        )}
+                        <CardContent
+                          sx={{
+                            p: 2,
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 0.5,
+                            flexGrow: 1,
+                          }}
+                        >
+                          <Typography
+                            variant="h6"
+                            sx={{
+                              fontWeight: 600,
+                              textAlign: "center",
+                              minHeight: "2.6em",
+                              display: "-webkit-box",
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: "vertical",
+                              overflow: "hidden",
+                              color:
+                                theme.palette.mode === "dark"
+                                  ? "white"
+                                  : "black",
+                            }}
+                          >
+                            {product.name || "\u00A0"}
+                          </Typography>
 
-                      {/* {product.categoryTypeId && (
+                          {/* {product.categoryTypeId && (
                         <Box sx={{ display: "flex", justifyContent: "center" }}>
                           <Chip
                             label={getCategoryTypeName(
@@ -1307,77 +1322,79 @@ const ProductCategory = () => {
                         </Box>
                       )} */}
 
-                      {product.storeId?.name && (
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          sx={{ display: "block", textAlign: "center" }}
-                        >
-                          {product.storeId.name}
-                        </Typography>
-                      )}
-
-                      <Box sx={{ mt: "auto" }}>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            gap: 1,
-                          }}
-                        >
-                          {isDiscountValid(product) &&
-                            product.previousPrice &&
-                            product.previousPrice > product.newPrice && (
-                              <Typography
-                                variant="body2"
-                                sx={{
-                                  textDecoration: "line-through",
-                                  color: "red",
-                                  fontSize: { xs: "0.8rem", sm: "0.9rem" },
-                                  fontWeight: 500,
-                                }}
-                              >
-                                {formatPrice(product.previousPrice)}
-                              </Typography>
-                            )}
-                          {product.newPrice && (
+                          {product.storeId?.name && (
                             <Typography
-                              variant="h6"
-                              sx={{
-                                color: "#52b788",
-                                fontWeight: 700,
-                                fontSize: { xs: "1.1rem", sm: "1.3rem" },
-                              }}
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{ display: "block", textAlign: "center" }}
                             >
-                              {formatPrice(product.newPrice)}
+                              {product.storeId.name}
                             </Typography>
                           )}
-                          {isDiscountValid(product) && (
-                            <Chip
-                              label={(() => {
-                                const off = calculateDiscount(
-                                  product.previousPrice,
-                                  product.newPrice,
-                                );
-                                return off === null ? t("Discount") : `${off}%`;
-                              })()}
-                              size="small"
+
+                          <Box sx={{ mt: "auto" }}>
+                            <Box
                               sx={{
-                                backgroundColor: "#e53e3e",
-                                color: "white",
-                                height: 20,
-                                fontSize: "0.7rem",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: 1,
                               }}
-                            />
-                          )}
-                        </Box>
-                      </Box>
-                    </CardContent>
-                  </Card>
+                            >
+                              {isDiscountValid(product) &&
+                                product.previousPrice &&
+                                product.previousPrice > product.newPrice && (
+                                  <Typography
+                                    variant="body2"
+                                    sx={{
+                                      textDecoration: "line-through",
+                                      color: "red",
+                                      fontSize: { xs: "0.8rem", sm: "0.9rem" },
+                                      fontWeight: 500,
+                                    }}
+                                  >
+                                    {formatPrice(product.previousPrice)}
+                                  </Typography>
+                                )}
+                              {product.newPrice && (
+                                <Typography
+                                  variant="h6"
+                                  sx={{
+                                    color: "#52b788",
+                                    fontWeight: 700,
+                                    fontSize: { xs: "1.1rem", sm: "1.3rem" },
+                                  }}
+                                >
+                                  {formatPrice(product.newPrice)}
+                                </Typography>
+                              )}
+                              {isDiscountValid(product) && (
+                                <Chip
+                                  label={(() => {
+                                    const off = calculateDiscount(
+                                      product.previousPrice,
+                                      product.newPrice,
+                                    );
+                                    return off === null
+                                      ? t("Discount")
+                                      : `${off}%`;
+                                  })()}
+                                  size="small"
+                                  sx={{
+                                    backgroundColor: "#e53e3e",
+                                    color: "white",
+                                    height: 20,
+                                    fontSize: "0.7rem",
+                                  }}
+                                />
+                              )}
+                            </Box>
+                          </Box>
+                        </CardContent>
+                      </Card>
+                    </Box>
+                  ))}
                 </Box>
-              ))}
-            </Box>
               </>
             )}
           </>
