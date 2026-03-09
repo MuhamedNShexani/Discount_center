@@ -1,4 +1,4 @@
-const Notification = require("../models/Notification");
+const BroadcastNotification = require("../models/BroadcastNotification");
 const User = require("../models/User");
 const { sendPushToAll } = require("../services/pushService");
 
@@ -27,17 +27,9 @@ const sendNotification = async (req, res) => {
       });
     }
 
-    const users = await User.find({}).select("_id").lean();
-    const notifications = users.map((u) => ({
-      userId: u._id,
-      title: title.trim(),
-      body: (body || "").trim(),
-      type: ["info", "promo", "alert", "general"].includes(type)
-        ? type
-        : "general",
-    }));
+    const userCount = await User.countDocuments();
 
-    if (notifications.length === 0) {
+    if (userCount === 0) {
       return res.json({
         success: true,
         message: "No users to notify",
@@ -46,7 +38,13 @@ const sendNotification = async (req, res) => {
       });
     }
 
-    await Notification.insertMany(notifications);
+    await BroadcastNotification.create({
+      title: title.trim(),
+      body: (body || "").trim(),
+      type: ["info", "promo", "alert", "general"].includes(type)
+        ? type
+        : "general",
+    });
 
     // Send web push to system notification center
     let pushResult = { sent: 0, failed: 0 };
@@ -62,8 +60,8 @@ const sendNotification = async (req, res) => {
 
     res.json({
       success: true,
-      message: `Notification sent to ${notifications.length} users (${pushResult.sent} push)`,
-      count: notifications.length,
+      message: `Notification sent to ${userCount} users (${pushResult.sent} push)`,
+      count: userCount,
       pushSent: pushResult.sent,
     });
   } catch (error) {

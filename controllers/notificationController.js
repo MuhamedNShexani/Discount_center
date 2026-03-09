@@ -1,4 +1,6 @@
-const Notification = require("../models/Notification");
+const BroadcastNotification = require("../models/BroadcastNotification");
+const NotificationRead = require("../models/NotificationRead");
+const UserNotificationState = require("../models/UserNotificationState");
 const User = require("../models/User");
 
 // @desc    Get notifications for current user (auth or deviceId)
@@ -21,19 +23,40 @@ const getNotifications = async (req, res) => {
     }
 
     const limit = parseInt(req.query.limit) || 50;
-    const notifications = await Notification.find({ userId })
-      .sort({ createdAt: -1 })
-      .limit(limit)
-      .lean();
 
-    const unreadCount = await Notification.countDocuments({
-      userId,
-      read: false,
-    });
+    const [userState, notifications, readReceipts] = await Promise.all([
+      UserNotificationState.findOne({ userId }).lean(),
+      BroadcastNotification.find({})
+        .sort({ createdAt: -1 })
+        .limit(limit)
+        .lean(),
+      NotificationRead.find({ userId })
+        .select("notificationId")
+        .lean(),
+    ]);
+
+    const markAllReadBefore = userState?.markAllReadBefore
+      ? new Date(userState.markAllReadBefore)
+      : new Date(0);
+    const readSet = new Set(
+      readReceipts.map((r) => r.notificationId?.toString()).filter(Boolean)
+    );
+
+    const data = notifications.map((n) => ({
+      _id: n._id,
+      title: n.title,
+      body: n.body,
+      type: n.type,
+      read:
+        n.createdAt <= markAllReadBefore || readSet.has(n._id.toString()),
+      createdAt: n.createdAt,
+    }));
+
+    const unreadCount = await countUnread(userId);
 
     res.json({
       success: true,
-      data: notifications,
+      data,
       unreadCount,
     });
   } catch (error) {
@@ -41,6 +64,32 @@ const getNotifications = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+async function countUnread(userId) {
+  const [userState, readNotificationIds] = await Promise.all([
+    UserNotificationState.findOne({ userId }).lean(),
+    NotificationRead.find({ userId }).select("notificationId").lean(),
+  ]);
+
+  const markAllReadBefore = userState?.markAllReadBefore
+    ? new Date(userState.markAllReadBefore)
+    : new Date(0);
+  const readSet = new Set(
+    readNotificationIds.map((r) => r.notificationId?.toString()).filter(Boolean)
+  );
+
+  const candidates = await BroadcastNotification.find({
+    createdAt: { $gt: markAllReadBefore },
+  })
+    .select("_id")
+    .lean();
+
+  const unreadCount = candidates.filter(
+    (n) => !readSet.has(n._id.toString())
+  ).length;
+
+  return unreadCount;
+}
 
 // @desc    Mark notification as read
 // @route   PUT /api/notifications/:id/read
@@ -61,11 +110,11 @@ const markAsRead = async (req, res) => {
       });
     }
 
-    const notification = await Notification.findOneAndUpdate(
-      { _id: req.params.id, userId },
-      { read: true },
-      { new: true }
-    );
+    const notificationId = req.params.id;
+
+    const notification = await BroadcastNotification.findById(
+      notificationId
+    ).lean();
 
     if (!notification) {
       return res.status(404).json({
@@ -74,7 +123,23 @@ const markAsRead = async (req, res) => {
       });
     }
 
-    res.json({ success: true, data: notification });
+    await NotificationRead.findOneAndUpdate(
+      { userId, notificationId },
+      { userId, notificationId, readAt: new Date() },
+      { upsert: true, new: true }
+    );
+
+    res.json({
+      success: true,
+      data: {
+        _id: notification._id,
+        title: notification.title,
+        body: notification.body,
+        type: notification.type,
+        read: true,
+        createdAt: notification.createdAt,
+      },
+    });
   } catch (error) {
     console.error("Mark read error:", error);
     res.status(500).json({ success: false, message: "Server error" });
@@ -100,7 +165,18 @@ const markAllAsRead = async (req, res) => {
       });
     }
 
-    await Notification.updateMany({ userId }, { read: true });
+    const now = new Date();
+
+    await UserNotificationState.findOneAndUpdate(
+      { userId },
+      { $max: { markAllReadBefore: now } },
+      {
+        upsert: true,
+        new: true,
+        setDefaultsOnInsert: true,
+      }
+    );
+
     res.json({ success: true });
   } catch (error) {
     console.error("Mark all read error:", error);

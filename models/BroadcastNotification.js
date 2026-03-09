@@ -1,13 +1,7 @@
 const mongoose = require("mongoose");
 
-const notificationSchema = new mongoose.Schema(
+const broadcastNotificationSchema = new mongoose.Schema(
   {
-    userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-      index: true,
-    },
     title: {
       type: String,
       required: true,
@@ -24,11 +18,6 @@ const notificationSchema = new mongoose.Schema(
       enum: ["info", "promo", "alert", "general"],
       default: "general",
     },
-    read: {
-      type: Boolean,
-      default: false,
-      index: true,
-    },
     createdAt: {
       type: Date,
       default: Date.now,
@@ -38,7 +27,9 @@ const notificationSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Compound index for efficient user notifications queries
-notificationSchema.index({ userId: 1, createdAt: -1 });
+broadcastNotificationSchema.index({ createdAt: -1 });
 
-module.exports = mongoose.model("Notification", notificationSchema);
+module.exports = mongoose.model(
+  "BroadcastNotification",
+  broadcastNotificationSchema
+);
