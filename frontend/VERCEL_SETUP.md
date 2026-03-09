@@ -44,7 +44,16 @@ VAPID_PRIVATE_KEY=<from: npm run generate-vapid>
 4. If you see “(X to notification center)” with X > 0, push is being sent
 5. Close the tab or app, then send another notification – it should appear on the lock screen or notification shade
 
-## 5. Mobile "Network Error" – Troubleshooting
+## 5. dashkan.net not working (but idiscount.vercel.app works)
+
+If the app works on **idiscount.vercel.app** but fails on **dashkan.net**:
+
+1. **Same Vercel project**: In Vercel → Your Project → **Settings → Domains**, confirm both `idiscount.vercel.app` and `dashkan.net` are on the **same project**. If dashkan.net is on a different project, that project has its own build and env vars.
+2. **Env vars for the dashkan.net project**: If dashkan.net is on a different project, go to that project → **Settings → Environment Variables** and add `REACT_APP_API_BASE_URL` and `REACT_APP_BACKEND_URL` (same values as the working project). Then **Redeploy**.
+3. **Redeploy**: After adding the domain or env vars, trigger a new deployment (Deployments → ⋮ → Redeploy).
+4. **Backend CORS**: Your backend must allow `https://dashkan.net` (already in server.js). Redeploy the backend if you recently added the custom domain.
+
+## 6. Mobile "Network Error" – Troubleshooting
 
 If the app works on laptop but shows "Network error" on mobile:
 
@@ -53,7 +62,7 @@ If the app works on laptop but shows "Network error" on mobile:
 3. **Backend reachable**: Test the API URL directly on mobile (e.g. open `https://YOUR-BACKEND/api/stores` in the mobile browser).
 4. **Slow networks**: The app retries failed requests once after 1.5s and uses a 30s timeout to help with slow mobile connections.
 
-## 6. If it still fails
+## 7. If it still fails
 
 - Confirm backend URL in Vercel env vars and that the backend is reachable.
 - Open DevTools → Application → Service Workers: check that the service worker is active.
