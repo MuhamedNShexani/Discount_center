@@ -360,6 +360,13 @@ const resources = {
       "Search by store name...": "Search by store name...",
       "Search by brand name...": "Search by brand name...",
 
+      // City names
+      "city.Erbil": "Erbil",
+      "city.Sulaimani": "Sulaimani",
+      "city.Duhok": "Duhok",
+      "city.Kerkuk": "Kirkuk",
+      "city.Halabja": "Halabja",
+
       // Privacy Policy
       "Privacy Policy": "Privacy Policy",
       "Last updated": "Last updated",
@@ -980,6 +987,13 @@ const resources = {
       "Search by store name...": "البحث باسم المتجر...",
       "Search by brand name...": "البحث باسم العلامة...",
 
+      // City names
+      "city.Erbil": "أربيل",
+      "city.Sulaimani": "السليمانية",
+      "city.Duhok": "دهوك",
+      "city.Kerkuk": "كركوك",
+      "city.Halabja": "حلبجة",
+
       // Privacy Policy
       "Privacy Policy": "سياسة الخصوصية",
 
@@ -1487,6 +1501,13 @@ const resources = {
       "To date": "بۆ ڕێکەوت",
       "Search by store name...": "گەڕان بە ناوی فرۆشگا...",
       "Search by brand name...": "گەڕان بە ناوی بڕاند...",
+
+      // City names
+      "city.Erbil": "هەولێر",
+      "city.Sulaimani": "سلێمانی",
+      "city.Duhok": "دهۆک",
+      "city.Kerkuk": "کەرکووک",
+      "city.Halabja": "هەڵەبجە",
 
       // Privacy Policy
       "Privacy Policy": "سیاسەتی پاراستنی نهێنی",

@@ -1,17 +1,28 @@
-import React, { createContext, useState, useContext } from "react";
+import React, { createContext, useState, useContext, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 const CityFilterContext = createContext(null);
 
+const CITY_DATA = [
+  { value: "Erbil", flag: "🏛️" },
+  { value: "Sulaimani", flag: "🏔️" },
+  { value: "Duhok", flag: "🏞️" },
+  { value: "Kerkuk", flag: "🛢️" },
+  { value: "Halabja", flag: "🌸" },
+];
+
 export const CityFilterProvider = ({ children }) => {
   const [selectedCity, setSelectedCity] = useState("Erbil");
+  const { t, i18n } = useTranslation();
 
-  const cities = [
-    { value: "Erbil", label: "Erbil", flag: "🏛️" },
-    { value: "Sulaimani", label: "Sulaimani", flag: "🏔️" },
-    { value: "Duhok", label: "Duhok", flag: "🏞️" },
-    { value: "Kerkuk", label: "Kerkuk", flag: "🛢️" },
-    { value: "Halabja", label: "Halabja", flag: "🌸" },
-  ];
+  const cities = useMemo(
+    () =>
+      CITY_DATA.map((city) => ({
+        ...city,
+        label: t(`city.${city.value}`),
+      })),
+    [t, i18n.language]
+  );
 
   const changeCity = (city) => {
     setSelectedCity(city);
@@ -22,7 +33,7 @@ export const CityFilterProvider = ({ children }) => {
   // Load city from localStorage on mount
   React.useEffect(() => {
     const savedCity = localStorage.getItem("selectedCity");
-    if (savedCity && cities.some((city) => city.value === savedCity)) {
+    if (savedCity && CITY_DATA.some((city) => city.value === savedCity)) {
       setSelectedCity(savedCity);
     }
   }, []);

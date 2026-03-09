@@ -3751,11 +3751,11 @@ const DataEntryForm = () => {
                       onChange={handleStoreFormChange}
                       label={t("Store City")}
                     >
-                      <MenuItem value="Erbil">🏛️ Erbil</MenuItem>
-                      <MenuItem value="Sulaimani">🏔️ Sulaimani</MenuItem>
-                      <MenuItem value="Duhok">🏞️ Duhok</MenuItem>
-                      <MenuItem value="Kerkuk">🛢️ Kerkuk</MenuItem>
-                      <MenuItem value="Halabja">🌸 Halabja</MenuItem>
+                      <MenuItem value="Erbil">🏛️ {t("city.Erbil")}</MenuItem>
+                      <MenuItem value="Sulaimani">🏔️ {t("city.Sulaimani")}</MenuItem>
+                      <MenuItem value="Duhok">🏞️ {t("city.Duhok")}</MenuItem>
+                      <MenuItem value="Kerkuk">🛢️ {t("city.Kerkuk")}</MenuItem>
+                      <MenuItem value="Halabja">🌸 {t("city.Halabja")}</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
@@ -5469,11 +5469,11 @@ const DataEntryForm = () => {
                     onChange={handleEditFormChange}
                     label={t("Store City")}
                   >
-                    <MenuItem value="Erbil">🏛️ Erbil</MenuItem>
-                    <MenuItem value="Sulaimani">🏔️ Sulaimani</MenuItem>
-                    <MenuItem value="Duhok">🏞️ Duhok</MenuItem>
-                    <MenuItem value="Kerkuk">🛢️ Kerkuk</MenuItem>
-                    <MenuItem value="Halabja">🌸 Halabja</MenuItem>
+                    <MenuItem value="Erbil">🏛️ {t("city.Erbil")}</MenuItem>
+                    <MenuItem value="Sulaimani">🏔️ {t("city.Sulaimani")}</MenuItem>
+                    <MenuItem value="Duhok">🏞️ {t("city.Duhok")}</MenuItem>
+                    <MenuItem value="Kerkuk">🛢️ {t("city.Kerkuk")}</MenuItem>
+                    <MenuItem value="Halabja">🌸 {t("city.Halabja")}</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>

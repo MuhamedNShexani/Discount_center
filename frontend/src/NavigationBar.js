@@ -484,7 +484,12 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                     <MenuItem value="en">🇺🇸 EN</MenuItem>
                     <MenuItem value="ar">🇸🇦 AR</MenuItem>
                     <MenuItem value="ku">
-                      <Box component="span" display="flex" alignItems="center" gap={1}>
+                      <Box
+                        component="span"
+                        display="flex"
+                        alignItems="center"
+                        gap={1}
+                      >
                         <img
                           src={kurdishFlag}
                           alt="Kurdish"
@@ -866,7 +871,12 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   whiteSpace: "nowrap",
                 }}
               >
-                <Box component="span" display="flex" alignItems="center" gap={0.5}>
+                <Box
+                  component="span"
+                  display="flex"
+                  alignItems="center"
+                  gap={0.5}
+                >
                   <img
                     src={kurdishFlag}
                     alt=""
