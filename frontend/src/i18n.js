@@ -461,6 +461,13 @@ const resources = {
       "Notifications on": "Notifications on",
       "Notifications off": "Notifications off",
       "Notifications are off": "Notifications are off",
+      "Notification center": "Notification center",
+      On: "On",
+      Off: "Off",
+      "Notifications blocked. Enable them in your browser settings.":
+        "Notifications blocked. Enable them in your browser settings.",
+      "Could not enable notifications. Try again.":
+        "Could not enable notifications. Try again.",
       "Mark all read": "Mark all read",
       Title: "Title",
       Message: "Message",
@@ -1042,6 +1049,13 @@ const resources = {
       "Notifications on": "الإشعارات مفعلة",
       "Notifications off": "الإشعارات معطلة",
       "Notifications are off": "الإشعارات معطلة",
+      "Notification center": "مركز الإشعارات",
+      On: "تفعيل",
+      Off: "إيقاف",
+      "Notifications blocked. Enable them in your browser settings.":
+        "الإشعارات محظورة. فعّلها من إعدادات المتصفح.",
+      "Could not enable notifications. Try again.":
+        "تعذر تفعيل الإشعارات. حاول مرة أخرى.",
       "Mark all read": "تحديد الكل كمقروء",
       Title: "العنوان",
       Message: "الرسالة",
@@ -1594,6 +1608,13 @@ const resources = {
       "Notifications on": "ئاگادارییەکان چالاکن",
       "Notifications off": "ئاگادارییەکان ناچالاکن",
       "Notifications are off": "ئاگادارییەکان ناچالاکن",
+      "Notification center": "ناوەندی ئاگاداری",
+      On: "چالاک",
+      Off: "ناچالاک",
+      "Notifications blocked. Enable them in your browser settings.":
+        "ئاگادارییەکان ڕێگەپێدراون. لە ڕێکخستنەکانی وێبگەڕەکەدا چالاکی بکە.",
+      "Could not enable notifications. Try again.":
+        "چالاککردنی ئاگادارییەکان سەرکەوتوو نەبوو. دووبارە هەوڵبدەرەوە.",
       "Mark all read": "هەموویان وەک خوێنراوەتەوە نیشانە بکە",
       Title: "ناونیشان",
       Message: "نامە",

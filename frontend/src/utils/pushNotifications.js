@@ -35,6 +35,24 @@ export const subscribePush = async (vapidPublicKey) => {
   return sub.toJSON();
 };
 
+/**
+ * Unsubscribe from push notifications - stops receiving in notification center
+ */
+export const unsubscribePush = async () => {
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (sub) {
+      await sub.unsubscribe();
+      return true;
+    }
+    return false;
+  } catch (e) {
+    console.warn("Unsubscribe push error:", e);
+    return false;
+  }
+};
+
 function urlBase64ToUint8Array(base64String) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");

@@ -20,12 +20,14 @@ export default function NotificationEnableBanner() {
     pushPermission,
     pushSubscribing,
     requestPushPermission,
+    pushEnabled,
   } = useNotifications();
   const [open, setOpen] = useState(false);
   const [showIOSHint, setShowIOSHint] = useState(false);
 
   useEffect(() => {
     if (!pushSupported) return;
+    if (!pushEnabled) return;
     if (pushPermission === "denied") return;
     if (sessionStorage.getItem(DISMISS_KEY)) return;
 
@@ -35,7 +37,7 @@ export default function NotificationEnableBanner() {
     if (isIOS() && !isStandalone()) {
       setShowIOSHint(true);
     }
-  }, [pushSupported, pushPermission]);
+  }, [pushSupported, pushPermission, pushEnabled]);
 
   const handleEnable = async () => {
     const ok = await requestPushPermission();

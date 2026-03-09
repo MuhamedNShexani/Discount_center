@@ -11,16 +11,26 @@ import { getDeviceId } from "../utils/deviceId";
 import {
   registerServiceWorker,
   subscribePush,
+  unsubscribePush,
   isPushSupported,
   getPermissionState,
 } from "../utils/pushNotifications";
 
-const NOTIFICATIONS_ENABLED_KEY = "notifications-enabled";
+const PUSH_ENABLED_KEY = "push-enabled";
+const LEGACY_KEY = "notifications-enabled";
 
-const getStoredNotificationsEnabled = () => {
+const getStoredPushEnabled = () => {
   try {
-    const stored = localStorage.getItem(NOTIFICATIONS_ENABLED_KEY);
-    return stored === null || stored === "true";
+    const stored = localStorage.getItem(PUSH_ENABLED_KEY);
+    if (stored !== null) return stored === "true";
+    const legacy = localStorage.getItem(LEGACY_KEY);
+    if (legacy !== null) {
+      const val = legacy === "true";
+      localStorage.setItem(PUSH_ENABLED_KEY, legacy);
+      localStorage.removeItem(LEGACY_KEY);
+      return val;
+    }
+    return true;
   } catch {
     return true;
   }
@@ -31,24 +41,15 @@ const NotificationContext = createContext(null);
 export const NotificationProvider = ({ children }) => {
   const { isAuthenticated } = useAuth();
   const [notifications, setNotifications] = useState([]);
-  const [notificationsEnabled, setNotificationsEnabledState] = useState(
-    getStoredNotificationsEnabled
-  );
-
-  const setNotificationsEnabled = useCallback((enabled) => {
-    setNotificationsEnabledState(enabled);
-    try {
-      localStorage.setItem(NOTIFICATIONS_ENABLED_KEY, String(enabled));
-    } catch {}
-  }, []);
+  const [pushEnabled, setPushEnabledState] = useState(getStoredPushEnabled);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [pushSupported, setPushSupported] = useState(false);
   const [pushPermission, setPushPermission] = useState("default");
   const [pushSubscribing, setPushSubscribing] = useState(false);
+  const [pushEnableError, setPushEnableError] = useState(null);
 
   const fetchNotifications = useCallback(async () => {
-    if (!notificationsEnabled) return;
     setLoading(true);
     try {
       const deviceId = isAuthenticated ? null : getDeviceId();
@@ -62,7 +63,7 @@ export const NotificationProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, notificationsEnabled]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     fetchNotifications();
@@ -71,7 +72,7 @@ export const NotificationProvider = ({ children }) => {
   }, [fetchNotifications]);
 
   const ensurePushSubscription = useCallback(async () => {
-    if (!isPushSupported() || getPermissionState() !== "granted") return;
+    if (!pushEnabled || !isPushSupported() || getPermissionState() !== "granted") return;
     try {
       const res = await notificationAPI.getVapidPublic();
       if (!res.data?.success || !res.data?.vapidPublicKey) return;
@@ -84,29 +85,34 @@ export const NotificationProvider = ({ children }) => {
     } catch (e) {
       console.warn("Ensure push subscription:", e);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, pushEnabled]);
 
   useEffect(() => {
     try {
       setPushSupported(isPushSupported());
       setPushPermission(getPermissionState());
-      registerServiceWorker().then((reg) => {
-        if (reg && getPermissionState() === "granted") {
-          ensurePushSubscription();
+      registerServiceWorker().then(async (reg) => {
+        if (!reg) return;
+        const perm = getPermissionState();
+        if (pushEnabled && perm === "granted") {
+          await ensurePushSubscription();
+        } else if (!pushEnabled && perm === "granted") {
+          await unsubscribePush();
         }
       }).catch(() => {});
     } catch (e) {
       setPushSupported(false);
       setPushPermission("denied");
     }
-  }, [ensurePushSubscription]);
+  }, [ensurePushSubscription, pushEnabled]);
 
-  const enablePushNotifications = useCallback(async () => {
-    if (!pushSupported || pushPermission === "granted") return;
+  const subscribeToPush = useCallback(async () => {
+    if (!isPushSupported() || getPermissionState() !== "granted") return false;
     setPushSubscribing(true);
     try {
+      await registerServiceWorker();
       const res = await notificationAPI.getVapidPublic();
-      if (!res.data.success || !res.data.vapidPublicKey) {
+      if (!res.data?.success || !res.data?.vapidPublicKey) {
         throw new Error("Push not configured");
       }
       const subscription = await subscribePush(res.data.vapidPublicKey);
@@ -116,28 +122,88 @@ export const NotificationProvider = ({ children }) => {
       return true;
     } catch (err) {
       console.error("Push subscribe error:", err);
-      if (err.name === "NotAllowedError") {
-        setPushPermission("denied");
-      }
       return false;
     } finally {
       setPushSubscribing(false);
     }
-  }, [pushSupported, pushPermission, isAuthenticated]);
+  }, [isAuthenticated]);
 
-  const requestPushPermission = useCallback(async () => {
-    if (!pushSupported || pushPermission !== "default") return false;
+  const enablePushNotifications = useCallback(async () => {
+    if (!isPushSupported()) return false;
+    const perm = getPermissionState();
+    if (perm === "granted") {
+      return await subscribeToPush();
+    }
+    if (perm === "denied") return false;
+    setPushSubscribing(true);
     try {
       const permission = await Notification.requestPermission();
       setPushPermission(permission);
       if (permission === "granted") {
-        return await enablePushNotifications();
+        return await subscribeToPush();
+      }
+      if (permission === "denied") {
+        setPushPermission("denied");
+      }
+      return false;
+    } catch (e) {
+      console.error("Request permission error:", e);
+      setPushPermission("denied");
+      return false;
+    } finally {
+      setPushSubscribing(false);
+    }
+  }, [subscribeToPush]);
+
+  const requestPushPermission = useCallback(async () => {
+    if (!isPushSupported() || getPermissionState() !== "default") return false;
+    try {
+      const permission = await Notification.requestPermission();
+      setPushPermission(permission);
+      if (permission === "granted") {
+        const ok = await enablePushNotifications();
+        if (ok) {
+          setPushEnabledState(true);
+          try {
+            localStorage.setItem(PUSH_ENABLED_KEY, "true");
+          } catch {}
+        }
+        return ok;
       }
     } catch (e) {
       setPushPermission("denied");
     }
     return false;
-  }, [pushSupported, pushPermission, enablePushNotifications]);
+  }, [enablePushNotifications]);
+
+  const setPushEnabled = useCallback(async (enabled) => {
+    setPushEnableError(null);
+    if (enabled) {
+      if (getPermissionState() === "denied") {
+        setPushEnableError("denied");
+        return;
+      }
+      setPushEnabledState(true);
+      const ok = await enablePushNotifications();
+      if (!ok) {
+        setPushEnabledState(false);
+        try {
+          localStorage.setItem(PUSH_ENABLED_KEY, "false");
+        } catch {}
+        setPushEnableError("failed");
+      } else {
+        try {
+          localStorage.setItem(PUSH_ENABLED_KEY, "true");
+        } catch {}
+      }
+    } else {
+      await unsubscribePush();
+      setPushEnabledState(false);
+      try {
+        localStorage.setItem(PUSH_ENABLED_KEY, "false");
+      } catch {}
+    }
+  }, [enablePushNotifications]);
 
   const markAsRead = useCallback(
     async (id) => {
@@ -179,8 +245,10 @@ export const NotificationProvider = ({ children }) => {
         pushPermission,
         pushSubscribing,
         requestPushPermission,
-        notificationsEnabled,
-        setNotificationsEnabled,
+        pushEnabled,
+        setPushEnabled,
+        pushEnableError,
+        setPushEnableError,
       }}
     >
       {children}

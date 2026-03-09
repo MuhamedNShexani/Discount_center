@@ -21,6 +21,8 @@ import {
   ListItemButton,
   Switch,
   FormControlLabel,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import {
   Home as HomeIcon,
@@ -69,8 +71,10 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
     pushPermission,
     pushSubscribing,
     requestPushPermission,
-    notificationsEnabled,
-    setNotificationsEnabled,
+    pushEnabled,
+    setPushEnabled,
+    pushEnableError,
+    setPushEnableError,
   } = useNotifications();
   const isSmUp = useMediaQuery(theme.breakpoints.up("sm"));
   const lang = i18n.language;
@@ -476,7 +480,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   },
                 }}
               >
-                <Badge badgeContent={notificationsEnabled ? unreadCount : 0} color="error">
+                <Badge badgeContent={unreadCount} color="error">
                   <NotificationsIcon />
                 </Badge>
               </IconButton>
@@ -604,7 +608,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                     },
                   }}
                 >
-                  <Badge badgeContent={notificationsEnabled ? unreadCount : 0} color="error">
+                  <Badge badgeContent={unreadCount} color="error">
                     <NotificationsIcon />
                   </Badge>
                 </IconButton>
@@ -659,7 +663,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
             <Typography variant="subtitle1" fontWeight={600}>
               {t("Notifications")}
             </Typography>
-            {unreadCount > 0 && notificationsEnabled && (
+            {unreadCount > 0 && (
               <Button
                 size="small"
                 onClick={() => markAllAsRead()}
@@ -670,24 +674,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
             )}
           </Box>
         </Box>
-        <Box sx={{ px: 2, py: 1, borderBottom: 1, borderColor: "divider" }}>
-          <FormControlLabel
-            control={
-              <Switch
-                size="small"
-                checked={notificationsEnabled}
-                onChange={(e) => setNotificationsEnabled(e.target.checked)}
-                color="primary"
-              />
-            }
-            label={
-              <Typography variant="body2">
-                {notificationsEnabled ? t("Notifications on") : t("Notifications off")}
-              </Typography>
-            }
-          />
-        </Box>
-        {notificationsEnabled && pushSupported && pushPermission === "default" && (
+        {pushSupported && pushPermission === "default" && (
           <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: "divider" }}>
             <Button
               fullWidth
@@ -704,11 +691,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
           </Box>
         )}
         <Box sx={{ maxHeight: 280, overflow: "auto" }}>
-          {!notificationsEnabled ? (
-            <Typography variant="body2" color="text.secondary" sx={{ p: 2, textAlign: "center" }}>
-              {t("Notifications are off")}
-            </Typography>
-          ) : notifications.length === 0 ? (
+          {notifications.length === 0 ? (
             <Typography variant="body2" color="text.secondary" sx={{ p: 2, textAlign: "center" }}>
               {t("No notifications")}
             </Typography>
@@ -995,6 +978,45 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
             }}
           />
         </MenuItem>
+
+        {/* Push / Notification Center On/Off - in profile */}
+        {pushSupported && (
+          <MenuItem
+            component="div"
+            disableRipple
+            onClick={(e) => e.stopPropagation()}
+            sx={{
+              py: 1.5,
+              px: 2,
+              "&:hover": {
+                backgroundColor:
+                  theme.palette.mode === "dark"
+                    ? "rgba(255,255,255,0.08)"
+                    : "rgba(0,0,0,0.04)",
+              },
+            }}
+          >
+            <ListItemIcon>
+              <NotificationsIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText
+              primary={t("Notification center")}
+              secondary={pushEnabled ? t("On") : t("Off")}
+              primaryTypographyProps={{
+                fontSize: "0.875rem",
+                fontWeight: 500,
+              }}
+              secondaryTypographyProps={{ fontSize: "0.75rem", color: "text.secondary" }}
+            />
+            <Switch
+              size="small"
+              checked={pushEnabled}
+              disabled={pushSubscribing}
+              onChange={(e) => setPushEnabled(e.target.checked)}
+              color="primary"
+            />
+          </MenuItem>
+        )}
 
         <Divider />
 
@@ -1320,6 +1342,24 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
           </>
         )}
       </Menu>
+
+      {/* Push enable error snackbar */}
+      <Snackbar
+        open={!!pushEnableError}
+        autoHideDuration={5000}
+        onClose={() => setPushEnableError(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setPushEnableError(null)}
+          severity="warning"
+          sx={{ width: "100%" }}
+        >
+          {pushEnableError === "denied"
+            ? t("Notifications blocked. Enable them in your browser settings.")
+            : t("Could not enable notifications. Try again.")}
+        </Alert>
+      </Snackbar>
 
       {/* Stores Dropdown removed */}
     </>
