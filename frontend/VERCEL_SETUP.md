@@ -15,6 +15,7 @@ Replace `YOUR-BACKEND-URL` with your real backend (e.g. `https://your-app.onrend
 
 - If these are missing, the app will call `http://localhost:5000/api`, which fails in production.
 - After changing env vars, trigger a new deployment (Redeploy).
+- **dashkan.net on Hostgator:** Uses manual build + upload. See [HOSTGATOR_BUILD.md](HOSTGATOR_BUILD.md) – you must use `.env.production` with production URLs when building.
 
 ## 2. Backend deployment
 

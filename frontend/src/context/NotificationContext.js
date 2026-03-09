@@ -91,15 +91,17 @@ export const NotificationProvider = ({ children }) => {
     try {
       setPushSupported(isPushSupported());
       setPushPermission(getPermissionState());
-      registerServiceWorker().then(async (reg) => {
-        if (!reg) return;
-        const perm = getPermissionState();
-        if (pushEnabled && perm === "granted") {
-          await ensurePushSubscription();
-        } else if (!pushEnabled && perm === "granted") {
-          await unsubscribePush();
-        }
-      }).catch(() => {});
+      registerServiceWorker()
+        .then(async (reg) => {
+          if (!reg) return;
+          const perm = getPermissionState();
+          if (pushEnabled && perm === "granted") {
+            await ensurePushSubscription();
+          } else if (!pushEnabled && perm === "granted") {
+            await unsubscribePush();
+          }
+        })
+        .catch(() => {});
     } catch (e) {
       setPushSupported(false);
       setPushPermission("denied");
