@@ -36,17 +36,22 @@ import {
   Settings as SettingsIcon,
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
+  LocationOn as LocationOnIcon,
+  PrivacyTip as PrivacyTipIcon,
+  ContactSupport as ContactSupportIcon,
 } from "@mui/icons-material";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "./context/AuthContext";
 import { useCityFilter } from "./context/CityFilterContext";
+import { useAppSettings } from "./context/AppSettingsContext";
 
 const NavigationBar = ({ darkMode, setDarkMode }) => {
   const theme = useTheme();
   const { t, i18n } = useTranslation();
   const { user, logout } = useAuth();
   const { selectedCity, changeCity, cities } = useCityFilter();
+  const { openWhatsApp } = useAppSettings();
   const isSmUp = useMediaQuery(theme.breakpoints.up("sm"));
   const lang = i18n.language;
   const location = useLocation();
@@ -294,56 +299,59 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                 {t("Stores")}
               </Button>
 
-              {/* Remaining nav items (Brands, Gifts, Admin) */}
-              {navItems.slice(2).map((item) => (
-                <Button
-                  key={item.path}
-                  component={Link}
-                  to={item.path}
-                  startIcon={item.icon}
-                  sx={{
-                    color: "white",
-                    textTransform: "none",
-                    fontSize: "1.3rem",
-                    px: 2,
-                    py: 1,
-                    borderRadius: 2,
-                    minWidth: "auto",
-                    position: "relative",
-                    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                    backgroundColor:
-                      location.pathname === item.path
-                        ? "rgba(255,255,255,0.2)"
-                        : "transparent",
-                    backdropFilter:
-                      location.pathname === item.path ? "blur(10px)" : "none",
-                    border:
-                      location.pathname === item.path
-                        ? "1px solid rgba(255,255,255,0.3)"
-                        : "1px solid transparent",
-                    "&:hover": {
-                      backgroundColor: "rgba(255,255,255,0.15)",
-                      backdropFilter: "blur(10px)",
-                      transform: "translateY(-2px)",
-                      boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
-                    },
-                    "&::after": {
-                      content: '""',
-                      position: "absolute",
-                      bottom: -2,
-                      left: "50%",
-                      transform: "translateX(-50%)",
-                      width: location.pathname === item.path ? "80%" : "0%",
-                      height: 2,
-                      backgroundColor: "white",
-                      borderRadius: 1,
-                      transition: "width 0.3s ease",
-                    },
-                  }}
-                >
-                  {item.name}
-                </Button>
-              ))}
+              {/* Remaining nav items (Brands, Gifts, Admin) - exclude Favourites (moved to profile) */}
+              {navItems
+                .slice(2)
+                .filter((item) => item.path !== "/favourites")
+                .map((item) => (
+                  <Button
+                    key={item.path}
+                    component={Link}
+                    to={item.path}
+                    startIcon={item.icon}
+                    sx={{
+                      color: "white",
+                      textTransform: "none",
+                      fontSize: "1.3rem",
+                      px: 2,
+                      py: 1,
+                      borderRadius: 2,
+                      minWidth: "auto",
+                      position: "relative",
+                      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                      backgroundColor:
+                        location.pathname === item.path
+                          ? "rgba(255,255,255,0.2)"
+                          : "transparent",
+                      backdropFilter:
+                        location.pathname === item.path ? "blur(10px)" : "none",
+                      border:
+                        location.pathname === item.path
+                          ? "1px solid rgba(255,255,255,0.3)"
+                          : "1px solid transparent",
+                      "&:hover": {
+                        backgroundColor: "rgba(255,255,255,0.15)",
+                        backdropFilter: "blur(10px)",
+                        transform: "translateY(-2px)",
+                        boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+                      },
+                      "&::after": {
+                        content: '""',
+                        position: "absolute",
+                        bottom: -2,
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        width: location.pathname === item.path ? "80%" : "0%",
+                        height: 2,
+                        backgroundColor: "white",
+                        borderRadius: 1,
+                        transition: "width 0.3s ease",
+                      },
+                    }}
+                  >
+                    {item.name}
+                  </Button>
+                ))}
               {/* Admin dropdown (Data Entry + Dashboard) - for admin users only */}
               {isAdmin && (
                 <>
@@ -359,14 +367,12 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                       py: 1,
                       borderRadius: 2,
                       minWidth: "auto",
-                      backgroundColor:
-                        location.pathname.startsWith("/admin")
-                          ? "rgba(255,255,255,0.2)"
-                          : "transparent",
-                      border:
-                        location.pathname.startsWith("/admin")
-                          ? "1px solid rgba(255,255,255,0.3)"
-                          : "1px solid transparent",
+                      backgroundColor: location.pathname.startsWith("/admin")
+                        ? "rgba(255,255,255,0.2)"
+                        : "transparent",
+                      border: location.pathname.startsWith("/admin")
+                        ? "1px solid rgba(255,255,255,0.3)"
+                        : "1px solid transparent",
                       "&:hover": {
                         backgroundColor: "rgba(255,255,255,0.15)",
                         borderColor: "rgba(255,255,255,0.5)",
@@ -417,57 +423,26 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   </Menu>
                 </>
               )}
-              {/* Login/Logout Button */}
-              {user ? (
-                <Button
-                  onClick={logout}
-                  startIcon={<LoginIcon />}
-                  sx={{
-                    color: "white",
-                    textTransform: "none",
-                    fontSize: { xs: "0.8rem", sm: "0.9rem" },
-                    px: { xs: 1, sm: 2 },
-                    py: 0.8,
-                    borderRadius: 2,
-                    backgroundColor: "rgba(255,255,255,0.1)",
-                    backdropFilter: "blur(10px)",
-                    border: "1px solid rgba(255,255,255,0.2)",
-                    transition: "all 0.3s ease",
-                    "&:hover": {
-                      backgroundColor: "rgba(255,255,255,0.2)",
-                      transform: "translateY(-2px)",
-                      boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
-                    },
-                  }}
-                >
-                  {t("Logout")}
-                </Button>
-              ) : (
-                <Button
-                  component={Link}
-                  to="/login"
-                  startIcon={<LoginIcon />}
-                  sx={{
-                    color: "white",
-                    textTransform: "none",
-                    fontSize: { xs: "0.8rem", sm: "0.9rem" },
-                    px: { xs: 1, sm: 2 },
-                    py: 0.8,
-                    borderRadius: 2,
-                    backgroundColor: "rgba(255,255,255,0.1)",
-                    backdropFilter: "blur(10px)",
-                    border: "1px solid rgba(255,255,255,0.2)",
-                    transition: "all 0.3s ease",
-                    "&:hover": {
-                      backgroundColor: "rgba(255,255,255,0.2)",
-                      transform: "translateY(-2px)",
-                      boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
-                    },
-                  }}
-                >
-                  {t("Login")}
-                </Button>
-              )}
+              {/* Desktop Profile Icon (contains Favourites, Login/Logout, City, Mode) */}
+              <IconButton
+                onClick={handleProfileMenuOpen}
+                sx={{
+                  color: "white",
+                  backgroundColor: "rgba(255,255,255,0.1)",
+                  backdropFilter: "blur(10px)",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                  transition: "all 0.3s ease",
+                  width: 40,
+                  height: 40,
+                  ml: 0.5,
+                  "&:hover": {
+                    backgroundColor: "rgba(255,255,255,0.2)",
+                    transform: "scale(1.1)",
+                  },
+                }}
+              >
+                <PersonIcon />
+              </IconButton>
             </Box>
           )}
 
@@ -476,7 +451,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
             {/* Desktop Controls */}
             {isSmUp && (
               <>
-                {/* Language Selector */}
+                {/* Language Selector (desktop - stays in navbar) */}
                 <Paper
                   elevation={0}
                   sx={{
@@ -510,63 +485,6 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                     <MenuItem value="ku">🏳️ KU</MenuItem>
                   </Select>
                 </Paper>
-
-                {/* City Selector */}
-                <Paper
-                  elevation={0}
-                  sx={{
-                    backgroundColor: "rgba(255,255,255,0.1)",
-                    backdropFilter: "blur(10px)",
-                    border: "1px solid rgba(255,255,255,0.2)",
-                    borderRadius: 2,
-                  }}
-                >
-                  <Select
-                    value={selectedCity}
-                    onChange={(e) => changeCity(e.target.value)}
-                    size="small"
-                    variant="standard"
-                    disableUnderline
-                    sx={{
-                      color: "white",
-                      minWidth: { xs: 80, sm: 100 },
-                      px: { xs: 0.5, sm: 1 },
-                      "& .MuiSvgIcon-root": {
-                        color: "white",
-                      },
-                      "& .MuiSelect-select": {
-                        py: 0.5,
-                        fontSize: { xs: "0.8rem", sm: "0.9rem" },
-                      },
-                    }}
-                  >
-                    {cities.map((city) => (
-                      <MenuItem key={city.value} value={city.value}>
-                        {city.flag} {city.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </Paper>
-
-                {/* Dark Mode Toggle */}
-                <IconButton
-                  onClick={() => setDarkMode(!darkMode)}
-                  sx={{
-                    color: "white",
-                    backgroundColor: "rgba(255,255,255,0.1)",
-                    backdropFilter: "blur(10px)",
-                    border: "1px solid rgba(255,255,255,0.2)",
-                    transition: "all 0.3s ease",
-                    width: { xs: 36, sm: 40 },
-                    height: { xs: 36, sm: 40 },
-                    "&:hover": {
-                      backgroundColor: "rgba(255,255,255,0.2)",
-                      transform: "scale(1.1) rotate(180deg)",
-                    },
-                  }}
-                >
-                  {darkMode ? <Brightness7Icon /> : <Brightness4Icon />}
-                </IconButton>
               </>
             )}
 
@@ -599,6 +517,9 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                       "& .MuiSelect-select": {
                         py: 0.5,
                         fontSize: "0.8rem",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
                       },
                     }}
                   >
@@ -609,7 +530,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                     ))}
                   </Select>
                 </Paper>
-                {/* Mobile Favourites Link (replaces language selector) */}
+                {/* Mobile Favourites Link */}
                 <IconButton
                   component={Link}
                   to="/favourites"
@@ -762,58 +683,77 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
           )}
         </Box>
 
-        {/* Language options (mobile - inside profile) */}
-        {!isSmUp && (
+        {/* Favourites - desktop only (mobile has separate Favourites icon in navbar) */}
+        {isSmUp && (
+          <MenuItem
+            component={Link}
+            to="/favourites"
+            onClick={handleProfileMenuClose}
+            sx={{
+              py: 1.5,
+              px: 2,
+              "&:hover": {
+                backgroundColor:
+                  theme.palette.mode === "dark"
+                    ? "rgba(255,255,255,0.08)"
+                    : "rgba(0,0,0,0.04)",
+              },
+            }}
+          >
+            <ListItemIcon>
+              <FavoriteIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText
+              primary={t("Favourites")}
+              primaryTypographyProps={{
+                fontSize: "0.875rem",
+                fontWeight: 500,
+              }}
+            />
+          </MenuItem>
+        )}
+
+        {/* City Selector - desktop (in profile) */}
+        {isSmUp && (
           <>
-            <Box sx={{ px: 2, py: 1 }}>
+            <Box sx={{ px: 2, py: 0.5 }}>
               <Typography variant="caption" color="text.secondary">
-                {t("Language")}
+                {t("City")}
               </Typography>
             </Box>
-            <MenuItem
-              onClick={() => {
-                i18n.changeLanguage("en");
-                handleProfileMenuClose();
-              }}
-              selected={lang === "en"}
-              sx={{ py: 1, px: 2 }}
-            >
-              <ListItemText
-                primary="🇺🇸 English"
-                primaryTypographyProps={{ fontSize: "0.875rem" }}
-              />
-            </MenuItem>
-            <MenuItem
-              onClick={() => {
-                i18n.changeLanguage("ar");
-                handleProfileMenuClose();
-              }}
-              selected={lang === "ar"}
-              sx={{ py: 1, px: 2 }}
-            >
-              <ListItemText
-                primary="🇸🇦 العربية"
-                primaryTypographyProps={{ fontSize: "0.875rem" }}
-              />
-            </MenuItem>
-            <MenuItem
-              onClick={() => {
-                i18n.changeLanguage("ku");
-                handleProfileMenuClose();
-              }}
-              selected={lang === "ku"}
-              sx={{ py: 1, px: 2 }}
-            >
-              <ListItemText
-                primary="🏳️ کوردی"
-                primaryTypographyProps={{ fontSize: "0.875rem" }}
-              />
-            </MenuItem>
+            {cities.map((city) => (
+              <MenuItem
+                key={city.value}
+                onClick={() => {
+                  changeCity(city.value);
+                  handleProfileMenuClose();
+                }}
+                selected={selectedCity === city.value}
+                sx={{
+                  py: 1,
+                  px: 2,
+                  "&:hover": {
+                    backgroundColor:
+                      theme.palette.mode === "dark"
+                        ? "rgba(255,255,255,0.08)"
+                        : "rgba(0,0,0,0.04)",
+                  },
+                }}
+              >
+                <ListItemIcon>
+                  <LocationOnIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText
+                  primary={`${city.flag} ${city.label}`}
+                  primaryTypographyProps={{ fontSize: "0.875rem" }}
+                />
+              </MenuItem>
+            ))}
             <Divider />
           </>
         )}
 
-        {/* Theme Toggle */}
+        {/* Theme / Mode Toggle */}
         <MenuItem
           onClick={() => {
             setDarkMode(!darkMode);
@@ -844,6 +784,80 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
 
         <Divider />
 
+        {/* Language options (mobile - inside profile, one row) */}
+        {!isSmUp && (
+          <>
+            <Box sx={{ px: 2, py: 1 }}>
+              <Typography variant="caption" color="text.secondary">
+                {t("Language")}
+              </Typography>
+            </Box>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "row",
+                gap: 1,
+                px: 2,
+                py: 1.5,
+                flexWrap: "nowrap",
+              }}
+            >
+              <Button
+                size="small"
+                variant={lang === "en" ? "contained" : "outlined"}
+                onClick={() => {
+                  i18n.changeLanguage("en");
+                  handleProfileMenuClose();
+                }}
+                sx={{
+                  minWidth: "auto",
+                  px: 1.5,
+                  py: 0.75,
+                  fontSize: "0.75rem",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                🇺🇸 EN
+              </Button>
+              <Button
+                size="small"
+                variant={lang === "ar" ? "contained" : "outlined"}
+                onClick={() => {
+                  i18n.changeLanguage("ar");
+                  handleProfileMenuClose();
+                }}
+                sx={{
+                  minWidth: "auto",
+                  px: 1.5,
+                  py: 0.75,
+                  fontSize: "0.75rem",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                🇸🇦 AR
+              </Button>
+              <Button
+                size="small"
+                variant={lang === "ku" ? "contained" : "outlined"}
+                onClick={() => {
+                  i18n.changeLanguage("ku");
+                  handleProfileMenuClose();
+                }}
+                sx={{
+                  minWidth: "auto",
+                  px: 1.5,
+                  py: 0.75,
+                  fontSize: "0.75rem",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                🏳️ KU
+              </Button>
+            </Box>
+            <Divider />
+          </>
+        )}
+
         {/* Admin group (Data Entry + Dashboard) and Logout / Login */}
         {user ? (
           <>
@@ -856,7 +870,8 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   sx={{
                     py: 1.5,
                     px: 2,
-                    color: theme.palette.mode === "dark" ? "#e2e8f0" : "#2c3e50",
+                    color:
+                      theme.palette.mode === "dark" ? "#e2e8f0" : "#2c3e50",
                     "&:hover": {
                       backgroundColor:
                         theme.palette.mode === "dark"
@@ -883,7 +898,8 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   sx={{
                     py: 1.5,
                     px: 2,
-                    color: theme.palette.mode === "dark" ? "#e2e8f0" : "#2c3e50",
+                    color:
+                      theme.palette.mode === "dark" ? "#e2e8f0" : "#2c3e50",
                     "&:hover": {
                       backgroundColor:
                         theme.palette.mode === "dark"
@@ -905,6 +921,65 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                 </MenuItem>
               </>
             )}
+            <Divider />
+            <>
+              {/* Privacy Policy - shown for both mobile and desktop */}
+              <MenuItem
+                component={Link}
+                to="/privacy-policy"
+                onClick={handleProfileMenuClose}
+                sx={{
+                  py: 1.5,
+                  px: 2,
+                  "&:hover": {
+                    backgroundColor:
+                      theme.palette.mode === "dark"
+                        ? "rgba(255,255,255,0.08)"
+                        : "rgba(0,0,0,0.04)",
+                  },
+                }}
+              >
+                <ListItemIcon>
+                  <PrivacyTipIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText
+                  primary={t("Privacy Policy")}
+                  primaryTypographyProps={{
+                    fontSize: "0.875rem",
+                    fontWeight: 500,
+                  }}
+                />
+              </MenuItem>
+              {/* Contact Us - opens WhatsApp */}
+              <MenuItem
+                onClick={() => {
+                  openWhatsApp();
+                  handleProfileMenuClose();
+                }}
+                sx={{
+                  py: 1.5,
+                  px: 2,
+                  "&:hover": {
+                    backgroundColor:
+                      theme.palette.mode === "dark"
+                        ? "rgba(255,255,255,0.08)"
+                        : "rgba(0,0,0,0.04)",
+                  },
+                }}
+              >
+                <ListItemIcon>
+                  <ContactSupportIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText
+                  primary={t("Contact Us")}
+                  primaryTypographyProps={{
+                    fontSize: "0.875rem",
+                    fontWeight: 500,
+                  }}
+                />
+              </MenuItem>
+            </>
+            <Divider />
             <MenuItem
               onClick={handleLogout}
               sx={{
@@ -929,30 +1004,89 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
             </MenuItem>
           </>
         ) : (
-          <MenuItem
-            component={Link}
-            to="/login"
-            onClick={handleProfileMenuClose}
-            sx={{
-              py: 1.5,
-              px: 2,
-              color: "#2c3e50",
-              "&:hover": {
-                backgroundColor: "rgba(64, 145, 108, 0.08)",
-              },
-            }}
-          >
-            <ListItemIcon>
-              <LoginIcon sx={{ color: "#2c3e50" }} />
-            </ListItemIcon>
-            <ListItemText
-              primary={t("Login")}
-              primaryTypographyProps={{
-                fontSize: "0.875rem",
-                fontWeight: 500,
+          <>
+            <Divider />
+            {/* Privacy Policy - shown for both mobile and desktop */}
+            <MenuItem
+              component={Link}
+              to="/privacy-policy"
+              onClick={handleProfileMenuClose}
+              sx={{
+                py: 1.5,
+                px: 2,
+                "&:hover": {
+                  backgroundColor:
+                    theme.palette.mode === "dark"
+                      ? "rgba(255,255,255,0.08)"
+                      : "rgba(0,0,0,0.04)",
+                },
               }}
-            />
-          </MenuItem>
+            >
+              <ListItemIcon>
+                <PrivacyTipIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText
+                primary={t("Privacy Policy")}
+                primaryTypographyProps={{
+                  fontSize: "0.875rem",
+                  fontWeight: 500,
+                }}
+              />
+            </MenuItem>
+            {/* Contact Us - opens WhatsApp */}
+            <MenuItem
+              onClick={() => {
+                openWhatsApp();
+                handleProfileMenuClose();
+              }}
+              sx={{
+                py: 1.5,
+                px: 2,
+                "&:hover": {
+                  backgroundColor:
+                    theme.palette.mode === "dark"
+                      ? "rgba(255,255,255,0.08)"
+                      : "rgba(0,0,0,0.04)",
+                },
+              }}
+            >
+              <ListItemIcon>
+                <ContactSupportIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText
+                primary={t("Contact Us")}
+                primaryTypographyProps={{
+                  fontSize: "0.875rem",
+                  fontWeight: 500,
+                }}
+              />
+            </MenuItem>
+            <Divider />
+            <MenuItem
+              component={Link}
+              to="/login"
+              onClick={handleProfileMenuClose}
+              sx={{
+                py: 1.5,
+                px: 2,
+                color: "#2c3e50",
+                "&:hover": {
+                  backgroundColor: "rgba(64, 145, 108, 0.08)",
+                },
+              }}
+            >
+              <ListItemIcon>
+                <LoginIcon sx={{ color: "#2c3e50" }} />
+              </ListItemIcon>
+              <ListItemText
+                primary={t("Login")}
+                primaryTypographyProps={{
+                  fontSize: "0.875rem",
+                  fontWeight: 500,
+                }}
+              />
+            </MenuItem>
+          </>
         )}
       </Menu>
 

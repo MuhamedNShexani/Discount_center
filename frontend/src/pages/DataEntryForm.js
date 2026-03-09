@@ -38,6 +38,7 @@ import {
   useTheme,
   TablePagination,
   Checkbox,
+  Snackbar,
 } from "@mui/material";
 import {
   storeAPI,
@@ -48,6 +49,7 @@ import {
   adAPI,
   storeTypeAPI,
   brandTypeAPI,
+  settingsAPI,
 } from "../services/api";
 import * as XLSX from "xlsx";
 
@@ -67,13 +69,23 @@ import CardGiftcardIcon from "@mui/icons-material/CardGiftcard";
 import CategoryIcon from "@mui/icons-material/Category";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
+import SettingsIcon from "@mui/icons-material/Settings";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "../context/AuthContext";
+import { useAppSettings } from "../context/AppSettingsContext";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
 
 const DataEntryForm = () => {
   const theme = useTheme();
   const { t } = useTranslation();
+  const { getAuthHeaders } = useAuth();
+  const {
+    contactWhatsAppNumber,
+    setContactWhatsAppNumber,
+    fetchSettings,
+  } = useAppSettings();
+  const [settingsContactNumber, setSettingsContactNumber] = useState("");
   const [activeTab, setActiveTab] = useState(0);
   const [activeListTab, setActiveListTab] = useState(0); // State for list tabs
   const [stores, setStores] = useState([]);
@@ -248,6 +260,12 @@ const DataEntryForm = () => {
   useEffect(() => {
     fetchProducts(selectedStoreFilter);
   }, [selectedStoreFilter]);
+
+  useEffect(() => {
+    if (activeListTab === 8) {
+      setSettingsContactNumber(contactWhatsAppNumber || "");
+    }
+  }, [activeListTab, contactWhatsAppNumber]);
 
   const fetchStores = async () => {
     try {
@@ -1755,6 +1773,21 @@ const DataEntryForm = () => {
 
   return (
     <Box sx={{ py: 10, px: { xs: 0.5, sm: 1.5, md: 3 } }}>
+      <Snackbar
+        open={!!message.text}
+        autoHideDuration={4000}
+        onClose={() => setMessage({ type: "", text: "" })}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setMessage({ type: "", text: "" })}
+          severity={message.type || "info"}
+          variant="filled"
+          sx={{ width: "100%" }}
+        >
+          {message.text}
+        </Alert>
+      </Snackbar>
       {/* Enhanced Admin Header */}
       <Paper
         elevation={0}
@@ -1871,7 +1904,18 @@ const DataEntryForm = () => {
             onChange={handleListTabChange}
             indicatorColor="primary"
             textColor="primary"
-            sx={{ mb: 2 }}
+            variant="scrollable"
+            scrollButtons="auto"
+            allowScrollButtonsMobile
+            sx={{
+              mb: 2,
+              "& .MuiTabs-scroller": {
+                overflowX: "auto !important",
+              },
+              "& .MuiTabs-flexContainer": {
+                flexWrap: "nowrap",
+              },
+            }}
           >
             <Tab
               label={t("Stores")}
@@ -1911,6 +1955,11 @@ const DataEntryForm = () => {
             <Tab
               label={t("Brand Types")}
               icon={<CategoryIcon />}
+              iconPosition="start"
+            />
+            <Tab
+              label={t("Settings")}
+              icon={<SettingsIcon />}
               iconPosition="start"
             />
           </Tabs>
@@ -2353,6 +2402,62 @@ const DataEntryForm = () => {
                   </TableBody>
                 </Table>
               </TableContainer>
+            </Box>
+          )}
+
+          {/* Settings Panel */}
+          {activeListTab === 8 && (
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                {t("Contact WhatsApp Number")}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                {t(
+                  "WhatsApp number for Contact Us (with country code, e.g. +9647503683478)"
+                )}
+              </Typography>
+              <Grid container spacing={2} alignItems="center">
+                <Grid item xs={12} sm={8} md={6}>
+                  <TextField
+                    fullWidth
+                    label={t("Contact WhatsApp Number")}
+                    value={settingsContactNumber}
+                    onChange={(e) =>
+                      setSettingsContactNumber(e.target.value)}
+                    placeholder="+9647503683478"
+                  />
+                </Grid>
+                <Grid item xs={12} sm={4} md={6}>
+                  <Button
+                    variant="contained"
+                    startIcon={<SaveIcon />}
+                    onClick={async () => {
+                      try {
+                        setMessage({ type: "", text: "" });
+                        const headers = getAuthHeaders();
+                        const num = settingsContactNumber.trim();
+                        await settingsAPI.update(
+                          { contactWhatsAppNumber: num },
+                          getAuthHeaders()
+                        );
+                        setContactWhatsAppNumber(num);
+                        await fetchSettings();
+                        setMessage({
+                          type: "success",
+                          text: t("Settings saved successfully"),
+                        });
+                      } catch (err) {
+                        setMessage({
+                          type: "error",
+                          text: t("Failed to save settings"),
+                        });
+                      }
+                    }}
+                  >
+                    {t("Save Settings")}
+                  </Button>
+                </Grid>
+              </Grid>
             </Box>
           )}
 

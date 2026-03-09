@@ -32,7 +32,9 @@ import NavigationBar from "./NavigationBar";
 import BottomNavigationBar from "./components/BottomNavigation";
 import { AuthProvider } from "./context/AuthContext";
 import { CityFilterProvider } from "./context/CityFilterContext";
+import { AppSettingsProvider } from "./context/AppSettingsContext";
 import LoginPage from "./pages/LoginPage";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ScrollToTop from "./components/ScrollToTop";
 
@@ -300,6 +302,7 @@ function App() {
                   }
                 />
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/products/:id" element={<ProductDetail />} />
               </Routes>
             </Container>
@@ -316,10 +319,12 @@ function App() {
 const Root = () => (
   <AuthProvider>
     <CityFilterProvider>
-      <Router>
-        <ScrollToTop />
-        <App />
-      </Router>
+      <AppSettingsProvider>
+        <Router>
+          <ScrollToTop />
+          <App />
+        </Router>
+      </AppSettingsProvider>
     </CityFilterProvider>
   </AuthProvider>
 );
