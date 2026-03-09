@@ -1,14 +1,17 @@
 import axios from "axios";
 
-const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL || "http://localhost:5000/api";
+// Proxy mode: use same-origin /api (avoids CORS, works on mobile). Set REACT_APP_USE_PROXY=true in Vercel.
+const USE_PROXY = process.env.REACT_APP_USE_PROXY === "true";
+const API_BASE_URL = USE_PROXY
+  ? "/api"
+  : process.env.REACT_APP_API_BASE_URL || "http://localhost:5000/api";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },
-  timeout: 30000,
+  timeout: 45000,
 });
 
 // Add auth token to requests when available
@@ -20,7 +23,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Retry failed requests once (helps with flaky mobile networks)
+// Retry failed requests (helps with flaky mobile networks)
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -30,9 +33,10 @@ api.interceptors.response.use(
       (error.message === "Network Error" ||
         error.code === "ERR_NETWORK" ||
         error.code === "ECONNABORTED");
-    if (isNetworkError && !originalRequest._retry) {
-      originalRequest._retry = true;
-      await new Promise((r) => setTimeout(r, 1500));
+    const retryCount = originalRequest._retryCount || 0;
+    if (isNetworkError && retryCount < 2) {
+      originalRequest._retryCount = retryCount + 1;
+      await new Promise((r) => setTimeout(r, 2000 * (retryCount + 1)));
       return api(originalRequest);
     }
     return Promise.reject(error);

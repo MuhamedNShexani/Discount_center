@@ -1,12 +1,23 @@
 {
   "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://realestate-backend.onrender.com/api/:path*"
+    },
+    {
+      "source": "/uploads/:path*",
+      "destination": "https://realestate-backend.onrender.com/uploads/:path*"
+    },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
     {
       "source": "/sw.js",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        },
         { "key": "Service-Worker-Allowed", "value": "/" }
       ]
     }

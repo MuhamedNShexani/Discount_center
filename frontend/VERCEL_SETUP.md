@@ -53,9 +53,11 @@ If the app works on **idiscount.vercel.app** but fails on **dashkan.net**:
 3. **Redeploy**: After adding the domain or env vars, trigger a new deployment (Deployments → ⋮ → Redeploy).
 4. **Backend CORS**: Your backend must allow `https://dashkan.net` (already in server.js). Redeploy the backend if you recently added the custom domain.
 
-## 6. Mobile "Network Error" – Troubleshooting
+## 6. Mobile "Network Error" – Use Proxy (Recommended)
 
-If the app works on laptop but shows "Network error" on mobile:
+If the app works on laptop but shows "Network error" on mobile, use the **proxy setup** – see [MOBILE_FIX.md](MOBILE_FIX.md). This fixes CORS and mixed content on mobile.
+
+Other causes if not using proxy:
 
 1. **HTTPS only**: `REACT_APP_API_BASE_URL` and `REACT_APP_BACKEND_URL` must use **HTTPS** (not `http://`). Mixed content (HTTPS page + HTTP API) is blocked on mobile.
 2. **Env vars**: In Vercel → Settings → Environment Variables, set both for Production. Redeploy after changing.
