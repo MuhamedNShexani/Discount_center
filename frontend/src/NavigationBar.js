@@ -17,6 +17,8 @@ import {
   ListItemText,
   Divider,
   ClickAwayListener,
+  Badge,
+  ListItemButton,
 } from "@mui/material";
 import {
   Home as HomeIcon,
@@ -39,6 +41,7 @@ import {
   LocationOn as LocationOnIcon,
   PrivacyTip as PrivacyTipIcon,
   ContactSupport as ContactSupportIcon,
+  Notifications as NotificationsIcon,
 } from "@mui/icons-material";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -46,6 +49,7 @@ import { useAuth } from "./context/AuthContext";
 import kurdishFlag from "./styles/kurdish_flag.jpg";
 import { useCityFilter } from "./context/CityFilterContext";
 import { useAppSettings } from "./context/AppSettingsContext";
+import { useNotifications } from "./context/NotificationContext";
 
 const NavigationBar = ({ darkMode, setDarkMode }) => {
   const theme = useTheme();
@@ -53,6 +57,17 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
   const { user, logout } = useAuth();
   const { selectedCity, changeCity, cities } = useCityFilter();
   const { openWhatsApp } = useAppSettings();
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    fetchNotifications,
+    pushSupported,
+    pushPermission,
+    pushSubscribing,
+    requestPushPermission,
+  } = useNotifications();
   const isSmUp = useMediaQuery(theme.breakpoints.up("sm"));
   const lang = i18n.language;
   const location = useLocation();
@@ -60,6 +75,9 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
   const isAdmin = !!user && user.email === "mshexani45@gmail.com";
   // Profile menu state
   const [profileAnchorEl, setProfileAnchorEl] = useState(null);
+
+  // Notification menu state
+  const [notificationAnchorEl, setNotificationAnchorEl] = useState(null);
 
   // Admin dropdown state
   const [adminAnchorEl, setAdminAnchorEl] = useState(null);
@@ -93,6 +111,15 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
 
   const handleAdminMenuClose = () => {
     setAdminAnchorEl(null);
+  };
+
+  const handleNotificationMenuOpen = (event) => {
+    setNotificationAnchorEl(event.currentTarget);
+    fetchNotifications();
+  };
+
+  const handleNotificationMenuClose = () => {
+    setNotificationAnchorEl(null);
   };
 
   const handleLogout = () => {
@@ -424,6 +451,118 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   </Menu>
                 </>
               )}
+              {/* Notification bell */}
+              <IconButton
+                onClick={handleNotificationMenuOpen}
+                sx={{
+                  color: "white",
+                  backgroundColor: "rgba(255,255,255,0.1)",
+                  backdropFilter: "blur(10px)",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                  transition: "all 0.3s ease",
+                  width: 40,
+                  height: 40,
+                  ml: 0.5,
+                  "&:hover": {
+                    backgroundColor: "rgba(255,255,255,0.2)",
+                    transform: "scale(1.1)",
+                  },
+                }}
+              >
+                <Badge badgeContent={unreadCount} color="error">
+                  <NotificationsIcon />
+                </Badge>
+              </IconButton>
+              <Menu
+                anchorEl={notificationAnchorEl}
+                open={Boolean(notificationAnchorEl)}
+                onClose={handleNotificationMenuClose}
+                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                transformOrigin={{ vertical: "top", horizontal: "right" }}
+                PaperProps={{
+                  sx: {
+                    mt: 1.5,
+                    minWidth: 320,
+                    maxWidth: 380,
+                    maxHeight: 400,
+                    backgroundColor:
+                      theme.palette.mode === "dark" ? "#2c3e50" : "#fff",
+                    border: `1px solid ${theme.palette.divider}`,
+                    borderRadius: 2,
+                  },
+                }}
+              >
+                <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: "divider" }}>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Typography variant="subtitle1" fontWeight={600}>
+                      {t("Notifications")}
+                    </Typography>
+                    {unreadCount > 0 && (
+                      <Button
+                        size="small"
+                        onClick={() => markAllAsRead()}
+                        sx={{ textTransform: "none" }}
+                      >
+                        {t("Mark all read")}
+                      </Button>
+                    )}
+                  </Box>
+                </Box>
+                {pushSupported && pushPermission === "default" && (
+                  <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: "divider" }}>
+                    <Button
+                      fullWidth
+                      variant="outlined"
+                      size="small"
+                      disabled={pushSubscribing}
+                      onClick={() => requestPushPermission()}
+                      sx={{ textTransform: "none" }}
+                    >
+                      {pushSubscribing
+                        ? t("Enabling...")
+                        : t("Enable system notifications")}
+                    </Button>
+                  </Box>
+                )}
+                <Box sx={{ maxHeight: 280, overflow: "auto" }}>
+                  {notifications.length === 0 ? (
+                    <Typography variant="body2" color="text.secondary" sx={{ p: 2, textAlign: "center" }}>
+                      {t("No notifications")}
+                    </Typography>
+                  ) : (
+                    notifications.map((n) => (
+                      <ListItemButton
+                        key={n._id}
+                        onClick={() => {
+                          markAsRead(n._id);
+                        }}
+                        sx={{
+                          py: 1.5,
+                          px: 2,
+                          backgroundColor: n.read ? "transparent" : "action.hover",
+                          borderBottom: "1px solid",
+                          borderColor: "divider",
+                        }}
+                      >
+                        <Box>
+                          <Typography
+                            variant="body2"
+                            fontWeight={n.read ? 400 : 600}
+                            sx={{ mb: 0.25 }}
+                          >
+                            {n.title}
+                          </Typography>
+                          {n.body && (
+                            <Typography variant="caption" color="text.secondary" display="block">
+                              {n.body.length > 80 ? `${n.body.slice(0, 80)}...` : n.body}
+                            </Typography>
+                          )}
+                        </Box>
+                      </ListItemButton>
+                    ))
+                  )}
+                </Box>
+              </Menu>
               {/* Desktop Profile Icon (contains Favourites, Login/Logout, City, Mode) */}
               <IconButton
                 onClick={handleProfileMenuOpen}
@@ -569,6 +708,27 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   }}
                 >
                   <FavoriteIcon />
+                </IconButton>
+                {/* Mobile Notification Bell */}
+                <IconButton
+                  onClick={handleNotificationMenuOpen}
+                  sx={{
+                    color: "white",
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    backdropFilter: "blur(10px)",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    transition: "all 0.3s ease",
+                    width: 40,
+                    height: 40,
+                    "&:hover": {
+                      backgroundColor: "rgba(255,255,255,0.2)",
+                      transform: "scale(1.1)",
+                    },
+                  }}
+                >
+                  <Badge badgeContent={unreadCount} color="error">
+                    <NotificationsIcon />
+                  </Badge>
                 </IconButton>
 
                 {/* Mobile Profile Icon */}

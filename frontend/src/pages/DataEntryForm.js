@@ -50,6 +50,7 @@ import {
   storeTypeAPI,
   brandTypeAPI,
   settingsAPI,
+  adminAPI,
 } from "../services/api";
 import * as XLSX from "xlsx";
 
@@ -70,6 +71,7 @@ import CategoryIcon from "@mui/icons-material/Category";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import SettingsIcon from "@mui/icons-material/Settings";
+import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 import { useAppSettings } from "../context/AppSettingsContext";
@@ -79,7 +81,10 @@ const API_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
 const DataEntryForm = () => {
   const theme = useTheme();
   const { t } = useTranslation();
-  const { getAuthHeaders } = useAuth();
+  const { getAuthHeaders, user } = useAuth();
+  const isAdmin =
+    user?.email === "mshexani45@gmail.com" ||
+    user?.email === "admin@gmail.com";
   const {
     contactWhatsAppNumber,
     setContactWhatsAppNumber,
@@ -107,6 +112,12 @@ const DataEntryForm = () => {
   const [rowsPerPage] = useState(10);
   const [storeTypes, setStoreTypes] = useState([]);
   const [brandTypes, setBrandTypes] = useState([]);
+
+  // Notification send form
+  const [notificationTitle, setNotificationTitle] = useState("");
+  const [notificationBody, setNotificationBody] = useState("");
+  const [notificationType, setNotificationType] = useState("general");
+  const [notificationSending, setNotificationSending] = useState(false);
 
   // Refs for file inputs
   const brandLogoFileRef = useRef(null);
@@ -265,7 +276,12 @@ const DataEntryForm = () => {
     if (activeListTab === 8) {
       setSettingsContactNumber(contactWhatsAppNumber || "");
     }
-  }, [activeListTab, contactWhatsAppNumber]);
+    if (activeListTab === 9 && isAdmin) {
+      setNotificationTitle("");
+      setNotificationBody("");
+      setNotificationType("general");
+    }
+  }, [activeListTab, contactWhatsAppNumber, isAdmin]);
 
   const fetchStores = async () => {
     try {
@@ -1962,6 +1978,13 @@ const DataEntryForm = () => {
               icon={<SettingsIcon />}
               iconPosition="start"
             />
+            {isAdmin && (
+              <Tab
+                label={t("Notifications")}
+                icon={<NotificationsActiveIcon />}
+                iconPosition="start"
+              />
+            )}
           </Tabs>
 
           {/* Store List Panel */}
@@ -2455,6 +2478,104 @@ const DataEntryForm = () => {
                     }}
                   >
                     {t("Save Settings")}
+                  </Button>
+                </Grid>
+              </Grid>
+            </Box>
+          )}
+
+          {/* Notifications Panel - Send to all users */}
+          {activeListTab === 9 && (
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                {t("Send Notification to All Users")}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                {t(
+                  "Compose a notification that will be sent to all users (both registered and anonymous)."
+                )}
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={12} md={8}>
+                  <TextField
+                    fullWidth
+                    label={t("Title")}
+                    value={notificationTitle}
+                    onChange={(e) => setNotificationTitle(e.target.value)}
+                    placeholder={t("e.g. New deals available!")}
+                    required
+                    sx={{ mb: 2 }}
+                  />
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={4}
+                    label={t("Message")}
+                    value={notificationBody}
+                    onChange={(e) => setNotificationBody(e.target.value)}
+                    placeholder={t("Optional message body...")}
+                    sx={{ mb: 2 }}
+                  />
+                  <FormControl fullWidth sx={{ mb: 2 }}>
+                    <InputLabel>{t("Type")}</InputLabel>
+                    <Select
+                      value={notificationType}
+                      onChange={(e) =>
+                        setNotificationType(e.target.value)}
+                      label={t("Type")}
+                    >
+                      <MenuItem value="general">{t("General")}</MenuItem>
+                      <MenuItem value="info">{t("Info")}</MenuItem>
+                      <MenuItem value="promo">{t("Promo")}</MenuItem>
+                      <MenuItem value="alert">{t("Alert")}</MenuItem>
+                    </Select>
+                  </FormControl>
+                  <Button
+                    variant="contained"
+                    startIcon={<NotificationsActiveIcon />}
+                    disabled={
+                      !notificationTitle.trim() || notificationSending
+                    }
+                    onClick={async () => {
+                      try {
+                        setNotificationSending(true);
+                        setMessage({ type: "", text: "" });
+                        const res = await adminAPI.sendNotification({
+                          title: notificationTitle.trim(),
+                          body: notificationBody.trim(),
+                          type: notificationType,
+                        });
+                        if (res.data.success) {
+                          setMessage({
+                            type: "success",
+                            text: t("Notification sent to {{count}} users", {
+                              count: res.data.count,
+                            }),
+                          });
+                          setNotificationTitle("");
+                          setNotificationBody("");
+                          setNotificationType("general");
+                        } else {
+                          setMessage({
+                            type: "error",
+                            text: res.data.message || t("Failed to send"),
+                          });
+                        }
+                      } catch (err) {
+                        setMessage({
+                          type: "error",
+                          text:
+                            err.response?.data?.message ||
+                            t("Failed to send notification"),
+                        });
+                      } finally {
+                        setNotificationSending(false);
+                      }
+                    }}
+                  >
+                    {notificationSending
+                      ? t("Sending...")
+                      : t("Send to All Users")}
                   </Button>
                 </Grid>
               </Grid>

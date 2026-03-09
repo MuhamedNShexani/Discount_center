@@ -7,9 +7,14 @@ const {
   getStoreReport,
   getBrandReport,
 } = require("../controllers/adminController");
+const { sendNotification } = require("../controllers/adminNotificationController");
+const { protect } = require("../middleware/auth");
 
 // GET /api/admin/stats
 router.get("/stats", getStats);
+
+// POST /api/admin/notifications/send - admin only
+router.post("/notifications/send", protect, sendNotification);
 
 // GET /api/admin/products/most-liked
 router.get("/products/most-liked", getMostLikedProducts);

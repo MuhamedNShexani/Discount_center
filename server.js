@@ -36,6 +36,7 @@ app.use("/api/auth", require("./routes/auth"));
 app.use("/api/ads", require("./routes/ad"));
 app.use("/api/store-types", require("./routes/storeType"));
 app.use("/api/brand-types", require("./routes/brandType"));
+app.use("/api/notifications", require("./routes/notification"));
 app.use("/api/admin", require("./routes/admin"));
 app.use("/api/settings", require("./routes/settings"));
 

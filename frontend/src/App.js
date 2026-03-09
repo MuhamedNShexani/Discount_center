@@ -33,6 +33,7 @@ import BottomNavigationBar from "./components/BottomNavigation";
 import { AuthProvider } from "./context/AuthContext";
 import { CityFilterProvider } from "./context/CityFilterContext";
 import { AppSettingsProvider } from "./context/AppSettingsContext";
+import { NotificationProvider } from "./context/NotificationContext";
 import LoginPage from "./pages/LoginPage";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -320,10 +321,12 @@ const Root = () => (
   <AuthProvider>
     <CityFilterProvider>
       <AppSettingsProvider>
-        <Router>
+        <NotificationProvider>
+          <Router>
           <ScrollToTop />
           <App />
-        </Router>
+          </Router>
+        </NotificationProvider>
       </AppSettingsProvider>
     </CityFilterProvider>
   </AuthProvider>

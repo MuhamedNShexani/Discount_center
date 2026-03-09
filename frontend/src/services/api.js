@@ -139,6 +139,11 @@ export const userAPI = {
       params: deviceId ? { deviceId } : {},
       headers,
     }),
+  pushSubscribe: (subscription, deviceId) =>
+    api.post("/users/push-subscribe", {
+      subscription,
+      ...(deviceId && { deviceId }),
+    }),
 };
 
 // Auth API calls
@@ -163,6 +168,19 @@ export const settingsAPI = {
   update: (data, headers) => api.put("/settings", data, { headers }),
 };
 
+// Notification API calls
+export const notificationAPI = {
+  getAll: (deviceId) =>
+    api.get("/notifications", {
+      params: deviceId ? { deviceId } : {},
+    }),
+  markAsRead: (id, deviceId) =>
+    api.put(`/notifications/${id}/read`, deviceId ? { deviceId } : {}),
+  markAllAsRead: (deviceId) =>
+    api.put("/notifications/read-all", deviceId ? { deviceId } : {}),
+  getVapidPublic: () => api.get("/notifications/vapid-public"),
+};
+
 // Admin API calls
 export const adminAPI = {
   getStats: () => api.get("/admin/stats"),
@@ -170,6 +188,7 @@ export const adminAPI = {
   getMostViewedProducts: () => api.get("/admin/products/most-viewed"),
   getStoreReport: (params = {}) => api.get("/admin/reports/stores", { params }),
   getBrandReport: (params = {}) => api.get("/admin/reports/brands", { params }),
+  sendNotification: (data) => api.post("/admin/notifications/send", data),
 };
 
 export default api;
