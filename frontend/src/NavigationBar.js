@@ -43,6 +43,7 @@ import {
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "./context/AuthContext";
+import kurdishFlag from "./styles/kurdish_flag.jpg";
 import { useCityFilter } from "./context/CityFilterContext";
 import { useAppSettings } from "./context/AppSettingsContext";
 
@@ -482,7 +483,21 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   >
                     <MenuItem value="en">🇺🇸 EN</MenuItem>
                     <MenuItem value="ar">🇸🇦 AR</MenuItem>
-                    <MenuItem value="ku">🏳️ KU</MenuItem>
+                    <MenuItem value="ku">
+                      <Box component="span" display="flex" alignItems="center" gap={1}>
+                        <img
+                          src={kurdishFlag}
+                          alt="Kurdish"
+                          style={{
+                            width: 20,
+                            height: 14,
+                            objectFit: "cover",
+                            borderRadius: 2,
+                          }}
+                        />
+                        {t("Kurdish")}
+                      </Box>
+                    </MenuItem>
                   </Select>
                 </Paper>
               </>
@@ -851,7 +866,19 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   whiteSpace: "nowrap",
                 }}
               >
-                🏳️ KU
+                <Box component="span" display="flex" alignItems="center" gap={0.5}>
+                  <img
+                    src={kurdishFlag}
+                    alt=""
+                    style={{
+                      width: 16,
+                      height: 12,
+                      objectFit: "cover",
+                      borderRadius: 2,
+                    }}
+                  />
+                  {t("Kurdish")}
+                </Box>
               </Button>
             </Box>
             <Divider />
