@@ -117,6 +117,8 @@ const DataEntryForm = () => {
   const [notificationTitle, setNotificationTitle] = useState("");
   const [notificationBody, setNotificationBody] = useState("");
   const [notificationType, setNotificationType] = useState("general");
+  const [notificationLinkType, setNotificationLinkType] = useState("none");
+  const [notificationLinkId, setNotificationLinkId] = useState("");
   const [notificationSending, setNotificationSending] = useState(false);
 
   // Refs for file inputs
@@ -2530,6 +2532,57 @@ const DataEntryForm = () => {
                       <MenuItem value="alert">{t("Alert")}</MenuItem>
                     </Select>
                   </FormControl>
+                  <FormControl fullWidth sx={{ mb: 2 }}>
+                    <InputLabel>{t("Link")}</InputLabel>
+                    <Select
+                      value={notificationLinkType}
+                      onChange={(e) => {
+                        setNotificationLinkType(e.target.value);
+                        setNotificationLinkId("");
+                      }}
+                      label={t("Link")}
+                    >
+                      <MenuItem value="none">{t("No link")}</MenuItem>
+                      <MenuItem value="store">{t("Store")}</MenuItem>
+                      <MenuItem value="brand">{t("Brand")}</MenuItem>
+                    </Select>
+                  </FormControl>
+                  {notificationLinkType === "store" && (
+                    <FormControl fullWidth sx={{ mb: 2 }}>
+                      <InputLabel>{t("Select Store")}</InputLabel>
+                      <Select
+                        value={notificationLinkId}
+                        onChange={(e) =>
+                          setNotificationLinkId(e.target.value)}
+                        label={t("Select Store")}
+                      >
+                        <MenuItem value="">{t("Select Store")}</MenuItem>
+                        {stores.map((s) => (
+                          <MenuItem key={s._id} value={s._id}>
+                            {s.name}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  )}
+                  {notificationLinkType === "brand" && (
+                    <FormControl fullWidth sx={{ mb: 2 }}>
+                      <InputLabel>{t("Select Brand")}</InputLabel>
+                      <Select
+                        value={notificationLinkId}
+                        onChange={(e) =>
+                          setNotificationLinkId(e.target.value)}
+                        label={t("Select Brand")}
+                      >
+                        <MenuItem value="">{t("Select Brand")}</MenuItem>
+                        {brands.map((b) => (
+                          <MenuItem key={b._id} value={b._id}>
+                            {b.name}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  )}
                   <Button
                     variant="contained"
                     startIcon={<NotificationsActiveIcon />}
@@ -2540,10 +2593,17 @@ const DataEntryForm = () => {
                       try {
                         setNotificationSending(true);
                         setMessage({ type: "", text: "" });
+                        let link = "";
+                        if (notificationLinkType === "store" && notificationLinkId) {
+                          link = `/stores/${notificationLinkId}`;
+                        } else if (notificationLinkType === "brand" && notificationLinkId) {
+                          link = `/brands/${notificationLinkId}`;
+                        }
                         const res = await adminAPI.sendNotification({
                           title: notificationTitle.trim(),
                           body: notificationBody.trim(),
                           type: notificationType,
+                          ...(link && { link }),
                         });
                         if (res.data.success) {
                           const msg =
@@ -2562,6 +2622,8 @@ const DataEntryForm = () => {
                           setNotificationTitle("");
                           setNotificationBody("");
                           setNotificationType("general");
+                          setNotificationLinkType("none");
+                          setNotificationLinkId("");
                         } else {
                           setMessage({
                             type: "error",

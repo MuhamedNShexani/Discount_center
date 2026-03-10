@@ -145,6 +145,12 @@ export const userAPI = {
       { productId, ...(deviceId && { deviceId }) },
       { headers },
     ),
+  toggleFollowStore: (deviceId, storeId, headers = {}) =>
+    api.post(
+      "/users/follow-store",
+      { storeId, ...(deviceId && { deviceId }) },
+      { headers },
+    ),
   recordView: (deviceId, productId, headers = {}) =>
     api.post("/users/view-product", { deviceId, productId }, { headers }),
   addReview: (deviceId, productId, rating, comment, headers = {}) =>
@@ -155,6 +161,11 @@ export const userAPI = {
     ),
   getLikedProducts: (deviceId, headers = {}) =>
     api.get("/users/liked-products", {
+      params: deviceId ? { deviceId } : {},
+      headers,
+    }),
+  getFollowedStores: (deviceId, headers = {}) =>
+    api.get("/users/followed-stores", {
       params: deviceId ? { deviceId } : {},
       headers,
     }),
@@ -202,7 +213,14 @@ export const notificationAPI = {
     api.put(`/notifications/${id}/read`, deviceId ? { deviceId } : {}),
   markAllAsRead: (deviceId) =>
     api.put("/notifications/read-all", deviceId ? { deviceId } : {}),
+  clearAll: (deviceId) =>
+    api.put("/notifications/clear", deviceId ? { deviceId } : {}),
   getVapidPublic: () => api.get("/notifications/vapid-public"),
+};
+
+// Search API calls
+export const searchAPI = {
+  search: (q) => api.get("/search", { params: { q } }),
 };
 
 // Admin API calls

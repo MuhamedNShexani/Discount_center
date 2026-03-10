@@ -240,16 +240,132 @@ export const useUserTracking = () => {
     }
   }, [isAuthenticated, deviceId, getAuthHeaders]);
 
+  // Toggle store follow (works for both logged-in and device users)
+  const toggleFollowStore = useCallback(
+    async (storeId) => {
+      if (!isAuthenticated && !deviceId) {
+        return {
+          success: false,
+          message: "Please wait for app to load",
+          requiresAuth: false,
+        };
+      }
+
+      try {
+        const headers = getAuthHeaders();
+        const response = await userAPI.toggleFollowStore(
+          isAuthenticated ? null : deviceId,
+          storeId,
+          headers
+        );
+
+        if (response.data.success) {
+          if (!isAuthenticated) {
+            setUser((prevUser) => {
+              if (!prevUser) return prevUser;
+              const isCurrentlyFollowed = (prevUser.followedStores || []).some(
+                (id) => id.toString() === storeId || id === storeId
+              );
+              if (isCurrentlyFollowed) {
+                return {
+                  ...prevUser,
+                  followedStores: (prevUser.followedStores || []).filter(
+                    (id) => id.toString() !== storeId && id !== storeId
+                  ),
+                };
+              }
+              return {
+                ...prevUser,
+                followedStores: [...(prevUser.followedStores || []), storeId],
+              };
+            });
+          } else {
+            const authUser = JSON.parse(localStorage.getItem("user"));
+            if (authUser) {
+              const isCurrentlyFollowed = (authUser.followedStores || []).some(
+                (id) => id === storeId || id.toString() === storeId
+              );
+              if (isCurrentlyFollowed) {
+                authUser.followedStores = (authUser.followedStores || []).filter(
+                  (id) => id !== storeId && id.toString() !== storeId
+                );
+              } else {
+                authUser.followedStores = [...(authUser.followedStores || []), storeId];
+              }
+              localStorage.setItem("user", JSON.stringify(authUser));
+            }
+          }
+          return response.data;
+        }
+        return response.data;
+      } catch (error) {
+        console.error("Error toggling store follow:", error);
+        return {
+          success: false,
+          message: error.response?.data?.message || "Failed to toggle follow",
+        };
+      }
+    },
+    [isAuthenticated, deviceId, getAuthHeaders]
+  );
+
+  // Check if store is followed
+  const isStoreFollowed = useCallback(
+    (storeId) => {
+      if (isAuthenticated) {
+        const authUser = JSON.parse(localStorage.getItem("user"));
+        if (!authUser?.followedStores) return false;
+        return authUser.followedStores.some(
+          (id) => id === storeId || id.toString() === storeId
+        );
+      }
+      if (!user?.followedStores) return false;
+      return user.followedStores.some(
+        (id) => id.toString() === storeId || id === storeId
+      );
+    },
+    [isAuthenticated, user]
+  );
+
+  // Get user's followed stores
+  const getFollowedStores = useCallback(async () => {
+    if (!isAuthenticated && !deviceId) {
+      return {
+        success: false,
+        message: "Please wait for app to load",
+        requiresAuth: false,
+      };
+    }
+
+    try {
+      const headers = getAuthHeaders();
+      const response = await userAPI.getFollowedStores(
+        isAuthenticated ? null : deviceId,
+        headers
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error getting followed stores:", error);
+      return {
+        success: false,
+        message: "Failed to get followed stores",
+      };
+    }
+  }, [isAuthenticated, deviceId, getAuthHeaders]);
+
   return {
     deviceId,
     user,
     loading,
     isAuthenticated,
     toggleLike,
+    toggleFollowStore,
     recordView,
     addReview,
     isProductLiked,
+    isStoreFollowed,
     getLikedProducts,
+    getFollowedStores,
     getViewedProducts,
   };
 };

@@ -18,7 +18,7 @@ const sendNotification = async (req, res) => {
       });
     }
 
-    const { title, body, type = "general" } = req.body;
+    const { title, body, type = "general", link } = req.body;
 
     if (!title || !title.trim()) {
       return res.status(400).json({
@@ -38,13 +38,20 @@ const sendNotification = async (req, res) => {
       });
     }
 
-    await BroadcastNotification.create({
+    const linkVal = (link || "").trim();
+    const now = new Date();
+    const expireDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const createPayload = {
       title: title.trim(),
       body: (body || "").trim(),
       type: ["info", "promo", "alert", "general"].includes(type)
         ? type
         : "general",
-    });
+      expireDate,
+    };
+    if (linkVal) createPayload.link = linkVal;
+
+    await BroadcastNotification.create(createPayload);
 
     // Send web push to system notification center
     let pushResult = { sent: 0, failed: 0 };

@@ -52,6 +52,8 @@ import {
 } from "@mui/icons-material";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
+import PersonAddDisabledIcon from "@mui/icons-material/PersonAddDisabled";
 import StarIcon from "@mui/icons-material/Star";
 import { storeAPI, productAPI, giftAPI } from "../services/api";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
@@ -71,7 +73,15 @@ const StoreProfile = () => {
   const theme = useTheme();
   const { t } = useTranslation();
   const { isAuthenticated } = useAuth();
-  const { toggleLike, isProductLiked, recordView } = useUserTracking();
+  const {
+    toggleLike,
+    toggleFollowStore,
+    isProductLiked,
+    isStoreFollowed,
+    recordView,
+  } = useUserTracking();
+  const [followLoading, setFollowLoading] = useState(false);
+  const [followerCount, setFollowerCount] = useState(0);
 
   const [store, setStore] = useState(null);
   const [products, setProducts] = useState([]);
@@ -138,7 +148,9 @@ const StoreProfile = () => {
 
       // Fetch store details
       const storeResponse = await storeAPI.getById(id);
-      setStore(storeResponse.data);
+      const storeData = storeResponse.data;
+      setStore(storeData);
+      setFollowerCount(storeData?.followerCount ?? 0);
 
       // Fetch products for this store
       const productsResponse = await productAPI.getByStore(id);
@@ -1095,51 +1107,139 @@ const StoreProfile = () => {
           <Box position="relative" zIndex={1}>
             {/* Mobile Layout - Logo and Name on same row */}
             <Box
-              alignItems="center"
               sx={{
-                display: { xs: "flex", md: "none" },
-                gap: 2,
+                display: { xs: "block", md: "none" },
                 mb: 2,
               }}
             >
-              {store.logo ? (
-                <Avatar
-                  src={`${process.env.REACT_APP_BACKEND_URL}${store.logo}`}
-                  alt={store.name}
-                  sx={{
-                    width: 60,
-                    height: 60,
-                    border: "3px solid rgba(255,255,255,0.2)",
-                    boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
-                    flexShrink: 0,
-                  }}
-                />
-              ) : (
-                <Avatar
-                  sx={{
-                    width: 60,
-                    height: 60,
-                    bgcolor: "rgba(255,255,255,0.2)",
-                    border: "3px solid rgba(255,255,255,0.2)",
-                    boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
-                    flexShrink: 0,
-                  }}
-                >
-                  <Business sx={{ fontSize: 30 }} />
-                </Avatar>
-              )}
-              <Typography
-                variant="h2"
+              <Box
                 sx={{
-                  fontWeight: 700,
-                  fontSize: "1.2rem",
-                  textShadow: "0 2px 4px rgba(0,0,0,0.3)",
-                  color: "white",
-                  flex: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 2,
+                  mb: 1.5,
                 }}
               >
-                {store.name}
-              </Typography>
+                {store.logo ? (
+                  <Avatar
+                    src={`${process.env.REACT_APP_BACKEND_URL}${store.logo}`}
+                    alt={store.name}
+                    sx={{
+                      width: 60,
+                      height: 60,
+                      border: "3px solid rgba(255,255,255,0.2)",
+                      boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
+                      flexShrink: 0,
+                    }}
+                  />
+                ) : (
+                  <Avatar
+                    sx={{
+                      width: 60,
+                      height: 60,
+                      bgcolor: "rgba(255,255,255,0.2)",
+                      border: "3px solid rgba(255,255,255,0.2)",
+                      boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Business sx={{ fontSize: 30 }} />
+                  </Avatar>
+                )}
+                <Typography
+                  variant="h2"
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: "1.2rem",
+                    textShadow: "0 2px 4px rgba(0,0,0,0.3)",
+                    color: "white",
+                    flex: 1,
+                  }}
+                >
+                  {store.name}
+                </Typography>
+              </Box>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 2,
+                  flexWrap: "wrap",
+                  justifyContent: "flex-start",
+                }}
+              >
+                <Typography
+                  variant="body1"
+                  sx={{
+                    color: "rgba(255,255,255,0.95)",
+                    fontWeight: 600,
+                    textShadow: "0 1px 2px rgba(0,0,0,0.3)",
+                  }}
+                >
+                  {followerCount} {t("Followers")}
+                </Typography>
+                <Button
+                  variant={
+                    isStoreFollowed(store._id) ? "contained" : "outlined"
+                  }
+                  size="small"
+                  disabled={followLoading}
+                  onClick={async () => {
+                    setFollowLoading(true);
+                    try {
+                      const result = await toggleFollowStore(store._id);
+                      if (result?.success && result?.data != null) {
+                        setFollowerCount(
+                          Math.max(
+                            0,
+                            result.data.followerCount ?? followerCount,
+                          ),
+                        );
+                      }
+                    } finally {
+                      setFollowLoading(false);
+                    }
+                  }}
+                  startIcon={
+                    isStoreFollowed(store._id) ? (
+                      <PersonAddDisabledIcon sx={{ fontSize: 18 }} />
+                    ) : (
+                      <PersonAddIcon sx={{ fontSize: 18 }} />
+                    )
+                  }
+                  sx={{
+                    fontWeight: 600,
+                    textTransform: "none",
+                    borderRadius: 2,
+                    px: 2,
+                    py: 0.75,
+                    fontSize: "0.875rem",
+                    ...(isStoreFollowed(store._id)
+                      ? {
+                          color: "white",
+                          bgcolor: "rgba(248, 23, 23, 0.95)",
+                          boxShadow: "0 2px 8px rgba(255, 3, 3, 0.4)",
+                          "&:hover": {
+                            bgcolor: "rgb(175, 76, 76)",
+                            boxShadow: "0 4px 12px rgba(255, 3, 3, 0.5)",
+                          },
+                        }
+                      : {
+                          color: "white",
+                          borderColor: "rgba(15, 204, 78, 0.8)",
+                          borderWidth: 2,
+                          backgroundColor: "rgba(15, 204, 78, 0.8)",
+                          "&:hover": {
+                            borderColor: "rgba(15, 204, 78, 0.97)",
+                            backgroundColor: "rgba(15, 204, 78, 0.97)",
+                            borderWidth: 2,
+                          },
+                        }),
+                  }}
+                >
+                  {isStoreFollowed(store._id) ? t("Unfollow") : t("Follow")}
+                </Button>
+              </Box>
             </Box>
 
             {/* Desktop Layout - Original Grid */}
@@ -1193,6 +1293,87 @@ const StoreProfile = () => {
                 >
                   {store.name}
                 </Typography>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 2,
+                    mb: 2,
+                    flexWrap: "wrap",
+                    justifyContent: { xs: "center", md: "flex-start" },
+                  }}
+                >
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      color: "rgba(255,255,255,0.95)",
+                      fontWeight: 600,
+                      textShadow: "0 1px 2px rgba(0,0,0,0.3)",
+                    }}
+                  >
+                    {followerCount} {t("Followers")}
+                  </Typography>
+                  <Button
+                    variant={
+                      isStoreFollowed(store._id) ? "contained" : "outlined"
+                    }
+                    size="small"
+                    disabled={followLoading}
+                    onClick={async () => {
+                      setFollowLoading(true);
+                      try {
+                        const result = await toggleFollowStore(store._id);
+                        if (result?.success && result?.data != null) {
+                          setFollowerCount(
+                            Math.max(
+                              0,
+                              result.data.followerCount ?? followerCount,
+                            ),
+                          );
+                        }
+                      } finally {
+                        setFollowLoading(false);
+                      }
+                    }}
+                    startIcon={
+                      isStoreFollowed(store._id) ? (
+                        <PersonAddDisabledIcon sx={{ fontSize: 18 }} />
+                      ) : (
+                        <PersonAddIcon sx={{ fontSize: 18 }} />
+                      )
+                    }
+                    sx={{
+                      fontWeight: 600,
+                      textTransform: "none",
+                      borderRadius: 2,
+                      px: 2,
+                      py: 0.75,
+                      fontSize: "0.875rem",
+                      ...(isStoreFollowed(store._id)
+                        ? {
+                            color: "white",
+                            bgcolor: "rgba(76, 175, 80, 0.95)",
+                            boxShadow: "0 2px 8px rgba(76, 175, 80, 0.4)",
+                            "&:hover": {
+                              bgcolor: "rgba(76, 175, 80, 1)",
+                              boxShadow: "0 4px 12px rgba(76, 175, 80, 0.5)",
+                            },
+                          }
+                        : {
+                            color: "white",
+                            borderColor: "rgba(255,255,255,0.8)",
+                            borderWidth: 2,
+                            "&:hover": {
+                              borderColor: "white",
+                              bgcolor: "rgba(255,255,255,0.15)",
+                              borderWidth: 2,
+                            },
+                          }),
+                    }}
+                  >
+                    {isStoreFollowed(store._id) ? t("Unfollow") : t("Follow")}
+                  </Button>
+                </Box>
                 <Box sx={{ mb: 3 }}>
                   {store.address && (
                     <Box

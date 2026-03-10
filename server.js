@@ -55,6 +55,7 @@ app.use("/api/brand-types", require("./routes/brandType"));
 app.use("/api/notifications", require("./routes/notification"));
 app.use("/api/admin", require("./routes/admin"));
 app.use("/api/settings", require("./routes/settings"));
+app.use("/api/search", require("./routes/search"));
 
 const PORT = process.env.PORT || 5000;
 // app.listen(PORT, () => console.log(`Server started on port ${PORT}`));

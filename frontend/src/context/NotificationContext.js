@@ -234,6 +234,18 @@ export const NotificationProvider = ({ children }) => {
     }
   }, [isAuthenticated]);
 
+  const clearAll = useCallback(async () => {
+    try {
+      const deviceId = isAuthenticated ? null : getDeviceId();
+      await notificationAPI.clearAll(deviceId);
+      setNotifications([]);
+      setUnreadCount(0);
+      fetchNotifications();
+    } catch (err) {
+      console.error("Clear notifications error:", err);
+    }
+  }, [isAuthenticated, fetchNotifications]);
+
   return (
     <NotificationContext.Provider
       value={{
@@ -243,6 +255,7 @@ export const NotificationProvider = ({ children }) => {
         fetchNotifications,
         markAsRead,
         markAllAsRead,
+        clearAll,
         pushSupported,
         pushPermission,
         pushSubscribing,

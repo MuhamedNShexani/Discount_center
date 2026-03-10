@@ -13,6 +13,10 @@ const userNotificationStateSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
+    clearedBefore: {
+      type: Date,
+      required: false,
+    },
   },
   { timestamps: true }
 );

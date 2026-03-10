@@ -1,5 +1,6 @@
 const User = require("../models/User");
 const Product = require("../models/Product");
+const Store = require("../models/Store");
 
 // @desc    Get or create user by device ID (for anonymous tracking)
 // @route   GET /api/users/device/:deviceId
@@ -409,11 +410,123 @@ const getViewedProducts = async (req, res) => {
   }
 };
 
+// @desc    Follow/unfollow a store (works with auth token OR deviceId for anonymous)
+// @route   POST /api/users/follow-store
+// @access  Public (optionalAuth)
+const toggleFollowStore = async (req, res) => {
+  try {
+    const { storeId, deviceId } = req.body;
+    const userId = req.userId;
+
+    if (!storeId) {
+      return res.status(400).json({
+        success: false,
+        message: "Store ID is required",
+      });
+    }
+
+    let user;
+    if (userId) {
+      user = await User.findById(userId);
+    } else if (deviceId) {
+      user = await User.findOne({ deviceId });
+      if (!user) {
+        user = new User({ deviceId });
+        await user.save();
+      }
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Either login or provide device ID to follow stores",
+      });
+    }
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const store = await Store.findById(storeId);
+    if (!store) {
+      return res.status(404).json({ success: false, message: "Store not found" });
+    }
+
+    const isFollowed = (user.followedStores || []).some(
+      (id) => id.toString() === storeId
+    );
+
+    if (isFollowed) {
+      user.followedStores = (user.followedStores || []).filter(
+        (id) => id.toString() !== storeId
+      );
+      await Store.findByIdAndUpdate(storeId, {
+        $inc: { followerCount: -1 },
+      });
+    } else {
+      if (!user.followedStores) user.followedStores = [];
+      user.followedStores.push(storeId);
+      await Store.findByIdAndUpdate(storeId, {
+        $inc: { followerCount: 1 },
+      });
+    }
+    await user.save();
+
+    const updatedStore = await Store.findById(storeId).select("followerCount").lean();
+
+    res.json({
+      success: true,
+      data: {
+        isFollowed: !isFollowed,
+        followerCount: Math.max(0, updatedStore.followerCount || 0),
+      },
+    });
+  } catch (error) {
+    console.error("Error toggling store follow:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// @desc    Get user's followed stores
+// @route   GET /api/users/followed-stores
+// @access  Public (optionalAuth)
+const getFollowedStores = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const deviceId = req.query.deviceId;
+
+    let user;
+    if (userId) {
+      user = await User.findById(userId);
+    } else if (deviceId) {
+      user = await User.findOne({ deviceId });
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Either login or provide device ID to view followed stores",
+      });
+    }
+
+    if (!user || !user.followedStores?.length) {
+      return res.json({ success: true, data: [] });
+    }
+
+    const stores = await Store.find({ _id: { $in: user.followedStores }, show: { $ne: false } })
+      .populate("storeTypeId", "name icon")
+      .lean();
+
+    res.json({ success: true, data: stores });
+  } catch (error) {
+    console.error("Error getting followed stores:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
 module.exports = {
   getUserByDevice,
   toggleProductLike,
+  toggleFollowStore,
   recordProductView,
   addProductReview,
   getLikedProducts,
   getViewedProducts,
+  getFollowedStores,
 };

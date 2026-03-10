@@ -9,18 +9,21 @@ import {
   CircularProgress,
   Alert,
   Chip,
+  Button,
 } from "@mui/material";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import StorefrontIcon from "@mui/icons-material/Storefront";
+import ArrowBack from "@mui/icons-material/ArrowBack";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@mui/material/styles";
 import { useUserTracking } from "../hooks/useUserTracking";
 
 const FavouritesPage = () => {
   const theme = useTheme();
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const { getLikedProducts, toggleLike, isProductLiked, user } =
     useUserTracking();
@@ -148,20 +151,64 @@ const FavouritesPage = () => {
 
   if (loading) {
     return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="50vh"
-      >
-        <CircularProgress />
+      <Box sx={{ py: 3, px: 2 }}>
+        <Button
+          variant="outlined"
+          startIcon={<ArrowBack />}
+          onClick={() => navigate(-1)}
+          sx={{
+            mt: { xs: 4, md: 3 },
+            mb: 3,
+            borderRadius: 2,
+            borderColor: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+            color: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+            "&:hover": {
+              borderColor:
+                theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+              backgroundColor:
+                theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+              color: theme.palette.mode === "dark" ? "#52b788" : "white",
+            },
+          }}
+        >
+          {t("Back")}
+        </Button>
+        <Box
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          minHeight="40vh"
+        >
+          <CircularProgress />
+        </Box>
       </Box>
     );
   }
 
   if (error) {
     return (
-      <Box sx={{ p: 3 }}>
+      <Box sx={{ py: 3, px: 2 }}>
+        <Button
+          variant="outlined"
+          startIcon={<ArrowBack />}
+          onClick={() => navigate(-1)}
+          sx={{
+            mt: { xs: 4, md: 3 },
+            mb: 3,
+            borderRadius: 2,
+            borderColor: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+            color: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+            "&:hover": {
+              borderColor:
+                theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+              backgroundColor:
+                theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+              color: theme.palette.mode === "dark" ? "#52b788" : "white",
+            },
+          }}
+        >
+          {t("Back")}
+        </Button>
         <Alert severity="error">{error}</Alert>
       </Box>
     );
@@ -169,10 +216,29 @@ const FavouritesPage = () => {
 
   return (
     <Box sx={{ py: 3, px: 2, pb: { xs: 10, sm: 3 } }}>
+      <Button
+        variant="outlined"
+        startIcon={<ArrowBack />}
+        onClick={() => navigate(-1)}
+        sx={{
+          mt: { xs: 4, md: 3 },
+          mb: 3,
+          borderRadius: 2,
+          borderColor: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+          color: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+          "&:hover": {
+            borderColor: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+            backgroundColor:
+              theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+            color: theme.palette.mode === "dark" ? "#52b788" : "white",
+          },
+        }}
+      >
+        {t("Back")}
+      </Button>
       <Typography
         variant="h4"
         sx={{
-          mt: 4,
           mb: 3,
           fontWeight: 700,
           color: theme.palette.mode === "dark" ? "#40916c" : "#34495e",

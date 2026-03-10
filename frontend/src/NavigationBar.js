@@ -46,6 +46,7 @@ import {
   PrivacyTip as PrivacyTipIcon,
   ContactSupport as ContactSupportIcon,
   Notifications as NotificationsIcon,
+  Search as SearchIcon,
 } from "@mui/icons-material";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -66,6 +67,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
     unreadCount,
     markAsRead,
     markAllAsRead,
+    clearAll,
     fetchNotifications,
     pushSupported,
     pushPermission,
@@ -140,6 +142,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
 
   const navItems = [
     { name: t("Main Page"), path: "/", icon: <HomeIcon /> },
+    { name: t("Search"), path: "/search", icon: <SearchIcon /> },
     { name: t("Products"), path: "/categories", icon: <CategoryIcon /> },
     { name: t("Favourites"), path: "/favourites", icon: <FavoriteIcon /> },
     { name: t("Brands"), path: "/brands", icon: <BusinessIcon /> },
@@ -189,45 +192,166 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
         }}
       >
         <Toolbar
-          sx={{ justifyContent: "space-between", px: { xs: 1, sm: 2, md: 4 } }}
+          sx={{
+            justifyContent: isSmUp ? "space-between" : "flex-start",
+            px: { xs: 1, sm: 2, md: 4 },
+            ...(isSmUp ? {} : { minHeight: 56 }),
+          }}
         >
-          {/* Logo and Brand */}
-          <Box display="flex" alignItems="center">
-            <Avatar
+          {/* Mobile navbar: Notification | Favourites | App name (center) | Search | Profile */}
+          {!isSmUp && (
+            <Box
               sx={{
-                mr: 2,
-                width: 40,
-                height: 40,
-                background: "linear-gradient(135deg, #ffffff20, #ffffff40)",
-                backdropFilter: "blur(10px)",
-                border: "2px solid rgba(255,255,255,0.3)",
+                display: "flex",
+                alignItems: "center",
+                width: "100%",
+                justifyContent: "space-between",
+                gap: 0.5,
               }}
             >
-              <StoreIcon sx={{ color: "white", fontSize: 24 }} />
-            </Avatar>
-            <Typography
-              variant="h5"
-              component={Link}
-              to="/"
-              sx={{
-                textDecoration: "none",
-                color: "white",
-                fontWeight: 700,
-                fontSize: { xs: "1rem", sm: "1.25rem", md: "1.5rem" },
-                textShadow: "0 2px 4px rgba(0,0,0,0.3)",
-                background: "linear-gradient(45deg, #ffffff, #f0f0f0)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-                transition: "all 0.3s ease",
-                "&:hover": {
-                  transform: "scale(1.05)",
-                },
-              }}
-            >
-              {t("Store Products")}
-            </Typography>
-          </Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.9 }}>
+                <IconButton
+                  onClick={handleNotificationMenuOpen}
+                  sx={{
+                    color: "white",
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    backdropFilter: "blur(10px)",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    transition: "all 0.3s ease",
+                    width: 40,
+                    height: 40,
+                    "&:hover": {
+                      backgroundColor: "rgba(255,255,255,0.2)",
+                      transform: "scale(1.1)",
+                    },
+                  }}
+                >
+                  <Badge badgeContent={unreadCount} color="error">
+                    <NotificationsIcon />
+                  </Badge>
+                </IconButton>
+                <IconButton
+                  component={Link}
+                  to="/favourites"
+                  sx={{
+                    color: "white",
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    backdropFilter: "blur(10px)",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    transition: "all 0.3s ease",
+                    width: 40,
+                    height: 40,
+                    "&:hover": {
+                      backgroundColor: "rgba(255,255,255,0.2)",
+                      transform: "scale(1.1)",
+                    },
+                  }}
+                >
+                  <FavoriteIcon />
+                </IconButton>
+              </Box>
+              <Typography
+                component={Link}
+                to="/"
+                sx={{
+                  flex: 1,
+                  textAlign: "center",
+                  textDecoration: "none",
+                  color: "white",
+                  fontWeight: 700,
+                  fontSize: "1.25rem",
+                  textShadow: "0 2px 4px rgba(0,0,0,0.3)",
+                  background: "linear-gradient(45deg, #ffffff, #f0f0f0)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                  transition: "all 0.3s ease",
+                  "&:hover": { transform: "scale(1.05)" },
+                }}
+              >
+                {t("Store Products")}
+              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.9 }}>
+                <IconButton
+                  component={Link}
+                  to="/search"
+                  sx={{
+                    color: "white",
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    backdropFilter: "blur(10px)",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    transition: "all 0.3s ease",
+                    width: 40,
+                    height: 40,
+                    "&:hover": {
+                      backgroundColor: "rgba(255,255,255,0.2)",
+                      transform: "scale(1.1)",
+                    },
+                  }}
+                >
+                  <SearchIcon />
+                </IconButton>
+                <IconButton
+                  onClick={handleProfileMenuOpen}
+                  sx={{
+                    color: "white",
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    backdropFilter: "blur(10px)",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    transition: "all 0.3s ease",
+                    width: 40,
+                    height: 40,
+                    "&:hover": {
+                      backgroundColor: "rgba(255,255,255,0.2)",
+                      transform: "scale(1.1)",
+                    },
+                  }}
+                >
+                  <PersonIcon />
+                </IconButton>
+              </Box>
+            </Box>
+          )}
+
+          {/* Desktop: Logo and Brand */}
+          {isSmUp && (
+            <Box display="flex" alignItems="center">
+              <Avatar
+                sx={{
+                  mr: 2,
+                  width: 40,
+                  height: 40,
+                  background: "linear-gradient(135deg, #ffffff20, #ffffff40)",
+                  backdropFilter: "blur(10px)",
+                  border: "2px solid rgba(255,255,255,0.3)",
+                }}
+              >
+                <StoreIcon sx={{ color: "white", fontSize: 24 }} />
+              </Avatar>
+              <Typography
+                variant="h5"
+                component={Link}
+                to="/"
+                sx={{
+                  textDecoration: "none",
+                  color: "white",
+                  fontWeight: 700,
+                  fontSize: { xs: "1rem", sm: "1.25rem", md: "1.5rem" },
+                  textShadow: "0 2px 4px rgba(0,0,0,0.3)",
+                  background: "linear-gradient(45deg, #ffffff, #f0f0f0)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                  transition: "all 0.3s ease",
+                  "&:hover": {
+                    transform: "scale(1.05)",
+                  },
+                }}
+              >
+                {t("Store Products")}
+              </Typography>
+            </Box>
+          )}
 
           {/* Desktop Navigation */}
           {isSmUp && (
@@ -507,10 +631,10 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
             </Box>
           )}
 
-          {/* Controls */}
-          <Box display="flex" alignItems="center" gap={{ xs: 2, sm: 1 }}>
-            {/* Desktop Controls */}
-            {isSmUp && (
+          {/* Controls - desktop only (mobile has its own navbar above) */}
+          {isSmUp && (
+            <Box display="flex" alignItems="center" gap={{ xs: 2, sm: 1 }}>
+              {/* Desktop Controls */}
               <>
                 {/* Language Selector (desktop - stays in navbar) */}
                 <Paper
@@ -566,75 +690,8 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   </Select>
                 </Paper>
               </>
-            )}
-
-            {/* Mobile Controls */}
-            {!isSmUp && (
-              <>
-                {/* Mobile Favourites Link */}
-                <IconButton
-                  component={Link}
-                  to="/favourites"
-                  sx={{
-                    color: "white",
-                    backgroundColor: "rgba(255,255,255,0.1)",
-                    backdropFilter: "blur(10px)",
-                    border: "1px solid rgba(255,255,255,0.2)",
-                    transition: "all 0.3s ease",
-                    width: 40,
-                    height: 40,
-                    "&:hover": {
-                      backgroundColor: "rgba(255,255,255,0.2)",
-                      transform: "scale(1.1)",
-                    },
-                  }}
-                >
-                  <FavoriteIcon />
-                </IconButton>
-                {/* Mobile Notification Bell */}
-                <IconButton
-                  onClick={handleNotificationMenuOpen}
-                  sx={{
-                    color: "white",
-                    backgroundColor: "rgba(255,255,255,0.1)",
-                    backdropFilter: "blur(10px)",
-                    border: "1px solid rgba(255,255,255,0.2)",
-                    transition: "all 0.3s ease",
-                    width: 40,
-                    height: 40,
-                    "&:hover": {
-                      backgroundColor: "rgba(255,255,255,0.2)",
-                      transform: "scale(1.1)",
-                    },
-                  }}
-                >
-                  <Badge badgeContent={unreadCount} color="error">
-                    <NotificationsIcon />
-                  </Badge>
-                </IconButton>
-
-                {/* Mobile Profile Icon */}
-                <IconButton
-                  onClick={handleProfileMenuOpen}
-                  sx={{
-                    color: "white",
-                    backgroundColor: "rgba(255,255,255,0.1)",
-                    backdropFilter: "blur(10px)",
-                    border: "1px solid rgba(255,255,255,0.2)",
-                    transition: "all 0.3s ease",
-                    width: 40,
-                    height: 40,
-                    "&:hover": {
-                      backgroundColor: "rgba(255,255,255,0.2)",
-                      transform: "scale(1.1)",
-                    },
-                  }}
-                >
-                  <PersonIcon />
-                </IconButton>
-              </>
-            )}
-          </Box>
+            </Box>
+          )}
         </Toolbar>
       </AppBar>
 
@@ -651,27 +708,45 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
             minWidth: 320,
             maxWidth: 380,
             maxHeight: 400,
-            backgroundColor:
-              theme.palette.mode === "dark" ? "#2c3e50" : "#fff",
+            backgroundColor: theme.palette.mode === "dark" ? "#2c3e50" : "#fff",
             border: `1px solid ${theme.palette.divider}`,
             borderRadius: 2,
           },
         }}
       >
         <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: "divider" }}>
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 1,
+            }}
+          >
             <Typography variant="subtitle1" fontWeight={600}>
               {t("Notifications")}
             </Typography>
-            {unreadCount > 0 && (
-              <Button
-                size="small"
-                onClick={() => markAllAsRead()}
-                sx={{ textTransform: "none" }}
-              >
-                {t("Mark all read")}
-              </Button>
-            )}
+            <Box sx={{ display: "flex", gap: 0.5 }}>
+              {unreadCount > 0 && (
+                <Button
+                  size="small"
+                  onClick={() => markAllAsRead()}
+                  sx={{ textTransform: "none" }}
+                >
+                  {t("Mark all read")}
+                </Button>
+              )}
+              {notifications.length > 0 && (
+                <Button
+                  size="small"
+                  onClick={() => clearAll()}
+                  sx={{ textTransform: "none", color: "text.secondary" }}
+                >
+                  {t("Clear notifications")}
+                </Button>
+              )}
+            </Box>
           </Box>
         </Box>
         {pushSupported && pushPermission === "default" && (
@@ -692,7 +767,11 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
         )}
         <Box sx={{ maxHeight: 280, overflow: "auto" }}>
           {notifications.length === 0 ? (
-            <Typography variant="body2" color="text.secondary" sx={{ p: 2, textAlign: "center" }}>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ p: 2, textAlign: "center" }}
+            >
               {t("No notifications")}
             </Typography>
           ) : (
@@ -710,7 +789,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   borderColor: "divider",
                 }}
               >
-                <Box>
+                <Box sx={{ width: "100%" }}>
                   <Typography
                     variant="body2"
                     fontWeight={n.read ? 400 : 600}
@@ -719,8 +798,36 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                     {n.title}
                   </Typography>
                   {n.body && (
-                    <Typography variant="caption" color="text.secondary" display="block">
-                      {n.body.length > 80 ? `${n.body.slice(0, 80)}...` : n.body}
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      display="block"
+                    >
+                      {n.body.length > 120
+                        ? `${n.body.slice(0, 120)}...`
+                        : n.body}
+                    </Typography>
+                  )}
+                  {n.link && (
+                    <Typography
+                      component={Link}
+                      to={n.link}
+                      variant="caption"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        markAsRead(n._id);
+                        handleNotificationMenuClose();
+                      }}
+                      sx={{
+                        display: "inline-block",
+                        mt: 0.5,
+                        color: "primary.main",
+                        textDecoration: "underline",
+                        fontSize: "0.7rem",
+                        "&:hover": { color: "primary.dark" },
+                      }}
+                    >
+                      {t("View")} →
                     </Typography>
                   )}
                 </Box>
@@ -868,10 +975,12 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
         )}
 
         {/* City Selector - in profile (desktop & mobile) - single button with submenu */}
-        {(
+        {
           <>
             <ListItemButton
-              onClick={(e) => setCityAnchorEl(cityAnchorEl ? null : e.currentTarget)}
+              onClick={(e) =>
+                setCityAnchorEl(cityAnchorEl ? null : e.currentTarget)
+              }
               sx={{
                 py: 1.5,
                 px: 2,
@@ -888,16 +997,24 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
               </ListItemIcon>
               <ListItemText
                 primary={t("City")}
-                secondary={
-                  (() => {
-                    const city = cities.find((c) => c.value === selectedCity);
-                    return city ? `${city.flag} ${city.label}` : "";
-                  })()
-                }
-                primaryTypographyProps={{ fontSize: "0.875rem", fontWeight: 500 }}
-                secondaryTypographyProps={{ fontSize: "0.8rem", color: "text.secondary" }}
+                secondary={(() => {
+                  const city = cities.find((c) => c.value === selectedCity);
+                  return city ? `${city.flag} ${city.label}` : "";
+                })()}
+                primaryTypographyProps={{
+                  fontSize: "0.875rem",
+                  fontWeight: 500,
+                }}
+                secondaryTypographyProps={{
+                  fontSize: "0.8rem",
+                  color: "text.secondary",
+                }}
               />
-              {cityAnchorEl ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+              {cityAnchorEl ? (
+                <ExpandLessIcon fontSize="small" />
+              ) : (
+                <ExpandMoreIcon fontSize="small" />
+              )}
             </ListItemButton>
             <Menu
               anchorEl={cityAnchorEl}
@@ -948,7 +1065,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
             </Menu>
             <Divider />
           </>
-        )}
+        }
 
         {/* Theme / Mode Toggle */}
         <MenuItem
@@ -1006,7 +1123,10 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                 fontSize: "0.875rem",
                 fontWeight: 500,
               }}
-              secondaryTypographyProps={{ fontSize: "0.75rem", color: "text.secondary" }}
+              secondaryTypographyProps={{
+                fontSize: "0.75rem",
+                color: "text.secondary",
+              }}
             />
             <Switch
               size="small"

@@ -82,10 +82,6 @@ const Gifts = () => {
           adAPI.getAll({ page: "gifts" }),
         ]);
 
-      console.log("Gifts response:", giftsResponse);
-      console.log("Stores response:", storesResponse);
-      console.log("Brands response:", brandsResponse);
-
       // Handle the API response structure: { success: true, data: gifts }
       const giftsData = Array.isArray(giftsResponse.data?.data)
         ? giftsResponse.data.data
@@ -106,7 +102,7 @@ const Gifts = () => {
         err.response?.data?.message ||
           err.response?.data?.msg ||
           err.message ||
-          "Network error. Please check your connection."
+          "Network error. Please check your connection.",
       );
       console.error("Error fetching gifts data:", err);
       // Set empty arrays on error to prevent "not iterable" errors
@@ -148,7 +144,7 @@ const Gifts = () => {
           storeId: ad.storeId,
           giftId: ad.giftId,
         })),
-    [bannerAds]
+    [bannerAds],
   );
 
   const applyFilters = () => {
@@ -163,7 +159,7 @@ const Gifts = () => {
     // Search filter
     if (filters.search) {
       filtered = filtered.filter((gift) =>
-        gift.description.toLowerCase().includes(filters.search.toLowerCase())
+        gift.description.toLowerCase().includes(filters.search.toLowerCase()),
       );
     }
 
@@ -173,7 +169,7 @@ const Gifts = () => {
         (gift) =>
           gift.storeId &&
           Array.isArray(gift.storeId) &&
-          gift.storeId.some((store) => store._id === filters.store)
+          gift.storeId.some((store) => store._id === filters.store),
       );
     }
 
@@ -594,7 +590,9 @@ const Gifts = () => {
   const storeGifts = Array.isArray(filteredGifts)
     ? filteredGifts.filter(
         (gift) =>
-          gift.storeId && Array.isArray(gift.storeId) && gift.storeId.length > 0
+          gift.storeId &&
+          Array.isArray(gift.storeId) &&
+          gift.storeId.length > 0,
       )
     : [];
   const brandGifts = Array.isArray(filteredGifts)
@@ -630,10 +628,10 @@ const Gifts = () => {
                       ad.brandId
                         ? navigate(`/brands/${ad.brandId}`)
                         : ad.storeId
-                        ? navigate(`/stores/${ad.storeId}`)
-                        : ad.giftId
-                        ? navigate(`/gifts/${ad.giftId}`)
-                        : null
+                          ? navigate(`/stores/${ad.storeId}`)
+                          : ad.giftId
+                            ? navigate(`/gifts/${ad.giftId}`)
+                            : null
                     }
                     src={ad.src}
                     alt={`Banner ${index + 1}`}
@@ -906,7 +904,7 @@ const Gifts = () => {
                       sx={{ cursor: "pointer" }}
                       onClick={() => {
                         navigate(
-                          `/brands/${selectedGift.brandId._id}?tab=gifts`
+                          `/brands/${selectedGift.brandId._id}?tab=gifts`,
                         );
                       }}
                     >

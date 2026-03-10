@@ -81,6 +81,12 @@ const userSchema = new mongoose.Schema({
       ref: "Product",
     },
   ],
+  followedStores: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Store",
+    },
+  ],
   viewedProducts: [
     {
       productId: {

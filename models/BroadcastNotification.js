@@ -18,6 +18,16 @@ const broadcastNotificationSchema = new mongoose.Schema(
       enum: ["info", "promo", "alert", "general"],
       default: "general",
     },
+    link: {
+      type: String,
+      trim: true,
+      maxlength: 200,
+    },
+    expireDate: {
+      type: Date,
+      required: false,
+      index: true,
+    },
     createdAt: {
       type: Date,
       default: Date.now,

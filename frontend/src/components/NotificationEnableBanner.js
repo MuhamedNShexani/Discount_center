@@ -5,14 +5,6 @@ import { useNotifications } from "../context/NotificationContext";
 
 const DISMISS_KEY = "notification-banner-dismissed";
 
-const isIOS = () =>
-  /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-  (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-
-const isStandalone = () =>
-  window.matchMedia("(display-mode: standalone)").matches ||
-  window.navigator.standalone === true;
-
 export default function NotificationEnableBanner() {
   const { t } = useTranslation();
   const {
@@ -23,7 +15,6 @@ export default function NotificationEnableBanner() {
     pushEnabled,
   } = useNotifications();
   const [open, setOpen] = useState(false);
-  const [showIOSHint, setShowIOSHint] = useState(false);
 
   useEffect(() => {
     if (!pushSupported) return;
@@ -34,16 +25,12 @@ export default function NotificationEnableBanner() {
     if (pushPermission === "default") {
       setOpen(true);
     }
-    if (isIOS() && !isStandalone()) {
-      setShowIOSHint(true);
-    }
   }, [pushSupported, pushPermission, pushEnabled]);
 
   const handleEnable = async () => {
     const ok = await requestPushPermission();
     if (ok) {
       setOpen(false);
-      setShowIOSHint(false);
     }
   };
 
@@ -97,38 +84,6 @@ export default function NotificationEnableBanner() {
           </Box>
         </Box>
       </Snackbar>
-
-      {showIOSHint && !open && pushPermission === "granted" && (
-        <Snackbar
-          open={showIOSHint}
-          autoHideDuration={null}
-          anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-          sx={{ bottom: { xs: 70, sm: 24 } }}
-        >
-          <Box
-            sx={{
-              backgroundColor: (theme) =>
-                theme.palette.mode === "dark" ? "#2c3e50" : "#1a1a1a",
-              color: "#fff",
-              borderRadius: 2,
-              p: 2,
-              maxWidth: 360,
-              boxShadow: 4,
-            }}
-          >
-            <Typography variant="body2" sx={{ mb: 1.5 }}>
-              {t("For notifications when app is closed: tap Share → Add to Home Screen")}
-            </Typography>
-            <Button
-              size="small"
-              onClick={() => setShowIOSHint(false)}
-              sx={{ color: "rgba(255,255,255,0.7)" }}
-            >
-              {t("Got it")}
-            </Button>
-          </Box>
-        </Snackbar>
-      )}
     </>
   );
 }

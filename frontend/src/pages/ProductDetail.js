@@ -368,11 +368,23 @@ const ProductDetail = () => {
   }
 
   return (
-    <Box sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
+    <Box sx={{ px: { xs: 2, sm: 3, md: 4 }, pt: 2, mt: { xs: 4, md: 3 } }}>
       <Button
+        variant="outlined"
         startIcon={<ArrowBack />}
         onClick={() => navigate(-1)}
-        sx={{ mb: { xs: 2, md: 3 } }}
+        sx={{
+          borderRadius: 2,
+          mb: { xs: 2, md: 3 },
+          borderColor: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+          color: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+          "&:hover": {
+            borderColor: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+            backgroundColor:
+              theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+            color: theme.palette.mode === "dark" ? "#52b788" : "white",
+          },
+        }}
       >
         {t("Back")}
       </Button>
@@ -439,31 +451,6 @@ const ProductDetail = () => {
                   {product.name}
                 </Typography>
               </Box>
-
-              {/* Category Type Badge */}
-              <Chip
-                label={getCategoryTypeName(
-                  product.categoryTypeId,
-                  product.categoryId?._id || product.categoryId,
-                )}
-                color="primary"
-                sx={{
-                  mb: 2,
-                  fontSize: { xs: "0.7rem", sm: "0.875rem" },
-                  height: { xs: "28px", sm: "32px" },
-                }}
-                icon={<CategoryIcon sx={{ fontSize: { xs: 16, sm: 20 } }} />}
-                component={RouterLink}
-                to="/categories"
-                state={{
-                  category: product.categoryId?.name || "All Categories",
-                  categoryType: getCategoryTypeName(
-                    product.categoryTypeId,
-                    product.categoryId?._id || product.categoryId,
-                  ),
-                }}
-                clickable
-              />
 
               {/* Category Details */}
               {product.categoryId && (
@@ -675,8 +662,7 @@ const ProductDetail = () => {
                     gutterBottom
                     sx={{
                       fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" },
-                      color:
-                        theme.palette.mode === "dark" ? "white" : "black",
+                      color: theme.palette.mode === "dark" ? "white" : "black",
                     }}
                   >
                     {t("Price")}:{" "}

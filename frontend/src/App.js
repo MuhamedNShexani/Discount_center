@@ -25,6 +25,7 @@ import ProductCategory from "./pages/ProductCategory";
 import DataEntryForm from "./pages/DataEntryForm";
 import ProductDetail from "./pages/ProductDetail";
 import StoreProfile from "./pages/StoreProfile";
+import SearchPage from "./pages/SearchPage";
 import Gifts from "./pages/Gifts";
 import FavouritesPage from "./pages/FavouritesPage";
 import AdminPage from "./pages/AdminPage";
@@ -304,6 +305,7 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
+                <Route path="/search" element={<SearchPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/products/:id" element={<ProductDetail />} />

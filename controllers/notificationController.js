@@ -24,9 +24,31 @@ const getNotifications = async (req, res) => {
 
     const limit = parseInt(req.query.limit) || 50;
 
-    const [userState, notifications, readReceipts] = await Promise.all([
-      UserNotificationState.findOne({ userId }).lean(),
-      BroadcastNotification.find({})
+    const userState = await UserNotificationState.findOne({ userId }).lean();
+
+    const now = new Date();
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const notificationsQuery = {
+      $and: [
+        {
+          $or: [
+            { expireDate: { $gt: now } },
+            {
+              expireDate: { $exists: false },
+              createdAt: { $gt: sevenDaysAgo },
+            },
+          ],
+        },
+      ],
+    };
+    if (userState?.clearedBefore) {
+      notificationsQuery.$and.push({
+        createdAt: { $gt: new Date(userState.clearedBefore) },
+      });
+    }
+
+    const [notifications, readReceipts] = await Promise.all([
+      BroadcastNotification.find(notificationsQuery)
         .sort({ createdAt: -1 })
         .limit(limit)
         .lean(),
@@ -47,6 +69,7 @@ const getNotifications = async (req, res) => {
       title: n.title,
       body: n.body,
       type: n.type,
+      link: n.link || null,
       read:
         n.createdAt <= markAllReadBefore || readSet.has(n._id.toString()),
       createdAt: n.createdAt,
@@ -78,8 +101,26 @@ async function countUnread(userId) {
     readNotificationIds.map((r) => r.notificationId?.toString()).filter(Boolean)
   );
 
+  const clearedBefore = userState?.clearedBefore
+    ? new Date(userState.clearedBefore)
+    : new Date(0);
+  const minDate = new Date(
+    Math.max(
+      markAllReadBefore.getTime(),
+      clearedBefore.getTime()
+    )
+  );
+  const now = new Date();
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const expiryFilter = {
+    $or: [
+      { expireDate: { $gt: now } },
+      { expireDate: { $exists: false }, createdAt: { $gt: sevenDaysAgo } },
+    ],
+  };
   const candidates = await BroadcastNotification.find({
-    createdAt: { $gt: markAllReadBefore },
+    createdAt: { $gt: minDate },
+    ...expiryFilter,
   })
     .select("_id")
     .lean();
@@ -184,8 +225,47 @@ const markAllAsRead = async (req, res) => {
   }
 };
 
+// @desc    Clear all notifications for current user (hide from view)
+// @route   PUT /api/notifications/clear
+// @access  Private (optionalAuth)
+const clearNotifications = async (req, res) => {
+  try {
+    let userId = req.userId;
+
+    if (!userId && req.body?.deviceId) {
+      const user = await User.findOne({ deviceId: req.body.deviceId });
+      if (user) userId = user._id;
+    }
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Login or provide deviceId",
+      });
+    }
+
+    const now = new Date();
+
+    await UserNotificationState.findOneAndUpdate(
+      { userId },
+      { $set: { clearedBefore: now } },
+      {
+        upsert: true,
+        new: true,
+        setDefaultsOnInsert: { markAllReadBefore: now },
+      }
+    );
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Clear notifications error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
 module.exports = {
   getNotifications,
   markAsRead,
   markAllAsRead,
+  clearNotifications,
 };

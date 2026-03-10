@@ -4,6 +4,7 @@ const {
   getNotifications,
   markAsRead,
   markAllAsRead,
+  clearNotifications,
 } = require("../controllers/notificationController");
 const { optionalAuth } = require("../middleware/auth");
 
@@ -21,6 +22,7 @@ router.get("/vapid-public", (req, res) => {
 
 router.get("/", optionalAuth, getNotifications);
 router.put("/read-all", optionalAuth, markAllAsRead);
+router.put("/clear", optionalAuth, clearNotifications);
 router.put("/:id/read", optionalAuth, markAsRead);
 
 module.exports = router;
