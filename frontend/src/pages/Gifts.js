@@ -342,6 +342,11 @@ const Gifts = () => {
     }
 
     const remainingDays = getRemainingDays(gift.expireDate);
+    const primaryStore =
+      Array.isArray(gift.storeId) && gift.storeId.length > 0
+        ? gift.storeId[0]
+        : null;
+    const brand = gift.brandId || null;
 
     return (
       <Card
@@ -352,8 +357,9 @@ const Gifts = () => {
         }}
         sx={{
           display: "flex",
-          height: { xs: "100px", sm: "250px", md: "280px" },
-          width: "100%",
+          flexDirection: { xs: "column", sm: "row" },
+          height: { xs: "200px", sm: "250px", md: "280px" },
+          width: "165px",
           borderRadius: 2,
           overflow: "hidden",
           cursor: "pointer",
@@ -382,7 +388,7 @@ const Gifts = () => {
         <Box
           sx={{
             width: { xs: "100%", sm: "150px", md: "200px" },
-            height: { xs: "100%", sm: "100%", md: "100%" },
+            height: { xs: 130, sm: "100%", md: "100%" },
             flexShrink: 0,
             position: "relative",
           }}
@@ -394,7 +400,7 @@ const Gifts = () => {
             sx={{
               width: "100%",
               height: "100%",
-              objectFit: "cover",
+              objectFit: "contain",
             }}
           />
         </Box>
@@ -410,6 +416,90 @@ const Gifts = () => {
             minHeight: 0,
           }}
         >
+          {/* Store / Brand Header */}
+          {activeTab === 0 && primaryStore && (
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                mb: 1.5,
+                pb: 1,
+                borderBottom: "1px solid",
+                borderColor: theme.palette.divider,
+                gap: 1,
+              }}
+            >
+              {primaryStore.logo && (
+                <Box
+                  component="img"
+                  src={`${process.env.REACT_APP_BACKEND_URL}${primaryStore.logo}`}
+                  alt={primaryStore.name}
+                  sx={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                    border: "1px solid rgba(0,0,0,0.1)",
+                    flexShrink: 0,
+                  }}
+                />
+              )}
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  fontWeight: 600,
+                  fontSize: { xs: "0.7rem", sm: "0.85rem" },
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {primaryStore.name}
+              </Typography>
+            </Box>
+          )}
+          {activeTab === 1 && brand && (
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                mb: 1.5,
+                pb: 1,
+                borderBottom: "1px solid",
+                borderColor: theme.palette.divider,
+                gap: 1,
+              }}
+            >
+              {brand.logo && (
+                <Box
+                  component="img"
+                  src={`${process.env.REACT_APP_BACKEND_URL}${brand.logo}`}
+                  alt={brand.name}
+                  sx={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                    border: "1px solid rgba(0,0,0,0.1)",
+                    flexShrink: 0,
+                  }}
+                />
+              )}
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  fontWeight: 600,
+                  fontSize: { xs: "0.7rem", sm: "0.85rem" },
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {brand.name}
+              </Typography>
+            </Box>
+          )}
+
           {/* Main Description */}
           {/* <Typography
             variant="body1"
@@ -685,7 +775,7 @@ const Gifts = () => {
       </Box> */}
 
       {/* Filters */}
-      {renderFilters()}
+      {/* {renderFilters()} */}
 
       {/* Tabs */}
       <Paper
@@ -717,12 +807,12 @@ const Gifts = () => {
             },
           }}
         >
-          <Tab
+          {/* <Tab
             sx={{ width: { xs: "100px", sm: "100px", md: "100%" } }}
             label={`${t("All Gifts")} (${allGifts.length})`}
             icon={<CardGiftcard />}
             iconPosition="start"
-          />
+          /> */}
           <Tab
             label={`${t("Store Gifts")} (${storeGifts.length})`}
             icon={<Store />}
@@ -738,7 +828,7 @@ const Gifts = () => {
 
       {/* Content */}
       <Box>
-        {activeTab === 0 && (
+        {/* {activeTab === 0 && (
           <Box>
             {allGifts.length === 0 ? (
               <Box
@@ -760,7 +850,11 @@ const Gifts = () => {
               <Box
                 sx={{
                   display: "grid",
-                  gridTemplateColumns: { xs: "1fr", md: "12fr" },
+                  gridTemplateColumns: {
+                    xs: "repeat(2, 1fr)",
+                    sm: "repeat(2, 1fr)",
+                    md: "repeat(2, 1fr)",
+                  },
                   gap: 3,
                   width: "100%",
                 }}
@@ -773,9 +867,9 @@ const Gifts = () => {
               </Box>
             )}
           </Box>
-        )}
+        )} */}
 
-        {activeTab === 1 && (
+        {activeTab === 0 && (
           <Box>
             {storeGifts.length === 0 ? (
               <Box
@@ -797,7 +891,11 @@ const Gifts = () => {
               <Box
                 sx={{
                   display: "grid",
-                  gridTemplateColumns: { xs: "1fr", md: " 1fr" },
+                  gridTemplateColumns: {
+                    xs: "repeat(2, 1fr)",
+                    sm: "repeat(2, 1fr)",
+                    md: "repeat(2, 1fr)",
+                  },
                   gap: 3,
                   width: "100%",
                 }}
@@ -812,7 +910,7 @@ const Gifts = () => {
           </Box>
         )}
 
-        {activeTab === 2 && (
+        {activeTab === 1 && (
           <Box>
             {brandGifts.length === 0 ? (
               <Box
@@ -834,7 +932,11 @@ const Gifts = () => {
               <Box
                 sx={{
                   display: "grid",
-                  gridTemplateColumns: { xs: "1fr", md: "1fr" },
+                  gridTemplateColumns: {
+                    xs: "repeat(2, 1fr)",
+                    sm: "repeat(2, 1fr)",
+                    md: "repeat(2, 1fr)",
+                  },
                   gap: 3,
                   width: "100%",
                 }}

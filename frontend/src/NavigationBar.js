@@ -269,7 +269,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   "&:hover": { transform: "scale(1.05)" },
                 }}
               >
-                {t("Store Products")}
+                {t("Discount Center")}
               </Typography>
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.9 }}>
                 <IconButton
@@ -348,7 +348,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   },
                 }}
               >
-                {t("Store Products")}
+                {t("Discount Center")}
               </Typography>
             </Box>
           )}

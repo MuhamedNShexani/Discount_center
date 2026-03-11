@@ -1045,16 +1045,16 @@ const StoreProfile = () => {
     <Box sx={{ py: 8, px: { xs: 0.5, sm: 1.5, md: 3 } }}>
       {/* Enhanced Back Button */}
       <Button
-        position="fixed"
-        top={10}
-        left={0}
-        zIndex={100}
         variant="outlined"
         startIcon={<ArrowBack />}
         onClick={() => navigate(-1)}
         sx={{
           mb: 3,
           borderRadius: 2,
+          position: "fixed",
+          top: 10,
+          left: 0,
+          zIndex: 100,
           borderColor: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
           color: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
           "&:hover": {
@@ -1373,6 +1373,20 @@ const StoreProfile = () => {
                   >
                     {isStoreFollowed(store._id) ? t("Unfollow") : t("Follow")}
                   </Button>
+                  <Chip
+                    icon={store.isVip ? undefined : <ShoppingCartIcon />}
+                    label={store.isVip ? t("VIP Store") : t("Premium Store")}
+                    sx={{
+                      backgroundColor: store.isVip
+                        ? "orange"
+                        : "rgba(255,255,255,0.2)",
+                      color: "white",
+                      fontWeight: 600,
+                      fontSize: "0.75rem",
+                      px: 1,
+                      backdropFilter: "blur(10px)",
+                    }}
+                  />
                 </Box>
                 <Box sx={{ mb: 3 }}>
                   {store.address && (
@@ -1542,42 +1556,6 @@ const StoreProfile = () => {
                     )}
                   </Box>
                 )}
-
-                <Box
-                  sx={{
-                    mt: 3,
-                    display: "flex",
-                    gap: 2,
-                    justifyContent: { xs: "center", md: "flex-start" },
-                  }}
-                >
-                  <Chip
-                    icon={<Store />}
-                    label={`${products.length} ${t("Products")}`}
-                    sx={{
-                      backgroundColor: "rgba(255,255,255,0.2)",
-                      color: "white",
-                      fontWeight: 600,
-                      fontSize: "1rem",
-                      px: 1,
-                      backdropFilter: "blur(10px)",
-                    }}
-                  />
-                  <Chip
-                    icon={store.isVip ? "" : <ShoppingCartIcon />}
-                    label={store.isVip ? t("VIP Store") : t("Premium Store")}
-                    sx={{
-                      backgroundColor: store.isVip
-                        ? "red"
-                        : "rgba(255,255,255,0.2)",
-                      color: "white",
-                      fontWeight: 600,
-                      fontSize: "1rem",
-                      px: 1,
-                      backdropFilter: "blur(10px)",
-                    }}
-                  />
-                </Box>
               </Grid>
             </Grid>
 
@@ -1739,41 +1717,6 @@ const StoreProfile = () => {
                   )}
                 </Box>
               )}
-
-              <Box
-                sx={{
-                  display: "flex",
-                  gap: 1,
-                  justifyContent: "center",
-                }}
-              >
-                <Chip
-                  icon={<Store />}
-                  label={`${products.length} ${t("Products")}`}
-                  sx={{
-                    backgroundColor: "rgba(255,255,255,0.2)",
-                    color: "white",
-                    fontWeight: 600,
-                    fontSize: "0.75rem",
-                    px: 1,
-                    backdropFilter: "blur(10px)",
-                  }}
-                />
-                <Chip
-                  icon={store.isVip ? "" : <ShoppingCartIcon />}
-                  label={store.isVip ? t("VIP Store") : t("Premium Store")}
-                  sx={{
-                    backgroundColor: store.isVip
-                      ? "red"
-                      : "rgba(255,255,255,0.2)",
-                    color: "white",
-                    fontWeight: 600,
-                    fontSize: "0.75rem",
-                    px: 1,
-                    backdropFilter: "blur(10px)",
-                  }}
-                />
-              </Box>
             </Box>
           </Box>
         </Box>
@@ -1806,7 +1749,7 @@ const StoreProfile = () => {
         </Box> */}
 
         {/* Filter Section */}
-        {renderFilters()}
+        {/* {renderFilters()} */}
 
         {/* Tabs */}
         <Paper
@@ -1869,17 +1812,6 @@ const StoreProfile = () => {
                 width: { xs: "100px", sm: "100px", md: "100%" },
               }}
             />
-            {store?.isVip && (
-              <Tab
-                label={`${t("All Products")} (${nonDiscountedProducts.length})`}
-                icon={<StorefrontIcon />}
-                iconPosition="start"
-                sx={{
-                  textTransform: "none",
-                  width: { xs: "100px", sm: "100px", md: "100%" },
-                }}
-              />
-            )}
           </Tabs>
         </Paper>
 
@@ -1896,7 +1828,7 @@ const StoreProfile = () => {
               >
                 <StorefrontIcon
                   sx={{
-                    fontSize: 120,
+                    fontSize: 80,
                     color:
                       theme.palette.mode === "dark" ? "#4a5568" : "#cbd5e0",
                     mb: 3,
@@ -1907,7 +1839,7 @@ const StoreProfile = () => {
                   gutterBottom
                   sx={{
                     color: theme.palette.text.secondary,
-                    fontWeight: 600,
+                    fontWeight: 150,
                     mb: 2,
                   }}
                 >
@@ -1943,7 +1875,7 @@ const StoreProfile = () => {
               >
                 <CardGiftcardIcon
                   sx={{
-                    fontSize: 120,
+                    fontSize: 80,
                     color:
                       theme.palette.mode === "dark" ? "#4a5568" : "#cbd5e0",
                     mb: 3,
@@ -1954,7 +1886,7 @@ const StoreProfile = () => {
                   gutterBottom
                   sx={{
                     color: theme.palette.text.secondary,
-                    fontWeight: 600,
+                    fontWeight: 150,
                     mb: 2,
                   }}
                 >
@@ -1987,53 +1919,6 @@ const StoreProfile = () => {
                   </Box>
                 ))}
               </Box>
-            )}
-          </Box>
-        )}
-
-        {store?.isVip && activeTab === 2 && (
-          <Box>
-            {nonDiscountedProducts.length === 0 ? (
-              <Box
-                sx={{
-                  textAlign: "center",
-                  py: 8,
-                  px: 4,
-                }}
-              >
-                <StorefrontIcon
-                  sx={{
-                    fontSize: 120,
-                    color:
-                      theme.palette.mode === "dark" ? "#4a5568" : "#cbd5e0",
-                    mb: 3,
-                  }}
-                />
-                <Typography
-                  variant="h4"
-                  gutterBottom
-                  sx={{
-                    color: theme.palette.text.secondary,
-                    fontWeight: 600,
-                    mb: 2,
-                  }}
-                >
-                  {t("No regular products available")}
-                </Typography>
-                <Typography
-                  variant="body1"
-                  sx={{
-                    color: theme.palette.text.secondary,
-                    maxWidth: 500,
-                    mx: "auto",
-                    lineHeight: 1.6,
-                  }}
-                >
-                  {t("This store hasn't added any regular products yet.")}
-                </Typography>
-              </Box>
-            ) : (
-              renderProductsByType(nonDiscountedProducts, false)
             )}
           </Box>
         )}

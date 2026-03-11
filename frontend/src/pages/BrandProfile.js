@@ -1063,16 +1063,16 @@ const BrandProfile = () => {
     <Box sx={{ py: 8, px: { xs: 0.5, sm: 1.5, md: 3 } }}>
       {/* Enhanced Back Button */}
       <Button
-        position="fixed"
-        top={10}
-        left={0}
-        zIndex={100}
         variant="outlined"
         startIcon={<ArrowBack />}
         onClick={() => navigate(-1)}
         sx={{
           mb: 3,
           borderRadius: 2,
+          position: "fixed",
+          top: 10,
+          left: 0,
+          zIndex: 100,
           borderColor: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
           color: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
           "&:hover": {
@@ -1283,20 +1283,19 @@ const BrandProfile = () => {
                   },
                 }}
               />
-              <Chip
-                icon={brand.isVip ? "" : <ShoppingCartIcon />}
-                label={brand.isVip ? t("VIP Brand") : t("Premium Brand")}
-                sx={{
-                  backgroundColor: brand.isVip
-                    ? "red"
-                    : "rgba(255,255,255,0.2)",
-                  color: "white",
-                  fontWeight: 500,
-                  fontSize: "0.75rem",
-                  px: 1,
-                  backdropFilter: "blur(10px)",
-                }}
-              />
+              {brand.isVip && (
+                <Chip
+                  label={t("VIP Brand")}
+                  sx={{
+                    backgroundColor: "orange",
+                    color: "white",
+                    fontWeight: 500,
+                    fontSize: "0.75rem",
+                    px: 1,
+                    backdropFilter: "blur(10px)",
+                  }}
+                />
+              )}
             </Box>
           </Box>
 
@@ -1579,7 +1578,7 @@ const BrandProfile = () => {
               >
                 <StorefrontIcon
                   sx={{
-                    fontSize: 120,
+                    fontSize: 80,
                     color:
                       theme.palette.mode === "dark" ? "#4a5568" : "#cbd5e0",
                     mb: 3,
@@ -1590,7 +1589,7 @@ const BrandProfile = () => {
                   gutterBottom
                   sx={{
                     color: theme.palette.text.secondary,
-                    fontWeight: 600,
+                    fontWeight: 150,
                     mb: 2,
                   }}
                 >
@@ -1638,7 +1637,7 @@ const BrandProfile = () => {
                       gutterBottom
                       sx={{
                         color: theme.palette.text.secondary,
-                        fontWeight: 600,
+                        fontWeight: 150,
                         mb: 2,
                       }}
                     >
@@ -1673,7 +1672,7 @@ const BrandProfile = () => {
                   >
                     <StorefrontIcon
                       sx={{
-                        fontSize: 120,
+                        fontSize: 80,
                         color:
                           theme.palette.mode === "dark" ? "#4a5568" : "#cbd5e0",
                         mb: 3,
@@ -1684,7 +1683,7 @@ const BrandProfile = () => {
                       gutterBottom
                       sx={{
                         color: theme.palette.text.secondary,
-                        fontWeight: 600,
+                        fontWeight: 150,
                         mb: 2,
                       }}
                     >
@@ -1721,7 +1720,7 @@ const BrandProfile = () => {
                   >
                     <CardGiftcardIcon
                       sx={{
-                        fontSize: 120,
+                        fontSize: 80,
                         color:
                           theme.palette.mode === "dark" ? "#4a5568" : "#cbd5e0",
                         mb: 3,
@@ -1732,7 +1731,7 @@ const BrandProfile = () => {
                       gutterBottom
                       sx={{
                         color: theme.palette.text.secondary,
-                        fontWeight: 600,
+                        fontWeight: 150,
                         mb: 2,
                       }}
                     >
@@ -1780,7 +1779,7 @@ const BrandProfile = () => {
                   >
                     <CardGiftcardIcon
                       sx={{
-                        fontSize: 120,
+                        fontSize: 80,
                         color:
                           theme.palette.mode === "dark" ? "#4a5568" : "#cbd5e0",
                         mb: 3,
@@ -1791,7 +1790,7 @@ const BrandProfile = () => {
                       gutterBottom
                       sx={{
                         color: theme.palette.text.secondary,
-                        fontWeight: 600,
+                        fontWeight: 150,
                         mb: 2,
                       }}
                     >
