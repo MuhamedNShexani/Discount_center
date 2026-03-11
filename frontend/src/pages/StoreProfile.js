@@ -64,6 +64,7 @@ import CardGiftcardIcon from "@mui/icons-material/CardGiftcard";
 import { useTranslation } from "react-i18next";
 import Loader from "../components/Loader";
 import { useUserTracking } from "../hooks/useUserTracking";
+import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { useAuth } from "../context/AuthContext";
 
 const StoreProfile = () => {
@@ -128,6 +129,9 @@ const StoreProfile = () => {
     }
   }, [id]);
 
+  // Pull-to-refresh for store profile
+  usePullToRefresh(fetchStoreData);
+
   // Initialize like states when products change
   useEffect(() => {
     const initialLikeCounts = {};
@@ -142,7 +146,7 @@ const StoreProfile = () => {
     setLikeStates(initialLikeStates);
   }, [products, isProductLiked]);
 
-  const fetchStoreData = async () => {
+  async function fetchStoreData() {
     try {
       setLoading(true);
 
@@ -170,7 +174,7 @@ const StoreProfile = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   const calculateDiscount = (previousPrice, newPrice) => {
     if (!previousPrice || !newPrice || previousPrice <= newPrice) return 0;
@@ -1051,23 +1055,21 @@ const StoreProfile = () => {
         sx={{
           mb: 3,
           borderRadius: 2,
-          position: "fixed",
-          top: 10,
-          left: 0,
-          zIndex: 100,
+          position: "relative",
+
           borderColor: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
           color: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
           "&:hover": {
             borderColor: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
             backgroundColor:
-              theme.palette.mode === "dark" ? "#40916c" : "#34495e",
-            color: theme.palette.mode === "dark" ? "#52b788" : "white",
+              theme.palette.mode === "dark"
+                ? "rgba(82, 183, 136, 0.1)"
+                : "rgba(64, 145, 108, 0.1)",
           },
         }}
       >
         {t("Back")}
       </Button>
-
       {/* Enhanced Store Header */}
       <Paper
         elevation={0}

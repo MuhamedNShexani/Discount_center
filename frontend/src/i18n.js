@@ -1187,13 +1187,13 @@ const resources = {
       "Discover amazing products from this store": "  کاڵاى دڵخوازت  بدۆزەوە",
       "No products available": "هیچ کاڵایەک نەدۆزرایەوە",
       "This store hasn't added any products yet. Check back later!":
-        "فرۆشگاەکە نەتوانرێت بەردەست بکەوە چونکە کاڵای هەیە. لە پاشەیەکی زیاتر بەردەست بکەوە.",
+        "فڕۆشگایەکە نەتوانرێت بەردەست بکەوە چونکە کاڵای هەیە. لە پاشەیەکی زیاتر بەردەست بکەوە.",
       "Discover amazing products from this brand": "بدۆزەوە لە بڕاندی دڵخوازت",
       "This brand hasn't added any discount products yet.":
         "ئەم بڕاندە لە ئێستادا هیچ کاڵایەکى داشکاندنى بەردەست نییە",
       "address not provided": "ناونیشان نەدۆزرایەوە",
       "This store hasn't added any discount products yet.":
-        "فرۆشگاەکە لە ئێستادا هیچ کاڵایەکى داشکاندنى بەردەست نییە",
+        "فڕۆشگایەکە لە ئێستادا هیچ کاڵایەکى داشکاندنى بەردەست نییە",
       "Discount Expired": "داشکاندەکە کۆتایی هاتووە",
       "phone not provided": "تەلەفون نەدۆزرایەوە",
       "description not provided": "وەسف نەدۆزرایەوە",
@@ -1247,7 +1247,7 @@ const resources = {
       "More Products": "کاڵای زیاتر",
       "View Profile": "پیشاندانی پرۆفایل",
       "Discover products from various stores":
-        "بەدواى کاڵاى دڵخوازت  بگەڕێ لە فرۆشگاە جیاوازەکان",
+        "بەدواى کاڵاى دڵخوازت  بگەڕێ لە فڕۆشگایە جیاوازەکان",
       "Browse all stores and their products":
         "هەموو فرۆشگاکان و کاڵاکانیان بگەڕێ",
       English: "ئینگلیزی",
@@ -1322,7 +1322,7 @@ const resources = {
       "Search By Name": "بگەڕێ بە پێی ناو",
       "Search By Brand": "بگەڕێ بە پێی بڕاند",
       "Discover All Products from Various Stores":
-        "گەڕان بکە بۆ کاڵاکان لە فرۆشگاە جیاوازەکان",
+        "گەڕان بکە بۆ کاڵاکان لە فڕۆشگایە جیاوازەکان",
       "Search By Barcode": "بگەڕێ بە پێی بارکۆد",
       "Total Brands": "ژمارەی بڕاندەکان",
       Weight: "کێش",
@@ -1336,9 +1336,9 @@ const resources = {
       "Search for discount products...": "بگەڕێ بە پێی کاڵا داشکێندراوەکان...",
       "Search for products...": "بگەڕێ بە پێی کاڵاکان...",
       "Discover Discount Products from Various Stores":
-        "گەڕان بکە بۆ کاڵا داشکێندراوەکان لە فرۆشگاە جیاوازەکان",
+        "گەڕان بکە بۆ کاڵا داشکێندراوەکان لە فڕۆشگایە جیاوازەکان",
       "Discover Products from Various Stores":
-        "گەڕان بکە بۆ کاڵاکان لە فرۆشگاە جیاوازەکان",
+        "گەڕان بکە بۆ کاڵاکان لە فڕۆشگایە جیاوازەکان",
       "Edit Store": "دەستکاری فرۆشگا",
       "Edit Brand": "دەستکاری بڕاند",
       "Edit Product": "دەستکاری کاڵا",
@@ -1361,7 +1361,7 @@ const resources = {
       undefined: "پێناسەنەکراوەکان",
       "No regular products available": "هیچ کاڵایەک نەدۆزرایەوە",
       "This store hasn't added any regular products yet.":
-        " هیچ کاڵایەکى ئاسایی لە ئێستادا بەردەست نییە لەم فرۆشگاە",
+        " هیچ کاڵایەکى ئاسایی لە ئێستادا بەردەست نییە لەم فڕۆشگایە",
       "Logo URL": "بەستەری لوگۆ",
       "Current Image:": "وێنەی ئێستا:",
       Language: "زمان",
@@ -1474,7 +1474,7 @@ const resources = {
       "This brand hasn't added any gifts yet.":
         "ئەم بڕاندە لە ئێستادا هیچ خەڵات و دیاریەک زیاد نەکردووە.",
       "This store hasn't added any gifts yet.":
-        "ئەم فرۆشگاە لە ئێستادا هیچ خەڵات و دیاریەک زیاد نەکردووە.",
+        "ئەم فڕۆشگایە لە ئێستادا هیچ خەڵات و دیاریەک زیاد نەکردووە.",
       Discount: "داشکاندن",
       ID: "دینار",
       "View Products": "بینینی کاڵاکان",

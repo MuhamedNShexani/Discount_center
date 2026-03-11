@@ -62,6 +62,7 @@ import CardGiftcardIcon from "@mui/icons-material/CardGiftcard";
 import { useTranslation } from "react-i18next";
 import Loader from "../components/Loader";
 import { useUserTracking } from "../hooks/useUserTracking";
+import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { useAuth } from "../context/AuthContext";
 
 const BrandProfile = () => {
@@ -116,6 +117,9 @@ const BrandProfile = () => {
     }
   }, [id]);
 
+  // Pull-to-refresh for brand profile
+  usePullToRefresh(fetchBrandData);
+
   // Initialize like states when products change
   useEffect(() => {
     const initialLikeCounts = {};
@@ -130,7 +134,7 @@ const BrandProfile = () => {
     setLikeStates(initialLikeStates);
   }, [products, isProductLiked]);
 
-  const fetchBrandData = async () => {
+  async function fetchBrandData() {
     try {
       setLoading(true);
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -58,6 +58,7 @@ import { useTranslation } from "react-i18next";
 import { useTheme } from "@mui/material/styles";
 import { useUserTracking } from "../hooks/useUserTracking";
 import { useCityFilter } from "../context/CityFilterContext";
+import { usePullToRefresh } from "../hooks/usePullToRefresh";
 
 const MainPage = () => {
   const theme = useTheme();
@@ -96,10 +97,6 @@ const MainPage = () => {
 
   // Scroll to top state
   const [showScrollTop, setShowScrollTop] = useState(false);
-
-  // Pull-to-refresh state (mobile)
-  const pullStartY = useRef(null);
-  const isPulling = useRef(false);
 
   // Stores pagination state
   const [displayedStores, setDisplayedStores] = useState([]);
@@ -320,51 +317,8 @@ const MainPage = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Pull-to-refresh on mobile: pull down from top to refresh page
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const isTouchDevice =
-      "ontouchstart" in window || navigator.maxTouchPoints > 0;
-    if (!isTouchDevice) return;
-
-    const handleTouchStart = (e) => {
-      if (window.scrollY === 0) {
-        pullStartY.current = e.touches[0].clientY;
-        isPulling.current = true;
-      } else {
-        pullStartY.current = null;
-        isPulling.current = false;
-      }
-    };
-
-    const handleTouchMove = (e) => {
-      if (!isPulling.current || pullStartY.current == null) return;
-      const currentY = e.touches[0].clientY;
-      const diff = currentY - pullStartY.current;
-      // Trigger refresh if user pulls down more than 80px
-      if (diff > 80) {
-        isPulling.current = false;
-        pullStartY.current = null;
-        window.location.reload();
-      }
-    };
-
-    const handleTouchEnd = () => {
-      isPulling.current = false;
-      pullStartY.current = null;
-    };
-
-    window.addEventListener("touchstart", handleTouchStart, { passive: true });
-    window.addEventListener("touchmove", handleTouchMove, { passive: true });
-    window.addEventListener("touchend", handleTouchEnd);
-
-    return () => {
-      window.removeEventListener("touchstart", handleTouchStart);
-      window.removeEventListener("touchmove", handleTouchMove);
-      window.removeEventListener("touchend", handleTouchEnd);
-    };
-  }, []);
+  // Pull-to-refresh on mobile: pull down from top to reload page data
+  usePullToRefresh(fetchData);
 
   // Scroll to top function
   const scrollToTop = () => {
@@ -427,7 +381,7 @@ const MainPage = () => {
     fetchFollowed();
   }, [mainPageTab, getFollowedStores, user]);
 
-  const fetchData = async () => {
+  async function fetchData() {
     try {
       setLoading(true);
 

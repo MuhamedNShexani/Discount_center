@@ -37,6 +37,7 @@ import "slick-carousel/slick/slick-theme.css";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useCityFilter } from "../context/CityFilterContext";
+import { usePullToRefresh } from "../hooks/usePullToRefresh";
 
 const Gifts = () => {
   const theme = useTheme();
@@ -71,7 +72,10 @@ const Gifts = () => {
     applyFilters();
   }, [gifts, filters, selectedCity]);
 
-  const fetchData = async () => {
+  // Pull-to-refresh for gifts page
+  usePullToRefresh(fetchData);
+
+  async function fetchData() {
     try {
       setLoading(true);
       const [giftsResponse, storesResponse, brandsResponse, adsResponse] =
