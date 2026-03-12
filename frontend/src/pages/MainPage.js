@@ -1495,7 +1495,7 @@ const MainPage = () => {
                           : "0 8px 32px rgba(0,0,0,0.1)",
                       transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                       "&:hover": {
-                        transform: "translateY(-4px)",
+                        // transform: "translateY(-4px)",
                         boxShadow:
                           theme.palette.mode === "dark"
                             ? "0 16px 64px rgba(0,0,0,0.4)"
@@ -1616,7 +1616,7 @@ const MainPage = () => {
                                 transition: "all 0.2s ease",
                                 "&:hover": {
                                   textShadow: "0 4px 8px rgba(0,0,0,0.4)",
-                                  transform: "translateX(4px)",
+                                  // transform: "translateX(4px)",
                                 },
                               }}
                             >
@@ -1820,7 +1820,6 @@ const MainPage = () => {
                                 return (
                                   <Card
                                     key={product._id}
-                                    onClick={() => handleProductClick(product)}
                                     sx={{
                                       cursor: "pointer",
                                       height: { xs: "auto", sm: "300px" }, // auto on mobile to remove bottom space
@@ -1850,7 +1849,7 @@ const MainPage = () => {
                                       transition:
                                         "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                                       "&:hover": {
-                                        transform: "translateY(-4px)",
+                                        // transform: "translateY(-4px)",
                                         boxShadow:
                                           "0 12px 24px rgba(0,0,0,0.15)",
                                       },
@@ -1865,6 +1864,9 @@ const MainPage = () => {
                                         flexShrink: 0,
                                         backgroundColor: "#f8f9fa",
                                       }}
+                                      onClick={() =>
+                                        handleProductClick(product)
+                                      }
                                     >
                                       {product.image ? (
                                         <CardMedia
@@ -1881,9 +1883,9 @@ const MainPage = () => {
                                               md: "200px",
                                             },
                                             transition: "transform 0.3s ease",
-                                            "&:hover": {
-                                              transform: "scale(1.05)",
-                                            },
+                                            // "&:hover": {
+                                            //   transform: "scale(1.05)",
+                                            // },
                                           }}
                                         />
                                       ) : (
@@ -2447,7 +2449,6 @@ const MainPage = () => {
                                 color: "inherit",
                                 transition: "transform 0.2s",
                                 cursor: "pointer",
-                                "&:hover": { transform: "scale(1.02)" },
                               }}
                               onClick={() => handleProductClick(product)}
                             >
@@ -2492,12 +2493,6 @@ const MainPage = () => {
                                       theme.palette.mode === "dark"
                                         ? "rgba(0,0,0,0.9)"
                                         : "rgba(255,255,255,0.9)",
-                                    "&:hover": {
-                                      bgcolor:
-                                        theme.palette.mode === "dark"
-                                          ? "rgba(0,0,0,1)"
-                                          : "rgba(255,255,255,1)",
-                                    },
                                   }}
                                 >
                                   {(likeStates[product._id] ??
@@ -2641,7 +2636,6 @@ const MainPage = () => {
               borderWidth: 2,
               "&:hover": {
                 borderWidth: 2,
-                transform: "translateY(-2px)",
                 boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
               },
               transition: "all 0.3s ease",
