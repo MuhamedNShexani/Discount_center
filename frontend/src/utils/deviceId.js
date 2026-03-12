@@ -1,23 +1,40 @@
 // Generate a unique device ID for anonymous user tracking
-export const generateDeviceId = () => {
-  // Try to get existing device ID from localStorage
-  let deviceId = localStorage.getItem("deviceId");
-
-  if (!deviceId) {
-    // Generate a new, purely random ID (per installation) – no fingerprinting
-    if (window.crypto && window.crypto.getRandomValues) {
-      const bytes = new Uint8Array(16);
-      window.crypto.getRandomValues(bytes);
-      deviceId = Array.from(bytes)
+const generateRandomId = () => {
+  // Prefer crypto for better uniqueness
+  if (window.crypto && window.crypto.getRandomValues) {
+    const buf = new Uint8Array(16);
+    window.crypto.getRandomValues(buf);
+    return (
+      "dev_" +
+      Array.from(buf)
         .map((b) => b.toString(16).padStart(2, "0"))
-        .join("");
-    } else {
-      // Fallback: pseudo-random string
-      deviceId = Math.random().toString(36).substring(2) + Date.now().toString(36);
-    }
+        .join("")
+    );
+  }
+  // Fallback to Math.random if crypto is not available
+  return (
+    "dev_" +
+    Math.random().toString(36).substring(2, 10) +
+    Math.random().toString(36).substring(2, 10)
+  );
+};
 
-    // Store in localStorage so this device keeps its own account
-    localStorage.setItem("deviceId", deviceId);
+export const generateDeviceId = () => {
+  let deviceId = null;
+  try {
+    deviceId = localStorage.getItem("deviceId");
+  } catch {
+    deviceId = null;
+  }
+
+  // If we have an old fingerprint-based ID (no "dev_" prefix), migrate to a new random one.
+  if (!deviceId || !deviceId.startsWith("dev_")) {
+    deviceId = generateRandomId();
+    try {
+      localStorage.setItem("deviceId", deviceId);
+    } catch {
+      // Ignore storage errors; ID will be regenerated next time if needed
+    }
   }
 
   return deviceId;
