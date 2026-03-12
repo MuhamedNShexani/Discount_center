@@ -338,13 +338,24 @@ const SearchPage = () => {
                     <ListItemAvatar>
                       <Avatar
                         variant="rounded"
-                        src={p.image ? `${backendUrl}${p.image}` : undefined}
                         sx={{
                           width: 48,
                           height: 48,
                           bgcolor: "grey.200",
+                          objectFit: "contain",
                         }}
                       >
+                        {p.image && (
+                          <img
+                            src={`${backendUrl}${p.image}`}
+                            alt={p.name}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "contain",
+                            }}
+                          />
+                        )}
                         {!p.image && (
                           <CategoryIcon sx={{ color: "grey.600" }} />
                         )}
