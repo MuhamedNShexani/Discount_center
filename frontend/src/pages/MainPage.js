@@ -86,12 +86,6 @@ const MainPage = () => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [productDialogOpen, setProductDialogOpen] = useState(false);
 
-  // Review dialog state (for product popup)
-  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
-  const [reviewRating, setReviewRating] = useState(0);
-  const [reviewComment, setReviewComment] = useState("");
-  const [submittingReview, setSubmittingReview] = useState(false);
-
   // Filter toggle state for mobile
   const [filtersOpen, setFiltersOpen] = useState(false);
 
@@ -114,7 +108,6 @@ const MainPage = () => {
     isAuthenticated,
     user,
     recordView,
-    addReview,
   } = useUserTracking();
 
   // City filter hook
@@ -220,39 +213,6 @@ const MainPage = () => {
     setProductDialogOpen(true);
     if (isAuthenticated) {
       recordView(product._id);
-    }
-  };
-
-  const handleReviewSubmit = async () => {
-    if (!selectedProduct || reviewRating === 0) return;
-    try {
-      setSubmittingReview(true);
-      const result = await addReview(
-        selectedProduct._id,
-        reviewRating,
-        reviewComment,
-      );
-      if (result.success) {
-        setSelectedProduct((prev) =>
-          prev
-            ? {
-                ...prev,
-                averageRating: result.data.averageRating,
-                reviewCount: result.data.reviewCount,
-              }
-            : prev,
-        );
-        setReviewDialogOpen(false);
-        setReviewRating(0);
-        setReviewComment("");
-      } else {
-        alert(result.message || "Failed to submit review");
-      }
-    } catch (error) {
-      console.error("Error submitting review:", error);
-      alert("Failed to submit review");
-    } finally {
-      setSubmittingReview(false);
     }
   };
 
@@ -455,7 +415,7 @@ const MainPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   // Memoized list of categories based on the selected store type
   const filteredCategories = useMemo(() => {
@@ -2528,8 +2488,16 @@ const MainPage = () => {
                                     position: "absolute",
                                     top: 4,
                                     right: 4,
-                                    bgcolor: "rgba(255,255,255,0.9)",
-                                    "&:hover": { bgcolor: "white" },
+                                    bgcolor:
+                                      theme.palette.mode === "dark"
+                                        ? "rgba(0,0,0,0.9)"
+                                        : "rgba(255,255,255,0.9)",
+                                    "&:hover": {
+                                      bgcolor:
+                                        theme.palette.mode === "dark"
+                                          ? "rgba(0,0,0,1)"
+                                          : "rgba(255,255,255,1)",
+                                    },
                                   }}
                                 >
                                   {(likeStates[product._id] ??
@@ -2542,7 +2510,13 @@ const MainPage = () => {
                                     />
                                   ) : (
                                     <FavoriteBorderIcon
-                                      sx={{ fontSize: "1.2rem" }}
+                                      sx={{
+                                        fontSize: "1.2rem",
+                                        color:
+                                          theme.palette.mode === "dark"
+                                            ? "white"
+                                            : "black",
+                                      }}
                                     />
                                   )}
                                 </IconButton>
@@ -2743,7 +2717,10 @@ const MainPage = () => {
                       <ShoppingCartIcon
                         sx={{
                           fontSize: { xs: 50, sm: 70, md: 80 },
-                          color: "grey.400",
+                          color:
+                            theme.palette.mode === "dark"
+                              ? "white"
+                              : "grey.400",
                         }}
                       />
                     </Box>
@@ -2758,14 +2735,18 @@ const MainPage = () => {
                         sx={{
                           fontSize: { xs: 24, sm: 28 },
                           mr: { xs: 1, md: 2 },
-                          color: "primary.main",
+                          color:
+                            theme.palette.mode === "dark"
+                              ? "white"
+                              : "primary.main",
                         }}
                       />
                       <Typography
                         variant="h4"
                         component="h1"
                         sx={{
-                          color: "black",
+                          color:
+                            theme.palette.mode === "dark" ? "white" : "black",
                           fontSize: { xs: "1rem", sm: "1.5rem", md: "1.75rem" },
                           lineHeight: 1.3,
                         }}
@@ -2812,7 +2793,10 @@ const MainPage = () => {
                         mb={1.5}
                         sx={{
                           textDecoration: "none",
-                          color: "inherit",
+                          color:
+                            theme.palette.mode === "dark"
+                              ? "white"
+                              : "primary.main",
                           cursor: "pointer",
                           "&:hover": { opacity: 0.8 },
                         }}
@@ -2822,12 +2806,17 @@ const MainPage = () => {
                           sx={{
                             fontSize: { xs: 16, sm: 18 },
                             mr: 0.5,
-                            color: "text.secondary",
+                            color:
+                              theme.palette.mode === "dark"
+                                ? "white"
+                                : "text.secondary",
                           }}
                         />
                         <Typography
                           variant="body1"
-                          color="black"
+                          color={
+                            theme.palette.mode === "dark" ? "white" : "black"
+                          }
                           sx={{
                             fontWeight: "bold",
                             fontSize: { xs: "0.875rem", sm: "1rem" },
@@ -2887,12 +2876,17 @@ const MainPage = () => {
                           sx={{
                             fontSize: { xs: 16, sm: 18 },
                             mr: 0.5,
-                            color: "text.secondary",
+                            color:
+                              theme.palette.mode === "dark"
+                                ? "white"
+                                : "text.secondary",
                           }}
                         />
                         <Typography
                           variant="body1"
-                          color="black"
+                          color={
+                            theme.palette.mode === "dark" ? "white" : "black"
+                          }
                           sx={{
                             fontWeight: "bold",
                             fontSize: { xs: "0.875rem", sm: "1rem" },
@@ -2910,12 +2904,17 @@ const MainPage = () => {
                           sx={{
                             fontSize: { xs: 16, sm: 18 },
                             mr: 0.5,
-                            color: "text.secondary",
+                            color:
+                              theme.palette.mode === "dark"
+                                ? "white"
+                                : "text.secondary",
                           }}
                         />
                         <Typography
                           variant="body1"
-                          color="black"
+                          color={
+                            theme.palette.mode === "dark" ? "white" : "black"
+                          }
                           sx={{
                             fontWeight: "bold",
                             fontSize: { xs: "0.875rem", sm: "1rem" },
@@ -2942,13 +2941,19 @@ const MainPage = () => {
                           variant="h6"
                           sx={{
                             fontSize: { xs: "1.25rem", sm: "1.5rem" },
-                            color: theme.palette.text.primary,
+                            color:
+                              theme.palette.mode === "dark"
+                                ? "white"
+                                : theme.palette.text.primary,
                           }}
                         >
                           {t("Price")}:{" "}
                           <span
                             style={{
-                              color: "#52b788",
+                              color:
+                                theme.palette.mode === "dark"
+                                  ? "white"
+                                  : "#52b788",
                               fontWeight: 700,
                             }}
                           >
@@ -2969,7 +2974,10 @@ const MainPage = () => {
                               variant="body1"
                               sx={{
                                 textDecoration: "line-through",
-                                color: "red",
+                                color:
+                                  theme.palette.mode === "dark"
+                                    ? "white"
+                                    : "red",
                                 fontSize: { xs: "0.8rem", sm: "0.9rem" },
                                 fontWeight: 500,
                               }}
@@ -3099,34 +3107,7 @@ const MainPage = () => {
                           </Typography>
                         </Box>
                       )}
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={() => {
-                          if (!isAuthenticated) {
-                            setLoginNotificationReason("review");
-                            setLoginNotificationOpen(true);
-                            return;
-                          }
-                          setReviewDialogOpen(true);
-                        }}
-                        startIcon={<StarIcon />}
-                        sx={{
-                          borderRadius: 2,
-                          textTransform: "none",
-                          fontSize: "0.875rem",
-                          backgroundColor: "rgba(255, 193, 7, 0.05)",
-                          borderColor: "#ffc107",
-                          color: "#ffc107",
-                          "&:hover": {
-                            backgroundColor: "rgba(255, 193, 7, 0.1)",
-                            borderColor: "#ffa000",
-                            color: "#ffa000",
-                          },
-                        }}
-                      >
-                        {t("Write a Review")}
-                      </Button>
+                      {/* Review feature removed */}
                     </Box>
 
                     {/* Product Details (barcode, weight, description) */}
@@ -3193,50 +3174,6 @@ const MainPage = () => {
             </Paper>
           )}
         </DialogContent>
-      </Dialog>
-
-      {/* Review Dialog */}
-      <Dialog
-        open={reviewDialogOpen}
-        onClose={() => setReviewDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>{t("Write a Review")}</DialogTitle>
-        <DialogContent>
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="body1" gutterBottom>
-              {t("Rating")}:
-            </Typography>
-            <Rating
-              value={reviewRating}
-              onChange={(event, newValue) => setReviewRating(newValue)}
-              size="large"
-              sx={{ fontSize: "2rem" }}
-            />
-          </Box>
-          <TextField
-            fullWidth
-            multiline
-            rows={4}
-            label={t("Comment (optional)")}
-            value={reviewComment}
-            onChange={(e) => setReviewComment(e.target.value)}
-            variant="outlined"
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setReviewDialogOpen(false)}>
-            {t("Cancel")}
-          </Button>
-          <Button
-            onClick={handleReviewSubmit}
-            variant="contained"
-            disabled={submittingReview || reviewRating === 0}
-          >
-            {submittingReview ? t("Submitting...") : t("Submit Review")}
-          </Button>
-        </DialogActions>
       </Dialog>
 
       {/* Login Notification Dialog */}

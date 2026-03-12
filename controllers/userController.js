@@ -73,26 +73,26 @@ const toggleProductLike = async (req, res) => {
 
     // Compare as strings (productId from body is string; likedProducts may be ObjectIds)
     const isLiked = user.likedProducts.some(
-      (id) => id.toString() === productId || id === productId
+      (id) => id.toString() === productId || id === productId,
     );
 
     let updatedProduct;
     if (isLiked) {
       // Unlike
       user.likedProducts = user.likedProducts.filter(
-        (id) => id.toString() !== productId
+        (id) => id.toString() !== productId,
       );
       updatedProduct = await Product.findByIdAndUpdate(
         productId,
         { $inc: { likeCount: -1 } },
-        { new: true }
+        { new: true },
       );
       // Ensure like count doesn't go below 0
       if (updatedProduct.likeCount < 0) {
         updatedProduct = await Product.findByIdAndUpdate(
           productId,
           { likeCount: 0 },
-          { new: true }
+          { new: true },
         );
       }
     } else {
@@ -101,7 +101,7 @@ const toggleProductLike = async (req, res) => {
       updatedProduct = await Product.findByIdAndUpdate(
         productId,
         { $inc: { likeCount: 1 } },
-        { new: true }
+        { new: true },
       );
     }
 
@@ -165,12 +165,12 @@ const recordProductView = async (req, res) => {
     const updatedProduct = await Product.findByIdAndUpdate(
       productId,
       { $inc: { viewCount: 1 } },
-      { new: true }
+      { new: true },
     );
 
     // Update user's viewed products
     const existingView = user.viewedProducts.find(
-      (view) => view.productId.toString() === productId
+      (view) => view.productId.toString() === productId,
     );
 
     if (existingView) {
@@ -194,118 +194,6 @@ const recordProductView = async (req, res) => {
     });
   } catch (error) {
     console.error("Error recording product view:", error);
-    res.status(500).json({ success: false, message: "Server error" });
-  }
-};
-
-// @desc    Add product review (requires authentication)
-// @route   POST /api/users/review-product
-// @access  Private
-const addProductReview = async (req, res) => {
-  try {
-    const { productId, rating, comment } = req.body;
-    const userId = req.userId; // From auth middleware
-
-    if (!productId || !rating) {
-      return res.status(400).json({
-        success: false,
-        message: "Product ID and Rating are required",
-      });
-    }
-
-    if (rating < 1 || rating > 5) {
-      return res.status(400).json({
-        success: false,
-        message: "Rating must be between 1 and 5",
-      });
-    }
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    const product = await Product.findById(productId);
-    if (!product) {
-      return res.status(404).json({
-        success: false,
-        message: "Product not found",
-      });
-    }
-
-    // Check if user already reviewed this product
-    const existingReviewIndex = user.reviews.findIndex(
-      (review) => review.productId.toString() === productId
-    );
-
-    let isNewReview = false;
-    if (existingReviewIndex !== -1) {
-      // Update existing review
-      user.reviews[existingReviewIndex] = {
-        productId,
-        rating,
-        comment: comment || "",
-        createdAt: user.reviews[existingReviewIndex].createdAt,
-      };
-    } else {
-      // Add new review
-      user.reviews.push({
-        productId,
-        rating,
-        comment: comment || "",
-        createdAt: Date.now(),
-      });
-      isNewReview = true;
-    }
-
-    // Calculate new average rating
-    const allReviews = await User.aggregate([
-      { $unwind: "$reviews" },
-      { $match: { "reviews.productId": product._id } },
-      {
-        $group: {
-          _id: null,
-          avgRating: { $avg: "$reviews.rating" },
-          reviewCount: { $sum: 1 },
-        },
-      },
-    ]);
-
-    const newAverageRating =
-      allReviews.length > 0 ? allReviews[0].avgRating : 0;
-    const newReviewCount =
-      allReviews.length > 0 ? allReviews[0].reviewCount : 0;
-
-    // Update product using findByIdAndUpdate to avoid validation issues
-    const updateData = {
-      averageRating: newAverageRating,
-      reviewCount: newReviewCount,
-    };
-
-    if (isNewReview) {
-      updateData.reviewCount = newReviewCount;
-    }
-
-    const updatedProduct = await Product.findByIdAndUpdate(
-      productId,
-      updateData,
-      { new: true }
-    );
-
-    await user.save();
-
-    res.json({
-      success: true,
-      data: {
-        averageRating: updatedProduct.averageRating,
-        reviewCount: updatedProduct.reviewCount,
-      },
-    });
-  } catch (error) {
-    console.error("Error adding product review:", error);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
@@ -442,21 +330,25 @@ const toggleFollowStore = async (req, res) => {
     }
 
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
     const store = await Store.findById(storeId);
     if (!store) {
-      return res.status(404).json({ success: false, message: "Store not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Store not found" });
     }
 
     const isFollowed = (user.followedStores || []).some(
-      (id) => id.toString() === storeId
+      (id) => id.toString() === storeId,
     );
 
     if (isFollowed) {
       user.followedStores = (user.followedStores || []).filter(
-        (id) => id.toString() !== storeId
+        (id) => id.toString() !== storeId,
       );
       await Store.findByIdAndUpdate(storeId, {
         $inc: { followerCount: -1 },
@@ -470,7 +362,9 @@ const toggleFollowStore = async (req, res) => {
     }
     await user.save();
 
-    const updatedStore = await Store.findById(storeId).select("followerCount").lean();
+    const updatedStore = await Store.findById(storeId)
+      .select("followerCount")
+      .lean();
 
     res.json({
       success: true,
@@ -509,7 +403,10 @@ const getFollowedStores = async (req, res) => {
       return res.json({ success: true, data: [] });
     }
 
-    const stores = await Store.find({ _id: { $in: user.followedStores }, show: { $ne: false } })
+    const stores = await Store.find({
+      _id: { $in: user.followedStores },
+      show: { $ne: false },
+    })
       .populate("storeTypeId", "name icon")
       .lean();
 
@@ -520,13 +417,50 @@ const getFollowedStores = async (req, res) => {
   }
 };
 
+// @desc    Update anonymous (device) user display name
+// @route   PUT /api/users/device-profile
+// @access  Public (optionalAuth - uses deviceId)
+const updateDeviceProfile = async (req, res) => {
+  try {
+    const { deviceId, name } = req.body;
+
+    if (!deviceId || !name || !name.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Device ID and name are required",
+      });
+    }
+
+    let user = await User.findOne({ deviceId });
+    if (!user) {
+      user = new User({ deviceId });
+    }
+
+    user.firstName = name.trim();
+    await user.save();
+
+    res.json({
+      success: true,
+      data: {
+        _id: user._id,
+        deviceId: user.deviceId,
+        firstName: user.firstName,
+        lastName: user.lastName,
+      },
+    });
+  } catch (error) {
+    console.error("Error updating device profile:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
 module.exports = {
   getUserByDevice,
   toggleProductLike,
   toggleFollowStore,
   recordProductView,
-  addProductReview,
   getLikedProducts,
   getViewedProducts,
   getFollowedStores,
+  updateDeviceProfile,
 };

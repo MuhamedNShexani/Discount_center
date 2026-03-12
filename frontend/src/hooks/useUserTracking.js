@@ -152,38 +152,6 @@ export const useUserTracking = () => {
     [deviceId, getAuthHeaders, viewRecording]
   );
 
-  // Add product review (requires authentication)
-  const addReview = useCallback(
-    async (productId, rating, comment = "") => {
-      if (!isAuthenticated) {
-        return {
-          success: false,
-          message: "Please login to leave reviews",
-          requiresAuth: true,
-        };
-      }
-
-      try {
-        const headers = getAuthHeaders();
-        const response = await userAPI.addReview(
-          null,
-          productId,
-          rating,
-          comment,
-          headers
-        );
-        if (response.data.success) {
-          return response.data;
-        }
-        return response.data;
-      } catch (error) {
-        console.error("Error adding review:", error);
-        return { success: false, message: "Failed to add review" };
-      }
-    },
-    [isAuthenticated, getAuthHeaders]
-  );
-
   // Check if product is liked (works for both logged-in and device users)
   const isProductLiked = useCallback(
     (productId) => {
@@ -353,6 +321,33 @@ export const useUserTracking = () => {
     }
   }, [isAuthenticated, deviceId, getAuthHeaders]);
 
+  const updateGuestName = useCallback(
+    async (name) => {
+      if (!deviceId || isAuthenticated) {
+        return { success: false, message: "Not a guest user" };
+      }
+      try {
+        const response = await userAPI.updateDeviceProfile(deviceId, name);
+        if (response.data?.success) {
+          setUser((prev) => ({
+            ...(prev || {}),
+            firstName: response.data.data.firstName,
+            lastName: response.data.data.lastName,
+          }));
+          return response.data;
+        }
+        return response.data;
+      } catch (error) {
+        console.error("Error updating guest name:", error);
+        return {
+          success: false,
+          message: error?.response?.data?.message || "Failed to update name",
+        };
+      }
+    },
+    [deviceId, isAuthenticated]
+  );
+
   return {
     deviceId,
     user,
@@ -361,7 +356,7 @@ export const useUserTracking = () => {
     toggleLike,
     toggleFollowStore,
     recordView,
-    addReview,
+    updateGuestName,
     isProductLiked,
     isStoreFollowed,
     getLikedProducts,

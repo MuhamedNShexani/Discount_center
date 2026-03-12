@@ -104,30 +104,6 @@ const userSchema = new mongoose.Schema({
     },
   ],
 
-  // User reviews (only for logged users)
-  reviews: [
-    {
-      productId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Product",
-      },
-      rating: {
-        type: Number,
-        required: true,
-        min: 1,
-        max: 5,
-      },
-      comment: {
-        type: String,
-        maxlength: 500,
-      },
-      createdAt: {
-        type: Date,
-        default: Date.now,
-      },
-    },
-  ],
-
   // Account status
   isActive: {
     type: Boolean,
@@ -209,7 +185,6 @@ userSchema.methods.getPublicProfile = function () {
       isActive: this.isActive,
       likedProducts: this.likedProducts,
       viewedProducts: this.viewedProducts,
-      reviews: this.reviews,
       createdAt: this.createdAt,
     };
   } catch (error) {
@@ -224,7 +199,6 @@ userSchema.methods.getPublicProfile = function () {
       isActive: this.isActive || false,
       likedProducts: this.likedProducts || [],
       viewedProducts: this.viewedProducts || [],
-      reviews: this.reviews || [],
       createdAt: this.createdAt,
     };
   }

@@ -500,17 +500,17 @@ const ProductCategory = () => {
               backgroundColor:
                 selectedStoreTypeId === type._id
                   ? theme.palette.mode === "dark"
-                    ? "#40916c"
+                    ? "#34495e"
                     : "#34495e"
-                  : "transparent",
-              color: selectedStoreTypeId === type._id ? "white" : "inherit",
+                  : "primary.main",
+              color: "white",
               "&:hover": {
                 backgroundColor:
                   selectedStoreTypeId === type._id
                     ? theme.palette.mode === "dark"
                       ? "#40916c"
-                      : "#34495e"
-                    : "transparent",
+                      : "white"
+                    : "primary.main",
               },
             }}
           >

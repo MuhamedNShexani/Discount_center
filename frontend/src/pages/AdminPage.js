@@ -23,6 +23,7 @@ import {
   TableHead,
   TableRow,
   TextField,
+  MenuItem,
 } from "@mui/material";
 import {
   Dashboard as DashboardIcon,
@@ -66,6 +67,8 @@ const AdminPage = () => {
   const [brandFromDate, setBrandFromDate] = useState("");
   const [brandToDate, setBrandToDate] = useState("");
   const [tabLoading, setTabLoading] = useState(false);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(20); // 20, 50, 100, -1 = all
 
   const isAdmin =
     user?.email === "mshexani45@gmail.com" || user?.email === "admin@gmail.com";
@@ -181,8 +184,57 @@ const AdminPage = () => {
     }
   };
 
+  const handleDeleteExpiredProducts = async () => {
+    if (
+      !window.confirm(
+        t(
+          "Are you sure you want to delete all products whose expire date is more than 1 month in the past? This cannot be undone.",
+        ),
+      )
+    ) {
+      return;
+    }
+    try {
+      setTabLoading(true);
+      const res = await adminAPI.deleteExpiredProducts();
+      const msg =
+        res.data?.message ||
+        t("Expired products deleted successfully from the database.");
+      alert(msg);
+      // Reload stats and current tab data after deletion
+      loadAdminStats();
+      if (activeTab === 0) {
+        loadMostLiked();
+      } else if (activeTab === 1) {
+        loadMostViewed();
+      } else if (activeTab === 2) {
+        loadStoreReport({
+          storeName: storeNameFilter.trim() || undefined,
+          fromDate: storeFromDate || undefined,
+          toDate: storeToDate || undefined,
+        });
+      } else if (activeTab === 3) {
+        loadBrandReport({
+          brandName: brandNameFilter.trim() || undefined,
+          fromDate: brandFromDate || undefined,
+          toDate: brandToDate || undefined,
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting expired products:", error);
+      alert(
+        error?.response?.data?.message ||
+          error?.message ||
+          t("Failed to delete expired products."),
+      );
+    } finally {
+      setTabLoading(false);
+    }
+  };
+
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
+    setPage(0);
   };
 
   const formatDate = (dateStr) => {
@@ -203,7 +255,13 @@ const AdminPage = () => {
     const headers = [];
     if (showStore) headers.push(t("Store Name"));
     if (showBrand) headers.push(t("Brand Name"));
-    headers.push(t("Product Name"), t("Expire Date"), t("Like"), t("Viewed"), t("Review"));
+    headers.push(
+      t("Product Name"),
+      t("Expire Date"),
+      t("Like"),
+      t("Viewed"),
+      t("Review"),
+    );
 
     const rows = products.map((p) => {
       const row = {};
@@ -224,6 +282,43 @@ const AdminPage = () => {
     XLSX.writeFile(workbook, `${sheetName}_${date}.xlsx`);
   };
 
+  const handleRowsPerPageChange = (event) => {
+    const value = parseInt(event.target.value, 10);
+    setRowsPerPage(value);
+    setPage(0);
+  };
+
+  const getPagedData = (data) => {
+    if (!Array.isArray(data)) return [];
+    if (rowsPerPage === -1) return data;
+    const start = page * rowsPerPage;
+    return data.slice(start, start + rowsPerPage);
+  };
+
+  const getActiveTabData = () => {
+    if (activeTab === 0) return mostLikedProducts;
+    if (activeTab === 1) return mostViewedProducts;
+    if (activeTab === 2) return storeReport;
+    if (activeTab === 3) return brandReport;
+    return [];
+  };
+
+  const totalItems = getActiveTabData().length;
+  const totalPages =
+    rowsPerPage === -1 || totalItems === 0
+      ? 1
+      : Math.ceil(totalItems / rowsPerPage);
+
+  const handleNextPage = () => {
+    if (rowsPerPage === -1) return;
+    setPage((prev) => Math.min(prev + 1, totalPages - 1));
+  };
+
+  const handlePrevPage = () => {
+    if (rowsPerPage === -1) return;
+    setPage((prev) => Math.max(prev - 1, 0));
+  };
+
   const ProductTable = ({ products, showStore, showBrand }) => (
     <TableContainer component={Paper} variant="outlined">
       <Table size="small">
@@ -241,19 +336,18 @@ const AdminPage = () => {
         <TableBody>
           {products.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={showStore || showBrand ? 7 : 5} align="center">
+              <TableCell
+                colSpan={showStore || showBrand ? 7 : 5}
+                align="center"
+              >
                 {t("No data to display")}
               </TableCell>
             </TableRow>
           ) : (
             products.map((p) => (
               <TableRow key={p._id} hover>
-                {showStore && (
-                  <TableCell>{p.storeId?.name || "-"}</TableCell>
-                )}
-                {showBrand && (
-                  <TableCell>{p.brandId?.name || "-"}</TableCell>
-                )}
+                {showStore && <TableCell>{p.storeId?.name || "-"}</TableCell>}
+                {showBrand && <TableCell>{p.brandId?.name || "-"}</TableCell>}
                 <TableCell>{p.name}</TableCell>
                 <TableCell>{formatDate(p.expireDate)}</TableCell>
                 <TableCell align="center">{p.likeCount || 0}</TableCell>
@@ -269,7 +363,12 @@ const AdminPage = () => {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="100vh"
+      >
         <CircularProgress />
       </Box>
     );
@@ -287,14 +386,33 @@ const AdminPage = () => {
 
   return (
     <Container maxWidth="xl" sx={{ mt: 2, mb: 4 }}>
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h3" component="h1" gutterBottom>
-          <DashboardIcon sx={{ mr: 2, verticalAlign: "middle" }} />
-          {t("Admin Dashboard")}
-        </Typography>
-        <Typography variant="subtitle1" color="text.secondary">
-          {t("Welcome back, Admin")} - {user?.firstName} {user?.lastName}
-        </Typography>
+      <Box
+        sx={{
+          mb: 4,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 2,
+        }}
+      >
+        <Box sx={{ mt: 5 }}>
+          <Typography variant="h3" component="h1" gutterBottom>
+            <DashboardIcon sx={{ mr: 2, verticalAlign: "middle" }} />
+            {t("Admin Dashboard")}
+          </Typography>
+          <Typography variant="subtitle1" color="text.secondary">
+            {t("Welcome back, Admin")} - {user?.firstName} {user?.lastName}
+          </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          color="error"
+          onClick={handleDeleteExpiredProducts}
+          disabled={tabLoading}
+        >
+          {t("Remove products expired 1 month ago")}
+        </Button>
       </Box>
 
       <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -373,12 +491,30 @@ const AdminPage = () => {
         <Box sx={{ p: 3 }}>
           {activeTab === 0 && (
             <Box>
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2, mb: 2 }}>
-                <Typography variant="h5">{t("Most liked Products list")}</Typography>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: 2,
+                  mb: 2,
+                }}
+              >
+                <Typography variant="h5">
+                  {t("Most liked Products list")}
+                </Typography>
                 <Button
                   variant="outlined"
                   startIcon={<FileDownloadIcon />}
-                  onClick={() => exportToExcel(mostLikedProducts, true, true, "MostLikedProducts")}
+                  onClick={() =>
+                    exportToExcel(
+                      mostLikedProducts,
+                      true,
+                      true,
+                      "MostLikedProducts",
+                    )
+                  }
                   disabled={tabLoading || mostLikedProducts.length === 0}
                 >
                   {t("Export to Excel")}
@@ -389,19 +525,41 @@ const AdminPage = () => {
                   <CircularProgress />
                 </Box>
               ) : (
-                <ProductTable products={mostLikedProducts} showStore showBrand />
+                <ProductTable
+                  products={getPagedData(mostLikedProducts)}
+                  showStore
+                  showBrand
+                />
               )}
             </Box>
           )}
 
           {activeTab === 1 && (
             <Box>
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2, mb: 2 }}>
-                <Typography variant="h5">{t("Most viewed products list")}</Typography>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: 2,
+                  mb: 2,
+                }}
+              >
+                <Typography variant="h5">
+                  {t("Most viewed products list")}
+                </Typography>
                 <Button
                   variant="outlined"
                   startIcon={<FileDownloadIcon />}
-                  onClick={() => exportToExcel(mostViewedProducts, true, true, "MostViewedProducts")}
+                  onClick={() =>
+                    exportToExcel(
+                      mostViewedProducts,
+                      true,
+                      true,
+                      "MostViewedProducts",
+                    )
+                  }
                   disabled={tabLoading || mostViewedProducts.length === 0}
                 >
                   {t("Export to Excel")}
@@ -412,19 +570,34 @@ const AdminPage = () => {
                   <CircularProgress />
                 </Box>
               ) : (
-                <ProductTable products={mostViewedProducts} showStore showBrand />
+                <ProductTable
+                  products={getPagedData(mostViewedProducts)}
+                  showStore
+                  showBrand
+                />
               )}
             </Box>
           )}
 
           {activeTab === 2 && (
             <Box>
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2, mb: 2 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: 2,
+                  mb: 2,
+                }}
+              >
                 <Typography variant="h5">{t("Report for stores")}</Typography>
                 <Button
                   variant="outlined"
                   startIcon={<FileDownloadIcon />}
-                  onClick={() => exportToExcel(storeReport, true, false, "StoreReport")}
+                  onClick={() =>
+                    exportToExcel(storeReport, true, false, "StoreReport")
+                  }
                   disabled={tabLoading || storeReport.length === 0}
                 >
                   {t("Export to Excel")}
@@ -463,19 +636,30 @@ const AdminPage = () => {
                   <CircularProgress />
                 </Box>
               ) : (
-                <ProductTable products={storeReport} showStore />
+                <ProductTable products={getPagedData(storeReport)} showStore />
               )}
             </Box>
           )}
 
           {activeTab === 3 && (
             <Box>
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2, mb: 2 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: 2,
+                  mb: 2,
+                }}
+              >
                 <Typography variant="h5">{t("Report for brands")}</Typography>
                 <Button
                   variant="outlined"
                   startIcon={<FileDownloadIcon />}
-                  onClick={() => exportToExcel(brandReport, false, true, "BrandReport")}
+                  onClick={() =>
+                    exportToExcel(brandReport, false, true, "BrandReport")
+                  }
                   disabled={tabLoading || brandReport.length === 0}
                 >
                   {t("Export to Excel")}
@@ -514,10 +698,59 @@ const AdminPage = () => {
                   <CircularProgress />
                 </Box>
               ) : (
-                <ProductTable products={brandReport} showBrand />
+                <ProductTable products={getPagedData(brandReport)} showBrand />
               )}
             </Box>
           )}
+          <Box
+            sx={{
+              mt: 3,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 2,
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+              <Typography variant="body2">{t("Rows per page")}:</Typography>
+              <TextField
+                select
+                size="small"
+                value={rowsPerPage}
+                onChange={handleRowsPerPageChange}
+                sx={{ minWidth: 80 }}
+              >
+                <MenuItem value={20}>20</MenuItem>
+                <MenuItem value={50}>50</MenuItem>
+                <MenuItem value={100}>100</MenuItem>
+                <MenuItem value={-1}>{t("All")}</MenuItem>
+              </TextField>
+            </Box>
+            {rowsPerPage !== -1 && totalItems > 0 && (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                <Typography variant="body2">
+                  {t("Page")} {page + 1} {t("of")} {totalPages}
+                </Typography>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={handlePrevPage}
+                  disabled={page === 0}
+                >
+                  {t("Previous page")}
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={handleNextPage}
+                  disabled={page >= totalPages - 1}
+                >
+                  {t("Next page")}
+                </Button>
+              </Box>
+            )}
+          </Box>
         </Box>
       </Paper>
     </Container>

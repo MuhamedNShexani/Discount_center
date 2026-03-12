@@ -29,6 +29,7 @@ import SearchPage from "./pages/SearchPage";
 import Gifts from "./pages/Gifts";
 import FavouritesPage from "./pages/FavouritesPage";
 import AdminPage from "./pages/AdminPage";
+import AdminUsersPage from "./pages/AdminUsersPage";
 import NavigationBar from "./NavigationBar";
 import BottomNavigationBar from "./components/BottomNavigation";
 import { AuthProvider } from "./context/AuthContext";
@@ -292,7 +293,7 @@ function App() {
                 <Route
                   path="/admin"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedEmails={["mshexani45@gmail.com", "admin@gmail.com"]}>
                       <DataEntryForm />
                     </ProtectedRoute>
                   }
@@ -302,6 +303,14 @@ function App() {
                   element={
                     <ProtectedRoute allowedEmails={["mshexani45@gmail.com"]}>
                       <AdminPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/users"
+                  element={
+                    <ProtectedRoute allowedEmails={["mshexani45@gmail.com", "admin@gmail.com"]}>
+                      <AdminUsersPage />
                     </ProtectedRoute>
                   }
                 />

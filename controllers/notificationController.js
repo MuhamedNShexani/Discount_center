@@ -24,7 +24,24 @@ const getNotifications = async (req, res) => {
 
     const limit = parseInt(req.query.limit) || 50;
 
-    const userState = await UserNotificationState.findOne({ userId }).lean();
+    // Ensure per-user notification state exists.
+    // For a brand-new user/device, we create a state that marks all existing
+    // notifications as effectively "cleared", so they only see notifications
+    // created after their first visit.
+    let userState = await UserNotificationState.findOne({ userId }).lean();
+    if (!userState) {
+      const now = new Date();
+      userState = await UserNotificationState.create({
+        userId,
+        markAllReadBefore: now,
+        clearedBefore: now,
+      });
+      return res.json({
+        success: true,
+        data: [],
+        unreadCount: 0,
+      });
+    }
 
     const now = new Date();
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);

@@ -23,6 +23,11 @@ import {
   FormControlLabel,
   Snackbar,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
 } from "@mui/material";
 import {
   Home as HomeIcon,
@@ -47,10 +52,12 @@ import {
   ContactSupport as ContactSupportIcon,
   Notifications as NotificationsIcon,
   Search as SearchIcon,
+  People as PeopleIcon,
 } from "@mui/icons-material";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "./context/AuthContext";
+import { useUserTracking } from "./hooks/useUserTracking";
 import kurdishFlag from "./styles/kurdish_flag.jpg";
 import { useCityFilter } from "./context/CityFilterContext";
 import { useAppSettings } from "./context/AppSettingsContext";
@@ -60,6 +67,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
   const theme = useTheme();
   const { t, i18n } = useTranslation();
   const { user, logout } = useAuth();
+  const { user: guestUser, updateGuestName } = useUserTracking();
   const { selectedCity, changeCity, cities } = useCityFilter();
   const { openWhatsApp } = useAppSettings();
   const {
@@ -97,6 +105,9 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
 
   // City submenu state (desktop profile)
   const [cityAnchorEl, setCityAnchorEl] = useState(null);
+
+  const [guestNameDialogOpen, setGuestNameDialogOpen] = useState(false);
+  const [guestNameInput, setGuestNameInput] = useState("");
 
   const handleLangChange = (event) => {
     i18n.changeLanguage(event.target.value);
@@ -147,16 +158,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
     { name: t("Favourites"), path: "/favourites", icon: <FavoriteIcon /> },
     { name: t("Brands"), path: "/brands", icon: <BusinessIcon /> },
     { name: t("Gifts"), path: "/gifts", icon: <CardGiftcardIcon /> },
-    // Show Data Entry for authenticated non-admin (admin users get Admin dropdown)
-    ...(user && isAuthenticated && !isAdmin
-      ? [
-          {
-            name: t("Data Entry"),
-            path: "/admin",
-            icon: <AdminPanelSettingsIcon />,
-          },
-        ]
-      : []),
+    // Data Entry is now admin-only via Admin dropdown; no extra nav item for non-admins
     // Only show Admin link for specific admin email
     // ...(user && user.email === "mshexani45@gmail.com"
     //   ? [
@@ -515,7 +517,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                     {item.name}
                   </Button>
                 ))}
-              {/* Admin dropdown (Data Entry + Dashboard) - for admin users only */}
+              {/* Admin dropdown (Data Entry + Users + Dashboard) - for admin users only */}
               {isAdmin && (
                 <>
                   <Button
@@ -571,6 +573,17 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                         <AdminPanelSettingsIcon fontSize="small" />
                       </ListItemIcon>
                       <ListItemText primary={t("Data Entry")} />
+                    </MenuItem>
+                    <MenuItem
+                      component={Link}
+                      to="/admin/users"
+                      onClick={handleAdminMenuClose}
+                      selected={location.pathname === "/admin/users"}
+                    >
+                      <ListItemIcon>
+                        <PeopleIcon fontSize="small" />
+                      </ListItemIcon>
+                      <ListItemText primary={t("Users")} />
                     </MenuItem>
                     <MenuItem
                       component={Link}
@@ -837,6 +850,45 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
         </Box>
       </Menu>
 
+      {/* Guest name dialog */}
+      <Dialog
+        open={guestNameDialogOpen}
+        onClose={() => setGuestNameDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>{t("Change account name")}</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            fullWidth
+            margin="normal"
+            label={t("Name")}
+            value={guestNameInput}
+            onChange={(e) => setGuestNameInput(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setGuestNameDialogOpen(false)}>
+            {t("Cancel")}
+          </Button>
+          <Button
+            onClick={async () => {
+              const name = guestNameInput.trim();
+              if (!name) return;
+              const res = await updateGuestName(name);
+              if (res?.success) {
+                setGuestNameDialogOpen(false);
+              } else {
+                alert(res?.message || t("Failed to update name"));
+              }
+            }}
+          >
+            {t("Save")}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Mobile Profile Menu */}
       <Menu
         anchorEl={profileAnchorEl}
@@ -921,7 +973,9 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   fontWeight: 600,
                 }}
               >
-                G
+                {guestUser?.firstName
+                  ? guestUser.firstName.charAt(0).toUpperCase()
+                  : "G"}
               </Avatar>
               <Box>
                 <Typography
@@ -930,20 +984,48 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   fontWeight={600}
                   sx={{ fontSize: "1rem" }}
                 >
-                  {t("Guest User")}
+                  {guestUser?.firstName || t("Guest User")}
                 </Typography>
-                <Typography
+                {/* <Typography
                   variant="body2"
                   color="text.secondary"
                   sx={{ fontSize: "0.8rem" }}
                 >
                   {t("Not logged in")}
-                </Typography>
+                </Typography> */}
               </Box>
             </Box>
           )}
         </Box>
-
+        {!user && (
+          <MenuItem
+            onClick={() => {
+              setGuestNameInput(guestUser?.firstName || "");
+              setGuestNameDialogOpen(true);
+            }}
+            sx={{
+              py: 1.5,
+              px: 2,
+              "&:hover": {
+                backgroundColor:
+                  theme.palette.mode === "dark"
+                    ? "rgba(255,255,255,0.08)"
+                    : "rgba(0,0,0,0.04)",
+              },
+            }}
+          >
+            <ListItemIcon>
+              <PersonIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText
+              primary={t("Change name")}
+              primaryTypographyProps={{
+                fontSize: "0.875rem",
+                fontWeight: 500,
+              }}
+            />
+          </MenuItem>
+        )}
         {/* Favourites - desktop only (mobile has separate Favourites icon in navbar) */}
         {isSmUp && (
           <MenuItem
@@ -1063,6 +1145,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                 </MenuItem>
               ))}
             </Menu>
+
             <Divider />
           </>
         }
@@ -1352,29 +1435,33 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                 />
               </MenuItem>
             </>
-            <Divider />
-            <MenuItem
-              onClick={handleLogout}
-              sx={{
-                py: 1.5,
-                px: 2,
-                color: "#e53e3e",
-                "&:hover": {
-                  backgroundColor: "rgba(229, 62, 62, 0.08)",
-                },
-              }}
-            >
-              <ListItemIcon>
-                <LogoutIcon sx={{ color: "#e53e3e" }} />
-              </ListItemIcon>
-              <ListItemText
-                primary={t("Logout")}
-                primaryTypographyProps={{
-                  fontSize: "0.875rem",
-                  fontWeight: 500,
-                }}
-              />
-            </MenuItem>
+            {isSmUp && (
+              <>
+                <Divider />
+                <MenuItem
+                  onClick={handleLogout}
+                  sx={{
+                    py: 1.5,
+                    px: 2,
+                    color: "#e53e3e",
+                    "&:hover": {
+                      backgroundColor: "rgba(229, 62, 62, 0.08)",
+                    },
+                  }}
+                >
+                  <ListItemIcon>
+                    <LogoutIcon sx={{ color: "#e53e3e" }} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={t("Logout")}
+                    primaryTypographyProps={{
+                      fontSize: "0.875rem",
+                      fontWeight: 500,
+                    }}
+                  />
+                </MenuItem>
+              </>
+            )}
           </>
         ) : (
           <>
@@ -1434,31 +1521,35 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                 }}
               />
             </MenuItem>
-            <Divider />
-            <MenuItem
-              component={Link}
-              to="/login"
-              onClick={handleProfileMenuClose}
-              sx={{
-                py: 1.5,
-                px: 2,
-                color: "#2c3e50",
-                "&:hover": {
-                  backgroundColor: "rgba(64, 145, 108, 0.08)",
-                },
-              }}
-            >
-              <ListItemIcon>
-                <LoginIcon sx={{ color: "#2c3e50" }} />
-              </ListItemIcon>
-              <ListItemText
-                primary={t("Login")}
-                primaryTypographyProps={{
-                  fontSize: "0.875rem",
-                  fontWeight: 500,
-                }}
-              />
-            </MenuItem>
+            {isSmUp && (
+              <>
+                <Divider />
+                <MenuItem
+                  component={Link}
+                  to="/login"
+                  onClick={handleProfileMenuClose}
+                  sx={{
+                    py: 1.5,
+                    px: 2,
+                    color: "#2c3e50",
+                    "&:hover": {
+                      backgroundColor: "rgba(64, 145, 108, 0.08)",
+                    },
+                  }}
+                >
+                  <ListItemIcon>
+                    <LoginIcon sx={{ color: "#2c3e50" }} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={t("Login")}
+                    primaryTypographyProps={{
+                      fontSize: "0.875rem",
+                      fontWeight: 500,
+                    }}
+                  />
+                </MenuItem>
+              </>
+            )}
           </>
         )}
       </Menu>

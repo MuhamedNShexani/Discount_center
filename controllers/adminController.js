@@ -4,6 +4,13 @@ const Store = require("../models/Store");
 const Brand = require("../models/Brand");
 const Gift = require("../models/Gift");
 
+// Simple admin check helper (by email)
+const isAdminUser = (user) => {
+  if (!user) return false;
+  const adminEmails = ["mshexani45@gmail.com", "admin@gmail.com"];
+  return adminEmails.includes(user.email);
+};
+
 // @desc    Get high-level admin stats
 // @route   GET /api/admin/stats
 const getStats = async (req, res) => {
@@ -46,6 +53,183 @@ const getStats = async (req, res) => {
   } catch (err) {
     console.error("Admin stats error:", err.message);
     res.status(500).send("Server Error");
+  }
+};
+
+// @desc    Get all users (admin only)
+// @route   GET /api/admin/users
+const getUsers = async (req, res) => {
+  try {
+    if (!isAdminUser(req.user)) {
+      return res.status(403).json({
+        success: false,
+        message: "Admin privileges required",
+      });
+    }
+
+    const users = await User.find({})
+      .select("username email firstName lastName phone deviceId isActive createdAt")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json({
+      success: true,
+      data: users,
+    });
+  } catch (err) {
+    console.error("Admin getUsers error:", err.message);
+    res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+
+// @desc    Create a new registered user (admin only)
+// @route   POST /api/admin/users
+const createUser = async (req, res) => {
+  try {
+    if (!isAdminUser(req.user)) {
+      return res.status(403).json({
+        success: false,
+        message: "Admin privileges required",
+      });
+    }
+
+    const { username, email, password, firstName, lastName, phone } = req.body;
+
+    if (!username || !email || !password || !firstName || !lastName || !phone) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Username, email, password, first name, last name, and phone are required",
+      });
+    }
+
+    if (username.trim().length < 3) {
+      return res.status(400).json({
+        success: false,
+        message: "Username must be at least 3 characters long",
+      });
+    }
+
+    const existingUser = await User.findOne({
+      $or: [{ email }, { username }, { phone }],
+    });
+
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "User with this email, username or phone already exists",
+      });
+    }
+
+    const user = new User({
+      username,
+      email,
+      password,
+      firstName,
+      lastName,
+      phone,
+    });
+
+    await user.save();
+
+    const safeUser = {
+      _id: user._id,
+      username: user.username,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      phone: user.phone,
+      deviceId: user.deviceId,
+      isActive: user.isActive,
+      createdAt: user.createdAt,
+    };
+
+    res.status(201).json({ success: true, data: safeUser });
+  } catch (err) {
+    console.error("Admin createUser error:", err.message);
+    res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+
+// @desc    Update an existing user (admin only)
+// @route   PUT /api/admin/users/:id
+const updateUser = async (req, res) => {
+  try {
+    if (!isAdminUser(req.user)) {
+      return res.status(403).json({
+        success: false,
+        message: "Admin privileges required",
+      });
+    }
+
+    const { id } = req.params;
+    const { username, email, firstName, lastName, phone, isActive, password } =
+      req.body;
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    if (username !== undefined) user.username = username;
+    if (email !== undefined) user.email = email;
+    if (firstName !== undefined) user.firstName = firstName;
+    if (lastName !== undefined) user.lastName = lastName;
+    if (phone !== undefined) user.phone = phone;
+    if (password !== undefined && password !== "") user.password = password;
+    if (isActive !== undefined) user.isActive = !!isActive;
+
+    await user.save();
+
+    const safeUser = {
+      _id: user._id,
+      username: user.username,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      phone: user.phone,
+      deviceId: user.deviceId,
+      isActive: user.isActive,
+      createdAt: user.createdAt,
+    };
+
+    res.json({ success: true, data: safeUser });
+  } catch (err) {
+    console.error("Admin updateUser error:", err.message);
+    res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+
+// @desc    Delete a user (admin only)
+// @route   DELETE /api/admin/users/:id
+const deleteUser = async (req, res) => {
+  try {
+    if (!isAdminUser(req.user)) {
+      return res.status(403).json({
+        success: false,
+        message: "Admin privileges required",
+      });
+    }
+
+    const { id } = req.params;
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    await user.deleteOne();
+
+    res.json({ success: true, message: "User deleted" });
+  } catch (err) {
+    console.error("Admin deleteUser error:", err.message);
+    res.status(500).json({ success: false, message: "Server Error" });
   }
 };
 
@@ -157,10 +341,48 @@ const getBrandReport = async (req, res) => {
   }
 };
 
+// @desc    Delete products whose expireDate passed more than 1 month ago
+// @route   DELETE /api/admin/products/expired
+const deleteExpiredProducts = async (req, res) => {
+  try {
+    if (!isAdminUser(req.user)) {
+      return res.status(403).json({
+        success: false,
+        message: "Admin privileges required",
+      });
+    }
+
+    const now = new Date();
+    const oneMonthAgo = new Date(
+      now.getFullYear(),
+      now.getMonth() - 1,
+      now.getDate()
+    );
+
+    const result = await Product.deleteMany({
+      expireDate: { $exists: true, $ne: null, $lt: oneMonthAgo },
+    });
+
+    res.json({
+      success: true,
+      deletedCount: result.deletedCount || 0,
+      message: `Deleted ${result.deletedCount || 0} expired products`,
+    });
+  } catch (err) {
+    console.error("Admin deleteExpiredProducts error:", err.message);
+    res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+
 module.exports = {
   getStats,
   getMostLikedProducts,
   getMostViewedProducts,
   getStoreReport,
   getBrandReport,
+  getUsers,
+  createUser,
+  updateUser,
+  deleteUser,
+  deleteExpiredProducts,
 };

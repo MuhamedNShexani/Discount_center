@@ -110,14 +110,16 @@ const login = async (req, res) => {
     const user = await User.findOne(
       isEmail
         ? { email: emailOrUsername.toLowerCase() }
-        : { username: emailOrUsername }
+        : { username: emailOrUsername },
     );
 
     if (!user) {
       console.log(
         "[Login] User not found:",
         isEmail ? "email" : "username",
-        isEmail ? emailOrUsername.toLowerCase().slice(0, 3) + "..." : emailOrUsername.slice(0, 3) + "..."
+        isEmail
+          ? emailOrUsername.toLowerCase().slice(0, 3) + "..."
+          : emailOrUsername.slice(0, 3) + "...",
       );
       return res.status(401).json({
         success: false,
@@ -144,7 +146,10 @@ const login = async (req, res) => {
     // Check password (trim to avoid accidental spaces)
     const isPasswordValid = await user.comparePassword((password || "").trim());
     if (!isPasswordValid) {
-      console.log("[Login] Wrong password for user:", user.email || user.username);
+      console.log(
+        "[Login] Wrong password for user:",
+        user.email || user.username,
+      );
       return res.status(401).json({
         success: false,
         message: "Invalid email or password",

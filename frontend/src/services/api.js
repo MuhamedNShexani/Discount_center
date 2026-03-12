@@ -153,12 +153,6 @@ export const userAPI = {
     ),
   recordView: (deviceId, productId, headers = {}) =>
     api.post("/users/view-product", { deviceId, productId }, { headers }),
-  addReview: (deviceId, productId, rating, comment, headers = {}) =>
-    api.post(
-      "/users/review-product",
-      { productId, rating, comment },
-      { headers },
-    ),
   getLikedProducts: (deviceId, headers = {}) =>
     api.get("/users/liked-products", {
       params: deviceId ? { deviceId } : {},
@@ -179,6 +173,8 @@ export const userAPI = {
       subscription,
       ...(deviceId && { deviceId }),
     }),
+  updateDeviceProfile: (deviceId, name) =>
+    api.put("/users/device-profile", { deviceId, name }),
 };
 
 // Auth API calls
@@ -231,6 +227,11 @@ export const adminAPI = {
   getStoreReport: (params = {}) => api.get("/admin/reports/stores", { params }),
   getBrandReport: (params = {}) => api.get("/admin/reports/brands", { params }),
   sendNotification: (data) => api.post("/admin/notifications/send", data),
+  getUsers: () => api.get("/admin/users"),
+  createUser: (data) => api.post("/admin/users", data),
+  updateUser: (id, data) => api.put(`/admin/users/${id}`, data),
+  deleteUser: (id) => api.delete(`/admin/users/${id}`),
+  deleteExpiredProducts: () => api.delete("/admin/products/expired"),
 };
 
 export default api;

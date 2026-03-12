@@ -14,8 +14,6 @@ import {
   Alert,
   Divider,
   IconButton,
-  Rating,
-  TextField,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -54,14 +52,8 @@ const ProductDetail = () => {
   const theme = useTheme();
 
   // User tracking hook (user = device user for guests)
-  const {
-    toggleLike,
-    recordView,
-    addReview,
-    isProductLiked,
-    isAuthenticated,
-    user,
-  } = useUserTracking();
+  const { toggleLike, recordView, isProductLiked, isAuthenticated, user } =
+    useUserTracking();
 
   // State for tracking like count locally
   const [localLikeCount, setLocalLikeCount] = useState(0);
@@ -120,12 +112,6 @@ const ProductDetail = () => {
     }
   };
 
-  // Review state
-  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
-  const [reviewRating, setReviewRating] = useState(0);
-  const [reviewComment, setReviewComment] = useState("");
-  const [submittingReview, setSubmittingReview] = useState(false);
-
   useEffect(() => {
     fetchProduct();
     fetchCategories();
@@ -165,37 +151,6 @@ const ProductDetail = () => {
       setLocalLikeState(isProductLiked(product._id));
     }
   }, [product, isAuthenticated, user, isProductLiked]);
-
-  // Handle review submission
-  const handleReviewSubmit = async () => {
-    if (reviewRating === 0) {
-      alert("Please select a rating");
-      return;
-    }
-
-    try {
-      setSubmittingReview(true);
-      const result = await addReview(id, reviewRating, reviewComment);
-      if (result.success) {
-        // Update product with new rating data
-        setProduct((prev) => ({
-          ...prev,
-          averageRating: result.data.averageRating,
-          reviewCount: result.data.reviewCount,
-        }));
-        setReviewDialogOpen(false);
-        setReviewRating(0);
-        setReviewComment("");
-      } else {
-        alert("Failed to submit review: " + result.message);
-      }
-    } catch (error) {
-      console.error("Error submitting review:", error);
-      alert("Failed to submit review");
-    } finally {
-      setSubmittingReview(false);
-    }
-  };
 
   const fetchCategories = async () => {
     try {
@@ -880,35 +835,7 @@ const ProductDetail = () => {
                   </Box>
 
                   {/* Bottom Row - Review Button */}
-                  <Button
-                    variant="outlined"
-                    onClick={() => {
-                      if (!isAuthenticated) {
-                        setLoginNotificationReason("review");
-                        setLoginNotificationOpen(true);
-                        return;
-                      }
-                      setReviewDialogOpen(true);
-                    }}
-                    startIcon={<StarIcon />}
-                    sx={{
-                      borderRadius: 2,
-                      textTransform: "none",
-                      fontSize: { xs: "0.875rem", sm: "1rem" },
-                      width: { xs: "100%", sm: "auto" },
-                      height: { xs: "44px", sm: "auto" },
-                      backgroundColor: "rgba(255, 193, 7, 0.05)",
-                      borderColor: "#ffc107",
-                      color: "#ffc107",
-                      "&:hover": {
-                        backgroundColor: "rgba(255, 193, 7, 0.1)",
-                        borderColor: "#ffa000",
-                        color: "#ffa000",
-                      },
-                    }}
-                  >
-                    {t("Write a Review")}
-                  </Button>
+                  {/* Review feature removed */}
                 </Box>
               </Box>
 
@@ -1079,7 +1006,7 @@ const ProductDetail = () => {
                         {relatedProduct.name}
                       </Typography>
 
-                      {relatedProduct.categoryTypeId && (
+                      {/* {relatedProduct.categoryTypeId && (
                         <Chip
                           label={getCategoryTypeName(
                             relatedProduct.categoryTypeId,
@@ -1096,7 +1023,7 @@ const ProductDetail = () => {
                             height: { xs: "20px", sm: "24px" },
                           }}
                         />
-                      )}
+                      )} */}
 
                       {relatedProduct.brandId && (
                         <Box display="flex" alignItems="center" mb={0.5}>
@@ -1216,50 +1143,6 @@ const ProductDetail = () => {
           )}
         </Paper>
       )}
-
-      {/* Review Dialog */}
-      <Dialog
-        open={reviewDialogOpen}
-        onClose={() => setReviewDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>{t("Write a Review")}</DialogTitle>
-        <DialogContent>
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="body1" gutterBottom>
-              {t("Rating")}:
-            </Typography>
-            <Rating
-              value={reviewRating}
-              onChange={(event, newValue) => setReviewRating(newValue)}
-              size="large"
-              sx={{ fontSize: "2rem" }}
-            />
-          </Box>
-          <TextField
-            fullWidth
-            multiline
-            rows={4}
-            label={t("Comment (optional)")}
-            value={reviewComment}
-            onChange={(e) => setReviewComment(e.target.value)}
-            variant="outlined"
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setReviewDialogOpen(false)}>
-            {t("Cancel")}
-          </Button>
-          <Button
-            onClick={handleReviewSubmit}
-            variant="contained"
-            disabled={submittingReview || reviewRating === 0}
-          >
-            {submittingReview ? t("Submitting...") : t("Submit Review")}
-          </Button>
-        </DialogActions>
-      </Dialog>
 
       {/* Login Notification Dialog */}
       <Dialog

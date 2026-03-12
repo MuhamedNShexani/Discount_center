@@ -6,6 +6,11 @@ const {
   getMostViewedProducts,
   getStoreReport,
   getBrandReport,
+  getUsers,
+  createUser,
+  updateUser,
+  deleteUser,
+  deleteExpiredProducts,
 } = require("../controllers/adminController");
 const { sendNotification } = require("../controllers/adminNotificationController");
 const { protect } = require("../middleware/auth");
@@ -27,5 +32,14 @@ router.get("/reports/stores", getStoreReport);
 
 // GET /api/admin/reports/brands?brandId=optional
 router.get("/reports/brands", getBrandReport);
+
+// User management - admin-only, requires auth
+router.get("/users", protect, getUsers);
+router.post("/users", protect, createUser);
+router.put("/users/:id", protect, updateUser);
+router.delete("/users/:id", protect, deleteUser);
+
+// Delete expired products - admin-only, requires auth
+router.delete("/products/expired", protect, deleteExpiredProducts);
 
 module.exports = router;

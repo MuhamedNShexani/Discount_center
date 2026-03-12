@@ -1191,6 +1191,15 @@ const resources = {
       "Discover amazing products from this brand": "بدۆزەوە لە بڕاندی دڵخوازت",
       "This brand hasn't added any discount products yet.":
         "ئەم بڕاندە لە ئێستادا هیچ کاڵایەکى داشکاندنى بەردەست نییە",
+      "List of all users, including guest device accounts and admin accounts.":
+        "لیستی هەموو بەکارهێنەران، لەگەڵ ئەکاونتە جۆری دیسک و بەڕێوەبەرەکان.",
+      "Create User": "دروستکردنی بەکارهێنەر",
+      "Edit User": "دەستکاریکردنى بەکارهێنەر",
+      users: "بەکارهێنەران",
+      "Change account name": "گۆڕینی ناوی ئەکاونت",
+      "Change name": "گۆڕینی ناو",
+      Users: "بەکارهێنەران",
+      "Created At": "ڕێکەوتى دروستکردن",
       "address not provided": "ناونیشان نەدۆزرایەوە",
       "This store hasn't added any discount products yet.":
         "فڕۆشگایەکە لە ئێستادا هیچ کاڵایەکى داشکاندنى بەردەست نییە",
