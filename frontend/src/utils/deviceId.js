@@ -4,28 +4,19 @@ export const generateDeviceId = () => {
   let deviceId = localStorage.getItem("deviceId");
 
   if (!deviceId) {
-    // Generate a new device ID using browser fingerprinting
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    ctx.textBaseline = "top";
-    ctx.font = "14px Arial";
-    ctx.fillText("Device fingerprint", 2, 2);
+    // Generate a new, purely random ID (per installation) – no fingerprinting
+    if (window.crypto && window.crypto.getRandomValues) {
+      const bytes = new Uint8Array(16);
+      window.crypto.getRandomValues(bytes);
+      deviceId = Array.from(bytes)
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
+    } else {
+      // Fallback: pseudo-random string
+      deviceId = Math.random().toString(36).substring(2) + Date.now().toString(36);
+    }
 
-    const fingerprint = canvas.toDataURL();
-
-    // Combine with other browser characteristics
-    const userAgent = navigator.userAgent;
-    const screenRes = `${window.screen.width}x${window.screen.height}`;
-    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const language = navigator.language;
-
-    // Create a hash-like string
-    const combined = `${fingerprint}-${userAgent}-${screenRes}-${timeZone}-${language}`;
-    deviceId = btoa(combined)
-      .replace(/[^a-zA-Z0-9]/g, "")
-      .substring(0, 32);
-
-    // Store in localStorage
+    // Store in localStorage so this device keeps its own account
     localStorage.setItem("deviceId", deviceId);
   }
 

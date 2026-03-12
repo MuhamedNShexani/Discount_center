@@ -1151,7 +1151,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
         }
 
         {/* Theme / Mode Toggle */}
-        <MenuItem
+        {/* <MenuItem
           onClick={() => {
             setDarkMode(!darkMode);
             handleProfileMenuClose();
@@ -1177,10 +1177,10 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
               fontWeight: 500,
             }}
           />
-        </MenuItem>
+        </MenuItem> */}
 
         {/* Push / Notification Center On/Off - in profile */}
-        {pushSupported && (
+        {/* {pushSupported && (
           <MenuItem
             component="div"
             disableRipple
@@ -1219,7 +1219,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
               color="primary"
             />
           </MenuItem>
-        )}
+        )} */}
 
         <Divider />
 
