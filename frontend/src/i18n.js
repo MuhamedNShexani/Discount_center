@@ -238,6 +238,21 @@ const resources = {
         "Failed to delete. Please try again.",
       Logout: "Logout",
       Login: "Login",
+      "Deactivate Account": "Deactivate Account",
+      "Your account will be inactive immediately and you will be logged out.":
+        "Your account will be inactive immediately and you will be logged out.",
+      "You have 30 days to log in again to reactivate your account and cancel deletion.":
+        "You have 30 days to log in again to reactivate your account and cancel deletion.",
+      "If you do not log in within 30 days, your account and all data will be permanently deleted.":
+        "If you do not log in within 30 days, your account and all data will be permanently deleted.",
+      "Are you sure you want to deactivate your account?":
+        "Are you sure you want to deactivate your account?",
+      "Deactivating...": "Deactivating...",
+      "Account deactivated. You have 30 days to log in again to reactivate.":
+        "Account deactivated. You have 30 days to log in again to reactivate.",
+      "Not supported": "Not supported",
+      "Enable notifications to receive updates and offers from the app?":
+        "Enable notifications to receive updates and offers from the app?",
       "Cannot delete brand. It has associated products. Please delete the products first.":
         "Cannot delete brand. It has associated products. Please delete the products first.",
       "No gifts available": "No gifts available",
@@ -261,7 +276,9 @@ const resources = {
       "Sign in to your account or create a new one":
         "Sign in to your account or create a new one",
       "Continue as Guest": "Continue as Guest",
-      "Or sign in to sync across devices": "Or sign in to sync across devices",
+      "sign in to sync across devices": "sign in to sync across devices",
+      "Create an account to save your favourites":
+        "Create an account to save your favourites",
       Login: "Login",
       Register: "Register",
       Email: "Email",
@@ -571,6 +588,8 @@ const resources = {
       "Click to explore products": "اضغط لاستكشاف المنتجات",
       "No stores found": "لم يتم العثور على متاجر",
       "Premium Store": "متجر مميز",
+      "Create an account to save your favourites": "أنشئ حساباً لحفظ إعجاباتك",
+      "Sign in to sync across devices": "تسجيل الدخول لمزامنة الأجهزة",
       Electronic: "إلكترونيات",
       Cosmetic: "تجميل",
       "No discount products available": "لا توجد منتجات مخفضة",
@@ -926,6 +945,21 @@ const resources = {
         "فشل الحذف. يرجى المحاولة مرة أخرى.",
       Logout: "تسجيل الخروج",
       Login: "تسجيل الدخول",
+      "Deactivate Account": "إلغاء تنشيط الحساب",
+      "Your account will be inactive immediately and you will be logged out.":
+        "سيصبح حسابك غير نشط فوراً وسيتم تسجيل خروجك.",
+      "You have 30 days to log in again to reactivate your account and cancel deletion.":
+        "لديك 30 يوماً لتسجيل الدخول مرة أخرى لتفعيل حسابك وإلغاء الحذف.",
+      "If you do not log in within 30 days, your account and all data will be permanently deleted.":
+        "إذا لم تسجّل الدخول خلال 30 يوماً، سيتم حذف حسابك وجميع البيانات نهائياً.",
+      "Are you sure you want to deactivate your account?":
+        "هل أنت متأكد أنك تريد إلغاء تنشيط حسابك؟",
+      "Deactivating...": "جاري إلغاء التنشيط...",
+      "Account deactivated. You have 30 days to log in again to reactivate.":
+        "تم إلغاء تنشيط الحساب. لديك 30 يوماً لتسجيل الدخول لتفعيله مرة أخرى.",
+      "Not supported": "غير مدعوم",
+      "Enable notifications to receive updates and offers from the app?":
+        "تفعيل الإشعارات لتلقي التحديثات والعروض من التطبيق؟",
       "Cannot delete brand. It has associated products. Please delete the products first.":
         "لا يمكن حذف الشركة. لديها منتجات مرتبطة. يرجى حذف المنتجات أولاً.",
       "No gifts available": "لا توجد هدايا متاحة",
@@ -1207,6 +1241,9 @@ const resources = {
       "phone not provided": "تەلەفون نەدۆزرایەوە",
       "description not provided": "وەسف نەدۆزرایەوە",
       "Premium Brand": "بڕاندی دڵخوازت",
+      "Create an account to save your favourites":
+        "ئەکاونت دروست بکە بۆ چوونەژوورەوە لەهەر شوێنێک",
+      "Sign in to sync across devices": "لەڕێگەى ئەکاونتەکەتەوە بڕۆ ژوورەوە",
       Theme: "ڕەنگ",
       "This brand hasn't added any products yet. Check back later!":
         "ئەم بڕاندیە لە ئێستادا هیچ کاڵایەکى بەردەست نییە لە ئێستادا ",
@@ -1323,8 +1360,6 @@ const resources = {
       "All Brands": "هەموو بڕاندەکان",
       Products: "کاڵاکان",
       "Continue as Guest": "وەکو میوان بەردەوام بە",
-      "Or sign in to sync across devices":
-        "یاخود لەڕێگەى ئەکاونتەکەتەوە بڕۆ ژوورەوە",
       "Browse all Brands and their products":
         "هەموو بڕاندەکان و کاڵاکانیان بگەڕێ",
       "Brands Available": "بڕاند بەردەستە",
@@ -1477,6 +1512,21 @@ const resources = {
         "سڕینەوە سەرکەوتوو نەبوو. تکایە دووبارە هەوڵبدەرەوە.",
       Logout: "چوونەدەرەوە",
       Login: "چوونەژوورەوە",
+      "Deactivate Account": "ناچالاککردنی ئەکاونت",
+      "Your account will be inactive immediately and you will be logged out.":
+        "ئەکاونتەکەت یەکسەر ناچالاک دەبێت و دەچیتە دەرەوە.",
+      "You have 30 days to log in again to reactivate your account and cancel deletion.":
+        "٣٠ ڕۆژت هەیە دووبارە بچیتە ژوورەوە بۆ چالاککردنەوەی ئەکاونت و هەڵوەشاندنەوەی سڕینەوە.",
+      "If you do not log in within 30 days, your account and all data will be permanently deleted.":
+        "ئەگەر لە ماوەی ٣٠ ڕۆژدا چوونەژوورەوە نەبیت، ئەکاونت و هەموو داتاکە بە هەمیشەیی دەسڕێتەوە.",
+      "Are you sure you want to deactivate your account?":
+        "دڵنیایت دەتەوێت ئەکاونتەکەت ناچالاک بکەیت؟",
+      "Deactivating...": "ناچالاککردن...",
+      "Account deactivated. You have 30 days to log in again to reactivate.":
+        "ئەکاونت ناچالاک کرا. ٣٠ ڕۆژت هەیە دووبارە بچیتە ژوورەوە بۆ چالاککردنەوە.",
+      "Not supported": "پشتیوانی نەکراوە",
+      "Enable notifications to receive updates and offers from the app?":
+        "ئاگاداریەکان چالاک بکە بۆ وەرگرتنی نوێکاری و پیشەکانی ئەپەکە؟",
       "Cannot delete brand. It has associated products. Please delete the products first.":
         "بڕاندکە ناتوانرێت بسڕێتەوە چونکە کاڵای پەیوەستداری هەیە. تکایە سەرەتا کاڵاکان بسڕەوە.",
       "No gifts available": "هیچ خەڵات و دیاریەک نەدۆزرایەوە",

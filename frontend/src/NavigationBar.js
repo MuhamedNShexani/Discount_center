@@ -53,6 +53,7 @@ import {
   Notifications as NotificationsIcon,
   Search as SearchIcon,
   People as PeopleIcon,
+  Block as BlockIcon,
 } from "@mui/icons-material";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -66,7 +67,7 @@ import { useNotifications } from "./context/NotificationContext";
 const NavigationBar = ({ darkMode, setDarkMode }) => {
   const theme = useTheme();
   const { t, i18n } = useTranslation();
-  const { user, logout } = useAuth();
+  const { user, logout, deactivate } = useAuth();
   const { user: guestUser, updateGuestName } = useUserTracking();
   const { selectedCity, changeCity, cities } = useCityFilter();
   const { openWhatsApp } = useAppSettings();
@@ -108,6 +109,14 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
 
   const [guestNameDialogOpen, setGuestNameDialogOpen] = useState(false);
   const [guestNameInput, setGuestNameInput] = useState("");
+  const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false);
+  const [deactivating, setDeactivating] = useState(false);
+  const [deactivateSnackbar, setDeactivateSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "info",
+  });
+  const [confirmPushOpen, setConfirmPushOpen] = useState(false);
 
   const handleLangChange = (event) => {
     i18n.changeLanguage(event.target.value);
@@ -149,6 +158,28 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
   const handleLogout = () => {
     logout();
     handleProfileMenuClose();
+  };
+
+  const handleDeactivateClick = () => {
+    handleProfileMenuClose();
+    setDeactivateDialogOpen(true);
+  };
+
+  const handleDeactivateConfirm = async () => {
+    setDeactivating(true);
+    const result = await deactivate();
+    setDeactivating(false);
+    setDeactivateDialogOpen(false);
+    setDeactivateSnackbar({
+      open: true,
+      message: result.success
+        ? result.message ||
+          t(
+            "Account deactivated. You have 30 days to log in again to reactivate.",
+          )
+        : result.message,
+      severity: result.success ? "success" : "error",
+    });
   };
 
   const navItems = [
@@ -938,9 +969,9 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                     fontWeight: 600,
                   }}
                 >
-                  {user.firstName
-                    ? user.firstName.charAt(0).toUpperCase()
-                    : "U"}
+                  {(user.displayName || user.username || "U")
+                    .charAt(0)
+                    .toUpperCase()}
                 </Avatar>
                 <Box>
                   <Typography
@@ -949,7 +980,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                     fontWeight={600}
                     sx={{ fontSize: "1rem" }}
                   >
-                    {user.firstName} {user.lastName}
+                    {user.displayName || user.username || t("User")}
                   </Typography>
                   <Typography
                     variant="body2"
@@ -973,9 +1004,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   fontWeight: 600,
                 }}
               >
-                {guestUser?.firstName
-                  ? guestUser.firstName.charAt(0).toUpperCase()
-                  : "G"}
+                {(guestUser?.displayName || "G").charAt(0).toUpperCase()}
               </Avatar>
               <Box>
                 <Typography
@@ -984,7 +1013,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   fontWeight={600}
                   sx={{ fontSize: "1rem" }}
                 >
-                  {guestUser?.firstName || t("Guest User")}
+                  {guestUser?.displayName || t("Guest User")}
                 </Typography>
                 {/* <Typography
                   variant="body2"
@@ -1000,7 +1029,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
         {!user && (
           <MenuItem
             onClick={() => {
-              setGuestNameInput(guestUser?.firstName || "");
+              setGuestNameInput(guestUser?.displayName || "");
               setGuestNameDialogOpen(true);
             }}
             sx={{
@@ -1179,47 +1208,92 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
           />
         </MenuItem> */}
 
-        {/* Push / Notification Center On/Off - in profile */}
-        {/* {pushSupported && (
-          <MenuItem
-            component="div"
-            disableRipple
-            onClick={(e) => e.stopPropagation()}
-            sx={{
-              py: 1.5,
-              px: 2,
-              "&:hover": {
-                backgroundColor:
-                  theme.palette.mode === "dark"
-                    ? "rgba(255,255,255,0.08)"
-                    : "rgba(0,0,0,0.04)",
-              },
+        {/* Push / Notification Center On/Off - always visible in profile */}
+        <MenuItem
+          component="div"
+          disableRipple
+          onClick={(e) => e.stopPropagation()}
+          sx={{
+            py: 1.5,
+            px: 2,
+            "&:hover": {
+              backgroundColor:
+                theme.palette.mode === "dark"
+                  ? "rgba(255,255,255,0.08)"
+                  : "rgba(0,0,0,0.04)",
+            },
+          }}
+        >
+          <ListItemIcon>
+            <NotificationsIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText
+            primary={t("Notification center")}
+            secondary={
+              !pushSupported
+                ? t("Not supported")
+                : pushEnabled
+                  ? t("On")
+                  : t("Off")
+            }
+            primaryTypographyProps={{
+              fontSize: "0.875rem",
+              fontWeight: 500,
             }}
-          >
-            <ListItemIcon>
-              <NotificationsIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText
-              primary={t("Notification center")}
-              secondary={pushEnabled ? t("On") : t("Off")}
-              primaryTypographyProps={{
-                fontSize: "0.875rem",
-                fontWeight: 500,
-              }}
-              secondaryTypographyProps={{
-                fontSize: "0.75rem",
-                color: "text.secondary",
-              }}
-            />
-            <Switch
-              size="small"
-              checked={pushEnabled}
-              disabled={pushSubscribing}
-              onChange={(e) => setPushEnabled(e.target.checked)}
+            secondaryTypographyProps={{
+              fontSize: "0.75rem",
+              color: "text.secondary",
+            }}
+          />
+          <Switch
+            size="small"
+            checked={pushEnabled}
+            disabled={!pushSupported || pushSubscribing}
+            onChange={(e) => {
+              if (e.target.checked) {
+                setConfirmPushOpen(true);
+              } else {
+                setPushEnabled(false);
+              }
+            }}
+            color="primary"
+          />
+        </MenuItem>
+
+        {/* Confirm enable notification center */}
+        <Dialog
+          open={confirmPushOpen}
+          onClose={() => setConfirmPushOpen(false)}
+          maxWidth="xs"
+          fullWidth
+        >
+          <DialogTitle>{t("Notification center")}</DialogTitle>
+          <DialogContent>
+            <Typography variant="body2" color="text.secondary">
+              {t("Enable notifications to receive updates and offers from the app?")}
+            </Typography>
+          </DialogContent>
+          <DialogActions sx={{ px: 2, pb: 2 }}>
+            <Button onClick={() => setConfirmPushOpen(false)}>
+              {t("Cancel")}
+            </Button>
+            <Button
+              variant="contained"
               color="primary"
-            />
-          </MenuItem>
-        )} */}
+              disabled={pushSubscribing}
+              onClick={async () => {
+                setConfirmPushOpen(false);
+                if (pushPermission === "default") {
+                  await requestPushPermission();
+                } else {
+                  await setPushEnabled(true);
+                }
+              }}
+            >
+              {pushSubscribing ? t("Enabling...") : t("Enable")}
+            </Button>
+          </DialogActions>
+        </Dialog>
 
         <Divider />
 
@@ -1375,9 +1449,9 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                     }}
                   />
                 </MenuItem>
+                <Divider />
               </>
             )}
-            <Divider />
             <>
               {/* Privacy Policy - shown for both mobile and desktop */}
               <MenuItem
@@ -1434,34 +1508,54 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   }}
                 />
               </MenuItem>
-            </>
-            {isSmUp && (
-              <>
-                <Divider />
-                <MenuItem
-                  onClick={handleLogout}
-                  sx={{
-                    py: 1.5,
-                    px: 2,
-                    color: "#e53e3e",
-                    "&:hover": {
-                      backgroundColor: "rgba(229, 62, 62, 0.08)",
-                    },
+              <Divider />
+              {/* Deactivate Account - 30-day grace period then permanent deletion */}
+              <MenuItem
+                onClick={handleDeactivateClick}
+                sx={{
+                  py: 1.5,
+                  px: 2,
+                  color: "#b45309",
+                  "&:hover": {
+                    backgroundColor: "rgba(180, 83, 9, 0.08)",
+                  },
+                }}
+              >
+                <ListItemIcon>
+                  <BlockIcon sx={{ color: "#b45309" }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary={t("Deactivate Account")}
+                  primaryTypographyProps={{
+                    fontSize: "0.875rem",
+                    fontWeight: 500,
                   }}
-                >
-                  <ListItemIcon>
-                    <LogoutIcon sx={{ color: "#e53e3e" }} />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={t("Logout")}
-                    primaryTypographyProps={{
-                      fontSize: "0.875rem",
-                      fontWeight: 500,
-                    }}
-                  />
-                </MenuItem>
-              </>
-            )}
+                />
+              </MenuItem>
+              {/* Logout - now available on both desktop and mobile */}
+              <MenuItem
+                onClick={handleLogout}
+                sx={{
+                  py: 1.5,
+                  px: 2,
+                  color: "#e53e3e",
+                  "&:hover": {
+                    backgroundColor: "rgba(229, 62, 62, 0.08)",
+                  },
+                }}
+              >
+                <ListItemIcon>
+                  <LogoutIcon sx={{ color: "#e53e3e" }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary={t("Logout")}
+                  primaryTypographyProps={{
+                    fontSize: "0.875rem",
+                    fontWeight: 500,
+                  }}
+                />
+              </MenuItem>
+            </>
           </>
         ) : (
           <>
@@ -1521,38 +1615,112 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                 }}
               />
             </MenuItem>
-            {isSmUp && (
-              <>
-                <Divider />
-                <MenuItem
-                  component={Link}
-                  to="/login"
-                  onClick={handleProfileMenuClose}
-                  sx={{
-                    py: 1.5,
-                    px: 2,
-                    color: "#2c3e50",
-                    "&:hover": {
-                      backgroundColor: "rgba(64, 145, 108, 0.08)",
-                    },
-                  }}
-                >
-                  <ListItemIcon>
-                    <LoginIcon sx={{ color: "#2c3e50" }} />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={t("Login")}
-                    primaryTypographyProps={{
-                      fontSize: "0.875rem",
-                      fontWeight: 500,
-                    }}
-                  />
-                </MenuItem>
-              </>
-            )}
+            <Divider />
+            {/* Login - now available on both desktop and mobile */}
+            <MenuItem
+              component={Link}
+              to="/login"
+              onClick={handleProfileMenuClose}
+              sx={{
+                py: 1.5,
+                px: 2,
+                color: "#2c3e50",
+                "&:hover": {
+                  backgroundColor: "rgba(64, 145, 108, 0.08)",
+                },
+              }}
+            >
+              <ListItemIcon>
+                <LoginIcon sx={{ color: "#2c3e50" }} />
+              </ListItemIcon>
+              <ListItemText
+                primary={t("Login")}
+                primaryTypographyProps={{
+                  fontSize: "0.875rem",
+                  fontWeight: 500,
+                }}
+              />
+            </MenuItem>
           </>
         )}
       </Menu>
+
+      {/* Deactivate Account confirmation dialog */}
+      <Dialog
+        open={deactivateDialogOpen}
+        onClose={() => !deactivating && setDeactivateDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>{t("Deactivate Account")}</DialogTitle>
+        <DialogContent>
+          <Box component="ul" sx={{ mt: 1, pl: 2 }}>
+            <Typography
+              component="li"
+              variant="body2"
+              color="text.secondary"
+              sx={{ mb: 0.5 }}
+            >
+              {t(
+                "Your account will be inactive immediately and you will be logged out.",
+              )}
+            </Typography>
+            <Typography
+              component="li"
+              variant="body2"
+              color="text.secondary"
+              sx={{ mb: 0.5 }}
+            >
+              {t(
+                "You have 30 days to log in again to reactivate your account and cancel deletion.",
+              )}
+            </Typography>
+            <Typography component="li" variant="body2" color="text.secondary">
+              {t(
+                "If you do not log in within 30 days, your account and all data will be permanently deleted.",
+              )}
+            </Typography>
+          </Box>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+            {t("Are you sure you want to deactivate your account?")}
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 2, pb: 2 }}>
+          <Button
+            onClick={() => setDeactivateDialogOpen(false)}
+            disabled={deactivating}
+          >
+            {t("Cancel")}
+          </Button>
+          <Button
+            variant="contained"
+            sx={{
+              color: "white",
+              backgroundColor: "red",
+            }}
+            onClick={handleDeactivateConfirm}
+            disabled={deactivating}
+          >
+            {deactivating ? t("Deactivating...") : t("Deactivate Account")}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Deactivate result snackbar */}
+      <Snackbar
+        open={deactivateSnackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setDeactivateSnackbar((s) => ({ ...s, open: false }))}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setDeactivateSnackbar((s) => ({ ...s, open: false }))}
+          severity={deactivateSnackbar.severity}
+          sx={{ width: "100%" }}
+        >
+          {deactivateSnackbar.message}
+        </Alert>
+      </Snackbar>
 
       {/* Push enable error snackbar */}
       <Snackbar

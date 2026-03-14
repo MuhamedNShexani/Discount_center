@@ -402,7 +402,7 @@ const AdminPage = () => {
             {t("Admin Dashboard")}
           </Typography>
           <Typography variant="subtitle1" color="text.secondary">
-            {t("Welcome back, Admin")} - {user?.firstName} {user?.lastName}
+            {t("Welcome back, Admin")} - {user?.displayName || user?.username}
           </Typography>
         </Box>
         <Button

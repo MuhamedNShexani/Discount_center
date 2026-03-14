@@ -7,6 +7,7 @@ const {
   updateProfile,
   changePassword,
   logout,
+  deactivate,
 } = require("../controllers/authController");
 const { protect } = require("../middleware/auth");
 
@@ -19,5 +20,6 @@ router.get("/profile", protect, getProfile);
 router.put("/profile", protect, updateProfile);
 router.put("/change-password", protect, changePassword);
 router.post("/logout", protect, logout);
+router.post("/deactivate", protect, deactivate);
 
 module.exports = router;

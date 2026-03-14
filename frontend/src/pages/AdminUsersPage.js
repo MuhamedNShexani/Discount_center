@@ -104,9 +104,7 @@ const AdminUsersPage = () => {
       _id: null,
       username: "",
       email: "",
-      firstName: "",
-      lastName: "",
-      phone: "",
+      displayName: "",
       isActive: true,
     });
     setEditDialogOpen(true);
@@ -136,9 +134,7 @@ const AdminUsersPage = () => {
         const updatePayload = {
           username: editingUser.username,
           email: editingUser.email,
-          firstName: editingUser.firstName,
-          lastName: editingUser.lastName,
-          phone: editingUser.phone,
+          displayName: editingUser.displayName,
           isActive: editingUser.isActive,
         };
         if (editingUser.password && editingUser.password.trim() !== "") {
@@ -150,9 +146,7 @@ const AdminUsersPage = () => {
           username: editingUser.username,
           email: editingUser.email,
           password: editingUser.password,
-          firstName: editingUser.firstName,
-          lastName: editingUser.lastName,
-          phone: editingUser.phone,
+          displayName: editingUser.displayName,
         });
       }
 
@@ -250,9 +244,7 @@ const AdminUsersPage = () => {
               users.map((u) => {
                 const isGuest = !!u.deviceId && !u.email;
                 const displayName =
-                  u.firstName || u.lastName
-                    ? `${u.firstName || ""} ${u.lastName || ""}`.trim()
-                    : u.username || (isGuest ? t("Guest user") : t("User"));
+                  u.displayName?.trim() || u.username || (isGuest ? t("Guest user") : t("User"));
                 return (
                   <TableRow key={u._id}>
                     <TableCell>{displayName}</TableCell>
@@ -336,32 +328,14 @@ const AdminUsersPage = () => {
                 value={editingUser.email || ""}
                 onChange={(e) => handleEditFieldChange("email", e.target.value)}
               />
-              <Box sx={{ display: "flex", gap: 2 }}>
-                <TextField
-                  fullWidth
-                  margin="normal"
-                  label={t("First Name")}
-                  value={editingUser.firstName || ""}
-                  onChange={(e) =>
-                    handleEditFieldChange("firstName", e.target.value)
-                  }
-                />
-                <TextField
-                  fullWidth
-                  margin="normal"
-                  label={t("Last Name")}
-                  value={editingUser.lastName || ""}
-                  onChange={(e) =>
-                    handleEditFieldChange("lastName", e.target.value)
-                  }
-                />
-              </Box>
               <TextField
                 fullWidth
                 margin="normal"
-                label={t("Phone")}
-                value={editingUser.phone || ""}
-                onChange={(e) => handleEditFieldChange("phone", e.target.value)}
+                label={t("Display Name")}
+                value={editingUser.displayName || ""}
+                onChange={(e) =>
+                  handleEditFieldChange("displayName", e.target.value)
+                }
               />
               <TextField
                 fullWidth

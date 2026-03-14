@@ -191,6 +191,7 @@ export const authAPI = {
       { headers },
     ),
   logout: (headers) => api.post("/auth/logout", {}, { headers }),
+  deactivate: (headers) => api.post("/auth/deactivate", {}, { headers }),
 };
 
 // Settings API calls

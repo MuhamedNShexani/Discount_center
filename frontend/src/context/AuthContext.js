@@ -46,8 +46,11 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       console.error("Error refreshing user profile:", error);
-      // Don't logout users on profile refresh errors
-      // Just log the error and continue with existing user data
+      // If user not found (404), account may have been deleted after deactivation
+      if (error.response?.status === 404) {
+        logout();
+        return;
+      }
       console.log(
         "Profile refresh failed, but keeping user logged in with existing data",
       );
@@ -103,6 +106,20 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("user");
   };
 
+  const deactivate = async () => {
+    try {
+      const response = await authAPI.deactivate(getAuthHeaders());
+      if (response.data?.success) {
+        logout();
+        return { success: true, message: response.data.message };
+      }
+      return { success: false, message: response.data?.message || "Deactivation failed" };
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || "Deactivation failed";
+      return { success: false, message };
+    }
+  };
+
   const updateProfile = async (profileData) => {
     try {
       const response = await authAPI.updateProfile(profileData);
@@ -153,6 +170,7 @@ export const AuthProvider = ({ children }) => {
         loading,
         login,
         logout,
+        deactivate,
         register,
         updateProfile,
         changePassword,

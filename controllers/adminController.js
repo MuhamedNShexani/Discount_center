@@ -68,7 +68,7 @@ const getUsers = async (req, res) => {
     }
 
     const users = await User.find({})
-      .select("username email firstName lastName phone deviceId isActive createdAt")
+      .select("username email displayName deviceId isActive createdAt")
       .sort({ createdAt: -1 })
       .lean();
 
@@ -93,13 +93,12 @@ const createUser = async (req, res) => {
       });
     }
 
-    const { username, email, password, firstName, lastName, phone } = req.body;
+    const { username, email, password } = req.body;
 
-    if (!username || !email || !password || !firstName || !lastName || !phone) {
+    if (!username || !email || !password) {
       return res.status(400).json({
         success: false,
-        message:
-          "Username, email, password, first name, last name, and phone are required",
+        message: "Username, email and password are required",
       });
     }
 
@@ -111,13 +110,13 @@ const createUser = async (req, res) => {
     }
 
     const existingUser = await User.findOne({
-      $or: [{ email }, { username }, { phone }],
+      $or: [{ email }, { username }],
     });
 
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: "User with this email, username or phone already exists",
+        message: "User with this email or username already exists",
       });
     }
 
@@ -125,9 +124,6 @@ const createUser = async (req, res) => {
       username,
       email,
       password,
-      firstName,
-      lastName,
-      phone,
     });
 
     await user.save();
@@ -136,9 +132,7 @@ const createUser = async (req, res) => {
       _id: user._id,
       username: user.username,
       email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      phone: user.phone,
+      displayName: user.displayName,
       deviceId: user.deviceId,
       isActive: user.isActive,
       createdAt: user.createdAt,
@@ -163,7 +157,7 @@ const updateUser = async (req, res) => {
     }
 
     const { id } = req.params;
-    const { username, email, firstName, lastName, phone, isActive, password } =
+    const { username, email, displayName, isActive, password } =
       req.body;
 
     const user = await User.findById(id);
@@ -176,9 +170,7 @@ const updateUser = async (req, res) => {
 
     if (username !== undefined) user.username = username;
     if (email !== undefined) user.email = email;
-    if (firstName !== undefined) user.firstName = firstName;
-    if (lastName !== undefined) user.lastName = lastName;
-    if (phone !== undefined) user.phone = phone;
+    if (displayName !== undefined) user.displayName = displayName && displayName.trim() ? displayName.trim() : null;
     if (password !== undefined && password !== "") user.password = password;
     if (isActive !== undefined) user.isActive = !!isActive;
 
@@ -188,9 +180,7 @@ const updateUser = async (req, res) => {
       _id: user._id,
       username: user.username,
       email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      phone: user.phone,
+      displayName: user.displayName,
       deviceId: user.deviceId,
       isActive: user.isActive,
       createdAt: user.createdAt,

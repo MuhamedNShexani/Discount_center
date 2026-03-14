@@ -18,9 +18,7 @@ const testAuthSystem = async () => {
       username: "testuser",
       email: "test@example.com",
       password: "password123",
-      firstName: "Test",
-      lastName: "User",
-      phone: "+1234567890",
+      displayName: "Test User",
     });
 
     await testUser.save();
@@ -45,8 +43,7 @@ const testAuthSystem = async () => {
       hasUsername: !!publicProfile.username,
       hasEmail: !!publicProfile.email,
       hasPassword: !publicProfile.password, // Should not have password
-      hasFirstName: !!publicProfile.firstName,
-      hasLastName: !!publicProfile.lastName,
+      hasDisplayName: publicProfile.displayName !== undefined,
     });
 
     // Test 4: Test user schema validation
@@ -71,8 +68,7 @@ const testAuthSystem = async () => {
         username: "testuser", // Same username
         email: "test@example.com", // Same email
         password: "password123",
-        firstName: "Another",
-        lastName: "User",
+        displayName: "Another User",
       });
       await duplicateUser.save();
       console.log("❌ Duplicate constraint failed - should have thrown error");
@@ -91,8 +87,7 @@ const testAuthSystem = async () => {
       username: "deviceuser",
       email: "device@example.com",
       password: "password123",
-      firstName: "Device",
-      lastName: "User",
+      displayName: "Device User",
     });
     await deviceUser.save();
     console.log("✅ Device user created successfully");
@@ -104,11 +99,9 @@ const testAuthSystem = async () => {
       username: "trackinguser",
       email: "tracking@example.com",
       password: "password123",
-      firstName: "Tracking",
-      lastName: "User",
+      displayName: "Tracking User",
       likedProducts: [],
       viewedProducts: [],
-      reviews: [],
     });
     await trackingUser.save();
     console.log("✅ Tracking user created successfully");

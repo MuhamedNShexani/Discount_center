@@ -59,9 +59,13 @@ app.use("/api/search", require("./routes/search"));
 
 const PORT = process.env.PORT || 5000;
 // app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
-app.listen(PORT, "0.0.0.0", () =>
-  console.log(`Server started on http://0.0.0.0:${PORT}`)
-);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server started on http://0.0.0.0:${PORT}`);
+  // Run job to delete deactivated users past grace period (every 24h)
+  const deleteDeactivatedUsers = require("./jobs/deleteDeactivatedUsers");
+  setInterval(() => deleteDeactivatedUsers.run().catch((e) => console.error("[deleteDeactivatedUsers]", e.message)), 24 * 60 * 60 * 1000);
+  deleteDeactivatedUsers.run().catch((e) => console.error("[deleteDeactivatedUsers]", e.message));
+});
 
 // Debug message for frontend
 console.log("Compiled successfully!");

@@ -1,5 +1,8 @@
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
+const { deleteUserAndAssociatedData } = require("../lib/deleteUserAndAssociatedData");
+
+const GRACE_DAYS = 30;
 
 // Generate JWT token
 const generateToken = (userId) => {
@@ -13,14 +16,13 @@ const generateToken = (userId) => {
 // @access  Public
 const register = async (req, res) => {
   try {
-    const { username, email, password, firstName, lastName, phone } = req.body;
+    const { username, email, password } = req.body;
 
     // Validate required fields
-    if (!username || !email || !password || !firstName || !lastName || !phone) {
+    if (!username || !email || !password) {
       return res.status(400).json({
         success: false,
-        message:
-          "Username, email, password, first name, last name, and phone are required",
+        message: "Username, email and password are required",
       });
     }
 
@@ -34,14 +36,13 @@ const register = async (req, res) => {
 
     // Check if user already exists
     const existingUser = await User.findOne({
-      $or: [{ email }, { username }, { phone }],
+      $or: [{ email }, { username }],
     });
 
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message:
-          "User with this email or username or phone number already exists",
+        message: "User with this email or username already exists",
       });
     }
 
@@ -50,9 +51,6 @@ const register = async (req, res) => {
       username,
       email,
       password,
-      firstName,
-      lastName,
-      phone,
     });
 
     await user.save();
@@ -63,20 +61,7 @@ const register = async (req, res) => {
     res.status(201).json({
       success: true,
       data: {
-        user: {
-          _id: user._id,
-          username: user.username,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          phone: user.phone,
-          likedProducts: user.likedProducts,
-          viewedProducts: user.viewedProducts,
-          reviews: user.reviews,
-          isActive: user.isActive,
-          isVerified: user.isVerified,
-          createdAt: user.createdAt,
-        },
+        user: user.getPublicProfile(),
         token,
       },
     });
@@ -135,7 +120,37 @@ const login = async (req, res) => {
       });
     }
 
-    // Check if user is active
+    // Deactivated account: reactivate within grace period or delete if past
+    if (!user.isActive && user.scheduledDeletionAt) {
+      const now = new Date();
+      if (now >= user.scheduledDeletionAt) {
+        await deleteUserAndAssociatedData(user._id);
+        return res.status(401).json({
+          success: false,
+          message: "Account has been permanently deleted after the grace period",
+        });
+      }
+      // Within grace period: verify password first, then reactivate
+      const isPasswordValid = await user.comparePassword((password || "").trim());
+      if (!isPasswordValid) {
+        return res.status(401).json({
+          success: false,
+          message: "Invalid email or password",
+        });
+      }
+      user.isActive = true;
+      user.deactivatedAt = undefined;
+      user.scheduledDeletionAt = undefined;
+      user.lastLogin = new Date();
+      await user.save();
+      const token = generateToken(user._id);
+      return res.json({
+        success: true,
+        data: { user: user.getPublicProfile(), token },
+        message: "Login successful. Account reactivated.",
+      });
+    }
+
     if (!user.isActive) {
       return res.status(401).json({
         success: false,
@@ -215,7 +230,7 @@ const getProfile = async (req, res) => {
 // @access  Private
 const updateProfile = async (req, res) => {
   try {
-    const { firstName, lastName, phone, avatar } = req.body;
+    const { displayName, avatar } = req.body;
 
     const user = await User.findById(req.userId);
     if (!user) {
@@ -226,9 +241,7 @@ const updateProfile = async (req, res) => {
     }
 
     // Update fields
-    if (firstName) user.firstName = firstName;
-    if (lastName) user.lastName = lastName;
-    if (phone !== undefined) user.phone = phone;
+    if (displayName !== undefined) user.displayName = displayName && displayName.trim() ? displayName.trim() : null;
     if (avatar !== undefined) user.avatar = avatar;
 
     await user.save();
@@ -302,14 +315,54 @@ const changePassword = async (req, res) => {
 // @access  Private
 const logout = async (req, res) => {
   try {
-    // In a real application, you might want to blacklist the token
-    // For now, we'll just return a success response
     res.json({
       success: true,
       message: "Logout successful",
     });
   } catch (error) {
     console.error("Logout error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
+// @desc    Deactivate account (30-day grace period, then permanent deletion)
+// @route   POST /api/auth/deactivate
+// @access  Private
+const deactivate = async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+    if (!user.username && user.deviceId) {
+      return res.status(400).json({
+        success: false,
+        message: "Guest accounts cannot be deactivated",
+      });
+    }
+
+    const now = new Date();
+    const scheduledDeletionAt = new Date(now);
+    scheduledDeletionAt.setDate(scheduledDeletionAt.getDate() + GRACE_DAYS);
+
+    user.isActive = false;
+    user.deactivatedAt = now;
+    user.scheduledDeletionAt = scheduledDeletionAt;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Account deactivated. You have 30 days to log in again to reactivate.",
+      data: { scheduledDeletionAt: user.scheduledDeletionAt },
+    });
+  } catch (error) {
+    console.error("Deactivate error:", error);
     res.status(500).json({
       success: false,
       message: "Server error",
@@ -324,4 +377,5 @@ module.exports = {
   updateProfile,
   changePassword,
   logout,
+  deactivate,
 };

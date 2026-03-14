@@ -53,7 +53,7 @@ export const useUserTracking = () => {
         const response = await userAPI.toggleLike(
           isAuthenticated ? null : deviceId,
           productId,
-          headers
+          headers,
         );
 
         if (response.data.success) {
@@ -62,13 +62,13 @@ export const useUserTracking = () => {
             setUser((prevUser) => {
               if (!prevUser) return prevUser;
               const isCurrentlyLiked = prevUser.likedProducts?.some(
-                (id) => id.toString() === productId || id === productId
+                (id) => id.toString() === productId || id === productId,
               );
               if (isCurrentlyLiked) {
                 return {
                   ...prevUser,
                   likedProducts: prevUser.likedProducts.filter(
-                    (id) => id.toString() !== productId && id !== productId
+                    (id) => id.toString() !== productId && id !== productId,
                   ),
                 };
               }
@@ -82,14 +82,17 @@ export const useUserTracking = () => {
             const authUser = JSON.parse(localStorage.getItem("user"));
             if (authUser) {
               const isCurrentlyLiked = authUser.likedProducts?.some(
-                (id) => id === productId
+                (id) => id === productId,
               );
               if (isCurrentlyLiked) {
                 authUser.likedProducts = authUser.likedProducts.filter(
-                  (id) => id !== productId
+                  (id) => id !== productId,
                 );
               } else {
-                authUser.likedProducts = [...(authUser.likedProducts || []), productId];
+                authUser.likedProducts = [
+                  ...(authUser.likedProducts || []),
+                  productId,
+                ];
               }
               localStorage.setItem("user", JSON.stringify(authUser));
             }
@@ -106,7 +109,7 @@ export const useUserTracking = () => {
         return { success: false, message };
       }
     },
-    [isAuthenticated, deviceId, getAuthHeaders]
+    [isAuthenticated, deviceId, getAuthHeaders],
   );
 
   // Record product view (works for both authenticated and anonymous users)
@@ -149,7 +152,7 @@ export const useUserTracking = () => {
         return { success: false, message: "Failed to record view" };
       }
     },
-    [deviceId, getAuthHeaders, viewRecording]
+    [deviceId, getAuthHeaders, viewRecording],
   );
 
   // Check if product is liked (works for both logged-in and device users)
@@ -167,20 +170,24 @@ export const useUserTracking = () => {
         return id?.toString() === productId || id === productId;
       });
     },
-    [isAuthenticated, user]
+    [isAuthenticated, user],
   );
 
   // Get user's liked products (works for both logged-in and device users)
   const getLikedProducts = useCallback(async () => {
     if (!isAuthenticated && !deviceId) {
-      return { success: false, message: "Please wait for app to load", requiresAuth: false };
+      return {
+        success: false,
+        message: "Please wait for app to load",
+        requiresAuth: false,
+      };
     }
 
     try {
       const headers = getAuthHeaders();
       const response = await userAPI.getLikedProducts(
         isAuthenticated ? null : deviceId,
-        headers
+        headers,
       );
       return response.data;
     } catch (error) {
@@ -192,14 +199,18 @@ export const useUserTracking = () => {
   // Get user's viewed products (works for both logged-in and device users)
   const getViewedProducts = useCallback(async () => {
     if (!isAuthenticated && !deviceId) {
-      return { success: false, message: "Please wait for app to load", requiresAuth: false };
+      return {
+        success: false,
+        message: "Please wait for app to load",
+        requiresAuth: false,
+      };
     }
 
     try {
       const headers = getAuthHeaders();
       const response = await userAPI.getViewedProducts(
         isAuthenticated ? null : deviceId,
-        headers
+        headers,
       );
       return response.data;
     } catch (error) {
@@ -224,7 +235,7 @@ export const useUserTracking = () => {
         const response = await userAPI.toggleFollowStore(
           isAuthenticated ? null : deviceId,
           storeId,
-          headers
+          headers,
         );
 
         if (response.data.success) {
@@ -232,13 +243,13 @@ export const useUserTracking = () => {
             setUser((prevUser) => {
               if (!prevUser) return prevUser;
               const isCurrentlyFollowed = (prevUser.followedStores || []).some(
-                (id) => id.toString() === storeId || id === storeId
+                (id) => id.toString() === storeId || id === storeId,
               );
               if (isCurrentlyFollowed) {
                 return {
                   ...prevUser,
                   followedStores: (prevUser.followedStores || []).filter(
-                    (id) => id.toString() !== storeId && id !== storeId
+                    (id) => id.toString() !== storeId && id !== storeId,
                   ),
                 };
               }
@@ -251,14 +262,17 @@ export const useUserTracking = () => {
             const authUser = JSON.parse(localStorage.getItem("user"));
             if (authUser) {
               const isCurrentlyFollowed = (authUser.followedStores || []).some(
-                (id) => id === storeId || id.toString() === storeId
+                (id) => id === storeId || id.toString() === storeId,
               );
               if (isCurrentlyFollowed) {
-                authUser.followedStores = (authUser.followedStores || []).filter(
-                  (id) => id !== storeId && id.toString() !== storeId
-                );
+                authUser.followedStores = (
+                  authUser.followedStores || []
+                ).filter((id) => id !== storeId && id.toString() !== storeId);
               } else {
-                authUser.followedStores = [...(authUser.followedStores || []), storeId];
+                authUser.followedStores = [
+                  ...(authUser.followedStores || []),
+                  storeId,
+                ];
               }
               localStorage.setItem("user", JSON.stringify(authUser));
             }
@@ -274,7 +288,7 @@ export const useUserTracking = () => {
         };
       }
     },
-    [isAuthenticated, deviceId, getAuthHeaders]
+    [isAuthenticated, deviceId, getAuthHeaders],
   );
 
   // Check if store is followed
@@ -284,15 +298,15 @@ export const useUserTracking = () => {
         const authUser = JSON.parse(localStorage.getItem("user"));
         if (!authUser?.followedStores) return false;
         return authUser.followedStores.some(
-          (id) => id === storeId || id.toString() === storeId
+          (id) => id === storeId || id.toString() === storeId,
         );
       }
       if (!user?.followedStores) return false;
       return user.followedStores.some(
-        (id) => id.toString() === storeId || id === storeId
+        (id) => id.toString() === storeId || id === storeId,
       );
     },
-    [isAuthenticated, user]
+    [isAuthenticated, user],
   );
 
   // Get user's followed stores
@@ -309,7 +323,7 @@ export const useUserTracking = () => {
       const headers = getAuthHeaders();
       const response = await userAPI.getFollowedStores(
         isAuthenticated ? null : deviceId,
-        headers
+        headers,
       );
       return response.data;
     } catch (error) {
@@ -331,8 +345,7 @@ export const useUserTracking = () => {
         if (response.data?.success) {
           setUser((prev) => ({
             ...(prev || {}),
-            firstName: response.data.data.firstName,
-            lastName: response.data.data.lastName,
+            displayName: response.data.data.displayName,
           }));
           return response.data;
         }
@@ -345,7 +358,7 @@ export const useUserTracking = () => {
         };
       }
     },
-    [deviceId, isAuthenticated]
+    [deviceId, isAuthenticated],
   );
 
   return {

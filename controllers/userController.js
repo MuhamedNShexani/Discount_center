@@ -13,8 +13,7 @@ const getUserByDevice = async (req, res) => {
     let user = await User.findOne({ deviceId });
 
     if (!user) {
-      // Create new anonymous user with deviceId (use deviceId-based phone to satisfy unique index)
-      user = new User({ deviceId, phone: `device:${deviceId}` });
+      user = new User({ deviceId });
       await user.save();
     }
 
@@ -46,7 +45,7 @@ const toggleProductLike = async (req, res) => {
     } else if (deviceId) {
       user = await User.findOne({ deviceId });
       if (!user) {
-        user = new User({ deviceId, phone: `device:${deviceId}` });
+        user = new User({ deviceId });
         await user.save();
       }
     } else {
@@ -143,7 +142,7 @@ const recordProductView = async (req, res) => {
     } else if (deviceId) {
       user = await User.findOne({ deviceId });
       if (!user) {
-        user = new User({ deviceId, phone: `device:${deviceId}` });
+        user = new User({ deviceId });
         await user.save();
       }
     } else {
@@ -319,7 +318,7 @@ const toggleFollowStore = async (req, res) => {
     } else if (deviceId) {
       user = await User.findOne({ deviceId });
       if (!user) {
-        user = new User({ deviceId, phone: `device:${deviceId}` });
+        user = new User({ deviceId });
         await user.save();
       }
     } else {
@@ -433,10 +432,10 @@ const updateDeviceProfile = async (req, res) => {
 
     let user = await User.findOne({ deviceId });
     if (!user) {
-      user = new User({ deviceId, phone: `device:${deviceId}` });
+      user = new User({ deviceId });
     }
 
-    user.firstName = name.trim();
+    user.displayName = name.trim();
     await user.save();
 
     res.json({
@@ -444,8 +443,7 @@ const updateDeviceProfile = async (req, res) => {
       data: {
         _id: user._id,
         deviceId: user.deviceId,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        displayName: user.displayName,
       },
     });
   } catch (error) {

@@ -32,31 +32,12 @@ const userSchema = new mongoose.Schema({
     minlength: 6,
   },
 
-  // Profile fields (required for registered users, optional for anonymous)
-  firstName: {
+  // Profile fields
+  displayName: {
     type: String,
-    required: function () {
-      return !this.deviceId;
-    }, // Only required if no deviceId
+    required: false,
     trim: true,
-    maxlength: 50,
-  },
-  lastName: {
-    type: String,
-    required: function () {
-      return !this.deviceId;
-    }, // Only required if no deviceId
-    trim: true,
-    maxlength: 50,
-  },
-  phone: {
-    type: String,
-    required: function () {
-      return !this.deviceId;
-    }, // Only required if no deviceId
-    unique: true,
-    sparse: true, // Allow multiple null values
-    trim: true,
+    maxlength: 100,
   },
   avatar: {
     type: String,
@@ -109,6 +90,14 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  deactivatedAt: {
+    type: Date,
+    required: false,
+  },
+  scheduledDeletionAt: {
+    type: Date,
+    required: false,
+  },
   isVerified: {
     type: Boolean,
     default: false,
@@ -153,10 +142,9 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-// Method to get full name (for registered users)
+// Method to get display name
 userSchema.methods.getFullName = function () {
-  if (!this.firstName || !this.lastName) return "Anonymous User";
-  return `${this.firstName} ${this.lastName}`;
+  return this.displayName || this.username || "Anonymous User";
 };
 
 // Method to get public profile (without sensitive data)
@@ -178,8 +166,7 @@ userSchema.methods.getPublicProfile = function () {
     return {
       _id: this._id,
       username: this.username,
-      firstName: this.firstName,
-      lastName: this.lastName,
+      displayName: this.displayName,
       email: this.email,
       avatar: this.avatar,
       isActive: this.isActive,
@@ -189,12 +176,10 @@ userSchema.methods.getPublicProfile = function () {
     };
   } catch (error) {
     console.error("Error in getPublicProfile:", error);
-    // Return a safe fallback profile
     return {
       _id: this._id,
       username: this.username || "Unknown",
-      firstName: this.firstName || "Unknown",
-      lastName: this.lastName || "User",
+      displayName: this.displayName || "",
       email: this.email || "",
       isActive: this.isActive || false,
       likedProducts: this.likedProducts || [],
