@@ -1,6 +1,6 @@
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
-const { deleteUserAndAssociatedData } = require("../lib/deleteUserAndAssociatedData");
+const { deleteUserAndAssociatedData } = require("./deleteUserAndAssociatedData");
 
 const GRACE_DAYS = 30;
 
