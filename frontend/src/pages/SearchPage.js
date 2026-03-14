@@ -27,6 +27,7 @@ import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
 import { searchAPI } from "../services/api";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
+import { useCityFilter } from "../context/CityFilterContext";
 import { getLocalizedName } from "../utils/localize";
 import { getDeviceId } from "../utils/deviceId";
 import {
@@ -42,6 +43,7 @@ const SearchPage = () => {
   const lang = i18n.language || "en";
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { selectedCity } = useCityFilter();
   const [searchParams, setSearchParams] = useSearchParams();
   const qParam = searchParams.get("q") || "";
 
@@ -77,7 +79,7 @@ const SearchPage = () => {
       setLoading(true);
       setSearched(true);
       try {
-        const res = await searchAPI.search(trimmed);
+        const res = await searchAPI.search(trimmed, selectedCity || null);
         const data = res?.data?.data || res?.data || {};
         setResults({
           products: data.products || [],
@@ -93,7 +95,7 @@ const SearchPage = () => {
         setLoading(false);
       }
     },
-    [userId, deviceId, refreshRecentSearches],
+    [userId, deviceId, refreshRecentSearches, selectedCity],
   );
 
   useEffect(() => {
@@ -104,6 +106,14 @@ const SearchPage = () => {
       setSearched(false);
     }
   }, [qParam]);
+
+  // Re-run search when selected city changes so results stay in the chosen city
+  useEffect(() => {
+    if (qParam && (qParam || "").trim().length >= 2) {
+      performSearch((qParam || "").trim());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-run when city changes
+  }, [selectedCity]);
 
   const handleSearchClick = () => {
     const trimmed = (query || "").trim();

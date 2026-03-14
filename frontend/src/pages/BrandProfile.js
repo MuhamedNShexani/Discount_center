@@ -160,7 +160,7 @@ const BrandProfile = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   const calculateDiscount = (previousPrice, newPrice) => {
     if (!previousPrice || !newPrice || previousPrice <= newPrice) return 0;
@@ -1072,10 +1072,11 @@ const BrandProfile = () => {
         onClick={() => navigate(-1)}
         sx={{
           mb: 3,
+          mt: 6,
           borderRadius: 2,
           position: "fixed",
-          top: 10,
-          left: 0,
+          top: 15,
+          left: 5,
           zIndex: 100,
           borderColor: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
           color: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
@@ -1096,6 +1097,7 @@ const BrandProfile = () => {
         elevation={0}
         sx={{
           mb: 4,
+          mt: 3,
           borderRadius: 4,
           overflow: "hidden",
           background:
@@ -1491,7 +1493,7 @@ const BrandProfile = () => {
       {/* Enhanced Products Section with Tabs */}
       <Box sx={{ mb: 4 }}>
         {/* Filter Section */}
-        {renderFilters()}
+        {/* {renderFilters()} */}
 
         {/* Tabs */}
         <Paper

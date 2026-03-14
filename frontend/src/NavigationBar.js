@@ -54,6 +54,7 @@ import {
   Search as SearchIcon,
   People as PeopleIcon,
   Block as BlockIcon,
+  Refresh as RefreshIcon,
 } from "@mui/icons-material";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -63,6 +64,10 @@ import kurdishFlag from "./styles/kurdish_flag.jpg";
 import { useCityFilter } from "./context/CityFilterContext";
 import { useAppSettings } from "./context/AppSettingsContext";
 import { useNotifications } from "./context/NotificationContext";
+import { useContentRefresh } from "./context/ContentRefreshContext";
+
+// Set to true to show notification center (bell, profile toggle, enable banner)
+const NOTIFICATIONS_CENTER_ENABLED = false;
 
 const NavigationBar = ({ darkMode, setDarkMode }) => {
   const theme = useTheme();
@@ -88,6 +93,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
     setPushEnableError,
   } = useNotifications();
   const isSmUp = useMediaQuery(theme.breakpoints.up("sm"));
+  const { triggerRefresh } = useContentRefresh();
   const lang = i18n.language;
   const location = useLocation();
   const isAuthenticated = !!user;
@@ -243,29 +249,31 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
               }}
             >
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.9 }}>
-                <IconButton
-                  onClick={handleNotificationMenuOpen}
-                  sx={{
-                    color: "white",
-                    backgroundColor: "rgba(255,255,255,0.1)",
-                    backdropFilter: "blur(10px)",
-                    border: "1px solid rgba(255,255,255,0.2)",
-                    transition: "all 0.3s ease",
-                    width: 40,
-                    height: 40,
-                    "&:hover": {
-                      backgroundColor: "rgba(255,255,255,0.2)",
-                      transform: "scale(1.1)",
-                    },
-                  }}
-                >
-                  <Badge badgeContent={unreadCount} color="error">
-                    <NotificationsIcon />
-                  </Badge>
-                </IconButton>
+                {NOTIFICATIONS_CENTER_ENABLED && (
+                  <IconButton
+                    onClick={handleNotificationMenuOpen}
+                    sx={{
+                      color: "white",
+                      backgroundColor: "rgba(255,255,255,0.1)",
+                      backdropFilter: "blur(10px)",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      transition: "all 0.3s ease",
+                      width: 40,
+                      height: 40,
+                      "&:hover": {
+                        backgroundColor: "rgba(255,255,255,0.2)",
+                        transform: "scale(1.1)",
+                      },
+                    }}
+                  >
+                    <Badge badgeContent={unreadCount} color="error">
+                      <NotificationsIcon />
+                    </Badge>
+                  </IconButton>
+                )}
                 <IconButton
                   component={Link}
-                  to="/favourites"
+                  to="/search"
                   sx={{
                     color: "white",
                     backgroundColor: "rgba(255,255,255,0.1)",
@@ -280,7 +288,26 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                     },
                   }}
                 >
-                  <FavoriteIcon />
+                  <SearchIcon />
+                </IconButton>
+                <IconButton
+                  onClick={() => triggerRefresh?.()}
+                  sx={{
+                    color: "white",
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    backdropFilter: "blur(10px)",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    transition: "all 0.3s ease",
+                    width: 40,
+                    height: 40,
+                    "&:hover": {
+                      backgroundColor: "rgba(255,255,255,0.2)",
+                      transform: "scale(1.1)",
+                    },
+                  }}
+                  aria-label={t("Refresh")}
+                >
+                  <RefreshIcon />
                 </IconButton>
               </Box>
               <Typography
@@ -307,7 +334,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.9 }}>
                 <IconButton
                   component={Link}
-                  to="/search"
+                  to="/favourites"
                   sx={{
                     color: "white",
                     backgroundColor: "rgba(255,255,255,0.1)",
@@ -322,7 +349,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                     },
                   }}
                 >
-                  <SearchIcon />
+                  <FavoriteIcon />
                 </IconButton>
                 <IconButton
                   onClick={handleProfileMenuOpen}
@@ -630,28 +657,29 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   </Menu>
                 </>
               )}
-              {/* Notification bell */}
-              <IconButton
-                onClick={handleNotificationMenuOpen}
-                sx={{
-                  color: "white",
-                  backgroundColor: "rgba(255,255,255,0.1)",
-                  backdropFilter: "blur(10px)",
-                  border: "1px solid rgba(255,255,255,0.2)",
-                  transition: "all 0.3s ease",
-                  width: 40,
-                  height: 40,
-                  ml: 0.5,
-                  "&:hover": {
-                    backgroundColor: "rgba(255,255,255,0.2)",
-                    transform: "scale(1.1)",
-                  },
-                }}
-              >
-                <Badge badgeContent={unreadCount} color="error">
-                  <NotificationsIcon />
-                </Badge>
-              </IconButton>
+              {NOTIFICATIONS_CENTER_ENABLED && (
+                <IconButton
+                  onClick={handleNotificationMenuOpen}
+                  sx={{
+                    color: "white",
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    backdropFilter: "blur(10px)",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    transition: "all 0.3s ease",
+                    width: 40,
+                    height: 40,
+                    ml: 0.5,
+                    "&:hover": {
+                      backgroundColor: "rgba(255,255,255,0.2)",
+                      transform: "scale(1.1)",
+                    },
+                  }}
+                >
+                  <Badge badgeContent={unreadCount} color="error">
+                    <NotificationsIcon />
+                  </Badge>
+                </IconButton>
+              )}
               {/* Desktop Profile Icon (contains Favourites, Login/Logout, City, Mode) */}
               <IconButton
                 onClick={handleProfileMenuOpen}
@@ -739,147 +767,151 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
         </Toolbar>
       </AppBar>
 
-      {/* Notification Menu - shared by desktop and mobile */}
-      <Menu
-        anchorEl={notificationAnchorEl}
-        open={Boolean(notificationAnchorEl)}
-        onClose={handleNotificationMenuClose}
-        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-        transformOrigin={{ vertical: "top", horizontal: "right" }}
-        PaperProps={{
-          sx: {
-            mt: 1.5,
-            minWidth: 320,
-            maxWidth: 380,
-            maxHeight: 400,
-            backgroundColor: theme.palette.mode === "dark" ? "#2c3e50" : "#fff",
-            border: `1px solid ${theme.palette.divider}`,
-            borderRadius: 2,
-          },
-        }}
-      >
-        <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: "divider" }}>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: 1,
-            }}
-          >
-            <Typography variant="subtitle1" fontWeight={600}>
-              {t("Notifications")}
-            </Typography>
-            <Box sx={{ display: "flex", gap: 0.5 }}>
-              {unreadCount > 0 && (
-                <Button
-                  size="small"
-                  onClick={() => markAllAsRead()}
-                  sx={{ textTransform: "none" }}
-                >
-                  {t("Mark all read")}
-                </Button>
-              )}
-              {notifications.length > 0 && (
-                <Button
-                  size="small"
-                  onClick={() => clearAll()}
-                  sx={{ textTransform: "none", color: "text.secondary" }}
-                >
-                  {t("Clear notifications")}
-                </Button>
-              )}
+      {NOTIFICATIONS_CENTER_ENABLED && (
+        <Menu
+          anchorEl={notificationAnchorEl}
+          open={Boolean(notificationAnchorEl)}
+          onClose={handleNotificationMenuClose}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+          transformOrigin={{ vertical: "top", horizontal: "right" }}
+          PaperProps={{
+            sx: {
+              mt: 1.5,
+              minWidth: 320,
+              maxWidth: 380,
+              maxHeight: 400,
+              backgroundColor:
+                theme.palette.mode === "dark" ? "#2c3e50" : "#fff",
+              border: `1px solid ${theme.palette.divider}`,
+              borderRadius: 2,
+            },
+          }}
+        >
+          <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: "divider" }}>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: 1,
+              }}
+            >
+              <Typography variant="subtitle1" fontWeight={600}>
+                {t("Notifications")}
+              </Typography>
+              <Box sx={{ display: "flex", gap: 0.5 }}>
+                {unreadCount > 0 && (
+                  <Button
+                    size="small"
+                    onClick={() => markAllAsRead()}
+                    sx={{ textTransform: "none" }}
+                  >
+                    {t("Mark all read")}
+                  </Button>
+                )}
+                {notifications.length > 0 && (
+                  <Button
+                    size="small"
+                    onClick={() => clearAll()}
+                    sx={{ textTransform: "none", color: "text.secondary" }}
+                  >
+                    {t("Clear notifications")}
+                  </Button>
+                )}
+              </Box>
             </Box>
           </Box>
-        </Box>
-        {pushSupported && pushPermission === "default" && (
-          <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: "divider" }}>
-            <Button
-              fullWidth
-              variant="outlined"
-              size="small"
-              disabled={pushSubscribing}
-              onClick={() => requestPushPermission()}
-              sx={{ textTransform: "none" }}
+          {pushSupported && pushPermission === "default" && (
+            <Box
+              sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: "divider" }}
             >
-              {pushSubscribing
-                ? t("Enabling...")
-                : t("Enable system notifications")}
-            </Button>
-          </Box>
-        )}
-        <Box sx={{ maxHeight: 280, overflow: "auto" }}>
-          {notifications.length === 0 ? (
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{ p: 2, textAlign: "center" }}
-            >
-              {t("No notifications")}
-            </Typography>
-          ) : (
-            notifications.map((n) => (
-              <ListItemButton
-                key={n._id}
-                onClick={() => {
-                  markAsRead(n._id);
-                }}
-                sx={{
-                  py: 1.5,
-                  px: 2,
-                  backgroundColor: n.read ? "transparent" : "action.hover",
-                  borderBottom: "1px solid",
-                  borderColor: "divider",
-                }}
+              <Button
+                fullWidth
+                variant="outlined"
+                size="small"
+                disabled={pushSubscribing}
+                onClick={() => requestPushPermission()}
+                sx={{ textTransform: "none" }}
               >
-                <Box sx={{ width: "100%" }}>
-                  <Typography
-                    variant="body2"
-                    fontWeight={n.read ? 400 : 600}
-                    sx={{ mb: 0.25 }}
-                  >
-                    {n.title}
-                  </Typography>
-                  {n.body && (
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      display="block"
-                    >
-                      {n.body.length > 120
-                        ? `${n.body.slice(0, 120)}...`
-                        : n.body}
-                    </Typography>
-                  )}
-                  {n.link && (
-                    <Typography
-                      component={Link}
-                      to={n.link}
-                      variant="caption"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        markAsRead(n._id);
-                        handleNotificationMenuClose();
-                      }}
-                      sx={{
-                        display: "inline-block",
-                        mt: 0.5,
-                        color: "primary.main",
-                        textDecoration: "underline",
-                        fontSize: "0.7rem",
-                        "&:hover": { color: "primary.dark" },
-                      }}
-                    >
-                      {t("View")} →
-                    </Typography>
-                  )}
-                </Box>
-              </ListItemButton>
-            ))
+                {pushSubscribing
+                  ? t("Enabling...")
+                  : t("Enable system notifications")}
+              </Button>
+            </Box>
           )}
-        </Box>
-      </Menu>
+          <Box sx={{ maxHeight: 280, overflow: "auto" }}>
+            {notifications.length === 0 ? (
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ p: 2, textAlign: "center" }}
+              >
+                {t("No notifications")}
+              </Typography>
+            ) : (
+              notifications.map((n) => (
+                <ListItemButton
+                  key={n._id}
+                  onClick={() => {
+                    markAsRead(n._id);
+                  }}
+                  sx={{
+                    py: 1.5,
+                    px: 2,
+                    backgroundColor: n.read ? "transparent" : "action.hover",
+                    borderBottom: "1px solid",
+                    borderColor: "divider",
+                  }}
+                >
+                  <Box sx={{ width: "100%" }}>
+                    <Typography
+                      variant="body2"
+                      fontWeight={n.read ? 400 : 600}
+                      sx={{ mb: 0.25 }}
+                    >
+                      {n.title}
+                    </Typography>
+                    {n.body && (
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        display="block"
+                      >
+                        {n.body.length > 120
+                          ? `${n.body.slice(0, 120)}...`
+                          : n.body}
+                      </Typography>
+                    )}
+                    {n.link && (
+                      <Typography
+                        component={Link}
+                        to={n.link}
+                        variant="caption"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          markAsRead(n._id);
+                          handleNotificationMenuClose();
+                        }}
+                        sx={{
+                          display: "inline-block",
+                          mt: 0.5,
+                          color: "primary.main",
+                          textDecoration: "underline",
+                          fontSize: "0.7rem",
+                          "&:hover": { color: "primary.dark" },
+                        }}
+                      >
+                        {t("View")} →
+                      </Typography>
+                    )}
+                  </Box>
+                </ListItemButton>
+              ))
+            )}
+          </Box>
+        </Menu>
+      )}
 
       {/* Guest name dialog */}
       <Dialog
@@ -1208,92 +1240,98 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
           />
         </MenuItem> */}
 
-        {/* Push / Notification Center On/Off - always visible in profile */}
-        <MenuItem
-          component="div"
-          disableRipple
-          onClick={(e) => e.stopPropagation()}
-          sx={{
-            py: 1.5,
-            px: 2,
-            "&:hover": {
-              backgroundColor:
-                theme.palette.mode === "dark"
-                  ? "rgba(255,255,255,0.08)"
-                  : "rgba(0,0,0,0.04)",
-            },
-          }}
-        >
-          <ListItemIcon>
-            <NotificationsIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText
-            primary={t("Notification center")}
-            secondary={
-              !pushSupported
-                ? t("Not supported")
-                : pushEnabled
-                  ? t("On")
-                  : t("Off")
-            }
-            primaryTypographyProps={{
-              fontSize: "0.875rem",
-              fontWeight: 500,
-            }}
-            secondaryTypographyProps={{
-              fontSize: "0.75rem",
-              color: "text.secondary",
-            }}
-          />
-          <Switch
-            size="small"
-            checked={pushEnabled}
-            disabled={!pushSupported || pushSubscribing}
-            onChange={(e) => {
-              if (e.target.checked) {
-                setConfirmPushOpen(true);
-              } else {
-                setPushEnabled(false);
-              }
-            }}
-            color="primary"
-          />
-        </MenuItem>
-
-        {/* Confirm enable notification center */}
-        <Dialog
-          open={confirmPushOpen}
-          onClose={() => setConfirmPushOpen(false)}
-          maxWidth="xs"
-          fullWidth
-        >
-          <DialogTitle>{t("Notification center")}</DialogTitle>
-          <DialogContent>
-            <Typography variant="body2" color="text.secondary">
-              {t("Enable notifications to receive updates and offers from the app?")}
-            </Typography>
-          </DialogContent>
-          <DialogActions sx={{ px: 2, pb: 2 }}>
-            <Button onClick={() => setConfirmPushOpen(false)}>
-              {t("Cancel")}
-            </Button>
-            <Button
-              variant="contained"
-              color="primary"
-              disabled={pushSubscribing}
-              onClick={async () => {
-                setConfirmPushOpen(false);
-                if (pushPermission === "default") {
-                  await requestPushPermission();
-                } else {
-                  await setPushEnabled(true);
-                }
+        {NOTIFICATIONS_CENTER_ENABLED && (
+          <>
+            {/* Push / Notification Center On/Off - always visible in profile */}
+            <MenuItem
+              component="div"
+              disableRipple
+              onClick={(e) => e.stopPropagation()}
+              sx={{
+                py: 1.5,
+                px: 2,
+                "&:hover": {
+                  backgroundColor:
+                    theme.palette.mode === "dark"
+                      ? "rgba(255,255,255,0.08)"
+                      : "rgba(0,0,0,0.04)",
+                },
               }}
             >
-              {pushSubscribing ? t("Enabling...") : t("Enable")}
-            </Button>
-          </DialogActions>
-        </Dialog>
+              <ListItemIcon>
+                <NotificationsIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText
+                primary={t("Notification center")}
+                secondary={
+                  !pushSupported
+                    ? t("Not supported")
+                    : pushEnabled
+                      ? t("On")
+                      : t("Off")
+                }
+                primaryTypographyProps={{
+                  fontSize: "0.875rem",
+                  fontWeight: 500,
+                }}
+                secondaryTypographyProps={{
+                  fontSize: "0.75rem",
+                  color: "text.secondary",
+                }}
+              />
+              <Switch
+                size="small"
+                checked={pushEnabled}
+                disabled={!pushSupported || pushSubscribing}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setConfirmPushOpen(true);
+                  } else {
+                    setPushEnabled(false);
+                  }
+                }}
+                color="primary"
+              />
+            </MenuItem>
+
+            {/* Confirm enable notification center */}
+            <Dialog
+              open={confirmPushOpen}
+              onClose={() => setConfirmPushOpen(false)}
+              maxWidth="xs"
+              fullWidth
+            >
+              <DialogTitle>{t("Notification center")}</DialogTitle>
+              <DialogContent>
+                <Typography variant="body2" color="text.secondary">
+                  {t(
+                    "Enable notifications to receive updates and offers from the app?",
+                  )}
+                </Typography>
+              </DialogContent>
+              <DialogActions sx={{ px: 2, pb: 2 }}>
+                <Button onClick={() => setConfirmPushOpen(false)}>
+                  {t("Cancel")}
+                </Button>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  disabled={pushSubscribing}
+                  onClick={async () => {
+                    setConfirmPushOpen(false);
+                    if (pushPermission === "default") {
+                      await requestPushPermission();
+                    } else {
+                      await setPushEnabled(true);
+                    }
+                  }}
+                >
+                  {pushSubscribing ? t("Enabling...") : t("Enable")}
+                </Button>
+              </DialogActions>
+            </Dialog>
+          </>
+        )}
 
         <Divider />
 
@@ -1722,23 +1760,26 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
         </Alert>
       </Snackbar>
 
-      {/* Push enable error snackbar */}
-      <Snackbar
-        open={!!pushEnableError}
-        autoHideDuration={5000}
-        onClose={() => setPushEnableError(null)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert
+      {NOTIFICATIONS_CENTER_ENABLED && (
+        <Snackbar
+          open={!!pushEnableError}
+          autoHideDuration={5000}
           onClose={() => setPushEnableError(null)}
-          severity="warning"
-          sx={{ width: "100%" }}
+          anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
         >
-          {pushEnableError === "denied"
-            ? t("Notifications blocked. Enable them in your browser settings.")
-            : t("Could not enable notifications. Try again.")}
-        </Alert>
-      </Snackbar>
+          <Alert
+            onClose={() => setPushEnableError(null)}
+            severity="warning"
+            sx={{ width: "100%" }}
+          >
+            {pushEnableError === "denied"
+              ? t(
+                  "Notifications blocked. Enable them in your browser settings.",
+                )
+              : t("Could not enable notifications. Try again.")}
+          </Alert>
+        </Snackbar>
+      )}
 
       {/* Stores Dropdown removed */}
     </>

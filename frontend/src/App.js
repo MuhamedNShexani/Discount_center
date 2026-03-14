@@ -42,6 +42,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import ScrollToTop from "./components/ScrollToTop";
 import ErrorBoundary from "./components/ErrorBoundary";
 import NotificationEnableBanner from "./components/NotificationEnableBanner";
+import { ContentRefreshProvider, useContentRefresh } from "./context/ContentRefreshContext";
 
 // Footer component remains the same
 const Footer = () => (
@@ -66,9 +67,10 @@ const Footer = () => (
   </Box>
 );
 
-function App() {
+function AppContent() {
   const [darkMode, setDarkMode] = useState(false);
   const { t, i18n } = useTranslation();
+  const { refreshKey } = useContentRefresh();
   const [lang, setLang] = useState(i18n.language || "en");
   const muiTheme = useTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down("sm"));
@@ -273,6 +275,7 @@ function App() {
           />
           <Box
             component="main"
+            key={refreshKey}
             sx={{
               flexGrow: 1, // Allows this Box to expand and push the footer down
               py: 3,
@@ -323,12 +326,18 @@ function App() {
           </Box>
           <Footer />
           <BottomNavigationBar />
-          <NotificationEnableBanner />
+          {false && <NotificationEnableBanner />}
         </Box>
       </ThemeProvider>
     </CacheProvider>
   );
 }
+
+const App = () => (
+  <ContentRefreshProvider>
+    <AppContent />
+  </ContentRefreshProvider>
+);
 
 // Root component remains the same
 const Root = () => (

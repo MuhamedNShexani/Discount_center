@@ -217,7 +217,8 @@ export const notificationAPI = {
 
 // Search API calls
 export const searchAPI = {
-  search: (q) => api.get("/search", { params: { q } }),
+  search: (q, city = null) =>
+    api.get("/search", { params: city ? { q, city } : { q } }),
 };
 
 // Admin API calls
