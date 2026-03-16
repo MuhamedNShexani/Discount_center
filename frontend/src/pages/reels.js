@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   Card,
   CardContent,
@@ -60,9 +60,10 @@ import { useUserTracking } from "../hooks/useUserTracking";
 import { useCityFilter } from "../context/CityFilterContext";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
 
-const MainPage = () => {
+const ReelsPage = () => {
   const theme = useTheme();
   const navigate = useNavigate();
+  const reelsScrollRef = useRef(null);
   const [stores, setStores] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
   const [productsByStore, setProductsByStore] = useState({});
@@ -280,6 +281,16 @@ const MainPage = () => {
   // Pull-to-refresh on mobile: pull down from top to reload page data
   usePullToRefresh(fetchData);
 
+  // Disable page scroll outside of reels cards while this page is active
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+
   // Scroll to top function
   const scrollToTop = () => {
     window.scrollTo({
@@ -436,9 +447,13 @@ const MainPage = () => {
   }, [selectedCategory]);
 
   const handleStoreTypeChange = (storeTypeId) => {
-    setSelectedStoreTypeId(storeTypeId);
+    const normalizedId = getID(storeTypeId);
+    setSelectedStoreTypeId(normalizedId);
     setSelectedCategory(null);
     setSelectedCategoryType(null);
+    if (reelsScrollRef.current) {
+      reelsScrollRef.current.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   const handleCategoryChange = (category) => {
@@ -784,26 +799,74 @@ const MainPage = () => {
   return (
     <Box
       sx={{
+        // Reels page content; outer layout stays normal so app header/nav are visible
+        mt: { xs: 0, sm: 0, md: 0 },
         px: { xs: 0.5, sm: 1.5, md: 3 },
-        pt: { xs: "100px", sm: "113px", md: "113px" },
+        pt: { xs: 0, sm: 0, md: "113px" },
+        height: { xs: "100vh", sm: "100vh" },
+        display: "flex",
+        flexDirection: "column",
+        backgroundColor: (theme) => theme.palette.background.default,
       }}
     >
-      {/* For You / Following Tabs - Fixed (no scrolling), after banner */}
+      {/* Store type filter - icons only */}
       <Box
         sx={{
-          position: "fixed",
-          top: 65,
-          left: 0,
-          right: 0,
-          zIndex: 1090,
-          width: "fit-content",
+          mt: 5,
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 1.5,
+          px: 1,
+          overflowX: "auto",
+          width: "100%",
+        }}
+      >
+        {[{ _id: "all", name: t("All"), icon: "🏪" }, ...storeTypes].map(
+          (type) => {
+            const isActive = selectedStoreTypeId === getID(type._id);
+            const icon = type.icon || "🏪";
+            return (
+              <IconButton
+                key={type._id}
+                onClick={() => handleStoreTypeChange(type._id)}
+                sx={{
+                  width: isActive ? 64 : 52,
+                  height: isActive ? 64 : 52,
+                  borderRadius: "50%",
+                  border: isActive
+                    ? "3px solid rgba(52,73,94,0.9)"
+                    : "2px solid rgba(0,0,0,0.15)",
+                  backgroundColor: isActive ? "#34495e" : "#ffffff",
+                  color: isActive ? "#ffffff" : "#34495e",
+                  flexShrink: 0,
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontSize: isActive ? "1.8rem" : "1.4rem",
+                  }}
+                >
+                  {icon}
+                </Typography>
+              </IconButton>
+            );
+          },
+        )}
+      </Box>
+      {/* For You / Following Tabs - header (no scrolling before this) */}
+      <Box
+        sx={{
+          flexShrink: 0,
           backgroundColor: "#ffffff",
           borderRadius: { xs: 2, md: 3 },
           display: "flex",
-          justifyContent: "center",
+          flexDirection: "column",
           alignItems: "center",
           boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-          margin: "0 auto",
+          mt: { xs: 1, sm: 1, md: 0 },
+          mb: { xs: 1, sm: 1, md: 2 },
+          py: 0.5,
         }}
       >
         <Tabs
@@ -842,596 +905,17 @@ const MainPage = () => {
           />
         </Tabs>
       </Box>
-      {/* Advertisement Banner - Fixed (no scrolling) */}
+      {/* Scrollable reels content starts below header */}
       <Box
         sx={{
-          position: "relative",
-          backgroundColor:
-            theme.palette.mode === "dark" ? "#121212" : "#ffffff",
-          px: { xs: 0.5, sm: 1.5, md: 3 },
-          py: 0,
-          mb: 2,
-          boxSizing: "border-box",
-        }}
-      >
-        <Box
-          sx={{
-            width: "100%",
-            maxWidth: "lg",
-            margin: "0 auto",
-            height: { xs: "100px", sm: "150px", md: "250px" },
-            borderRadius: { xs: 2, md: 3 },
-            overflow: "hidden",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
-          }}
-        >
-          <Slider {...bannerSettings}>
-            {(bannerAdsWithImages.length > 0 ? bannerAdsWithImages : []).map(
-              (ad, index) => (
-                <div key={ad._id || index}>
-                  <img
-                    onClick={() =>
-                      ad.brandId
-                        ? navigate(`/brands/${ad.brandId}`)
-                        : ad.storeId
-                          ? navigate(`/stores/${ad.storeId}`)
-                          : ad.giftId
-                            ? navigate(`/gifts/${ad.giftId}`)
-                            : null
-                    }
-                    src={ad.src || ad}
-                    alt={`Banner ${index + 1}`}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "contain",
-                      cursor: ad.brandId ? "pointer" : "default",
-                    }}
-                  />
-                </div>
-              ),
-            )}
-          </Slider>
-        </Box>
-      </Box>
-      {/* Enhanced Filters Section */}
-      <Box
-        sx={{
-          backgroundColor:
-            theme.palette.mode === "dark" ? "#40916c" : "#34495e",
-          borderRadius: { xs: 2, md: 3 },
-          p: { xs: 2, md: 3 },
-          mb: 0,
-          boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
-          display: "block",
-          position: "relative",
-        }}
-      >
-        {/* Top Left Icon Buttons - Mobile Only */}
-        <Box
-          sx={{
-            position: "absolute",
-            top: 8,
-            right: 8,
-            display: { xs: "flex", md: "none" },
-            gap: 1,
-            zIndex: 10,
-          }}
-          mb={1}
-        >
-          {/* Mobile Filter clean Button */}
-          <IconButton
-            onClick={clearAllFilters}
-            sx={{
-              color: "white",
-              backgroundColor: "rgba(255,255,255,0.1)",
-              "&:hover": {
-                backgroundColor: "rgba(255,255,255,0.2)",
-              },
-              width: 32,
-              height: 32,
-            }}
-          >
-            <ClearAllIcon sx={{ fontSize: "18px" }} />
-          </IconButton>
-
-          {/* Mobile Filter Toggle Button */}
-          <IconButton
-            onClick={() => setFiltersOpen(!filtersOpen)}
-            sx={{
-              color: "white",
-              backgroundColor: "rgba(255,255,255,0.1)",
-              "&:hover": {
-                backgroundColor: "rgba(255,255,255,0.2)",
-              },
-              width: 32,
-              height: 32,
-            }}
-          >
-            <SearchIcon sx={{ fontSize: "18px" }} />
-          </IconButton>
-        </Box>
-
-        {/* Filter Content */}
-        <Box>
-          {/* Search and Basic Filters */}
-          <Box
-            sx={{
-              mt: 3,
-              display: { xs: filtersOpen ? "block" : "none", md: "block" },
-            }}
-          >
-            <Box
-              sx={{
-                mb: 1,
-                display: "flex",
-                gap: { xs: 1, md: 2 },
-                alignItems: "center",
-                flexDirection: { xs: "column", sm: "row" },
-              }}
-            >
-              <TextField
-                variant="outlined"
-                placeholder={t("Search for products or stores...")}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                sx={{
-                  flex: 1,
-                  width: { xs: "100%", sm: "auto" },
-                  maxWidth: { xs: "100%", sm: 400 },
-                  backgroundColor: "white",
-                  borderRadius: 1,
-                  "& .MuiOutlinedInput-root": {
-                    "& fieldset": {
-                      borderColor: "transparent",
-                    },
-                    "&:hover fieldset": {
-                      borderColor: "transparent",
-                    },
-                    "&.Mui-focused fieldset": {
-                      borderColor: theme.palette.primary.main,
-                    },
-                  },
-                }}
-                size="small"
-                InputProps={{
-                  inputProps: {
-                    style: {
-                      color:
-                        theme.palette.mode === "dark" ? "black" : "grey.500",
-                    },
-                  },
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon
-                        sx={{
-                          color:
-                            theme.palette.mode === "dark"
-                              ? "#2c3e50"
-                              : "grey.500",
-                        }}
-                      />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-
-              {/* Price Range Filters */}
-              <Box
-                sx={{
-                  display: "flex",
-
-                  gap: { xs: 0.5, sm: 1 },
-                  alignItems: "center",
-                  flexWrap: { xs: "wrap", sm: "nowrap" },
-                }}
-              >
-                <TextField
-                  type="number"
-                  placeholder={t("Min Price")}
-                  value={priceRange[0] || ""}
-                  onChange={(e) => {
-                    const val = Number(e.target.value) || 0;
-                    setPriceRange([val, priceRange[1]]);
-                  }}
-                  sx={{
-                    width: { xs: "45%", sm: 80, md: 120 },
-                    height: { xs: "35px", sm: "50px", md: "50px" },
-                    backgroundColor: "white",
-                    borderRadius: 1,
-                    "& .MuiOutlinedInput-root": {
-                      "& fieldset": { borderColor: "transparent" },
-                      "&:hover fieldset": { borderColor: "transparent" },
-                      "&.Mui-focused fieldset": {
-                        borderColor: theme.palette.primary.main,
-                      },
-                    },
-                  }}
-                  size="small"
-                  InputProps={{
-                    inputProps: {
-                      style: {
-                        color:
-                          theme.palette.mode === "dark" ? "black" : "grey.500",
-                      },
-                    },
-                  }}
-                />
-
-                <Typography
-                  sx={{
-                    fontSize: "0.875rem",
-                    color: "white",
-                  }}
-                >
-                  -
-                </Typography>
-
-                <TextField
-                  type="number"
-                  placeholder={t("Max Price")}
-                  value={priceRange[1] === 1000000 ? "" : priceRange[1]}
-                  onChange={(e) => {
-                    const val = Number(e.target.value) || 1000000;
-                    setPriceRange([priceRange[0], val]);
-                  }}
-                  sx={{
-                    width: { xs: "45%", sm: 80, md: 120 },
-                    height: { xs: "35px", sm: "50px", md: "50px" },
-                    backgroundColor: "white",
-                    borderRadius: 1,
-                    "& .MuiOutlinedInput-root": {
-                      "& fieldset": { borderColor: "transparent" },
-                      "&:hover fieldset": { borderColor: "transparent" },
-                      "&.Mui-focused fieldset": {
-                        borderColor: theme.palette.primary.main,
-                      },
-                    },
-                  }}
-                  size="small"
-                  InputProps={{
-                    inputProps: {
-                      style: {
-                        color:
-                          theme.palette.mode === "dark" ? "black" : "grey.500",
-                      },
-                    },
-                  }}
-                />
-              </Box>
-            </Box>
-          </Box>
-          {/* Store Type Filter */}
-          <Box sx={{ mb: 0 }}>
-            <Typography
-              variant="subtitle2"
-              sx={{
-                color: "white",
-                mb: 0.5,
-                fontSize: "0.9rem",
-                fontWeight: 500,
-              }}
-            >
-              {t("Store Type")}
-            </Typography>
-            <Box
-              sx={{
-                display: "flex",
-                gap: { xs: 0.5, sm: 1 },
-                flexWrap: "wrap",
-                alignItems: "center",
-                pb: 0,
-                minHeight: "20px",
-                width: "100%",
-                overflow: "hidden",
-              }}
-            >
-              {[{ _id: "all", name: t("All") }, ...storeTypes].map((type) => (
-                <Button
-                  key={type._id}
-                  variant={
-                    selectedStoreTypeId === type._id ? "contained" : "outlined"
-                  }
-                  onClick={() => handleStoreTypeChange(type._id)}
-                  sx={{
-                    backgroundColor:
-                      selectedStoreTypeId === type._id
-                        ? theme.palette.mode === "dark"
-                          ? "#34495e"
-                          : "#40916c"
-                        : "transparent",
-                    color: "white",
-                    border: "1px solid rgba(255,255,255,0.3)",
-                    borderRadius: 2,
-                    px: { xs: 1.5, md: 2 },
-                    py: 0.5,
-                    fontSize: { xs: "0.75rem", md: "0.875rem" },
-                    textTransform: "none",
-                    minHeight: "32px",
-                    maxWidth: "min(105px, 100%)",
-                    whiteSpace: "normal",
-                    textAlign: "center",
-                    lineHeight: 1.4,
-                    display: "inline-flex",
-                    flexWrap: "wrap",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    "&:hover": {
-                      backgroundColor:
-                        selectedStoreTypeId === type._id
-                          ? theme.palette.mode === "dark"
-                            ? "#34495e"
-                            : "#40916c"
-                          : "rgba(255,255,255,0.1)",
-                      borderColor: "rgba(255,255,255,0.5)",
-                    },
-                  }}
-                >
-                  <span style={{ marginRight: "4px", flexShrink: 0 }}>
-                    {type.icon || "🏪"}
-                  </span>
-                  <span
-                    style={{
-                      flex: "1 1 0",
-                      minWidth: 0,
-                      overflowWrap: "break-word",
-                      wordBreak: "break-word",
-                    }}
-                  >
-                    {t(type.name)}
-                  </span>
-                </Button>
-              ))}
-            </Box>
-          </Box>
-
-          {/* Categories Filter */}
-          <Box sx={{ mt: 2, mb: 0 }}>
-            <Typography
-              variant="subtitle2"
-              sx={{
-                color: "white",
-                mb: 0.5,
-                fontSize: "0.9rem",
-                fontWeight: 600,
-              }}
-            >
-              {t("Categories")}
-            </Typography>
-            <Box
-              sx={{
-                display: "flex",
-                gap: { xs: 0.5, sm: 1 },
-                alignItems: "center",
-                justifyContent: { xs: "flex-start", md: "flex-start" },
-                overflowX: "auto",
-                overflowY: "hidden",
-                scrollbarWidth: "none",
-                "&::-webkit-scrollbar": {
-                  display: "none",
-                },
-                pb: 1,
-                minHeight: "50px",
-              }}
-            >
-              {/* Browse All Categories */}
-              <Button
-                variant={selectedCategory === null ? "contained" : "outlined"}
-                onClick={() => handleCategoryChange(null)}
-                sx={{
-                  backgroundColor:
-                    selectedCategory === null
-                      ? theme.palette.mode === "dark"
-                        ? "#40916c"
-                        : "#34495e"
-                      : "transparent",
-                  color: "white",
-                  border: "1px solid rgba(255,255,255,0.3)",
-                  borderRadius: 2,
-                  px: { xs: 1.5, md: 2 },
-                  py: 0.5,
-                  fontSize: { xs: "0.75rem", md: "0.875rem" },
-                  textTransform: "none",
-                  minHeight: "32px",
-                  flexShrink: 0,
-                  "&:hover": {
-                    backgroundColor:
-                      selectedCategory === null
-                        ? theme.palette.mode === "dark"
-                          ? "#34495e"
-                          : "#40916c"
-                        : "rgba(255,255,255,0.1)",
-                    borderColor: "rgba(255,255,255,0.5)",
-                  },
-                }}
-                startIcon={<CategoryIcon sx={{ fontSize: "16px" }} />}
-              >
-                {t("all")}
-              </Button>
-
-              {/* Category Filter Buttons */}
-              {filteredCategories.map((category) => (
-                <Button
-                  key={category._id}
-                  variant={
-                    selectedCategory?._id === category._id
-                      ? "contained"
-                      : "outlined"
-                  }
-                  onClick={() => handleCategoryChange(category)}
-                  sx={{
-                    backgroundColor:
-                      selectedCategory?._id === category._id
-                        ? theme.palette.mode === "dark"
-                          ? "#34495e"
-                          : "#40916c"
-                        : "transparent",
-                    color: "white",
-                    border: "1px solid rgba(255,255,255,0.3)",
-                    borderRadius: 2,
-                    px: { xs: 1.5, md: 2 },
-                    py: 0.5,
-                    fontSize: { xs: "0.75rem", md: "0.875rem" },
-                    textTransform: "none",
-                    minHeight: "32px",
-                    flexShrink: 0,
-                    whiteSpace: "nowrap",
-                    "&:hover": {
-                      backgroundColor:
-                        selectedCategory?._id === category._id
-                          ? theme.palette.mode === "dark"
-                            ? "#34495e"
-                            : "#40916c"
-                          : "rgba(255,255,255,0.1)",
-                      borderColor: "rgba(255,255,255,0.5)",
-                    },
-                  }}
-                >
-                  {t(category.name)}
-                </Button>
-              ))}
-            </Box>
-          </Box>
-
-          {/* CCCategory Types Filter
-          {selectedCategory && (
-            <Box sx={{ mb: 0 }}>
-             
-              <Box
-                sx={{
-                  display: "flex",
-                  gap: { xs: 0.5, sm: 1 },
-                  alignItems: "center",
-                  justifyContent: { xs: "flex-start", md: "flex-start" },
-                  overflowX: "auto",
-                  overflowY: "hidden",
-                  scrollbarWidth: "none",
-                  "&::-webkit-scrollbar": {
-                    display: "none",
-                  },
-                  pb: 0,
-                  minHeight: "20px",
-                }}
-              >
-                CCAll Category Types
-                <Button
-                  variant={
-                    selectedCategoryType === null ? "contained" : "outlined"
-                  }
-                  onClick={() => handleCategoryTypeChange(null)}
-                  sx={{
-                    backgroundColor:
-                      selectedCategoryType === null
-                        ? theme.palette.mode === "dark"
-                          ? "#34495e"
-                          : "#40916c"
-                        : "transparent",
-                    color: "white",
-                    border: "1px solid rgba(255,255,255,0.3)",
-                    borderRadius: 2,
-                    px: { xs: 1.5, md: 2 },
-                    py: 0.5,
-                    fontSize: { xs: "0.75rem", md: "0.875rem" },
-                    textTransform: "none",
-                    minHeight: "32px",
-                    flexShrink: 0,
-                    "&:hover": {
-                      backgroundColor:
-                        selectedCategoryType === null
-                          ? theme.palette.mode === "dark"
-                            ? "#34495e"
-                            : "#40916c"
-                          : "rgba(255,255,255,0.1)",
-                      borderColor: "rgba(255,255,255,0.5)",
-                    },
-                  }}
-                  startIcon={<CategoryIcon sx={{ fontSize: "16px" }} />}
-                >
-                  {t("All Category Types")}
-                </Button>
-
-                CCCategory Type Filter Buttons
-                {categoryTypes.map((categoryType, index) => (
-                  <Button
-                    key={index}
-                    variant={
-                      selectedCategoryType?.name === categoryType.name
-                        ? "contained"
-                        : "outlined"
-                    }
-                    onClick={() => handleCategoryTypeChange(categoryType)}
-                    sx={{
-                      backgroundColor:
-                        selectedCategoryType?.name === categoryType.name
-                          ? theme.palette.mode === "dark"
-                            ? "#34495e"
-                            : "#40916c"
-                          : "transparent",
-                      color: "white",
-                      border: "1px solid rgba(255,255,255,0.3)",
-                      borderRadius: 2,
-                      px: { xs: 1.5, md: 2 },
-                      py: 0.5,
-                      fontSize: { xs: "0.75rem", md: "0.875rem" },
-                      textTransform: "none",
-                      minHeight: "32px",
-                      flexShrink: 0,
-                      whiteSpace: "nowrap",
-                      "&:hover": {
-                        backgroundColor:
-                          selectedCategoryType?.name === categoryType.name
-                            ? theme.palette.mode === "dark"
-                              ? "#34495e"
-                              : "#40916c"
-                            : "rgba(255,255,255,0.1)",
-                        borderColor: "rgba(255,255,255,0.5)",
-                      },
-                    }}
-                  >
-                    {t(categoryType.name)}
-                  </Button>
-                ))}
-              </Box>
-            </Box>
-          )} */}
-
-          {/* Clear Filters Button - Desktop Only */}
-          <Box
-            sx={{
-              mt: 2,
-              display: { xs: "none", md: "flex" },
-              justifyContent: "center",
-            }}
-          >
-            <Button
-              variant="outlined"
-              onClick={clearAllFilters}
-              sx={{
-                color: "white",
-                borderColor: "rgba(255,255,255,0.5)",
-                borderRadius: 2,
-                px: 3,
-                py: 0.5,
-                fontSize: "0.875rem",
-                textTransform: "none",
-                "&:hover": {
-                  backgroundColor: "rgba(255,255,255,0.1)",
-                  borderColor: "white",
-                },
-              }}
-            >
-              {t("Clear All Filters")}
-            </Button>
-          </Box>
-        </Box>
-      </Box>
-
-      <Box
-        sx={{
+          flex: 1,
+          overflowY: "auto",
+          scrollSnapType: { xs: "y mandatory", sm: "y mandatory" },
           display: "flex",
           flexDirection: "column",
-          gap: { xs: 2, sm: 2, md: 3 },
+          gap: { xs: 0, sm: 0, md: 0 }, // no space between cards
         }}
+        ref={reelsScrollRef}
       >
         {mainPageTab === 0 ? (
           <>
@@ -1464,21 +948,12 @@ const MainPage = () => {
               ).length;
 
               // Logic to insert BrandShowcase
-              const brandShowcase =
-                (index + 1) % 5 === 0 ? (
-                  <BrandShowcase
-                    brands={brands.slice(
-                      ((index + 1) / 5 - 1) * 5,
-                      ((index + 1) / 5) * 5,
-                    )}
-                  />
-                ) : null;
 
               return (
                 <React.Fragment key={store._id}>
                   <Card
                     sx={{
-                      mb: { xs: 0, sm: 2 },
+                      mb: { xs: 0, sm: 0 },
                       mt: { xs: 0, sm: 0 },
                       borderRadius: { xs: 2, md: 3 },
                       overflow: "hidden",
@@ -1501,6 +976,9 @@ const MainPage = () => {
                             ? "0 16px 64px rgba(0,0,0,0.4)"
                             : "0 16px 64px rgba(0,0,0,0.15)",
                       },
+                      // Make each store card fill the available viewport like a reel
+                      minHeight: { xs: "100%", sm: "100%" },
+                      scrollSnapAlign: { xs: "start", sm: "start" },
                     }}
                   >
                     {/* Store Header with Gradient Overlay */}
@@ -1722,7 +1200,7 @@ const MainPage = () => {
                         width: { xs: "100%", md: "100%" },
                         height:
                           productRows.length > 1
-                            ? { xs: "440px", sm: "615px", md: "auto" } // Fit 2 rows - smaller on mobile (auto height cards)
+                            ? { xs: "340px", sm: "520px", md: "auto" } // Fit 2 rows within reel viewport
                             : { xs: "auto", sm: "300px", md: "auto" },
                       }}
                     >
@@ -1799,15 +1277,11 @@ const MainPage = () => {
                                 display: "flex",
                                 gap: { xs: 0.5, md: 3 },
                                 pb: productRows.length === 1 ? 2 : 0,
-                                mb:
-                                  productRows.length > 1 &&
-                                  rowIndex < productRows.length - 1
-                                    ? 0.5
-                                    : 0,
+
                                 flexShrink: 0,
                                 minHeight:
                                   productRows.length > 1
-                                    ? { xs: "200px", sm: "300px" }
+                                    ? { xs: "170px", sm: "250px" }
                                     : "auto",
                                 alignItems: "stretch",
                               }}
@@ -1822,23 +1296,23 @@ const MainPage = () => {
                                     key={product._id}
                                     sx={{
                                       cursor: "pointer",
-                                      height: { xs: "auto", sm: "300px" }, // auto on mobile to remove bottom space
-                                      minHeight: { xs: "200px", sm: "300px" },
+                                      height: { xs: "auto", sm: "230px" },
+                                      minHeight: { xs: "130px", sm: "230px" },
                                       width: {
-                                        xs: "140px",
-                                        sm: "200px",
-                                        md: "280px",
-                                      }, // Reduced width on xs
+                                        xs: "120px",
+                                        sm: "180px",
+                                        md: "260px",
+                                      },
                                       maxWidth: {
-                                        xs: "140px",
-                                        sm: "200px",
-                                        md: "280px",
-                                      }, // Reduced width on xs
+                                        xs: "120px",
+                                        sm: "180px",
+                                        md: "260px",
+                                      },
                                       minWidth: {
-                                        xs: "140px",
-                                        sm: "200px",
-                                        md: "280px",
-                                      }, // Reduced width on xs
+                                        xs: "120px",
+                                        sm: "180px",
+                                        md: "260px",
+                                      },
                                       borderRadius: 2,
                                       overflow: "hidden",
                                       display: "flex",
@@ -1860,7 +1334,12 @@ const MainPage = () => {
                                       sx={{
                                         position: "relative",
                                         overflow: "hidden",
-                                        height: { xs: "100px", sm: "150px" }, // Reduced height on xs
+                                        mb: 1,
+                                        height: {
+                                          xs: "120px",
+                                          sm: "160px",
+                                          md: "230px",
+                                        },
                                         flexShrink: 0,
                                         backgroundColor: "#f8f9fa",
                                       }}
@@ -1871,30 +1350,26 @@ const MainPage = () => {
                                       {product.image ? (
                                         <CardMedia
                                           component="img"
-                                          height="180"
                                           image={`${process.env.REACT_APP_BACKEND_URL}${product.image}`}
                                           alt={product.name}
                                           sx={{
                                             objectFit: "contain",
                                             width: "100%",
                                             height: {
-                                              xs: "90px", // Reduced height
-                                              sm: "140px", // Reduced height
-                                              md: "200px",
+                                              xs: "140px",
+                                              sm: "190px",
+                                              md: "230px",
                                             },
                                             transition: "transform 0.3s ease",
-                                            // "&:hover": {
-                                            //   transform: "scale(1.05)",
-                                            // },
                                           }}
                                         />
                                       ) : (
                                         <Box
                                           sx={{
                                             height: {
-                                              xs: "100px",
-                                              sm: "150px",
-                                              md: "200px",
+                                              xs: "140px",
+                                              sm: "190px",
+                                              md: "230px",
                                             },
                                             width: "100%",
                                             display: "flex",
@@ -2029,12 +1504,13 @@ const MainPage = () => {
                                           color: "#000000",
                                           fontWeight: 600,
                                           fontSize: {
-                                            xs: "0.9rem",
-                                            sm: "1rem",
+                                            xs: "1.1rem",
+                                            sm: "1.25rem",
                                           },
                                           textAlign: "center",
+                                          mt: 0,
                                           mb: 0,
-                                          lineHeight: 1,
+                                          lineHeight: 1.2,
                                           minHeight: "2em",
                                           display: "-webkit-box",
                                           WebkitLineClamp: 2,
@@ -2126,7 +1602,7 @@ const MainPage = () => {
                       </Box>
                     </Box>
                   </Card>
-                  {brandShowcase}
+                  {/* {brandShowcase} */}
                 </React.Fragment>
               );
             })}
@@ -2277,7 +1753,7 @@ const MainPage = () => {
                           alt={t("sponsor")}
                           sx={{
                             position: "absolute",
-                            top: { xs: 0, md: -2 },
+                            top: { xs: -2, md: -2 },
                             left: { xs: -2, md: -2 },
                             zIndex: 2,
                             backgroundColor: "white",
@@ -2612,48 +2088,17 @@ const MainPage = () => {
         )}
       </Box>
 
-      {/* Load More Stores Button - For You tab only */}
-      {mainPageTab === 0 && hasMoreStores && (
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "center",
-            mt: 4,
-            mb: 2,
-          }}
-        >
-          <Button
-            onClick={loadMoreStores}
-            variant="outlined"
-            size="large"
-            sx={{
-              borderRadius: 3,
-              px: 4,
-              py: 1.5,
-              fontSize: "1.1rem",
-              fontWeight: 600,
-              textTransform: "none",
-              borderWidth: 2,
-              "&:hover": {
-                borderWidth: 2,
-                boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
-              },
-              transition: "all 0.3s ease",
-            }}
-          >
-            {t("Load More")}
-          </Button>
-        </Box>
-      )}
-
       {mainPageTab === 0 && finalFilteredStores.length === 0 && !loading && (
         <>
-          <br />
-          <br />
-
           <Alert
             severity="info"
             sx={{
+              position: "absolute",
+              top: "30%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              width: "100%",
+              textAlign: "center",
               borderRadius: 2,
               backgroundColor:
                 theme.palette.mode === "dark" ? "#52b788" : "#e3f2fd",
@@ -3250,4 +2695,4 @@ const MainPage = () => {
   );
 };
 
-export default MainPage;
+export default ReelsPage;

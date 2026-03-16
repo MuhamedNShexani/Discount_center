@@ -18,6 +18,7 @@ import rtlPlugin from "stylis-plugin-rtl";
 
 // Import pages
 import MainPage from "./pages/MainPage";
+import ReelsPage from "./pages/reels";
 import StoreList from "./pages/StoreList";
 import BrandList from "./pages/BrandList";
 import BrandProfile from "./pages/BrandProfile";
@@ -286,6 +287,7 @@ function AppContent() {
             <Container maxWidth="lg">
               <Routes>
                 <Route path="/" element={<MainPage />} />
+                <Route path="/reels" element={<ReelsPage />} />
                 <Route path="/stores" element={<StoreList />} />
                 <Route path="/stores/:id" element={<StoreProfile />} />
                 <Route path="/categories" element={<ProductCategory />} />
