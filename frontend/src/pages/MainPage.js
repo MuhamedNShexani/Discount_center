@@ -808,17 +808,34 @@ const MainPage = () => {
       >
         <Tabs
           value={mainPageTab}
+          TabIndicatorProps={{
+            children: <span className="MuiTabs-indicatorSpan" />,
+          }}
           onChange={(_, v) => {
             setMainPageTab(v);
+
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
           sx={{
             minHeight: 48,
+            "& .MuiTabs-indicator": {
+              display: "flex",
+              justifyContent: "center",
+              backgroundColor: "transparent",
+            },
+            "& .MuiTabs-indicatorSpan": {
+              width: "70%",
+              backgroundColor: "var(--brand-accent-orange)",
+              borderRadius: "999px",
+              height: "3px",
+            },
             "& .MuiTab-root": {
               fontWeight: 800,
               textTransform: "none",
               color: "black",
               minHeight: 48,
+              minWidth: "auto",
+              px: 2,
             },
           }}
         >
@@ -898,10 +915,11 @@ const MainPage = () => {
       <Box
         sx={{
           backgroundColor:
-            theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+            theme.palette.mode === "dark" ? "#4A90E2" : "#FF7A1A",
           borderRadius: { xs: 2, md: 3 },
           p: { xs: 2, md: 3 },
-          mb: 0,
+
+          mb: 3,
           boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
           display: "block",
           position: "relative",
@@ -1007,7 +1025,7 @@ const MainPage = () => {
                         sx={{
                           color:
                             theme.palette.mode === "dark"
-                              ? "#2c3e50"
+                              ? "#1E6FD9"
                               : "grey.500",
                         }}
                       />
@@ -1137,8 +1155,8 @@ const MainPage = () => {
                     backgroundColor:
                       selectedStoreTypeId === type._id
                         ? theme.palette.mode === "dark"
-                          ? "#34495e"
-                          : "#40916c"
+                          ? "#1E6FD9"
+                          : "#4A90E2"
                         : "transparent",
                     color: "white",
                     border: "1px solid rgba(255,255,255,0.3)",
@@ -1160,8 +1178,8 @@ const MainPage = () => {
                       backgroundColor:
                         selectedStoreTypeId === type._id
                           ? theme.palette.mode === "dark"
-                            ? "#34495e"
-                            : "#40916c"
+                            ? "#1E6FD9"
+                            : "#4A90E2"
                           : "rgba(255,255,255,0.1)",
                       borderColor: "rgba(255,255,255,0.5)",
                     },
@@ -1186,85 +1204,45 @@ const MainPage = () => {
           </Box>
 
           {/* Categories Filter */}
-          <Box sx={{ mt: 2, mb: 0 }}>
-            <Typography
-              variant="subtitle2"
-              sx={{
-                color: "white",
-                mb: 0.5,
-                fontSize: "0.9rem",
-                fontWeight: 600,
-              }}
-            >
-              {t("Categories")}
-            </Typography>
-            <Box
-              sx={{
-                display: "flex",
-                gap: { xs: 0.5, sm: 1 },
-                alignItems: "center",
-                justifyContent: { xs: "flex-start", md: "flex-start" },
-                overflowX: "auto",
-                overflowY: "hidden",
-                scrollbarWidth: "none",
-                "&::-webkit-scrollbar": {
-                  display: "none",
-                },
-                pb: 1,
-                minHeight: "50px",
-              }}
-            >
-              {/* Browse All Categories */}
-              <Button
-                variant={selectedCategory === null ? "contained" : "outlined"}
-                onClick={() => handleCategoryChange(null)}
+          {selectedStoreTypeId !== "all" && (
+            <Box sx={{ mt: 2, mb: 0 }}>
+              <Typography
+                variant="subtitle2"
                 sx={{
-                  backgroundColor:
-                    selectedCategory === null
-                      ? theme.palette.mode === "dark"
-                        ? "#40916c"
-                        : "#34495e"
-                      : "transparent",
                   color: "white",
-                  border: "1px solid rgba(255,255,255,0.3)",
-                  borderRadius: 2,
-                  px: { xs: 1.5, md: 2 },
-                  py: 0.5,
-                  fontSize: { xs: "0.75rem", md: "0.875rem" },
-                  textTransform: "none",
-                  minHeight: "32px",
-                  flexShrink: 0,
-                  "&:hover": {
+                  mb: 0.5,
+                  fontSize: "0.9rem",
+                  fontWeight: 600,
+                }}
+              >
+                {t("Categories")}
+              </Typography>
+              <Box
+                sx={{
+                  display: "flex",
+                  gap: { xs: 0.5, sm: 1 },
+                  alignItems: "center",
+                  justifyContent: { xs: "flex-start", md: "flex-start" },
+                  overflowX: "auto",
+                  overflowY: "hidden",
+                  scrollbarWidth: "none",
+                  "&::-webkit-scrollbar": {
+                    display: "none",
+                  },
+                  pb: 1,
+                  minHeight: "50px",
+                }}
+              >
+                {/* Browse All Categories */}
+                <Button
+                  variant={selectedCategory === null ? "contained" : "outlined"}
+                  onClick={() => handleCategoryChange(null)}
+                  sx={{
                     backgroundColor:
                       selectedCategory === null
                         ? theme.palette.mode === "dark"
-                          ? "#34495e"
-                          : "#40916c"
-                        : "rgba(255,255,255,0.1)",
-                    borderColor: "rgba(255,255,255,0.5)",
-                  },
-                }}
-                startIcon={<CategoryIcon sx={{ fontSize: "16px" }} />}
-              >
-                {t("all")}
-              </Button>
-
-              {/* Category Filter Buttons */}
-              {filteredCategories.map((category) => (
-                <Button
-                  key={category._id}
-                  variant={
-                    selectedCategory?._id === category._id
-                      ? "contained"
-                      : "outlined"
-                  }
-                  onClick={() => handleCategoryChange(category)}
-                  sx={{
-                    backgroundColor:
-                      selectedCategory?._id === category._id
-                        ? theme.palette.mode === "dark"
-                          ? "#34495e"
-                          : "#40916c"
+                          ? "#4A90E2"
+                          : "#1E6FD9"
                         : "transparent",
                     color: "white",
                     border: "1px solid rgba(255,255,255,0.3)",
@@ -1275,23 +1253,65 @@ const MainPage = () => {
                     textTransform: "none",
                     minHeight: "32px",
                     flexShrink: 0,
-                    whiteSpace: "nowrap",
                     "&:hover": {
                       backgroundColor:
-                        selectedCategory?._id === category._id
+                        selectedCategory === null
                           ? theme.palette.mode === "dark"
-                            ? "#34495e"
-                            : "#40916c"
+                            ? "#1E6FD9"
+                            : "#4A90E2"
                           : "rgba(255,255,255,0.1)",
                       borderColor: "rgba(255,255,255,0.5)",
                     },
                   }}
+                  startIcon={<CategoryIcon sx={{ fontSize: "16px" }} />}
                 >
-                  {t(category.name)}
+                  {t("all")}
                 </Button>
-              ))}
+
+                {/* Category Filter Buttons */}
+                {filteredCategories.map((category) => (
+                  <Button
+                    key={category._id}
+                    variant={
+                      selectedCategory?._id === category._id
+                        ? "contained"
+                        : "outlined"
+                    }
+                    onClick={() => handleCategoryChange(category)}
+                    sx={{
+                      backgroundColor:
+                        selectedCategory?._id === category._id
+                          ? theme.palette.mode === "dark"
+                            ? "#1E6FD9"
+                            : "#4A90E2"
+                          : "transparent",
+                      color: "white",
+                      border: "1px solid rgba(255,255,255,0.3)",
+                      borderRadius: 2,
+                      px: { xs: 1.5, md: 2 },
+                      py: 0.5,
+                      fontSize: { xs: "0.75rem", md: "0.875rem" },
+                      textTransform: "none",
+                      minHeight: "32px",
+                      flexShrink: 0,
+                      whiteSpace: "nowrap",
+                      "&:hover": {
+                        backgroundColor:
+                          selectedCategory?._id === category._id
+                            ? theme.palette.mode === "dark"
+                              ? "#1E6FD9"
+                              : "#4A90E2"
+                            : "rgba(255,255,255,0.1)",
+                        borderColor: "rgba(255,255,255,0.5)",
+                      },
+                    }}
+                  >
+                    {t(category.name)}
+                  </Button>
+                ))}
+              </Box>
             </Box>
-          </Box>
+          )}
 
           {/* CCCategory Types Filter
           {selectedCategory && (
@@ -1323,8 +1343,8 @@ const MainPage = () => {
                     backgroundColor:
                       selectedCategoryType === null
                         ? theme.palette.mode === "dark"
-                          ? "#34495e"
-                          : "#40916c"
+                          ? "#1E6FD9"
+                          : "#4A90E2"
                         : "transparent",
                     color: "white",
                     border: "1px solid rgba(255,255,255,0.3)",
@@ -1339,8 +1359,8 @@ const MainPage = () => {
                       backgroundColor:
                         selectedCategoryType === null
                           ? theme.palette.mode === "dark"
-                            ? "#34495e"
-                            : "#40916c"
+                            ? "#1E6FD9"
+                            : "#4A90E2"
                           : "rgba(255,255,255,0.1)",
                       borderColor: "rgba(255,255,255,0.5)",
                     },
@@ -1364,8 +1384,8 @@ const MainPage = () => {
                       backgroundColor:
                         selectedCategoryType?.name === categoryType.name
                           ? theme.palette.mode === "dark"
-                            ? "#34495e"
-                            : "#40916c"
+                            ? "#1E6FD9"
+                            : "#4A90E2"
                           : "transparent",
                       color: "white",
                       border: "1px solid rgba(255,255,255,0.3)",
@@ -1381,8 +1401,8 @@ const MainPage = () => {
                         backgroundColor:
                           selectedCategoryType?.name === categoryType.name
                             ? theme.palette.mode === "dark"
-                              ? "#34495e"
-                              : "#40916c"
+                              ? "#1E6FD9"
+                              : "#4A90E2"
                             : "rgba(255,255,255,0.1)",
                         borderColor: "rgba(255,255,255,0.5)",
                       },
@@ -1484,10 +1504,10 @@ const MainPage = () => {
                       overflow: "hidden",
                       background:
                         theme.palette.mode === "dark"
-                          ? "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)"
+                          ? "linear-gradient(135deg, #1E6FD9 0%, #4A90E2 100%)"
                           : "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
                       border: `1px solid ${
-                        theme.palette.mode === "dark" ? "#34495e" : "#e9ecef"
+                        theme.palette.mode === "dark" ? "#1E6FD9" : "#e9ecef"
                       }`,
                       boxShadow:
                         theme.palette.mode === "dark"
@@ -1507,7 +1527,7 @@ const MainPage = () => {
                     <Box
                       sx={{
                         background:
-                          theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+                          theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
                         p: { xs: 1, sm: 2, md: 3, lg: 1 }, // Reduced padding on xs
                         color: "white",
                         position: "relative",
@@ -1722,7 +1742,7 @@ const MainPage = () => {
                         width: { xs: "100%", md: "100%" },
                         height:
                           productRows.length > 1
-                            ? { xs: "440px", sm: "615px", md: "auto" } // Fit 2 rows - smaller on mobile (auto height cards)
+                            ? { xs: "600px", sm: "680px", md: "auto" } // Increased to fully show 2 rows
                             : { xs: "auto", sm: "300px", md: "auto" },
                       }}
                     >
@@ -1744,8 +1764,8 @@ const MainPage = () => {
                             "&::-webkit-scrollbar-thumb": {
                               backgroundColor:
                                 theme.palette.mode === "dark"
-                                  ? "#40916c"
-                                  : "#34495e",
+                                  ? "#4A90E2"
+                                  : "#1E6FD9",
                               borderRadius: 4,
                               "&:hover": {
                                 backgroundColor: "#45a049",
@@ -1782,8 +1802,8 @@ const MainPage = () => {
                               "&::-webkit-scrollbar-thumb": {
                                 backgroundColor:
                                   theme.palette.mode === "dark"
-                                    ? "#40916c"
-                                    : "#34495e",
+                                    ? "#4A90E2"
+                                    : "#1E6FD9",
                                 borderRadius: 4,
                                 "&:hover": {
                                   backgroundColor: "#45a049",
@@ -1807,7 +1827,7 @@ const MainPage = () => {
                                 flexShrink: 0,
                                 minHeight:
                                   productRows.length > 1
-                                    ? { xs: "200px", sm: "300px" }
+                                    ? { xs: "230px", sm: "330px" }
                                     : "auto",
                                 alignItems: "stretch",
                               }}
@@ -1817,13 +1837,17 @@ const MainPage = () => {
                                   product.previousPrice,
                                   product.newPrice,
                                 );
+                                const hasPreviousPrice =
+                                  product.previousPrice &&
+                                  product.newPrice &&
+                                  product.previousPrice > product.newPrice;
                                 return (
                                   <Card
                                     key={product._id}
                                     sx={{
                                       cursor: "pointer",
-                                      height: { xs: "auto", sm: "300px" }, // auto on mobile to remove bottom space
-                                      minHeight: { xs: "200px", sm: "300px" },
+                                      height: { xs: "auto", sm: "330px" }, // taller for 2-row visibility
+                                      minHeight: { xs: "230px", sm: "330px" },
                                       width: {
                                         xs: "140px",
                                         sm: "200px",
@@ -1860,7 +1884,7 @@ const MainPage = () => {
                                       sx={{
                                         position: "relative",
                                         overflow: "hidden",
-                                        height: { xs: "100px", sm: "150px" }, // Reduced height on xs
+                                        height: { xs: "150px", sm: "200px" }, // Reduced height on xs
                                         flexShrink: 0,
                                         backgroundColor: "#f8f9fa",
                                       }}
@@ -1871,16 +1895,16 @@ const MainPage = () => {
                                       {product.image ? (
                                         <CardMedia
                                           component="img"
-                                          height="180"
+                                          height="220"
                                           image={`${process.env.REACT_APP_BACKEND_URL}${product.image}`}
                                           alt={product.name}
                                           sx={{
                                             objectFit: "contain",
                                             width: "100%",
                                             height: {
-                                              xs: "90px", // Reduced height
-                                              sm: "140px", // Reduced height
-                                              md: "200px",
+                                              xs: "150px", // Reduced height
+                                              sm: "200px", // Reduced height
+                                              md: "250px",
                                             },
                                             transition: "transform 0.3s ease",
                                             // "&:hover": {
@@ -1892,9 +1916,9 @@ const MainPage = () => {
                                         <Box
                                           sx={{
                                             height: {
-                                              xs: "100px",
-                                              sm: "150px",
-                                              md: "200px",
+                                              xs: "150px",
+                                              sm: "200px",
+                                              md: "250px",
                                             },
                                             width: "100%",
                                             display: "flex",
@@ -2033,9 +2057,10 @@ const MainPage = () => {
                                             sm: "1rem",
                                           },
                                           textAlign: "center",
-                                          mb: 0,
-                                          lineHeight: 1,
-                                          minHeight: "2em",
+                                          mt: 0.5,
+                                          mb: 0.5,
+                                          lineHeight: 1.3,
+                                          minHeight: "2.6em",
                                           display: "-webkit-box",
                                           WebkitLineClamp: 2,
                                           WebkitBoxOrient: "vertical",
@@ -2052,35 +2077,47 @@ const MainPage = () => {
                                           flexDirection: "column",
                                           alignItems: "center",
                                           mb: 0,
+                                          minHeight: { xs: "70px", sm: "78px" },
                                         }}
                                       >
-                                        {product.previousPrice &&
-                                          product.previousPrice >
-                                            product.newPrice && (
-                                            <Typography
-                                              variant="body2"
-                                              sx={{
-                                                textDecoration: "line-through",
-                                                color: "red",
-                                                fontSize: {
-                                                  xs: "0.8rem",
-                                                  sm: "0.9rem",
-                                                },
-                                                fontWeight: 500,
-                                              }}
-                                            >
-                                              {formatPrice(
-                                                product.previousPrice,
-                                              )}
-                                            </Typography>
-                                          )}
+                                        <Typography
+                                          variant="body2"
+                                          sx={{
+                                            textDecoration: hasPreviousPrice
+                                              ? "line-through"
+                                              : "none",
+                                            color: "red",
+                                            fontSize: {
+                                              xs: "0.8rem",
+                                              sm: "0.9rem",
+                                            },
+                                            fontWeight: 500,
+                                            minHeight: "1.4em",
+                                            visibility: hasPreviousPrice
+                                              ? "visible"
+                                              : "hidden",
+                                          }}
+                                        >
+                                          {hasPreviousPrice
+                                            ? formatPrice(product.previousPrice)
+                                            : "\u00A0"}
+                                        </Typography>
                                         <Typography
                                           variant="h6"
                                           sx={{
-                                            color: "#52b788",
-                                            fontWeight: 700,
+                                            color: "white",
+
+                                            backgroundColor:
+                                              "var(--brand-accent-orange)",
+                                            border:
+                                              "1px solid var(--brand-accent-orange)",
+                                            borderRadius: "8px",
+                                            padding: "4px 8px",
+                                            boxShadow:
+                                              "0 2px 4px rgba(0, 0, 0, 0.1)",
+                                            fontWeight: 800,
                                             fontSize: {
-                                              xs: "1.1rem",
+                                              xs: "1.2rem",
                                               sm: "1.3rem",
                                             },
                                           }}
@@ -2156,8 +2193,8 @@ const MainPage = () => {
               sx={{
                 borderRadius: 2,
                 backgroundColor:
-                  theme.palette.mode === "dark" ? "#52b788" : "#e3f2fd",
-                border: `1px solid ${theme.palette.mode === "dark" ? "#40916c" : "#bbdefb"}`,
+                  theme.palette.mode === "dark" ? "#FFA94D" : "#e3f2fd",
+                border: `1px solid ${theme.palette.mode === "dark" ? "#FF7A1A" : "#bbdefb"}`,
               }}
             >
               {t("No stores match the current filters.")}
@@ -2196,9 +2233,9 @@ const MainPage = () => {
                     overflow: "hidden",
                     background:
                       theme.palette.mode === "dark"
-                        ? "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)"
+                        ? "linear-gradient(135deg, #1E6FD9 0%, #4A90E2 100%)"
                         : "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
-                    border: `1px solid ${theme.palette.mode === "dark" ? "#34495e" : "#e9ecef"}`,
+                    border: `1px solid ${theme.palette.mode === "dark" ? "#1E6FD9" : "#e9ecef"}`,
                     boxShadow:
                       theme.palette.mode === "dark"
                         ? "0 8px 32px rgba(0,0,0,0.3)"
@@ -2208,7 +2245,7 @@ const MainPage = () => {
                   <Box
                     sx={{
                       background:
-                        theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+                        theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
                       p: { xs: 1, sm: 2, md: 3 },
                       color: "white",
                       position: "relative",
@@ -2385,8 +2422,8 @@ const MainPage = () => {
                         "&::-webkit-scrollbar-thumb": {
                           backgroundColor:
                             theme.palette.mode === "dark"
-                              ? "#40916c"
-                              : "#34495e",
+                              ? "#4A90E2"
+                              : "#1E6FD9",
                           borderRadius: 4,
                         },
                       }),
@@ -2426,7 +2463,7 @@ const MainPage = () => {
                             flexShrink: 0,
                             minHeight:
                               productRows.length > 1
-                                ? { xs: "200px", sm: "300px" }
+                                ? { xs: "230px", sm: "330px" }
                                 : "auto",
                             alignItems: "stretch",
                           }}
@@ -2439,11 +2476,11 @@ const MainPage = () => {
                                 maxWidth: { xs: 140, sm: 200, md: 280 },
                                 height:
                                   productRows.length > 1
-                                    ? { xs: "auto", sm: "300px" }
+                                    ? { xs: "auto", sm: "330px" }
                                     : "auto",
                                 minHeight:
                                   productRows.length > 1
-                                    ? { xs: "200px", sm: "300px" }
+                                    ? { xs: "230px", sm: "330px" }
                                     : "auto",
                                 textDecoration: "none",
                                 color: "inherit",
@@ -2566,32 +2603,46 @@ const MainPage = () => {
                                     WebkitLineClamp: 2,
                                     WebkitBoxOrient: "vertical",
                                     overflow: "hidden",
+                                    lineHeight: 1.3,
+                                    minHeight: "2.6em",
                                   }}
                                 >
                                   {product.name}
                                 </Typography>
-                                {product.previousPrice &&
+                                <Typography
+                                  variant="body2"
+                                  sx={{
+                                    textDecoration:
+                                      product.previousPrice &&
+                                      product.newPrice &&
+                                      product.previousPrice > product.newPrice
+                                        ? "line-through"
+                                        : "none",
+                                    color: "red",
+                                    fontSize: "0.8rem",
+                                    minHeight: "1.4em",
+                                    visibility:
+                                      product.previousPrice &&
+                                      product.newPrice &&
+                                      product.previousPrice > product.newPrice
+                                        ? "visible"
+                                        : "hidden",
+                                  }}
+                                >
+                                  {product.previousPrice &&
                                   product.newPrice &&
-                                  product.previousPrice > product.newPrice && (
-                                    <Typography
-                                      variant="body2"
-                                      sx={{
-                                        textDecoration: "line-through",
-                                        color: "red",
-                                        fontSize: "0.8rem",
-                                      }}
-                                    >
-                                      {product.previousPrice?.toLocaleString()}{" "}
-                                      {t("ID")}
-                                    </Typography>
-                                  )}
+                                  product.previousPrice > product.newPrice
+                                    ? `${product.previousPrice?.toLocaleString()} ${t("ID")}`
+                                    : "\u00A0"}
+                                </Typography>
                                 {product.newPrice && (
                                   <Typography
                                     variant="body2"
                                     sx={{
-                                      color: "#52b788",
+                                      color: "var(--brand-light-orange)",
                                       fontWeight: 700,
                                       fontSize: "1rem",
+                                      minHeight: "1.6em",
                                     }}
                                   >
                                     {product.newPrice?.toLocaleString()}{" "}
@@ -2656,9 +2707,9 @@ const MainPage = () => {
             sx={{
               borderRadius: 2,
               backgroundColor:
-                theme.palette.mode === "dark" ? "#52b788" : "#e3f2fd",
+                theme.palette.mode === "dark" ? "#FFA94D" : "#e3f2fd",
               border: `1px solid ${
-                theme.palette.mode === "dark" ? "#40916c" : "#bbdefb"
+                theme.palette.mode === "dark" ? "#FF7A1A" : "#bbdefb"
               }`,
             }}
           >
@@ -2947,7 +2998,7 @@ const MainPage = () => {
                               color:
                                 theme.palette.mode === "dark"
                                   ? "white"
-                                  : "#52b788",
+                                  : "var(--brand-light-orange)",
                               fontWeight: 700,
                             }}
                           >
@@ -3140,8 +3191,8 @@ const MainPage = () => {
                         navigate(`/products/${selectedProduct._id}`);
                       }}
                       sx={{
-                        backgroundColor: "#52b788",
-                        "&:hover": { backgroundColor: "#40916c" },
+                        backgroundColor: "var(--brand-accent-orange)",
+                        "&:hover": { backgroundColor: "var(--brand-light-orange)" },
                         borderRadius: 2,
                         py: 1.5,
                       }}
@@ -3230,13 +3281,13 @@ const MainPage = () => {
             right: { xs: 16, sm: 16 },
             zIndex: 1000,
             backgroundColor:
-              theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+              theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
             color: "white",
             width: { xs: 48, sm: 56 }, // Slightly smaller on mobile
             height: { xs: 48, sm: 56 },
             "&:hover": {
               backgroundColor:
-                theme.palette.mode === "dark" ? "#52b788" : "#2c3e50",
+                theme.palette.mode === "dark" ? "#FFA94D" : "#1E6FD9",
               transform: "translateY(-2px)",
             },
             transition: "all 0.3s ease",

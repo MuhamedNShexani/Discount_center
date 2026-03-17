@@ -50,7 +50,7 @@ export default function NotificationEnableBanner() {
         <Box
           sx={{
             backgroundColor: (theme) =>
-              theme.palette.mode === "dark" ? "#2c3e50" : "#1a1a1a",
+              theme.palette.mode === "dark" ? "#1E6FD9" : "#1a1a1a",
             color: "#fff",
             borderRadius: 2,
             p: 2,
@@ -75,8 +75,8 @@ export default function NotificationEnableBanner() {
               onClick={handleEnable}
               disabled={pushSubscribing}
               sx={{
-                backgroundColor: "#2B8264",
-                "&:hover": { backgroundColor: "#1E5F49" },
+                backgroundColor: "var(--brand-accent-orange)",
+                "&:hover": { backgroundColor: "var(--brand-light-orange)" },
               }}
             >
               {pushSubscribing ? t("Enabling...") : t("Enable")}

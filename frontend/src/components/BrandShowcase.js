@@ -56,7 +56,7 @@ const BrandShowcase = ({ brands }) => {
         borderRadius: 4,
         background:
           theme.palette.mode === "dark"
-            ? "linear-gradient(145deg, #2c3e50, #34495e)"
+            ? "linear-gradient(145deg, #1E6FD9, #4A90E2)"
             : "linear-gradient(145deg, #e6e6e6, #ffffff)",
         boxShadow:
           theme.palette.mode === "dark"

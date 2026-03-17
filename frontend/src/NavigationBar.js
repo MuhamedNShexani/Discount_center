@@ -215,9 +215,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
         elevation={0}
         sx={{
           background:
-            theme.palette.mode === "dark"
-              ? "linear-gradient(135deg, #52b788 0%, #40916c 100%)"
-              : "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)",
+            "linear-gradient(120deg, #1E6FD9 0%, #4A90E2 56%, #FF7A1A 100%)",
           backdropFilter: "blur(20px)",
           borderBottom: `1px solid ${
             theme.palette.mode === "dark"
@@ -321,7 +319,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   fontWeight: 700,
                   fontSize: "1.25rem",
                   textShadow: "0 2px 4px rgba(0,0,0,0.3)",
-                  background: "linear-gradient(45deg, #ffffff, #f0f0f0)",
+                  background: "linear-gradient(45deg, #ffffff, #FFF5EC)",
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
                   backgroundClip: "text",
@@ -615,7 +613,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                         mt: 1.5,
                         minWidth: 180,
                         backgroundColor:
-                          theme.palette.mode === "dark" ? "#2c3e50" : "#fff",
+                          theme.palette.mode === "dark" ? "#1E6FD9" : "#fff",
                         border: `1px solid ${theme.palette.divider}`,
                         borderRadius: 2,
                       },
@@ -781,7 +779,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
               maxWidth: 380,
               maxHeight: 400,
               backgroundColor:
-                theme.palette.mode === "dark" ? "#2c3e50" : "#fff",
+                theme.palette.mode === "dark" ? "#1E6FD9" : "#fff",
               border: `1px solid ${theme.palette.divider}`,
               borderRadius: 2,
             },
@@ -962,7 +960,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
             mt: 1,
             minWidth: 200,
             backgroundColor:
-              theme.palette.mode === "dark" ? "#2c3e50" : "#ffffff",
+              theme.palette.mode === "dark" ? "#1E6FD9" : "#ffffff",
             backdropFilter: "blur(20px)",
             border: `1px solid ${
               theme.palette.mode === "dark"
@@ -996,7 +994,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                     width: 40,
                     height: 40,
                     backgroundColor:
-                      theme.palette.mode === "dark" ? "#2c3e50" : "#34495e",
+                      theme.palette.mode === "dark" ? "#1E6FD9" : "#1E6FD9",
                     fontSize: "1rem",
                     fontWeight: 600,
                   }}
@@ -1171,7 +1169,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   ml: 0.5,
                   minWidth: 160,
                   backgroundColor:
-                    theme.palette.mode === "dark" ? "#2c3e50" : "#fff",
+                    theme.palette.mode === "dark" ? "#1E6FD9" : "#fff",
                   border: `1px solid ${theme.palette.divider}`,
                   borderRadius: 2,
                 },
@@ -1439,7 +1437,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                     py: 1.5,
                     px: 2,
                     color:
-                      theme.palette.mode === "dark" ? "#e2e8f0" : "#2c3e50",
+                      theme.palette.mode === "dark" ? "#e2e8f0" : "#1E6FD9",
                     "&:hover": {
                       backgroundColor:
                         theme.palette.mode === "dark"
@@ -1467,7 +1465,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                     py: 1.5,
                     px: 2,
                     color:
-                      theme.palette.mode === "dark" ? "#e2e8f0" : "#2c3e50",
+                      theme.palette.mode === "dark" ? "#e2e8f0" : "#1E6FD9",
                     "&:hover": {
                       backgroundColor:
                         theme.palette.mode === "dark"
@@ -1553,14 +1551,14 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                 sx={{
                   py: 1.5,
                   px: 2,
-                  color: "#b45309",
+                  color: theme.palette.secondary.main,
                   "&:hover": {
-                    backgroundColor: "rgba(180, 83, 9, 0.08)",
+                    backgroundColor: "rgba(255,122,26,0.10)",
                   },
                 }}
               >
                 <ListItemIcon>
-                  <BlockIcon sx={{ color: "#b45309" }} />
+                  <BlockIcon sx={{ color: theme.palette.secondary.main }} />
                 </ListItemIcon>
                 <ListItemText
                   primary={t("Deactivate Account")}
@@ -1662,14 +1660,14 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
               sx={{
                 py: 1.5,
                 px: 2,
-                color: "#2c3e50",
+                color: theme.palette.primary.main,
                 "&:hover": {
-                  backgroundColor: "rgba(64, 145, 108, 0.08)",
+                  backgroundColor: "rgba(30,111,217,0.08)",
                 },
               }}
             >
               <ListItemIcon>
-                <LoginIcon sx={{ color: "#2c3e50" }} />
+                <LoginIcon sx={{ color: theme.palette.primary.main }} />
               </ListItemIcon>
               <ListItemText
                 primary={t("Login")}

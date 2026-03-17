@@ -837,8 +837,8 @@ const ReelsPage = () => {
                   border: isActive
                     ? "3px solid rgba(52,73,94,0.9)"
                     : "2px solid rgba(0,0,0,0.15)",
-                  backgroundColor: isActive ? "#34495e" : "#ffffff",
-                  color: isActive ? "#ffffff" : "#34495e",
+                  backgroundColor: isActive ? "var(--brand-primary-blue)" : "#ffffff",
+                  color: isActive ? "#ffffff" : "var(--brand-primary-blue)",
                   flexShrink: 0,
                 }}
               >
@@ -959,10 +959,10 @@ const ReelsPage = () => {
                       overflow: "hidden",
                       background:
                         theme.palette.mode === "dark"
-                          ? "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)"
+                          ? "linear-gradient(135deg, #1E6FD9 0%, #4A90E2 100%)"
                           : "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
                       border: `1px solid ${
-                        theme.palette.mode === "dark" ? "#34495e" : "#e9ecef"
+                        theme.palette.mode === "dark" ? "#1E6FD9" : "#e9ecef"
                       }`,
                       boxShadow:
                         theme.palette.mode === "dark"
@@ -985,7 +985,7 @@ const ReelsPage = () => {
                     <Box
                       sx={{
                         background:
-                          theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+                          theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
                         p: { xs: 1, sm: 2, md: 3, lg: 1 }, // Reduced padding on xs
                         color: "white",
                         position: "relative",
@@ -1222,8 +1222,8 @@ const ReelsPage = () => {
                             "&::-webkit-scrollbar-thumb": {
                               backgroundColor:
                                 theme.palette.mode === "dark"
-                                  ? "#40916c"
-                                  : "#34495e",
+                                  ? "#4A90E2"
+                                  : "#1E6FD9",
                               borderRadius: 4,
                               "&:hover": {
                                 backgroundColor: "#45a049",
@@ -1260,8 +1260,8 @@ const ReelsPage = () => {
                               "&::-webkit-scrollbar-thumb": {
                                 backgroundColor:
                                   theme.palette.mode === "dark"
-                                    ? "#40916c"
-                                    : "#34495e",
+                                    ? "#4A90E2"
+                                    : "#1E6FD9",
                                 borderRadius: 4,
                                 "&:hover": {
                                   backgroundColor: "#45a049",
@@ -1553,7 +1553,7 @@ const ReelsPage = () => {
                                         <Typography
                                           variant="h6"
                                           sx={{
-                                            color: "#52b788",
+                                            color: "var(--brand-light-orange)",
                                             fontWeight: 700,
                                             fontSize: {
                                               xs: "1.1rem",
@@ -1632,8 +1632,8 @@ const ReelsPage = () => {
               sx={{
                 borderRadius: 2,
                 backgroundColor:
-                  theme.palette.mode === "dark" ? "#52b788" : "#e3f2fd",
-                border: `1px solid ${theme.palette.mode === "dark" ? "#40916c" : "#bbdefb"}`,
+                  theme.palette.mode === "dark" ? "#FFA94D" : "#e3f2fd",
+                border: `1px solid ${theme.palette.mode === "dark" ? "#FF7A1A" : "#bbdefb"}`,
               }}
             >
               {t("No stores match the current filters.")}
@@ -1672,9 +1672,9 @@ const ReelsPage = () => {
                     overflow: "hidden",
                     background:
                       theme.palette.mode === "dark"
-                        ? "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)"
+                        ? "linear-gradient(135deg, #1E6FD9 0%, #4A90E2 100%)"
                         : "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
-                    border: `1px solid ${theme.palette.mode === "dark" ? "#34495e" : "#e9ecef"}`,
+                    border: `1px solid ${theme.palette.mode === "dark" ? "#1E6FD9" : "#e9ecef"}`,
                     boxShadow:
                       theme.palette.mode === "dark"
                         ? "0 8px 32px rgba(0,0,0,0.3)"
@@ -1684,7 +1684,7 @@ const ReelsPage = () => {
                   <Box
                     sx={{
                       background:
-                        theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+                        theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
                       p: { xs: 1, sm: 2, md: 3 },
                       color: "white",
                       position: "relative",
@@ -1861,8 +1861,8 @@ const ReelsPage = () => {
                         "&::-webkit-scrollbar-thumb": {
                           backgroundColor:
                             theme.palette.mode === "dark"
-                              ? "#40916c"
-                              : "#34495e",
+                              ? "#4A90E2"
+                              : "#1E6FD9",
                           borderRadius: 4,
                         },
                       }),
@@ -2065,7 +2065,7 @@ const ReelsPage = () => {
                                   <Typography
                                     variant="body2"
                                     sx={{
-                                      color: "#52b788",
+                                      color: "var(--brand-light-orange)",
                                       fontWeight: 700,
                                       fontSize: "1rem",
                                     }}
@@ -2101,9 +2101,9 @@ const ReelsPage = () => {
               textAlign: "center",
               borderRadius: 2,
               backgroundColor:
-                theme.palette.mode === "dark" ? "#52b788" : "#e3f2fd",
+                theme.palette.mode === "dark" ? "#FFA94D" : "#e3f2fd",
               border: `1px solid ${
-                theme.palette.mode === "dark" ? "#40916c" : "#bbdefb"
+                theme.palette.mode === "dark" ? "#FF7A1A" : "#bbdefb"
               }`,
             }}
           >
@@ -2392,7 +2392,7 @@ const ReelsPage = () => {
                               color:
                                 theme.palette.mode === "dark"
                                   ? "white"
-                                  : "#52b788",
+                                  : "var(--brand-light-orange)",
                               fontWeight: 700,
                             }}
                           >
@@ -2585,8 +2585,8 @@ const ReelsPage = () => {
                         navigate(`/products/${selectedProduct._id}`);
                       }}
                       sx={{
-                        backgroundColor: "#52b788",
-                        "&:hover": { backgroundColor: "#40916c" },
+                        backgroundColor: "var(--brand-accent-orange)",
+                        "&:hover": { backgroundColor: "var(--brand-light-orange)" },
                         borderRadius: 2,
                         py: 1.5,
                       }}
@@ -2675,13 +2675,13 @@ const ReelsPage = () => {
             right: { xs: 16, sm: 16 },
             zIndex: 1000,
             backgroundColor:
-              theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+              theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
             color: "white",
             width: { xs: 48, sm: 56 }, // Slightly smaller on mobile
             height: { xs: 48, sm: 56 },
             "&:hover": {
               backgroundColor:
-                theme.palette.mode === "dark" ? "#52b788" : "#2c3e50",
+                theme.palette.mode === "dark" ? "#FFA94D" : "#1E6FD9",
               transform: "translateY(-2px)",
             },
             transition: "all 0.3s ease",

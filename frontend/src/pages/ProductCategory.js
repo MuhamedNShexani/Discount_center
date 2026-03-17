@@ -500,15 +500,15 @@ const ProductCategory = () => {
               backgroundColor:
                 selectedStoreTypeId === type._id
                   ? theme.palette.mode === "dark"
-                    ? "#34495e"
-                    : "#34495e"
+                    ? "#1E6FD9"
+                    : "#1E6FD9"
                   : "primary.main",
               color: "white",
               "&:hover": {
                 backgroundColor:
                   selectedStoreTypeId === type._id
                     ? theme.palette.mode === "dark"
-                      ? "#40916c"
+                      ? "#4A90E2"
                       : "white"
                     : "primary.main",
               },
@@ -525,8 +525,8 @@ const ProductCategory = () => {
               <Avatar
                 sx={{
                   bgcolor:
-                    selectedStoreTypeId === type._id ? "white" : "#e8f5e9",
-                  color: "#2d6a4f",
+                    selectedStoreTypeId === type._id ? "white" : "#EAF2FF",
+                  color: "var(--brand-primary-blue)",
                   width: 40,
                   height: 40,
                   mb: 0.5,
@@ -554,7 +554,7 @@ const ProductCategory = () => {
           pl: "96px",
           pt: 8,
           pr: 2,
-          color: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+          color: theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
         }}
       >
         {mobileViewMode === "categories" && (
@@ -563,7 +563,7 @@ const ProductCategory = () => {
               sx={{
                 my: 2,
                 fontWeight: 600,
-                color: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+                color: theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
               }}
             >
               {t("Categories")}
@@ -595,7 +595,7 @@ const ProductCategory = () => {
                       sx={{
                         width: 64,
                         height: 64,
-                        bgcolor: "#52b788",
+                        bgcolor: "var(--brand-accent-orange)",
                         color: "white",
                         mx: "auto",
                         mb: 1,
@@ -626,7 +626,7 @@ const ProductCategory = () => {
                 <CircularProgress
                   sx={{
                     color:
-                      theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+                      theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
                   }}
                 />
               </Box>
@@ -645,7 +645,7 @@ const ProductCategory = () => {
                     sx={{
                       fontWeight: 700,
                       color:
-                        theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+                        theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
                     }}
                   >
                     {selectedCategory?.name}
@@ -655,7 +655,7 @@ const ProductCategory = () => {
                     onClick={() => setMobileViewMode("categories")}
                     sx={{
                       color:
-                        theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+                        theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
                     }}
                   >
                     {t("Back")}
@@ -681,8 +681,8 @@ const ProductCategory = () => {
                           backgroundColor:
                             selectedCategoryType === null
                               ? theme.palette.mode === "dark"
-                                ? "#40916c"
-                                : "#34495e"
+                                ? "#4A90E2"
+                                : "#1E6FD9"
                               : "transparent",
                           color:
                             selectedCategoryType === null ? "white" : "inherit",
@@ -703,8 +703,8 @@ const ProductCategory = () => {
                             backgroundColor:
                               selectedCategoryType?._id === type._id
                                 ? theme.palette.mode === "dark"
-                                  ? "#40916c"
-                                  : "#34495e"
+                                  ? "#4A90E2"
+                                  : "#1E6FD9"
                                 : "transparent",
                             color:
                               selectedCategoryType?._id === type._id
@@ -783,8 +783,8 @@ const ProductCategory = () => {
                                   fontSize: 36,
                                   color:
                                     theme.palette.mode === "dark"
-                                      ? "#40916c"
-                                      : "#34495e",
+                                      ? "#4A90E2"
+                                      : "#1E6FD9",
                                 }}
                               />
                             </Box>
@@ -879,7 +879,7 @@ const ProductCategory = () => {
                                   <Typography
                                     variant="h6"
                                     sx={{
-                                      color: "#52b788",
+                                      color: "var(--brand-light-orange)",
                                       fontWeight: 700,
                                       fontSize: { xs: "1.1rem", sm: "1.3rem" },
                                     }}
@@ -917,7 +917,7 @@ const ProductCategory = () => {
                           sx={{
                             mt: 1,
                             textTransform: "none",
-                            borderColor: "#52b788",
+                            borderColor: "var(--brand-accent-orange)",
                             color: "#2d6a4f",
                           }}
                           onClick={(e) => {
@@ -964,24 +964,24 @@ const ProductCategory = () => {
                     backgroundColor:
                       selectedStoreTypeId === type._id
                         ? theme.palette.mode === "dark"
-                          ? "#40916c"
-                          : "#34495e"
+                          ? "#4A90E2"
+                          : "#1E6FD9"
                         : "transparent",
                     color:
                       selectedStoreTypeId === type._id
                         ? "white"
                         : theme.palette.mode === "dark"
-                          ? "#40916c"
-                          : "#34495e",
+                          ? "#4A90E2"
+                          : "#1E6FD9",
                     borderColor:
-                      theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+                      theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
                     "&:hover": {
                       backgroundColor:
                         selectedStoreTypeId === type._id
                           ? theme.palette.mode === "dark"
-                            ? "#40916c"
-                            : "#34495e"
-                          : "rgba(82, 183, 136, 0.1)",
+                            ? "#4A90E2"
+                            : "#1E6FD9"
+                          : "rgba(30, 111, 217, 0.1)",
                     },
                   }}
                 >
@@ -1011,13 +1011,13 @@ const ProductCategory = () => {
                   display: "flex",
                   alignItems: "center",
                   gap: 1,
-                  color: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+                  color: theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
                 }}
               >
                 <CategoryIcon
                   sx={{
                     color:
-                      theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+                      theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
                   }}
                 />
                 {t("Categories")}
@@ -1036,24 +1036,24 @@ const ProductCategory = () => {
                       backgroundColor:
                         selectedCategory?._id === category._id
                           ? theme.palette.mode === "dark"
-                            ? "#40916c"
-                            : "#34495e"
+                            ? "#4A90E2"
+                            : "#1E6FD9"
                           : "transparent",
                       color:
                         selectedCategory?._id === category._id
                           ? "white"
                           : theme.palette.mode === "dark"
-                            ? "#40916c"
-                            : "#34495e",
+                            ? "#4A90E2"
+                            : "#1E6FD9",
                       borderColor:
-                        theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+                        theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
                       "&:hover": {
                         backgroundColor:
                           selectedCategory?._id === category._id
                             ? theme.palette.mode === "dark"
-                              ? "#40916c"
-                              : "#34495e"
-                            : "rgba(82, 183, 136, 0.1)",
+                              ? "#4A90E2"
+                              : "#1E6FD9"
+                            : "rgba(30, 111, 217, 0.1)",
                       },
                     }}
                   >
@@ -1070,13 +1070,13 @@ const ProductCategory = () => {
                           selectedCategory?._id === category._id
                             ? "white"
                             : theme.palette.mode === "dark"
-                              ? "#40916c"
-                              : "#34495e",
+                              ? "#4A90E2"
+                              : "#1E6FD9",
                         color:
                           selectedCategory?._id === category._id
                             ? theme.palette.mode === "dark"
-                              ? "#40916c"
-                              : "#34495e"
+                              ? "#4A90E2"
+                              : "#1E6FD9"
                             : "white",
                         fontSize: "0.75rem",
                         mr: 1,
@@ -1111,13 +1111,13 @@ const ProductCategory = () => {
                   display: "flex",
                   alignItems: "center",
                   gap: 1,
-                  color: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+                  color: theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
                 }}
               >
                 <ExpandMoreIcon
                   sx={{
                     color:
-                      theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+                      theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
                   }}
                 />
                 {t("Types")} - {selectedCategory.name}
@@ -1132,22 +1132,22 @@ const ProductCategory = () => {
                     backgroundColor:
                       selectedCategoryType === null
                         ? theme.palette.mode === "dark"
-                          ? "#40916c"
-                          : "#34495e"
+                          ? "#4A90E2"
+                          : "#1E6FD9"
                         : "transparent",
                     color:
                       selectedCategoryType === null
                         ? "white"
                         : theme.palette.mode === "dark"
-                          ? "#40916c"
-                          : "#34495e",
+                          ? "#4A90E2"
+                          : "#1E6FD9",
                     borderColor:
-                      theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+                      theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
                     "&:hover": {
                       backgroundColor:
                         selectedCategoryType === null
-                          ? "#40916c"
-                          : "rgba(82, 183, 136, 0.1)",
+                          ? "#4A90E2"
+                          : "rgba(30, 111, 217, 0.1)",
                     },
                   }}
                 >
@@ -1166,24 +1166,24 @@ const ProductCategory = () => {
                       backgroundColor:
                         selectedCategoryType?._id === type._id
                           ? theme.palette.mode === "dark"
-                            ? "#40916c"
-                            : "#34495e"
+                            ? "#4A90E2"
+                            : "#1E6FD9"
                           : "transparent",
                       color:
                         selectedCategoryType?._id === type._id
                           ? "white"
                           : theme.palette.mode === "dark"
-                            ? "#40916c"
-                            : "#34495e",
+                            ? "#4A90E2"
+                            : "#1E6FD9",
                       borderColor:
-                        theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+                        theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
                       "&:hover": {
                         backgroundColor:
                           selectedCategoryType?._id === type._id
                             ? theme.palette.mode === "dark"
-                              ? "#40916c"
-                              : "#34495e"
-                            : "rgba(82, 183, 136, 0.1)",
+                              ? "#4A90E2"
+                              : "#1E6FD9"
+                            : "rgba(30, 111, 217, 0.1)",
                       },
                     }}
                   >
@@ -1207,7 +1207,7 @@ const ProductCategory = () => {
                 <CircularProgress
                   sx={{
                     color:
-                      theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+                      theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
                   }}
                 />
               </Box>
@@ -1360,7 +1360,7 @@ const ProductCategory = () => {
                                 <Typography
                                   variant="h6"
                                   sx={{
-                                    color: "#52b788",
+                                    color: "var(--brand-light-orange)",
                                     fontWeight: 700,
                                     fontSize: { xs: "1.1rem", sm: "1.3rem" },
                                   }}
@@ -1533,7 +1533,7 @@ const ProductCategory = () => {
                     <Typography
                       variant="h6"
                       sx={{
-                        color: "#52b788",
+                        color: "var(--brand-light-orange)",
                         fontWeight: 700,
                         fontSize: { xs: "1.1rem", sm: "1.3rem" },
                       }}
@@ -1550,7 +1550,7 @@ const ProductCategory = () => {
                       })()}
                       size="large"
                       sx={{
-                        backgroundColor: "#52b788",
+                        backgroundColor: "var(--brand-accent-orange)",
                         color: "white",
                         fontSize: "1rem",
                         mt: 1,
@@ -1564,7 +1564,7 @@ const ProductCategory = () => {
                     <Typography
                       variant="h6"
                       sx={{
-                        color: "#52b788",
+                        color: "var(--brand-light-orange)",
                         fontWeight: 700,
                         fontSize: { xs: "1.1rem", sm: "1.3rem" },
                         mt: 2,
@@ -1579,9 +1579,9 @@ const ProductCategory = () => {
                     onClick={(e) => handleLikeClick(selectedProduct._id, e)}
                     disabled={likeLoading[selectedProduct._id]}
                     sx={{
-                      border: "2px solid #52b788",
+                      border: "2px solid var(--brand-accent-orange)",
                       color: likeStates[selectedProduct._id]
-                        ? "#52b788"
+                        ? "var(--brand-accent-orange)"
                         : "inherit",
                     }}
                   >

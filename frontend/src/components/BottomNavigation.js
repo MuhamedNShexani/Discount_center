@@ -55,7 +55,7 @@ const BottomNavigationBar = () => {
 
   const navItems = [
     { name: t("Home"), path: "/", icon: <HomeIcon /> },
-    { name: t("Reels"), path: "/reels", icon: <VideoLibraryIcon /> },
+    // { name: t("Reels"), path: "/reels", icon: <VideoLibraryIcon /> },
     // { name: t("Favourites"), path: "/favourites", icon: <FavoriteIcon /> },
     { name: t("Categories"), path: "/categories", icon: <CategoryIcon /> },
     { name: t("Stores"), path: "/stores", icon: <StoreIcon /> },
@@ -83,9 +83,7 @@ const BottomNavigationBar = () => {
         sx={{
           borderRadius: "16px 16px 0 0",
           background:
-            theme.palette.mode === "dark"
-              ? "linear-gradient(135deg, #52b788 0%, #40916c 100%)"
-              : "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)",
+            "linear-gradient(120deg, #1E6FD9 0%, #4A90E2 60%, #FF7A1A 100%)",
           backdropFilter: "blur(20px)",
           border: `1px solid ${
             theme.palette.mode === "dark"
@@ -109,7 +107,7 @@ const BottomNavigationBar = () => {
               color: "rgba(255,255,255,0.8) !important",
               "&.Mui-selected": {
                 color: "white !important",
-                backgroundColor: "rgba(255,255,255,0.15) !important",
+                backgroundColor: "rgba(255,122,26,0.25) !important",
               },
             },
           }}
@@ -132,7 +130,7 @@ const BottomNavigationBar = () => {
                     ? "white !important"
                     : "rgba(255,255,255,0.8) !important",
                   backgroundColor: isActive
-                    ? "rgba(255,255,255,0.15) !important"
+                    ? "rgba(255,122,26,0.25) !important"
                     : "transparent !important",
                   borderRadius: isActive ? 1 : 0,
                   minWidth: "auto",
@@ -140,14 +138,14 @@ const BottomNavigationBar = () => {
                   transition: "all 0.3s ease",
                   "&.Mui-selected": {
                     color: "white !important",
-                    backgroundColor: "rgba(255,255,255,0.15) !important",
+                    backgroundColor: "rgba(255,122,26,0.25) !important",
                   },
                   "&.MuiBottomNavigationAction-root": {
                     color: isActive
                       ? "white !important"
                       : "rgba(255,255,255,0.8) !important",
                     backgroundColor: isActive
-                      ? "rgba(255,255,255,0.15) !important"
+                      ? "rgba(255,122,26,0.25) !important"
                       : "transparent !important",
                   },
                   "& .MuiBottomNavigationAction-label": {

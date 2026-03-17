@@ -230,10 +230,10 @@ const Gifts = () => {
         borderRadius: { xs: 2, md: 3 },
         background:
           theme.palette.mode === "dark"
-            ? "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)"
+            ? "linear-gradient(135deg, #1E6FD9 0%, #4A90E2 100%)"
             : "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
         border: `1px solid ${
-          theme.palette.mode === "dark" ? "#34495e" : "#e9ecef"
+          theme.palette.mode === "dark" ? "#1E6FD9" : "#e9ecef"
         }`,
       }}
     >
@@ -257,7 +257,7 @@ const Gifts = () => {
             color: theme.palette.text.primary,
           }}
         >
-          <FilterList sx={{ color: "#52b788" }} />
+          <FilterList sx={{ color: "var(--brand-accent-orange)" }} />
           {t("Filters")}
         </Typography>
       </Box>
@@ -273,7 +273,7 @@ const Gifts = () => {
           color: theme.palette.text.primary,
         }}
       >
-        <FilterList sx={{ color: "#52b788" }} />
+        <FilterList sx={{ color: "var(--brand-accent-orange)" }} />
         {t("Filters")}
       </Typography>
 
@@ -369,7 +369,7 @@ const Gifts = () => {
           cursor: "pointer",
           background:
             theme.palette.mode === "dark"
-              ? "linear-gradient(135deg, #34495e 0%, #2c3e50 100%)"
+              ? "linear-gradient(135deg, #4A90E2 0%, #1E6FD9 100%)"
               : "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
           border: `1px solid ${
             theme.palette.mode === "dark" ? "#4a5568" : "#e2e8f0"
@@ -532,7 +532,7 @@ const Gifts = () => {
                     sx={{
                       fontSize: { xs: 12, sm: 16, md: 16 },
                       mr: 1,
-                      color: "#52b788",
+                      color: "var(--brand-light-orange)",
                       flexShrink: 0,
                     }}
                   />
@@ -578,20 +578,20 @@ const Gifts = () => {
                         borderRadius: 1,
                         backgroundColor:
                           theme.palette.mode === "dark"
-                            ? "rgba(82, 183, 136, 0.1)"
-                            : "rgba(82, 183, 136, 0.05)",
+                            ? "rgba(255, 122, 26, 0.1)"
+                            : "rgba(255, 122, 26, 0.05)",
                         border: `1px solid ${
                           theme.palette.mode === "dark"
-                            ? "rgba(82, 183, 136, 0.2)"
-                            : "rgba(82, 183, 136, 0.1)"
+                            ? "rgba(255, 122, 26, 0.2)"
+                            : "rgba(255, 122, 26, 0.1)"
                         }`,
                         "&:hover": {
                           textDecoration: "underline",
-                          color: "#52b788",
+                          color: "var(--brand-light-orange)",
                           backgroundColor:
                             theme.palette.mode === "dark"
-                              ? "rgba(82, 183, 136, 0.2)"
-                              : "rgba(82, 183, 136, 0.1)",
+                              ? "rgba(255, 122, 26, 0.2)"
+                              : "rgba(255, 122, 26, 0.1)",
                         },
                       }}
                     >
@@ -619,7 +619,7 @@ const Gifts = () => {
                 }}
               >
                 <Business
-                  sx={{ fontSize: 16, mr: 1, color: "#52b788", flexShrink: 0 }}
+                  sx={{ fontSize: 16, mr: 1, color: "var(--brand-light-orange)", flexShrink: 0 }}
                 />
                 <Typography
                   variant="body2"
@@ -645,7 +645,7 @@ const Gifts = () => {
                 label={`${t("Expires")}: ${remainingDays} ${t("days")}`}
                 size="small"
                 sx={{
-                  bgcolor: remainingDays <= 7 ? "#ff6b6b" : "#52b788",
+                  bgcolor: remainingDays <= 7 ? "#ff6b6b" : "var(--brand-accent-orange)",
                   color: "white",
                   fontSize: { xs: "0.5rem", sm: "0.75rem", md: "0.75rem" },
                 }}
@@ -751,7 +751,7 @@ const Gifts = () => {
           sx={{
             fontSize: { xs: 32, sm: 36, md: 40 },
             mr: { xs: 1, sm: 2 },
-            color: "#52b788",
+            color: "var(--brand-light-orange)",
           }}
         />
         <Box>
@@ -760,7 +760,7 @@ const Gifts = () => {
             component="h1"
             gutterBottom
             sx={{
-              color: theme.palette.mode === "dark" ? "#52b788" : "#40916c",
+              color: theme.palette.mode === "dark" ? "#FFA94D" : "#FF7A1A",
               fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" },
             }}
           >
@@ -790,11 +790,11 @@ const Gifts = () => {
           backgroundColor:
             theme.palette.mode === "dark"
               ? "rgba(255,255,255,0.05)"
-              : "rgba(82, 183, 136, 0.05)",
+              : "rgba(255, 122, 26, 0.05)",
           border: `1px solid ${
             theme.palette.mode === "dark"
               ? "rgba(255,255,255,0.1)"
-              : "rgba(82, 183, 136, 0.1)"
+              : "rgba(255, 122, 26, 0.1)"
           }`,
         }}
       >

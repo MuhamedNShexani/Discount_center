@@ -1815,8 +1815,8 @@ const DataEntryForm = () => {
           overflow: "hidden",
           background:
             theme.palette.mode === "dark"
-              ? "linear-gradient(135deg, #52b788 0%, #40916c 100%)"
-              : "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)",
+              ? "linear-gradient(135deg, #FFA94D 0%, #FF7A1A 100%)"
+              : "linear-gradient(135deg, #1E6FD9 0%, #4A90E2 100%)",
           boxShadow:
             theme.palette.mode === "dark"
               ? "0 12px 40px rgba(0,0,0,0.3)"
@@ -1911,8 +1911,8 @@ const DataEntryForm = () => {
             sx={{
               color:
                 theme.palette.mode === "dark"
-                  ? "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)"
-                  : "linear-gradient(135deg, #52b788 0%, #40916c 100%)",
+                  ? "linear-gradient(135deg, #1E6FD9 0%, #4A90E2 100%)"
+                  : "linear-gradient(135deg, #FFA94D 0%, #FF7A1A 100%)",
             }}
           >
             {t("Data Lists")}
@@ -2682,9 +2682,9 @@ const DataEntryForm = () => {
                     startIcon={<DownloadIcon />}
                     onClick={exportBrandsToExcel}
                     sx={{
-                      backgroundColor: "#52b788",
+                      backgroundColor: "var(--brand-accent-orange)",
                       "&:hover": {
-                        backgroundColor: "#40916c",
+                        backgroundColor: "var(--brand-light-orange)",
                       },
                     }}
                   >

@@ -178,7 +178,7 @@ const LoginPage = () => {
                 height: 80,
                 mx: "auto",
                 mb: 2,
-                background: "linear-gradient(135deg, #52b788 0%, #40916c 100%)",
+                background: "linear-gradient(135deg, #FFA94D 0%, #FF7A1A 100%)",
               }}
             >
               <Person sx={{ fontSize: 40 }} />
@@ -292,10 +292,10 @@ const LoginPage = () => {
                   mb: 2,
                   py: 1.5,
                   background:
-                    "linear-gradient(135deg, #52b788 0%, #40916c 100%)",
+                    "linear-gradient(135deg, #FFA94D 0%, #FF7A1A 100%)",
                   "&:hover": {
                     background:
-                      "linear-gradient(135deg, #40916c 0%, #2d5a3d 100%)",
+                      "linear-gradient(135deg, #FF7A1A 0%, #D9630E 100%)",
                   },
                 }}
               >
@@ -391,10 +391,10 @@ const LoginPage = () => {
                   mb: 2,
                   py: 1.5,
                   background:
-                    "linear-gradient(135deg, #52b788 0%, #40916c 100%)",
+                    "linear-gradient(135deg, #FFA94D 0%, #FF7A1A 100%)",
                   "&:hover": {
                     background:
-                      "linear-gradient(135deg, #40916c 0%, #2d5a3d 100%)",
+                      "linear-gradient(135deg, #FF7A1A 0%, #D9630E 100%)",
                   },
                 }}
               >

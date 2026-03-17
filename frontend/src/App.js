@@ -2,7 +2,7 @@ import "./i18n";
 import "./styles/kurdishFonts.css";
 import React, { useState, useMemo, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { ThemeProvider, createTheme } from "@mui/material/styles";
+import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import {
   Container,
@@ -44,6 +44,7 @@ import ScrollToTop from "./components/ScrollToTop";
 import ErrorBoundary from "./components/ErrorBoundary";
 import NotificationEnableBanner from "./components/NotificationEnableBanner";
 import { ContentRefreshProvider, useContentRefresh } from "./context/ContentRefreshContext";
+import { createAppTheme } from "./theme";
 
 // Footer component remains the same
 const Footer = () => (
@@ -103,155 +104,8 @@ function AppContent() {
   };
 
   const theme = useMemo(
-    () =>
-      createTheme({
-        palette: {
-          mode: darkMode ? "dark" : "light",
-          primary: {
-            main: "#2B8264", // Dark green (main brand color)
-            light: "#58A789", // Lighter green for hover/highlights
-            dark: "#1E5F49", // Darker green
-          },
-          secondary: {
-            main: "#A5D6C2", // Soft mint green (secondary/accent)
-            light: "#CFF0E5",
-            dark: "#78B39B",
-          },
-          background: darkMode
-            ? {
-                default: "#1A2D28", // deep greenish background
-                paper: "#24423B",
-              }
-            : {
-                default: "#F4FAF8", // very light mint/white
-                paper: "#FFFFFF",
-              },
-          text: darkMode
-            ? {
-                primary: "#FFFFFF",
-                secondary: "#A5D6C2",
-              }
-            : {
-                primary: "#2B2B2B",
-                secondary: "#2B8264",
-              },
-          error: { main: "#D32F2F" },
-          warning: { main: "#ED6C02" },
-          success: { main: "#2E7D32" },
-          info: { main: "#0288D1" },
-          divider: darkMode ? "#396A5A" : "#CFF0E5",
-        },
-        typography: {
-          fontFamily:
-            i18n.language === "ku"
-              ? "'NRT', 'Noto Sans Kurdish', 'Scheherazade New', 'Arial', sans-serif"
-              : "'Roboto', 'Helvetica', 'Arial', sans-serif",
-          h1: {
-            color: darkMode ? "#FFFFFF" : "#2B8264",
-            fontFamily:
-              i18n.language === "ku"
-                ? "'NRT', 'Noto Sans Kurdish', 'Scheherazade New', 'Arial', sans-serif"
-                : "'Roboto', 'Helvetica', 'Arial', sans-serif",
-          },
-          h2: {
-            color: darkMode ? "#FFFFFF" : "#2B8264",
-            fontFamily:
-              i18n.language === "ku"
-                ? "'NRT', 'Noto Sans Kurdish', 'Scheherazade New', 'Arial', sans-serif"
-                : "'Roboto', 'Helvetica', 'Arial', sans-serif",
-          },
-          h3: {
-            color: darkMode ? "#FFFFFF" : "#2B8264",
-            fontFamily:
-              i18n.language === "ku"
-                ? "'NRT', 'Noto Sans Kurdish', 'Scheherazade New', 'Arial', sans-serif"
-                : "'Roboto', 'Helvetica', 'Arial', sans-serif",
-          },
-          h4: {
-            color: darkMode ? "#FFFFFF" : "#2B8264",
-            fontFamily:
-              i18n.language === "ku"
-                ? "'NRT', 'Noto Sans Kurdish', 'Scheherazade New', 'Arial', sans-serif"
-                : "'Roboto', 'Helvetica', 'Arial', sans-serif",
-          },
-          h5: {
-            color: darkMode ? "#FFFFFF" : "#2B8264",
-            fontFamily:
-              i18n.language === "ku"
-                ? "'NRT', 'Noto Sans Kurdish', 'Scheherazade New', 'Arial', sans-serif"
-                : "'Roboto', 'Helvetica', 'Arial', sans-serif",
-          },
-          h6: {
-            color: darkMode ? "#FFFFFF" : "#2B8264",
-            fontFamily:
-              i18n.language === "ku"
-                ? "'NRT', 'Noto Sans Kurdish', 'Scheherazade New', 'Arial', sans-serif"
-                : "'Roboto', 'Helvetica', 'Arial', sans-serif",
-          },
-        },
-        components: {
-          MuiAppBar: {
-            styleOverrides: {
-              root: {
-                backgroundColor: darkMode ? "#24423B" : "#2B8264",
-              },
-            },
-          },
-          MuiButton: {
-            styleOverrides: {
-              root: {
-                borderRadius: 8,
-                textTransform: "none",
-                fontWeight: 600,
-              },
-              contained: {
-                backgroundColor: darkMode ? "#2B8264" : "#2B8264",
-                "&:hover": {
-                  backgroundColor: darkMode ? "#1E5F49" : "#1E5F49",
-                },
-              },
-              outlined: {
-                borderColor: "#2B8264",
-                color: "#2B8264",
-                "&:hover": {
-                  borderColor: "#1E5F49",
-                  backgroundColor: darkMode
-                    ? "rgba(43, 130, 100, 0.2)"
-                    : "rgba(43, 130, 100, 0.04)",
-                },
-              },
-            },
-          },
-          MuiCard: {
-            styleOverrides: {
-              root: {
-                borderRadius: 12,
-                boxShadow: darkMode
-                  ? "0 4px 12px rgba(0,0,0,0.15)"
-                  : "0 4px 12px rgba(43,130,100,0.1)",
-                border: darkMode
-                  ? "1px solid #396A5A"
-                  : "1px solid rgba(165, 214, 194, 0.3)",
-              },
-            },
-          },
-          MuiChip: {
-            styleOverrides: {
-              root: { borderRadius: 16 },
-              colorPrimary: {
-                backgroundColor: "#2B8264",
-                color: "#FFFFFF",
-              },
-            },
-          },
-          MuiPaper: {
-            styleOverrides: {
-              root: { borderRadius: 12 },
-            },
-          },
-        },
-      }),
-    [darkMode]
+    () => createAppTheme({ darkMode, language: i18n.language }),
+    [darkMode, i18n.language]
   );
 
   return (

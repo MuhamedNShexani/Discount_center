@@ -232,8 +232,8 @@ const BrandList = () => {
               backgroundColor:
                 selectedType === tItem.key
                   ? theme.palette.mode === "dark"
-                    ? "#40916c"
-                    : "#34495e"
+                    ? "#4A90E2"
+                    : "#1E6FD9"
                   : "transparent",
               color: selectedType === tItem.key ? "white" : "inherit",
             }}
@@ -269,7 +269,7 @@ const BrandList = () => {
                 overflow: "hidden",
                 background:
                   theme.palette.mode === "dark"
-                    ? "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)"
+                    ? "linear-gradient(135deg, #1E6FD9 0%, #4A90E2 100%)"
                     : "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
                 border: "none",
                 boxShadow:
@@ -305,8 +305,8 @@ const BrandList = () => {
                   overflow: "hidden",
                   background:
                     theme.palette.mode === "dark"
-                      ? "linear-gradient(135deg, #52b788 0%, #40916c 100%)"
-                      : "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)",
+                      ? "linear-gradient(135deg, #FFA94D 0%, #FF7A1A 100%)"
+                      : "linear-gradient(135deg, #1E6FD9 0%, #4A90E2 100%)",
                 }}
               >
                 {brand.logo ? (
@@ -460,7 +460,7 @@ const BrandList = () => {
                         mr: 1,
                         mt: 0.25,
                         color:
-                          theme.palette.mode === "dark" ? "#52b788" : "#40916c",
+                          theme.palette.mode === "dark" ? "#FFA94D" : "#FF7A1A",
                       }}
                     />
                     <Typography
@@ -492,7 +492,7 @@ const BrandList = () => {
                         fontSize: 16,
                         mr: 1,
                         color:
-                          theme.palette.mode === "dark" ? "#52b788" : "#40916c",
+                          theme.palette.mode === "dark" ? "#FFA94D" : "#FF7A1A",
                       }}
                     />
                     <Typography
@@ -541,8 +541,8 @@ const BrandList = () => {
                     sx={{
                       background:
                         theme.palette.mode === "dark"
-                          ? "linear-gradient(135deg, rgba(82, 183, 136, 0.1) 0%, rgba(64, 145, 108, 0.1) 100%)"
-                          : "linear-gradient(135deg, rgba(82, 183, 136, 0.05) 0%, rgba(64, 145, 108, 0.05) 100%)",
+                          ? "linear-gradient(135deg, rgba(255, 169, 77, 0.14) 0%, rgba(255, 122, 26, 0.14) 100%)"
+                          : "linear-gradient(135deg, rgba(255, 169, 77, 0.08) 0%, rgba(255, 122, 26, 0.08) 100%)",
                       borderRadius: 2,
                       py: 1,
                       px: 2,
@@ -554,7 +554,7 @@ const BrandList = () => {
                       variant="body2"
                       sx={{
                         color:
-                          theme.palette.mode === "dark" ? "#52b788" : "#40916c",
+                          theme.palette.mode === "dark" ? "#FFA94D" : "#FF7A1A",
                         fontWeight: 600,
                         textAlign: "center",
                         fontSize: "0.875rem",

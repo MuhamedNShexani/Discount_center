@@ -160,14 +160,14 @@ const FavouritesPage = () => {
             mt: { xs: 4, md: 3 },
             mb: 3,
             borderRadius: 2,
-            borderColor: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
-            color: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+            borderColor: theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
+            color: theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
             "&:hover": {
               borderColor:
-                theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+                theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
               backgroundColor:
-                theme.palette.mode === "dark" ? "#40916c" : "#34495e",
-              color: theme.palette.mode === "dark" ? "#52b788" : "white",
+                theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
+              color: theme.palette.mode === "dark" ? "#FFA94D" : "white",
             },
           }}
         >
@@ -196,14 +196,14 @@ const FavouritesPage = () => {
             mt: { xs: 4, md: 3 },
             mb: 3,
             borderRadius: 2,
-            borderColor: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
-            color: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+            borderColor: theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
+            color: theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
             "&:hover": {
               borderColor:
-                theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+                theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
               backgroundColor:
-                theme.palette.mode === "dark" ? "#40916c" : "#34495e",
-              color: theme.palette.mode === "dark" ? "#52b788" : "white",
+                theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
+              color: theme.palette.mode === "dark" ? "#FFA94D" : "white",
             },
           }}
         >
@@ -224,13 +224,13 @@ const FavouritesPage = () => {
           mt: { xs: 4, md: 3 },
           mb: 3,
           borderRadius: 2,
-          borderColor: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
-          color: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+          borderColor: theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
+          color: theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
           "&:hover": {
-            borderColor: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+            borderColor: theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
             backgroundColor:
-              theme.palette.mode === "dark" ? "#40916c" : "#34495e",
-            color: theme.palette.mode === "dark" ? "#52b788" : "white",
+              theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
+            color: theme.palette.mode === "dark" ? "#FFA94D" : "white",
           },
         }}
       >
@@ -241,7 +241,7 @@ const FavouritesPage = () => {
         sx={{
           mb: 3,
           fontWeight: 700,
-          color: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+          color: theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
         }}
       >
         {t("Favourites")}
@@ -448,7 +448,7 @@ const FavouritesPage = () => {
                       <Typography
                         variant="h6"
                         sx={{
-                          color: "#52b788",
+                          color: "var(--brand-light-orange)",
                           fontWeight: 700,
                           fontSize: { xs: "1.1rem", sm: "1.3rem" },
                         }}

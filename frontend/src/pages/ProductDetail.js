@@ -331,13 +331,13 @@ const ProductDetail = () => {
         sx={{
           borderRadius: 2,
           mb: { xs: 2, md: 3 },
-          borderColor: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
-          color: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+          borderColor: theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
+          color: theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
           "&:hover": {
-            borderColor: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+            borderColor: theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
             backgroundColor:
-              theme.palette.mode === "dark" ? "#40916c" : "#34495e",
-            color: theme.palette.mode === "dark" ? "#52b788" : "white",
+              theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
+            color: theme.palette.mode === "dark" ? "#FFA94D" : "white",
           },
         }}
       >
@@ -623,7 +623,7 @@ const ProductDetail = () => {
                     {t("Price")}:{" "}
                     <span
                       style={{
-                        color: "#52b788",
+                        color: "var(--brand-light-orange)",
                         fontWeight: 700,
                       }}
                     >
@@ -880,7 +880,7 @@ const ProductDetail = () => {
             borderRadius: 2,
             background:
               theme.palette.mode === "dark"
-                ? "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)"
+                ? "linear-gradient(135deg, #1E6FD9 0%, #4A90E2 100%)"
                 : "linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%)",
           }}
         >
@@ -898,7 +898,7 @@ const ProductDetail = () => {
             }}
           >
             <ShoppingCartIcon
-              sx={{ fontSize: { xs: 20, sm: 24, md: 28 }, color: "#52b788" }}
+              sx={{ fontSize: { xs: 20, sm: 24, md: 28 }, color: "var(--brand-light-orange)" }}
             />
             {t("Related Products")}
           </Typography>
@@ -923,7 +923,7 @@ const ProductDetail = () => {
                   borderRadius: 4,
                 },
                 "&::-webkit-scrollbar-thumb": {
-                  backgroundColor: "#52b788",
+                  backgroundColor: "var(--brand-accent-orange)",
                   borderRadius: 4,
                   "&:hover": {
                     backgroundColor: "#45a049",
@@ -945,7 +945,7 @@ const ProductDetail = () => {
                     borderRadius: { xs: 2, sm: 3, md: 3 },
                     background:
                       theme.palette.mode === "dark"
-                        ? "linear-gradient(135deg, #34495e 0%, #2c3e50 100%)"
+                        ? "linear-gradient(135deg, #4A90E2 0%, #1E6FD9 100%)"
                         : "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
                     border: `1px solid ${
                       theme.palette.mode === "dark" ? "#4a5568" : "#e2e8f0"
@@ -1017,9 +1017,9 @@ const ProductDetail = () => {
                           sx={{
                             fontSize: { xs: "0.6rem", sm: "0.7rem" },
                             mb: 1,
-                            borderColor: "#52b788",
-                            color: "#52b788",
-                            backgroundColor: "rgba(82, 183, 136, 0.05)",
+                            borderColor: "var(--brand-accent-orange)",
+                            color: "var(--brand-accent-orange)",
+                            backgroundColor: "rgba(255, 122, 26, 0.05)",
                             height: { xs: "20px", sm: "24px" },
                           }}
                         />
@@ -1094,7 +1094,7 @@ const ProductDetail = () => {
                           <Typography
                             variant="h6"
                             sx={{
-                              color: "#52b788",
+                              color: "var(--brand-light-orange)",
                               fontWeight: 700,
                               fontSize: {
                                 xs: "1.1rem",

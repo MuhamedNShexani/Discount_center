@@ -42,7 +42,7 @@ const StoreCard = ({ store, index, theme, t, onClick }) => {
           boxShadow: "0 6px 18px rgba(0,0,0,0.1)",
           background:
             theme.palette.mode === "dark"
-              ? "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)"
+              ? "linear-gradient(135deg, #1E6FD9 0%, #4A90E2 100%)"
               : "#ffffff",
           "&:hover": {
             transform: { xs: "none", sm: "translateY(-8px) scale(1.02)" },
@@ -60,8 +60,8 @@ const StoreCard = ({ store, index, theme, t, onClick }) => {
             width: { xs: 120, sm: "100%" },
             background:
               theme.palette.mode === "dark"
-                ? "linear-gradient(135deg,rgb(255, 255, 255) 0%, #34495e 100%)"
-                : "linear-gradient(135deg,rgb(0, 0, 0) 0%, #34495e 100%)",
+                ? "linear-gradient(135deg,rgb(255, 255, 255) 0%, #4A90E2 100%)"
+                : "linear-gradient(135deg,rgb(0, 0, 0) 0%, #1E6FD9 100%)",
             flexShrink: { xs: 0, sm: 1 },
           }}
         >
@@ -194,13 +194,13 @@ const StoreCard = ({ store, index, theme, t, onClick }) => {
               sx={{
                 backgroundColor:
                   theme.palette.mode === "dark"
-                    ? "rgba(82, 183, 136, 0.15)"
-                    : "rgba(82, 183, 136, 0.1)",
-                color: theme.palette.mode === "dark" ? "#40916c" : "#34495e",
+                    ? "rgba(255, 122, 26, 0.15)"
+                    : "rgba(255, 122, 26, 0.1)",
+                color: theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
                 border: `1px solid ${
                   theme.palette.mode === "dark"
-                    ? "rgba(82, 183, 136, 0.3)"
-                    : "rgba(82, 183, 136, 0.2)"
+                    ? "rgba(255, 122, 26, 0.3)"
+                    : "rgba(255, 122, 26, 0.2)"
                 }`,
                 fontWeight: 600,
                 alignSelf: { xs: "flex-start", sm: "center" },
@@ -445,8 +445,8 @@ const StoreList = () => {
                 backgroundColor:
                   selectedTypeId === tItem._id
                     ? theme.palette.mode === "dark"
-                      ? "#40916c"
-                      : "#34495e"
+                      ? "#4A90E2"
+                      : "#1E6FD9"
                     : "transparent",
                 color: selectedTypeId === tItem._id ? "white" : "inherit",
               }}
