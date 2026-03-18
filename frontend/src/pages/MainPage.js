@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   Card,
   CardContent,
@@ -23,6 +23,7 @@ import {
   Tabs,
   Tab,
   Skeleton,
+  useMediaQuery,
 } from "@mui/material";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
@@ -63,6 +64,7 @@ import { usePullToRefresh } from "../hooks/usePullToRefresh";
 
 const MainPage = () => {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const navigate = useNavigate();
   const [stores, setStores] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
@@ -92,6 +94,8 @@ const MainPage = () => {
 
   // Scroll to top state
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [showMainTabs, setShowMainTabs] = useState(true);
+  const lastMainScrollYRef = useRef(0);
 
   // Stores pagination state
   const [displayedStores, setDisplayedStores] = useState([]);
@@ -271,7 +275,7 @@ const MainPage = () => {
     const handleScroll = () => {
       const scrollTop =
         window.pageYOffset || document.documentElement.scrollTop;
-      setShowScrollTop(scrollTop > 300);
+      setShowScrollTop(scrollTop > 200000);
     };
 
     window.addEventListener("scroll", handleScroll);
@@ -280,6 +284,41 @@ const MainPage = () => {
 
   // Pull-to-refresh on mobile: pull down from top to reload page data
   usePullToRefresh(fetchData);
+
+  // Mobile behavior for For You / Following tabs:
+  // hide on scroll down, show on scroll up.
+  useEffect(() => {
+    if (!isMobile) {
+      setShowMainTabs(true);
+      return undefined;
+    }
+
+    lastMainScrollYRef.current = window.scrollY || 0;
+
+    const handleMainTabsScroll = () => {
+      const currentY = window.scrollY || 0;
+      const previousY = lastMainScrollYRef.current;
+
+      if (currentY <= 0) {
+        setShowMainTabs(true);
+        lastMainScrollYRef.current = 0;
+        return;
+      }
+
+      if (Math.abs(currentY - previousY) < 4) return;
+
+      if (currentY > previousY) {
+        setShowMainTabs(false);
+      } else {
+        setShowMainTabs(true);
+      }
+
+      lastMainScrollYRef.current = currentY;
+    };
+
+    window.addEventListener("scroll", handleMainTabsScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleMainTabsScroll);
+  }, [isMobile]);
 
   // Scroll to top function
   const scrollToTop = () => {
@@ -880,6 +919,13 @@ const MainPage = () => {
           alignItems: "center",
           boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
           margin: "0 auto",
+          transform: !isMobile
+            ? "translateY(0)"
+            : showMainTabs
+            ? "translateY(0)"
+            : "translateY(-130%)",
+          transition: "transform 240ms ease",
+          willChange: "transform",
         }}
       >
         <Tabs
@@ -1818,7 +1864,7 @@ const MainPage = () => {
                         width: { xs: "100%", md: "100%" },
                         height:
                           productRows.length > 1
-                            ? { xs: "520px", sm: "680px", md: "auto" } // Increased to fully show 2 rows
+                            ? { xs: "505px", sm: "680px", md: "auto" } // Increased to fully show 2 rows
                             : { xs: "auto", sm: "300px", md: "auto" },
                       }}
                     >

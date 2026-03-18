@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   AppBar,
   Toolbar,
@@ -98,6 +98,8 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
   const location = useLocation();
   const isAuthenticated = !!user;
   const isAdmin = !!user && user.email === "mshexani45@gmail.com";
+  const [showMobileNavbar, setShowMobileNavbar] = useState(true);
+  const lastScrollYRef = useRef(0);
   // Profile menu state
   const [profileAnchorEl, setProfileAnchorEl] = useState(null);
 
@@ -208,6 +210,43 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
     //   : []),
   ];
 
+  useEffect(() => {
+    if (isSmUp) {
+      setShowMobileNavbar(true);
+      return undefined;
+    }
+
+    lastScrollYRef.current = window.scrollY || 0;
+
+    const handleScroll = () => {
+      const currentY = window.scrollY || 0;
+      const prevY = lastScrollYRef.current;
+
+      // Always show when at top.
+      if (currentY <= 0) {
+        setShowMobileNavbar(true);
+        lastScrollYRef.current = 0;
+        return;
+      }
+
+      // Ignore tiny movement to avoid flicker.
+      if (Math.abs(currentY - prevY) < 4) return;
+
+      if (currentY > prevY) {
+        // Scrolling down -> hide
+        setShowMobileNavbar(false);
+      } else {
+        // Scrolling up -> show
+        setShowMobileNavbar(true);
+      }
+
+      lastScrollYRef.current = currentY;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isSmUp]);
+
   return (
     <>
       <AppBar
@@ -226,6 +265,13 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
             theme.palette.mode === "dark"
               ? "0 8px 32px rgba(0,0,0,0.3)"
               : "0 8px 32px rgba(0,0,0,0.1)",
+          transform: isSmUp
+            ? "translateY(0)"
+            : showMobileNavbar
+            ? "translateY(0)"
+            : "translateY(-110%)",
+          transition: "transform 260ms ease",
+          willChange: "transform",
         }}
       >
         <Toolbar
