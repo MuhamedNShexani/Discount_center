@@ -10,6 +10,7 @@ import {
   Fade,
   Chip,
   IconButton,
+  Skeleton,
 } from "@mui/material";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { brandAPI, adAPI, brandTypeAPI } from "../services/api";
@@ -81,7 +82,7 @@ const BrandList = () => {
         err.response?.data?.message ||
           err.response?.data?.msg ||
           err.message ||
-          "Network error. Please check your connection."
+          "Network error. Please check your connection.",
       );
       console.error("Error fetching Brands:", err);
     } finally {
@@ -138,14 +139,39 @@ const BrandList = () => {
           storeId: ad.storeId,
           giftId: ad.giftId,
         })),
-    [bannerAds]
+    [bannerAds],
   );
 
   const handleBrandClick = (brand) => {
     navigate(`/brands/${brand._id}`);
   };
 
-  if (loading) return <Loader message={t("Loading...")} />;
+  if (loading)
+    return (
+      <Box sx={{ py: { xs: 5, md: 10 }, px: { xs: 0.5, sm: 1.5, md: 3 } }}>
+        <Skeleton
+          variant="rounded"
+          sx={{ width: "100%", height: { xs: 150, md: 250 }, mb: 3 }}
+        />
+        <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} variant="rounded" width={96} height={32} />
+          ))}
+        </Box>
+        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i} sx={{ width: { xs: "100%", sm: 260, md: 280 } }}>
+              <Skeleton variant="rectangular" sx={{ height: 180 }} />
+              <CardContent>
+                <Skeleton variant="text" width="70%" height={30} />
+                <Skeleton variant="text" width="95%" />
+                <Skeleton variant="text" width="50%" />
+              </CardContent>
+            </Card>
+          ))}
+        </Box>
+      </Box>
+    );
   if (error) return <Loader message={error} />;
 
   const capitalize = (s) =>
@@ -167,11 +193,11 @@ const BrandList = () => {
         <Box
           sx={{
             width: "100%",
-            height: { xs: "100px", sm: "150px", md: "250px" },
+            height: { xs: "150px", sm: "150px", md: "250px" },
             borderRadius: { xs: 2, md: 3 },
             overflow: "hidden",
             boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
-            mb: 6,
+            mb: 4,
             mt: { xs: 0, md: 5 },
           }}
         >
@@ -184,10 +210,10 @@ const BrandList = () => {
                       ad.brandId
                         ? navigate(`/brands/${ad.brandId}`)
                         : ad.storeId
-                        ? navigate(`/stores/${ad.storeId}`)
-                        : ad.giftId
-                        ? navigate(`/gifts/${ad.giftId}`)
-                        : null
+                          ? navigate(`/stores/${ad.storeId}`)
+                          : ad.giftId
+                            ? navigate(`/gifts/${ad.giftId}`)
+                            : null
                     }
                     src={ad.src}
                     alt={`Banner ${index + 1}`}
@@ -413,7 +439,7 @@ const BrandList = () => {
                       textAlign: "center",
                     }}
                   >
-                    {brand.name}
+                    {brand.statusAll === "off" ? "" : brand.name}
                   </Typography>
                   {brand.isVip && (
                     <Box

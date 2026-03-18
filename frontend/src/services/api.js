@@ -72,6 +72,7 @@ export const brandTypeAPI = {
 
 export const brandAPI = {
   getAll: () => api.get("/brands"),
+  getAllIncludingHidden: () => api.get("/brands/all"),
   getById: (id) => api.get(`/brands/${id}`),
   create: (data) => api.post("/brands", data),
   update: (id, data) => api.put(`/brands/${id}`, data),

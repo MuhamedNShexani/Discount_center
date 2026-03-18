@@ -12,6 +12,12 @@ const brandSchema = new mongoose.Schema({
   phone: { type: String },
   description: { type: String },
   isVip: { type: Boolean, default: false },
+  expireDate: { type: Date, default: null },
+  statusAll: {
+    type: String,
+    enum: ["on", "off"],
+    default: "on",
+  },
 });
 
 module.exports = mongoose.model("Brand", brandSchema);

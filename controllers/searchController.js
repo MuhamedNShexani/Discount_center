@@ -19,34 +19,58 @@ const search = async (req, res) => {
     const regex = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
     const limit = 20;
 
-    const storeQuery = { name: regex, show: { $ne: false } };
+    const storeQuery = {
+      name: regex,
+      show: { $ne: false },
+      statusAll: { $ne: "off" },
+    };
     if (city) storeQuery.storecity = city;
 
     // When city is set, we need all store IDs in that city for product search (not only stores matching the query)
     const storeIdsInCityPromise = city
-      ? Store.find({ storecity: city }).select("_id").lean()
+      ? Store.find({
+          storecity: city,
+          show: { $ne: false },
+          statusAll: { $ne: "off" },
+        })
+          .select("_id")
+          .lean()
       : Promise.resolve([]);
 
-    const [stores, storeIdsInCityDocs, productsRaw, brandsAll] = await Promise.all([
+    const [
+      stores,
+      storeIdsInCityDocs,
+      visibleStoreIdsDocs,
+      productsRaw,
+      brandsAll,
+    ] =
+      await Promise.all([
       Store.find(storeQuery)
         .populate("storeTypeId", "name icon")
         .limit(limit)
         .lean(),
       storeIdsInCityPromise,
+      Store.find({
+        show: { $ne: false },
+        statusAll: { $ne: "off" },
+      })
+        .select("_id")
+        .lean(),
       city
         ? null
         : Product.find({ name: regex })
-            .populate("brandId", "name logo")
+            .populate("brandId", "name logo statusAll")
             .populate("storeId", "name logo")
             .limit(limit)
             .lean(),
-      Brand.find({ name: regex })
+      Brand.find({ name: regex, statusAll: { $ne: "off" } })
         .populate("brandTypeId", "name")
         .limit(limit)
         .lean(),
-    ]);
+      ]);
 
     const storeIdsInCity = (storeIdsInCityDocs || []).map((s) => s._id);
+    const visibleStoreIds = (visibleStoreIdsDocs || []).map((s) => String(s._id));
 
     let products;
     let brands;
@@ -56,7 +80,7 @@ const search = async (req, res) => {
         name: regex,
         storeId: { $in: storeIdsInCity },
       })
-        .populate("brandId", "name logo")
+        .populate("brandId", "name logo statusAll")
         .populate("storeId", "name logo")
         .limit(limit)
         .lean();
@@ -75,7 +99,11 @@ const search = async (req, res) => {
         brandIdsFromProducts.includes(b._id.toString())
       );
     } else {
-      products = productsRaw || [];
+      products = (productsRaw || []).filter((p) => {
+        const storeId = p.storeId && (p.storeId._id || p.storeId);
+        const storeOk = !storeId || visibleStoreIds.includes(String(storeId));
+        return storeOk;
+      });
       brands = brandsAll;
     }
 

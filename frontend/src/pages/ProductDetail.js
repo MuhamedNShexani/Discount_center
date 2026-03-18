@@ -443,7 +443,7 @@ const ProductDetail = () => {
                 </Box>
               )}
 
-              {product.brandId && (
+              {product.brandId && product.brandId.statusAll !== "off" && (
                 <Box display="flex" alignItems="center" mb={2}>
                   <BusinessIcon
                     sx={{
@@ -496,7 +496,7 @@ const ProductDetail = () => {
                       fontSize: { xs: "0.875rem", sm: "1rem", md: "1.25rem" },
                     }}
                   >
-                    {t("Store")}:{" "}
+                    {t("store")}:{" "}
                     <span
                       style={{
                         color:
@@ -898,7 +898,10 @@ const ProductDetail = () => {
             }}
           >
             <ShoppingCartIcon
-              sx={{ fontSize: { xs: 20, sm: 24, md: 28 }, color: "var(--brand-light-orange)" }}
+              sx={{
+                fontSize: { xs: 20, sm: 24, md: 28 },
+                color: "var(--brand-light-orange)",
+              }}
             />
             {t("Related Products")}
           </Typography>
@@ -1025,26 +1028,27 @@ const ProductDetail = () => {
                         />
                       )} */}
 
-                      {relatedProduct.brandId && (
-                        <Box display="flex" alignItems="center" mb={0.5}>
-                          <BusinessIcon
-                            sx={{
-                              fontSize: { xs: 12, sm: 14, md: 16 },
-                              mr: 0.5,
-                              color: "text.secondary",
-                            }}
-                          />
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              color: "text.secondary",
-                              fontSize: { xs: "0.7rem", sm: "0.75rem" },
-                            }}
-                          >
-                            {relatedProduct.brandId.name}
-                          </Typography>
-                        </Box>
-                      )}
+                      {relatedProduct.brandId &&
+                        relatedProduct.brandId.statusAll !== "off" && (
+                          <Box display="flex" alignItems="center" mb={0.5}>
+                            <BusinessIcon
+                              sx={{
+                                fontSize: { xs: 12, sm: 14, md: 16 },
+                                mr: 0.5,
+                                color: "text.secondary",
+                              }}
+                            />
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                color: "text.secondary",
+                                fontSize: { xs: "0.7rem", sm: "0.75rem" },
+                              }}
+                            >
+                              {relatedProduct.brandId.name}
+                            </Typography>
+                          </Box>
+                        )}
 
                       {relatedProduct.storeId && (
                         <Box display="flex" alignItems="center" mb={1}>

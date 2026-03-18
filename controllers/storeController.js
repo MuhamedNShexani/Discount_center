@@ -1,11 +1,13 @@
 const Store = require("../models/Store");
 const Product = require("../models/Product");
 
+const publicStoreFilter = { statusAll: { $ne: "off" } };
+
 // @desc    Get all stores (including hidden ones)
 // @route   GET /api/stores
 const getStores = async (req, res) => {
   try {
-    const stores = await Store.find()
+    const stores = await Store.find(publicStoreFilter)
       .populate("storeTypeId", "name icon")
       .sort({ isVip: -1, name: 1 });
     res.json(stores);
@@ -19,7 +21,10 @@ const getStores = async (req, res) => {
 // @route   GET /api/stores/visible
 const getVisibleStores = async (req, res) => {
   try {
-    const stores = await Store.find({ show: true })
+    const stores = await Store.find({
+      show: true,
+      ...publicStoreFilter,
+    })
       .populate("storeTypeId", "name icon")
       .sort({ isVip: -1, name: 1 });
     res.json(stores);
@@ -33,10 +38,10 @@ const getVisibleStores = async (req, res) => {
 // @route   GET /api/stores/:id
 const getStoreById = async (req, res) => {
   try {
-    const store = await Store.findById(req.params.id).populate(
-      "storeTypeId",
-      "name icon"
-    );
+    const store = await Store.findOne({
+      _id: req.params.id,
+      ...publicStoreFilter,
+    }).populate("storeTypeId", "name icon");
     if (!store) return res.status(404).json({ msg: "Store not found" });
     res.json(store);
   } catch (err) {
@@ -64,6 +69,8 @@ const createStore = async (req, res) => {
       storeTypeId: resolvedStoreTypeId,
       branches: rest.branches || [],
       show: rest.show !== undefined ? rest.show : true,
+      statusAll: rest.statusAll === "off" ? "off" : "on",
+      expireDate: rest.expireDate || null,
     };
 
     const store = new Store(storeData);
@@ -100,6 +107,12 @@ const updateStore = async (req, res) => {
     }
     if (rest.show !== undefined) {
       updateDoc.show = rest.show;
+    }
+    if (rest.statusAll !== undefined) {
+      updateDoc.statusAll = rest.statusAll === "off" ? "off" : "on";
+    }
+    if (rest.expireDate !== undefined) {
+      updateDoc.expireDate = rest.expireDate || null;
     }
 
     const store = await Store.findByIdAndUpdate(req.params.id, updateDoc, {

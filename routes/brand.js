@@ -3,6 +3,7 @@ const router = express.Router();
 const XLSX = require("xlsx");
 const {
   getBrands,
+  getAllBrands,
   getBrandById,
   createBrand,
   updateBrand,
@@ -13,6 +14,10 @@ const upload = require("../middleware/upload");
 // @route   GET /api/brands
 // @desc    Get all brands
 router.get("/", getBrands);
+
+// @route   GET /api/brands/all
+// @desc    Get all brands (including statusAll = off) - admin
+router.get("/all", getAllBrands);
 
 // @route   GET /api/brands/:id
 // @desc    Get brand by ID

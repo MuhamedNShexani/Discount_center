@@ -25,6 +25,7 @@ import {
   DialogContent,
   DialogActions,
   Button,
+  Skeleton,
 } from "@mui/material";
 import { Search, FilterList, Store, Business } from "@mui/icons-material";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
@@ -116,7 +117,7 @@ const Gifts = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   const bannerSettings = {
     dots: true,
@@ -619,7 +620,12 @@ const Gifts = () => {
                 }}
               >
                 <Business
-                  sx={{ fontSize: 16, mr: 1, color: "var(--brand-light-orange)", flexShrink: 0 }}
+                  sx={{
+                    fontSize: 16,
+                    mr: 1,
+                    color: "var(--brand-light-orange)",
+                    flexShrink: 0,
+                  }}
                 />
                 <Typography
                   variant="body2"
@@ -645,7 +651,10 @@ const Gifts = () => {
                 label={`${t("Expires")}: ${remainingDays} ${t("days")}`}
                 size="small"
                 sx={{
-                  bgcolor: remainingDays <= 7 ? "#ff6b6b" : "var(--brand-accent-orange)",
+                  bgcolor:
+                    remainingDays <= 7
+                      ? "#ff6b6b"
+                      : "var(--brand-accent-orange)",
                   color: "white",
                   fontSize: { xs: "0.5rem", sm: "0.75rem", md: "0.75rem" },
                 }}
@@ -661,13 +670,37 @@ const Gifts = () => {
 
   if (loading) {
     return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="400px"
-      >
-        <CircularProgress />
+      <Box sx={{ py: { xs: 5, md: 10 }, px: { xs: 0.5, sm: 1.5, md: 3 } }}>
+        <Skeleton
+          variant="rounded"
+          sx={{ width: "100%", height: { xs: 150, md: 250 }, mb: 3 }}
+        />
+        <Box sx={{ mb: 2, display: "flex", justifyContent: "center" }}>
+          <Skeleton variant="rounded" width={260} height={42} />
+        </Box>
+        <Box sx={{ mb: 2, display: "flex", gap: 1, flexWrap: "wrap" }}>
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} variant="rounded" width={110} height={38} />
+          ))}
+        </Box>
+        <Grid container spacing={2}>
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+            <Grid item xs={6} sm={4} md={3} key={i}>
+              <Card sx={{ borderRadius: 3, overflow: "hidden" }}>
+                <Skeleton variant="rectangular" sx={{ height: { xs: 130, sm: 160 } }} />
+                <CardContent sx={{ p: { xs: 1, sm: 1.5 } }}>
+                  <Skeleton variant="text" width="85%" height={24} />
+                  <Skeleton variant="text" width="65%" height={20} />
+                  <Box sx={{ display: "flex", gap: 0.5, mt: 0.5, mb: 1 }}>
+                    <Skeleton variant="rounded" width={56} height={20} />
+                    <Skeleton variant="rounded" width={70} height={20} />
+                  </Box>
+                  <Skeleton variant="rounded" width="62%" height={28} />
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
       </Box>
     );
   }
@@ -694,11 +727,12 @@ const Gifts = () => {
     : [];
 
   return (
-    <Box sx={{ py: 8, px: { xs: 0.5, sm: 1.5, md: 3 } }}>
+    <Box sx={{ py: { xs: 5, md: 10 }, px: { xs: 0.5, sm: 1.5, md: 3 } }}>
       {/* Banner Slider Section (from Ads: pages includes gifts/all) */}
       <Box
         sx={{
           mb: 2,
+          // position: { xs: "sticky", md: "static" },
           top: { xs: 100, md: "auto" },
           zIndex: { xs: 1000, md: "auto" },
         }}
@@ -706,11 +740,12 @@ const Gifts = () => {
         <Box
           sx={{
             width: "100%",
-            height: { xs: "100px", sm: "150px", md: "220px" },
+            height: { xs: "150px", sm: "150px", md: "250px" },
             borderRadius: { xs: 2, md: 3 },
             overflow: "hidden",
             boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
-            mb: 3,
+            mb: 4,
+            mt: { xs: 0, md: 5 },
           }}
         >
           {bannerAdsWithImages.length > 0 && (
@@ -733,10 +768,7 @@ const Gifts = () => {
                       width: "100%",
                       height: "100%",
                       objectFit: "contain",
-                      cursor:
-                        ad.brandId || ad.storeId || ad.giftId
-                          ? "pointer"
-                          : "default",
+                      cursor: ad.brandId ? "pointer" : "default",
                     }}
                   />
                 </div>

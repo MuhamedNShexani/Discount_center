@@ -375,8 +375,10 @@ const SearchPage = () => {
                       primary={getLocalizedName(p, "name", lang) || p.name}
                       secondary={
                         [
-                          getLocalizedName(p.brandId, "name", lang) ||
-                            p.brandId?.name,
+                          p.brandId?.statusAll === "off"
+                            ? null
+                            : (getLocalizedName(p.brandId, "name", lang) ||
+                              p.brandId?.name),
                           getLocalizedName(p.storeId, "name", lang) ||
                             p.storeId?.name,
                         ]

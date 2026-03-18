@@ -941,8 +941,8 @@ const MainPage = () => {
           position: "relative",
           backgroundColor:
             theme.palette.mode === "dark" ? "#121212" : "#ffffff",
-          px: { xs: 0.5, sm: 1.5, md: 3 },
-          py: 0,
+
+          borderRadius: { xs: 2, md: 3 },
           mb: 2,
           boxSizing: "border-box",
         }}
@@ -952,7 +952,7 @@ const MainPage = () => {
             width: "100%",
             maxWidth: "lg",
             margin: "0 auto",
-            height: { xs: "100px", sm: "150px", md: "250px" },
+            height: { xs: "150px", sm: "200px", md: "250px" },
             borderRadius: { xs: 2, md: 3 },
             overflow: "hidden",
             boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
@@ -977,7 +977,7 @@ const MainPage = () => {
                     style={{
                       width: "100%",
                       height: "100%",
-                      objectFit: "contain",
+                      objectFit: "cover",
                       cursor: ad.brandId ? "pointer" : "default",
                     }}
                   />
@@ -1818,7 +1818,7 @@ const MainPage = () => {
                         width: { xs: "100%", md: "100%" },
                         height:
                           productRows.length > 1
-                            ? { xs: "580px", sm: "680px", md: "auto" } // Increased to fully show 2 rows
+                            ? { xs: "520px", sm: "680px", md: "auto" } // Increased to fully show 2 rows
                             : { xs: "auto", sm: "300px", md: "auto" },
                       }}
                     >
@@ -1894,16 +1894,16 @@ const MainPage = () => {
                               sx={{
                                 display: "flex",
                                 gap: { xs: 0.5, md: 3 },
-                                pb: productRows.length === 1 ? 2 : 0,
+                                pb: productRows.length === 1 ? 1 : 0,
                                 mb:
                                   productRows.length > 1 &&
                                   rowIndex < productRows.length - 1
-                                    ? 0.5
+                                    ? 0.2
                                     : 0,
                                 flexShrink: 0,
                                 minHeight:
                                   productRows.length > 1
-                                    ? { xs: "230px", sm: "330px" }
+                                    ? { xs: "200px", sm: "330px" }
                                     : "auto",
                                 alignItems: "stretch",
                               }}
@@ -1923,7 +1923,7 @@ const MainPage = () => {
                                     sx={{
                                       cursor: "pointer",
                                       height: { xs: "auto", sm: "330px" }, // taller for 2-row visibility
-                                      minHeight: { xs: "230px", sm: "330px" },
+                                      minHeight: { xs: "200px", sm: "330px" },
                                       width: {
                                         xs: "140px",
                                         sm: "200px",
@@ -1934,11 +1934,7 @@ const MainPage = () => {
                                         sm: "200px",
                                         md: "280px",
                                       }, // Reduced width on xs
-                                      minWidth: {
-                                        xs: "140px",
-                                        sm: "200px",
-                                        md: "280px",
-                                      }, // Reduced width on xs
+
                                       borderRadius: 2,
                                       overflow: "hidden",
                                       display: "flex",
@@ -1960,7 +1956,7 @@ const MainPage = () => {
                                       sx={{
                                         position: "relative",
                                         overflow: "hidden",
-                                        height: { xs: "150px", sm: "200px" }, // Reduced height on xs
+                                        height: { xs: "130px", sm: "200px" }, // Reduced height on xs
                                         flexShrink: 0,
                                         backgroundColor: "#f8f9fa",
                                       }}
@@ -1971,14 +1967,14 @@ const MainPage = () => {
                                       {product.image ? (
                                         <CardMedia
                                           component="img"
-                                          height="220"
+                                          height="130"
                                           image={`${process.env.REACT_APP_BACKEND_URL}${product.image}`}
                                           alt={product.name}
                                           sx={{
                                             objectFit: "contain",
                                             width: "100%",
                                             height: {
-                                              xs: "150px", // Reduced height
+                                              xs: "130px", // Reduced height
                                               sm: "200px", // Reduced height
                                               md: "250px",
                                             },
@@ -1992,7 +1988,7 @@ const MainPage = () => {
                                         <Box
                                           sx={{
                                             height: {
-                                              xs: "150px",
+                                              xs: "130px",
                                               sm: "200px",
                                               md: "250px",
                                             },
@@ -2153,7 +2149,7 @@ const MainPage = () => {
                                           flexDirection: "column",
                                           alignItems: "center",
                                           mb: 0,
-                                          minHeight: { xs: "70px", sm: "78px" },
+                                          minHeight: { xs: "56px", sm: "78px" },
                                         }}
                                       >
                                         <Typography
@@ -2512,7 +2508,7 @@ const MainPage = () => {
                       width: { xs: "100%", md: "100%" },
                       height:
                         productRows.length > 1
-                          ? { xs: "600px", sm: "680px", md: "auto" }
+                          ? { xs: "520px", sm: "680px", md: "auto" }
                           : { xs: "auto", sm: "300px", md: "auto" },
                       ...(productRows.length > 1 && {
                         overflowX: "auto",
@@ -2572,7 +2568,7 @@ const MainPage = () => {
                             flexShrink: 0,
                             minHeight:
                               productRows.length > 1
-                                ? { xs: "230px", sm: "330px" }
+                                ? { xs: "200px", sm: "330px" }
                                 : "auto",
                             alignItems: "stretch",
                           }}
@@ -2588,7 +2584,7 @@ const MainPage = () => {
                                 sx={{
                                   cursor: "pointer",
                                   height: { xs: "auto", sm: "330px" },
-                                  minHeight: { xs: "230px", sm: "330px" },
+                                  minHeight: { xs: "200px", sm: "330px" },
                                   width: {
                                     xs: "140px",
                                     sm: "200px",
@@ -2622,7 +2618,7 @@ const MainPage = () => {
                                   sx={{
                                     position: "relative",
                                     overflow: "hidden",
-                                    height: { xs: "150px", sm: "200px" },
+                                    height: { xs: "130px", sm: "200px" },
                                     flexShrink: 0,
                                     backgroundColor: "#f8f9fa",
                                   }}
@@ -2633,12 +2629,12 @@ const MainPage = () => {
                                       component="img"
                                       image={`${process.env.REACT_APP_BACKEND_URL}${product.image}`}
                                       alt={product.name}
-                                      height="220"
+                                      height="130"
                                       sx={{
                                         objectFit: "contain",
                                         width: "100%",
                                         height: {
-                                          xs: "150px",
+                                          xs: "130px",
                                           sm: "200px",
                                           md: "250px",
                                         },
@@ -2649,7 +2645,7 @@ const MainPage = () => {
                                     <Box
                                       sx={{
                                         height: {
-                                          xs: "150px",
+                                          xs: "130px",
                                           sm: "200px",
                                           md: "250px",
                                         },
@@ -2784,7 +2780,7 @@ const MainPage = () => {
                                       flexDirection: "column",
                                       alignItems: "center",
                                       mb: 0,
-                                      minHeight: { xs: "70px", sm: "78px" },
+                                      minHeight: { xs: "56px", sm: "78px" },
                                     }}
                                   >
                                     <Typography
@@ -3120,7 +3116,7 @@ const MainPage = () => {
                             fontSize: { xs: "0.875rem", sm: "1rem" },
                           }}
                         >
-                          {t("Store")}: {selectedProduct.storeId.name}
+                          {t("store")}: {selectedProduct.storeId.name}
                         </Typography>
                       </Box>
                     )}

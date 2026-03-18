@@ -2,6 +2,8 @@ const Brand = require("../models/Brand");
 const Product = require("../models/Product");
 const BrandType = require("../models/BrandType");
 
+const publicBrandFilter = { statusAll: { $ne: "off" } };
+
 async function ensureBrandTypeIdFromLegacy(data) {
   if (!data) return data;
   const next = { ...data };
@@ -28,7 +30,7 @@ async function ensureBrandTypeIdFromLegacy(data) {
 // @route   GET /api/brands
 const getBrands = async (req, res) => {
   try {
-    const brands = await Brand.find()
+    const brands = await Brand.find(publicBrandFilter)
       .populate("brandTypeId")
       .sort({ isVip: -1, name: 1 });
     const serialized = brands.map((b) => {
@@ -52,7 +54,10 @@ const getBrands = async (req, res) => {
 // @route   GET /api/brands/:id
 const getBrandById = async (req, res) => {
   try {
-    const brand = await Brand.findById(req.params.id).populate("brandTypeId");
+    const brand = await Brand.findOne({
+      _id: req.params.id,
+      ...publicBrandFilter,
+    }).populate("brandTypeId");
     if (!brand) return res.status(404).json({ msg: "Brand not found" });
     const obj = brand.toObject();
     const response = {
@@ -69,12 +74,38 @@ const getBrandById = async (req, res) => {
   }
 };
 
+// @desc    Get all brands (including statusAll = off) - for admin
+// @route   GET /api/brands/all
+const getAllBrands = async (req, res) => {
+  try {
+    const brands = await Brand.find().populate("brandTypeId").sort({ isVip: -1, name: 1 });
+    const serialized = brands.map((b) => {
+      const obj = b.toObject();
+      return {
+        ...obj,
+        type:
+          obj.brandTypeId && obj.brandTypeId.name
+            ? obj.brandTypeId.name
+            : undefined,
+      };
+    });
+    res.json(serialized);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+};
+
 // @desc    Create brand
 // @route   POST /api/brands
 const createBrand = async (req, res) => {
   try {
     const body = await ensureBrandTypeIdFromLegacy(req.body);
-    const brand = new Brand(body);
+    const brand = new Brand({
+      ...body,
+      statusAll: body.statusAll === "off" ? "off" : "on",
+      expireDate: body.expireDate || null,
+    });
     await brand.save();
     const populated = await Brand.findById(brand._id).populate("brandTypeId");
     const obj = populated.toObject();
@@ -96,7 +127,14 @@ const createBrand = async (req, res) => {
 const updateBrand = async (req, res) => {
   try {
     const body = await ensureBrandTypeIdFromLegacy(req.body);
-    const brand = await Brand.findByIdAndUpdate(req.params.id, body, {
+    const normalizedBody = { ...body };
+    if (body.statusAll !== undefined) {
+      normalizedBody.statusAll = body.statusAll === "off" ? "off" : "on";
+    }
+    if (body.expireDate !== undefined) {
+      normalizedBody.expireDate = body.expireDate || null;
+    }
+    const brand = await Brand.findByIdAndUpdate(req.params.id, normalizedBody, {
       new: true,
     }).populate("brandTypeId");
     if (!brand) return res.status(404).json({ msg: "Brand not found" });
@@ -141,6 +179,7 @@ const deleteBrand = async (req, res) => {
 
 module.exports = {
   getBrands,
+  getAllBrands,
   getBrandById,
   createBrand,
   updateBrand,

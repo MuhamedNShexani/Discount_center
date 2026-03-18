@@ -83,13 +83,9 @@ const DataEntryForm = () => {
   const { t } = useTranslation();
   const { getAuthHeaders, user } = useAuth();
   const isAdmin =
-    user?.email === "mshexani45@gmail.com" ||
-    user?.email === "admin@gmail.com";
-  const {
-    contactWhatsAppNumber,
-    setContactWhatsAppNumber,
-    fetchSettings,
-  } = useAppSettings();
+    user?.email === "mshexani45@gmail.com" || user?.email === "admin@gmail.com";
+  const { contactWhatsAppNumber, setContactWhatsAppNumber, fetchSettings } =
+    useAppSettings();
   const [settingsContactNumber, setSettingsContactNumber] = useState("");
   const [activeTab, setActiveTab] = useState(0);
   const [activeListTab, setActiveListTab] = useState(0); // State for list tabs
@@ -140,6 +136,8 @@ const DataEntryForm = () => {
     description: "",
     isVip: false,
     brandTypeId: "",
+    expireDate: "",
+    statusAll: "on",
   });
   // Store form state
   const [storeForm, setStoreForm] = useState({
@@ -153,6 +151,8 @@ const DataEntryForm = () => {
     storecity: "Erbil",
     branches: [],
     show: true,
+    expireDate: "",
+    statusAll: "on",
   });
 
   // Product form state
@@ -310,7 +310,7 @@ const DataEntryForm = () => {
 
   const fetchBrands = async () => {
     try {
-      const response = await brandAPI.getAll();
+      const response = await brandAPI.getAllIncludingHidden();
       setBrands(response.data);
     } catch (err) {
       console.error("Error fetching brands:", err);
@@ -368,7 +368,7 @@ const DataEntryForm = () => {
       if (category && category.types) {
         // First try to find by ID (converting ObjectId to string)
         let type = category.types.find(
-          (t) => t._id.toString() === categoryTypeId
+          (t) => t._id.toString() === categoryTypeId,
         );
 
         // If not found by ID, try to find by name directly
@@ -401,6 +401,16 @@ const DataEntryForm = () => {
   // Handler for the new list tabs
   const handleListTabChange = (event, newValue) => {
     setActiveListTab(newValue);
+  };
+
+  const formatDisplayDate = (dateInput) => {
+    if (!dateInput) return "-";
+    const date = new Date(dateInput);
+    if (Number.isNaN(date.getTime())) return "-";
+    const dd = String(date.getDate()).padStart(2, "0");
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const yyyy = date.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
   };
 
   // Pagination handlers
@@ -967,6 +977,9 @@ const DataEntryForm = () => {
         phone: "",
         brandTypeId: "",
         description: "",
+        isVip: false,
+        expireDate: "",
+        statusAll: "on",
       });
       setSelectedBrandLogo(null);
       if (brandLogoFileRef.current) {
@@ -1020,6 +1033,8 @@ const DataEntryForm = () => {
         storecity: "Erbil",
         branches: [],
         show: true,
+        expireDate: "",
+        statusAll: "on",
       });
       setSelectedStoreLogo(null);
       fetchStores(); // Refresh stores list
@@ -1251,6 +1266,10 @@ const DataEntryForm = () => {
         brandTypeId:
           (data.brandTypeId && data.brandTypeId._id) || data.brandTypeId || "",
         description: data.description || "",
+        expireDate: data.expireDate
+          ? new Date(data.expireDate).toISOString().split("T")[0]
+          : "",
+        statusAll: data.statusAll === "off" ? "off" : "on",
       });
     } else if (type === "store") {
       setEditForm({
@@ -1265,6 +1284,10 @@ const DataEntryForm = () => {
         description: data.description || "",
         branches: data.branches || [],
         show: data.show !== undefined ? data.show : true,
+        expireDate: data.expireDate
+          ? new Date(data.expireDate).toISOString().split("T")[0]
+          : "",
+        statusAll: data.statusAll === "off" ? "off" : "on",
       });
     } else if (type === "category") {
       setEditForm({
@@ -1592,7 +1615,7 @@ const DataEntryForm = () => {
         "Cannot delete brand. It has associated products. Please delete the products first."
       ) {
         errorMsg = t(
-          "Cannot delete brand. It has associated products. Please delete the products first."
+          "Cannot delete brand. It has associated products. Please delete the products first.",
         );
       }
       setMessage({
@@ -1679,7 +1702,7 @@ const DataEntryForm = () => {
         "Cannot delete store. It has associated products. Please delete the products first."
       ) {
         errorMsg = t(
-          "Cannot delete store. It has associated products. Please delete the products first."
+          "Cannot delete store. It has associated products. Please delete the products first.",
         );
       }
       setMessage({
@@ -1748,8 +1771,8 @@ const DataEntryForm = () => {
       const confirmed = window.confirm(
         t(
           "Are you sure you want to delete {{count}} expired discount products? This action cannot be undone.",
-          { count: expiredDiscountProducts.length }
-        )
+          { count: expiredDiscountProducts.length },
+        ),
       );
 
       if (!confirmed) return;
@@ -1781,7 +1804,7 @@ const DataEntryForm = () => {
       setMessage({
         type: "error",
         text: t(
-          "Failed to delete expired discount products. Please try again."
+          "Failed to delete expired discount products. Please try again.",
         ),
       });
     } finally {
@@ -2108,6 +2131,24 @@ const DataEntryForm = () => {
                           color: "primary.contrastText",
                         }}
                       >
+                        {t("Status All")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Expire Contact")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
                         {t("Actions")}
                       </TableCell>
                     </TableRow>
@@ -2116,7 +2157,7 @@ const DataEntryForm = () => {
                     {stores
                       .slice(
                         storesPage * rowsPerPage,
-                        storesPage * rowsPerPage + rowsPerPage
+                        storesPage * rowsPerPage + rowsPerPage,
                       )
                       .map((store, idx) => (
                         <TableRow key={store._id}>
@@ -2158,7 +2199,7 @@ const DataEntryForm = () => {
                             {t(
                               store.storeTypeId?.name ||
                                 store.storeType?.name ||
-                                ""
+                                "",
                             )}
                           </TableCell>
                           <TableCell>{store.storecity}</TableCell>
@@ -2198,6 +2239,20 @@ const DataEntryForm = () => {
                             {store.show ? t("Visible") : t("Hidden")}
                           </TableCell>
                           <TableCell>
+                            <Chip
+                              size="small"
+                              label={
+                                store.statusAll === "off" ? t("off") : t("on")
+                              }
+                              color={
+                                store.statusAll === "off" ? "error" : "success"
+                              }
+                            />
+                          </TableCell>
+                          <TableCell>
+                            {formatDisplayDate(store.expireDate)}
+                          </TableCell>
+                          <TableCell>
                             <IconButton
                               color="primary"
                               onClick={() => handleEditOpen("store", store)}
@@ -2214,7 +2269,7 @@ const DataEntryForm = () => {
                                 } catch (error) {
                                   console.error(
                                     "Error toggling store visibility:",
-                                    error
+                                    error,
                                   );
                                 }
                               }}
@@ -2438,7 +2493,7 @@ const DataEntryForm = () => {
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 {t(
-                  "WhatsApp number for Contact Us (with country code, e.g. +9647503683478)"
+                  "WhatsApp number for Contact Us (with country code, e.g. +9647503683478)",
                 )}
               </Typography>
               <Grid container spacing={2} alignItems="center">
@@ -2447,8 +2502,7 @@ const DataEntryForm = () => {
                     fullWidth
                     label={t("Contact WhatsApp Number")}
                     value={settingsContactNumber}
-                    onChange={(e) =>
-                      setSettingsContactNumber(e.target.value)}
+                    onChange={(e) => setSettingsContactNumber(e.target.value)}
                     placeholder="+9647503683478"
                   />
                 </Grid>
@@ -2463,7 +2517,7 @@ const DataEntryForm = () => {
                         const num = settingsContactNumber.trim();
                         await settingsAPI.update(
                           { contactWhatsAppNumber: num },
-                          getAuthHeaders()
+                          getAuthHeaders(),
                         );
                         setContactWhatsAppNumber(num);
                         await fetchSettings();
@@ -2494,7 +2548,7 @@ const DataEntryForm = () => {
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 {t(
-                  "Compose a notification that will be sent to all users (both registered and anonymous)."
+                  "Compose a notification that will be sent to all users (both registered and anonymous).",
                 )}
               </Typography>
               <Grid container spacing={2}>
@@ -2522,8 +2576,7 @@ const DataEntryForm = () => {
                     <InputLabel>{t("Type")}</InputLabel>
                     <Select
                       value={notificationType}
-                      onChange={(e) =>
-                        setNotificationType(e.target.value)}
+                      onChange={(e) => setNotificationType(e.target.value)}
                       label={t("Type")}
                     >
                       <MenuItem value="general">{t("General")}</MenuItem>
@@ -2552,8 +2605,7 @@ const DataEntryForm = () => {
                       <InputLabel>{t("Select Store")}</InputLabel>
                       <Select
                         value={notificationLinkId}
-                        onChange={(e) =>
-                          setNotificationLinkId(e.target.value)}
+                        onChange={(e) => setNotificationLinkId(e.target.value)}
                         label={t("Select Store")}
                       >
                         <MenuItem value="">{t("Select Store")}</MenuItem>
@@ -2570,8 +2622,7 @@ const DataEntryForm = () => {
                       <InputLabel>{t("Select Brand")}</InputLabel>
                       <Select
                         value={notificationLinkId}
-                        onChange={(e) =>
-                          setNotificationLinkId(e.target.value)}
+                        onChange={(e) => setNotificationLinkId(e.target.value)}
                         label={t("Select Brand")}
                       >
                         <MenuItem value="">{t("Select Brand")}</MenuItem>
@@ -2586,17 +2637,21 @@ const DataEntryForm = () => {
                   <Button
                     variant="contained"
                     startIcon={<NotificationsActiveIcon />}
-                    disabled={
-                      !notificationTitle.trim() || notificationSending
-                    }
+                    disabled={!notificationTitle.trim() || notificationSending}
                     onClick={async () => {
                       try {
                         setNotificationSending(true);
                         setMessage({ type: "", text: "" });
                         let link = "";
-                        if (notificationLinkType === "store" && notificationLinkId) {
+                        if (
+                          notificationLinkType === "store" &&
+                          notificationLinkId
+                        ) {
                           link = `/stores/${notificationLinkId}`;
-                        } else if (notificationLinkType === "brand" && notificationLinkId) {
+                        } else if (
+                          notificationLinkType === "brand" &&
+                          notificationLinkId
+                        ) {
                           link = `/brands/${notificationLinkId}`;
                         }
                         const res = await adminAPI.sendNotification({
@@ -2608,10 +2663,13 @@ const DataEntryForm = () => {
                         if (res.data.success) {
                           const msg =
                             res.data.pushSent > 0
-                              ? t("Notification sent to {{count}} users ({{push}} to notification center)", {
-                                  count: res.data.count,
-                                  push: res.data.pushSent,
-                                })
+                              ? t(
+                                  "Notification sent to {{count}} users ({{push}} to notification center)",
+                                  {
+                                    count: res.data.count,
+                                    push: res.data.pushSent,
+                                  },
+                                )
                               : t("Notification sent to {{count}} users", {
                                   count: res.data.count,
                                 });
@@ -2766,6 +2824,24 @@ const DataEntryForm = () => {
                           color: "primary.contrastText",
                         }}
                       >
+                        {t("Status All")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Expire Contact")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
                         {t("Actions")}
                       </TableCell>
                     </TableRow>
@@ -2774,7 +2850,7 @@ const DataEntryForm = () => {
                     {brands
                       .slice(
                         brandsPage * rowsPerPage,
-                        brandsPage * rowsPerPage + rowsPerPage
+                        brandsPage * rowsPerPage + rowsPerPage,
                       )
                       .map((brand, idx) => (
                         <TableRow key={brand._id}>
@@ -2840,6 +2916,20 @@ const DataEntryForm = () => {
                                 }}
                               />
                             )}
+                          </TableCell>
+                          <TableCell>
+                            <Chip
+                              size="small"
+                              label={
+                                brand.statusAll === "off" ? t("off") : t("on")
+                              }
+                              color={
+                                brand.statusAll === "off" ? "error" : "success"
+                              }
+                            />
+                          </TableCell>
+                          <TableCell>
+                            {formatDisplayDate(brand.expireDate)}
                           </TableCell>
                           <TableCell>
                             <IconButton
@@ -3087,7 +3177,7 @@ const DataEntryForm = () => {
                     {products
                       .slice(
                         productsPage * rowsPerPage,
-                        productsPage * rowsPerPage + rowsPerPage
+                        productsPage * rowsPerPage + rowsPerPage,
                       )
                       .map((product, idx) => (
                         <TableRow key={product._id}>
@@ -3123,7 +3213,7 @@ const DataEntryForm = () => {
                           <TableCell>
                             {getCategoryTypeName(
                               product.categoryTypeId,
-                              product.categoryId?._id || product.categoryId
+                              product.categoryId?._id || product.categoryId,
                             )}
                           </TableCell>
                           <TableCell>
@@ -3159,7 +3249,7 @@ const DataEntryForm = () => {
                           <TableCell>
                             {product.expireDate
                               ? new Date(
-                                  product.expireDate
+                                  product.expireDate,
                                 ).toLocaleDateString()
                               : ""}
                           </TableCell>
@@ -3286,7 +3376,7 @@ const DataEntryForm = () => {
                             ? `${cat.storeTypeId?.icon || cat.storeType?.icon} `
                             : ""}
                           {t(
-                            cat.storeTypeId?.name || cat.storeType?.name || ""
+                            cat.storeTypeId?.name || cat.storeType?.name || "",
                           )}
                         </TableCell>
                         <TableCell>
@@ -3316,12 +3406,12 @@ const DataEntryForm = () => {
                                 formData.append("image", file);
                                 const res = await fetch(
                                   `${API_URL}/api/categories/${cat._id}/image`,
-                                  { method: "POST", body: formData }
+                                  { method: "POST", body: formData },
                                 );
                                 if (!res.ok) {
                                   const text = await res.text();
                                   throw new Error(
-                                    text || `Upload failed (${res.status})`
+                                    text || `Upload failed (${res.status})`,
                                   );
                                 }
                                 const json = await res.json();
@@ -3477,7 +3567,7 @@ const DataEntryForm = () => {
                     {(gifts || [])
                       .slice(
                         giftsPage * rowsPerPage,
-                        giftsPage * rowsPerPage + rowsPerPage
+                        giftsPage * rowsPerPage + rowsPerPage,
                       )
                       .map((gift, index) => (
                         <TableRow key={gift._id}>
@@ -3744,7 +3834,7 @@ const DataEntryForm = () => {
                     {ads
                       .slice(
                         adsPage * rowsPerPage,
-                        adsPage * rowsPerPage + rowsPerPage
+                        adsPage * rowsPerPage + rowsPerPage,
                       )
                       .map((ad, idx) => (
                         <TableRow key={ad._id}>
@@ -3770,7 +3860,7 @@ const DataEntryForm = () => {
                             {Array.isArray(ad.pages) && ad.pages.length
                               ? ad.pages
                                   .map((p) =>
-                                    t(p.charAt(0).toUpperCase() + p.slice(1))
+                                    t(p.charAt(0).toUpperCase() + p.slice(1)),
                                   )
                                   .join(", ")
                               : t("All")}
@@ -3869,18 +3959,18 @@ const DataEntryForm = () => {
           {addDialog.type === "brand"
             ? t("Add Brand")
             : addDialog.type === "store"
-            ? t("Add Store")
-            : addDialog.type === "gift"
-            ? t("Add Gift")
-            : addDialog.type === "category"
-            ? t("Add Category")
-            : addDialog.type === "ad"
-            ? t("Add Ad")
-            : addDialog.type === "storeType"
-            ? t("Add Store Type")
-            : addDialog.type === "brandType"
-            ? t("Add Brand Type")
-            : t("Add Product")}
+              ? t("Add Store")
+              : addDialog.type === "gift"
+                ? t("Add Gift")
+                : addDialog.type === "category"
+                  ? t("Add Category")
+                  : addDialog.type === "ad"
+                    ? t("Add Ad")
+                    : addDialog.type === "storeType"
+                      ? t("Add Store Type")
+                      : addDialog.type === "brandType"
+                        ? t("Add Brand Type")
+                        : t("Add Product")}
         </DialogTitle>
         <DialogContent dividers>
           {message.text && (
@@ -3942,10 +4032,14 @@ const DataEntryForm = () => {
                       label={t("Store City")}
                     >
                       <MenuItem value="Erbil">🏛️ {t("city.Erbil")}</MenuItem>
-                      <MenuItem value="Sulaimani">🏔️ {t("city.Sulaimani")}</MenuItem>
+                      <MenuItem value="Sulaimani">
+                        🏔️ {t("city.Sulaimani")}
+                      </MenuItem>
                       <MenuItem value="Duhok">🏞️ {t("city.Duhok")}</MenuItem>
                       <MenuItem value="Kerkuk">🛢️ {t("city.Kerkuk")}</MenuItem>
-                      <MenuItem value="Halabja">🌸 {t("city.Halabja")}</MenuItem>
+                      <MenuItem value="Halabja">
+                        🌸 {t("city.Halabja")}
+                      </MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
@@ -4033,6 +4127,31 @@ const DataEntryForm = () => {
                     label={t("Show in Store List")}
                   />
                 </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("Expire Contact")}
+                    name="expireDate"
+                    type="date"
+                    value={storeForm.expireDate}
+                    onChange={handleStoreFormChange}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>{t("Status All")}</InputLabel>
+                    <Select
+                      name="statusAll"
+                      value={storeForm.statusAll}
+                      onChange={handleStoreFormChange}
+                      label={t("Status All")}
+                    >
+                      <MenuItem value="on">{t("on")}</MenuItem>
+                      <MenuItem value="off">{t("off")}</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
                 <Grid xs={12}>
                   <Typography variant="subtitle1" gutterBottom>
                     {t("Branches")}
@@ -4091,7 +4210,7 @@ const DataEntryForm = () => {
                             size="small"
                             onClick={() => {
                               const newBranches = storeForm.branches.filter(
-                                (_, i) => i !== index
+                                (_, i) => i !== index,
                               );
                               setStoreForm({
                                 ...storeForm,
@@ -4139,8 +4258,8 @@ const DataEntryForm = () => {
                     {loading
                       ? t("Creating...")
                       : uploadLoading
-                      ? t("Uploading...")
-                      : t("Add Store")}
+                        ? t("Uploading...")
+                        : t("Add Store")}
                   </Button>
                 </Grid>
               </Grid>
@@ -4346,6 +4465,31 @@ const DataEntryForm = () => {
                     label={t("VIP Brand")}
                   />
                 </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("Expire Contact")}
+                    name="expireDate"
+                    type="date"
+                    value={brandForm.expireDate}
+                    onChange={handleBrandFormChange}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>{t("Status All")}</InputLabel>
+                    <Select
+                      name="statusAll"
+                      value={brandForm.statusAll}
+                      onChange={handleBrandFormChange}
+                      label={t("Status All")}
+                    >
+                      <MenuItem value="on">{t("on")}</MenuItem>
+                      <MenuItem value="off">{t("off")}</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
                 <Grid xs={12}>
                   <Button
                     type="submit"
@@ -4363,8 +4507,8 @@ const DataEntryForm = () => {
                     {loading
                       ? t("Creating...")
                       : uploadLoading
-                      ? t("Uploading...")
-                      : t("Add Brand")}
+                        ? t("Uploading...")
+                        : t("Add Brand")}
                   </Button>
                 </Grid>
               </Grid>
@@ -4635,8 +4779,8 @@ const DataEntryForm = () => {
                     {loading
                       ? t("Creating...")
                       : uploadLoading
-                      ? t("Uploading...")
-                      : t("Add Product")}
+                        ? t("Uploading...")
+                        : t("Add Product")}
                   </Button>
                 </Grid>
               </Grid>
@@ -4931,7 +5075,7 @@ const DataEntryForm = () => {
                             <Chip
                               key={value}
                               label={t(
-                                value.charAt(0).toUpperCase() + value.slice(1)
+                                value.charAt(0).toUpperCase() + value.slice(1),
                               )}
                               size="small"
                             />
@@ -5113,8 +5257,8 @@ const DataEntryForm = () => {
           {bulkDialog.type === "brand"
             ? t("Bulk Upload")
             : bulkDialog.type === "store"
-            ? t("Bulk Upload")
-            : t("Bulk Upload")}
+              ? t("Bulk Upload")
+              : t("Bulk Upload")}
         </DialogTitle>
         <DialogContent dividers>
           {bulkDialog.type === "store" && (
@@ -5205,11 +5349,11 @@ const DataEntryForm = () => {
                     <br />• {t("Column E: Description (optional)")}
                     <br />•{" "}
                     {t(
-                      "Column F: Show in Store List (true/false, default: true)"
+                      "Column F: Show in Store List (true/false, default: true)",
                     )}
                     <br />•{" "}
                     {t(
-                      "Column G: Branches (JSON format: [{'name':'Branch1','address':'Address1'}])"
+                      "Column G: Branches (JSON format: [{'name':'Branch1','address':'Address1'}])",
                     )}
                   </Typography>
                 </Grid>
@@ -5452,14 +5596,14 @@ const DataEntryForm = () => {
             editDialog.type === "brand"
               ? "Edit Brand"
               : editDialog.type === "store"
-              ? "Edit Store"
-              : editDialog.type === "gift"
-              ? "Edit Gift"
-              : editDialog.type === "storeType"
-              ? "Edit Store Type"
-              : editDialog.type === "brandType"
-              ? "Edit Brand Type"
-              : "Edit Product"
+                ? "Edit Store"
+                : editDialog.type === "gift"
+                  ? "Edit Gift"
+                  : editDialog.type === "storeType"
+                    ? "Edit Store Type"
+                    : editDialog.type === "brandType"
+                      ? "Edit Brand Type"
+                      : "Edit Product",
           )}
         </DialogTitle>
         <DialogContent>
@@ -5559,6 +5703,28 @@ const DataEntryForm = () => {
                 value={editForm.description}
                 onChange={handleEditFormChange}
               />
+              <TextField
+                margin="normal"
+                fullWidth
+                label={t("Expire Date")}
+                name="expireDate"
+                type="date"
+                value={editForm.expireDate || ""}
+                onChange={handleEditFormChange}
+                InputLabelProps={{ shrink: true }}
+              />
+              <FormControl fullWidth margin="normal">
+                <InputLabel>{t("Status All")}</InputLabel>
+                <Select
+                  name="statusAll"
+                  value={editForm.statusAll || "on"}
+                  onChange={handleEditFormChange}
+                  label={t("Status All")}
+                >
+                  <MenuItem value="on">{t("on")}</MenuItem>
+                  <MenuItem value="off">{t("off")}</MenuItem>
+                </Select>
+              </FormControl>
               <Box sx={{ mt: 2 }}>
                 <FormControlLabel
                   control={
@@ -5660,7 +5826,9 @@ const DataEntryForm = () => {
                     label={t("Store City")}
                   >
                     <MenuItem value="Erbil">🏛️ {t("city.Erbil")}</MenuItem>
-                    <MenuItem value="Sulaimani">🏔️ {t("city.Sulaimani")}</MenuItem>
+                    <MenuItem value="Sulaimani">
+                      🏔️ {t("city.Sulaimani")}
+                    </MenuItem>
                     <MenuItem value="Duhok">🏞️ {t("city.Duhok")}</MenuItem>
                     <MenuItem value="Kerkuk">🛢️ {t("city.Kerkuk")}</MenuItem>
                     <MenuItem value="Halabja">🌸 {t("city.Halabja")}</MenuItem>
@@ -5691,6 +5859,28 @@ const DataEntryForm = () => {
                 value={editForm.description}
                 onChange={handleEditFormChange}
               />
+              <TextField
+                margin="normal"
+                fullWidth
+                label={t("Expire Date")}
+                name="expireDate"
+                type="date"
+                value={editForm.expireDate || ""}
+                onChange={handleEditFormChange}
+                InputLabelProps={{ shrink: true }}
+              />
+              <FormControl fullWidth margin="normal">
+                <InputLabel>{t("Status All")}</InputLabel>
+                <Select
+                  name="statusAll"
+                  value={editForm.statusAll || "on"}
+                  onChange={handleEditFormChange}
+                  label={t("Status All")}
+                >
+                  <MenuItem value="on">{t("on")}</MenuItem>
+                  <MenuItem value="off">{t("off")}</MenuItem>
+                </Select>
+              </FormControl>
               <Box sx={{ mt: 2 }}>
                 <FormControlLabel
                   control={
@@ -6065,7 +6255,7 @@ const DataEntryForm = () => {
                             <Chip
                               key={value}
                               label={t(
-                                value.charAt(0).toUpperCase() + value.slice(1)
+                                value.charAt(0).toUpperCase() + value.slice(1),
                               )}
                               size="small"
                             />
@@ -6527,53 +6717,61 @@ const DataEntryForm = () => {
               deleteDialog.type === "brand"
                 ? handleDeleteBrandConfirm()
                 : deleteDialog.type === "gift"
-                ? handleDeleteBrandConfirm()
-                : deleteDialog.type === "category"
-                ? handleDeleteCategoryConfirm()
-                : deleteDialog.type === "storeType"
-                ? handleDeleteStoreTypeConfirm()
-                : deleteDialog.type === "brandType"
-                ? (async () => {
-                    setDeleteLoading(true);
-                    try {
-                      await brandTypeAPI.delete(deleteDialog.data._id);
-                      const res = await brandTypeAPI.getAll();
-                      setBrandTypes(res.data || []);
-                      setMessage({
-                        type: "success",
-                        text: t("Brand Type deleted successfully!"),
-                      });
-                    } catch (e) {
-                      setMessage({
-                        type: "error",
-                        text: t("Failed to delete brand type."),
-                      });
-                    } finally {
-                      setDeleteLoading(false);
-                      setDeleteDialog({ open: false, type: "", data: null });
-                    }
-                  })()
-                : (async () => {
-                    setDeleteLoading(true);
-                    try {
-                      await categoryAPI.delete(deleteDialog.data._id);
-                      setMessage({
-                        type: "success",
-                        text: t("Category deleted successfully!"),
-                      });
-                      fetchCategories();
-                    } catch (e) {
-                      setMessage({
-                        type: "error",
-                        text: t("Failed to delete category."),
-                      });
-                    } finally {
-                      setDeleteLoading(false);
-                      setDeleteDialog({ open: false, type: "", data: null });
-                    }
-                  })()
-                ? handleDeleteStoreConfirm()
-                : null
+                  ? handleDeleteBrandConfirm()
+                  : deleteDialog.type === "category"
+                    ? handleDeleteCategoryConfirm()
+                    : deleteDialog.type === "storeType"
+                      ? handleDeleteStoreTypeConfirm()
+                      : deleteDialog.type === "brandType"
+                        ? (async () => {
+                            setDeleteLoading(true);
+                            try {
+                              await brandTypeAPI.delete(deleteDialog.data._id);
+                              const res = await brandTypeAPI.getAll();
+                              setBrandTypes(res.data || []);
+                              setMessage({
+                                type: "success",
+                                text: t("Brand Type deleted successfully!"),
+                              });
+                            } catch (e) {
+                              setMessage({
+                                type: "error",
+                                text: t("Failed to delete brand type."),
+                              });
+                            } finally {
+                              setDeleteLoading(false);
+                              setDeleteDialog({
+                                open: false,
+                                type: "",
+                                data: null,
+                              });
+                            }
+                          })()
+                        : (async () => {
+                              setDeleteLoading(true);
+                              try {
+                                await categoryAPI.delete(deleteDialog.data._id);
+                                setMessage({
+                                  type: "success",
+                                  text: t("Category deleted successfully!"),
+                                });
+                                fetchCategories();
+                              } catch (e) {
+                                setMessage({
+                                  type: "error",
+                                  text: t("Failed to delete category."),
+                                });
+                              } finally {
+                                setDeleteLoading(false);
+                                setDeleteDialog({
+                                  open: false,
+                                  type: "",
+                                  data: null,
+                                });
+                              }
+                            })()
+                          ? handleDeleteStoreConfirm()
+                          : null
             }
             disabled={deleteLoading}
           >

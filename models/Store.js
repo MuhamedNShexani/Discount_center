@@ -18,6 +18,12 @@ const storeSchema = new mongoose.Schema({
   },
   isVip: { type: Boolean, default: false },
   isActive: { type: Boolean, default: true },
+  expireDate: { type: Date, default: null },
+  statusAll: {
+    type: String,
+    enum: ["on", "off"],
+    default: "on",
+  },
   branches: [
     {
       name: { type: String },

@@ -1,16 +1,33 @@
 const Gift = require("../models/Gift");
+const Store = require("../models/Store");
+const Brand = require("../models/Brand");
 
 // Get all gifts
 const getGifts = async (req, res) => {
   try {
     const gifts = await Gift.find()
-      .populate("storeId", "name logo storecity")
-      .populate("brandId", "name logo")
+      .populate({
+        path: "storeId",
+        select: "name logo storecity",
+        match: { statusAll: { $ne: "off" } },
+      })
+      .populate({
+        path: "brandId",
+        select: "name logo",
+        match: { statusAll: { $ne: "off" } },
+      })
       .sort({ createdAt: -1 });
+
+    const visibleGifts = gifts.filter((gift) => {
+      const hasVisibleStore =
+        Array.isArray(gift.storeId) && gift.storeId.length > 0;
+      const hasVisibleBrand = !!gift.brandId;
+      return hasVisibleStore || hasVisibleBrand;
+    });
 
     res.json({
       success: true,
-      data: gifts,
+      data: visibleGifts,
     });
   } catch (error) {
     res.status(500).json({
@@ -25,10 +42,27 @@ const getGifts = async (req, res) => {
 const getGiftById = async (req, res) => {
   try {
     const gift = await Gift.findById(req.params.id)
-      .populate("storeId", "name logo address phone storecity")
-      .populate("brandId", "name logo address phone");
+      .populate({
+        path: "storeId",
+        select: "name logo address phone storecity",
+        match: { statusAll: { $ne: "off" } },
+      })
+      .populate({
+        path: "brandId",
+        select: "name logo address phone",
+        match: { statusAll: { $ne: "off" } },
+      });
 
     if (!gift) {
+      return res.status(404).json({
+        success: false,
+        message: "Gift not found",
+      });
+    }
+
+    const hasVisibleStore = Array.isArray(gift.storeId) && gift.storeId.length > 0;
+    const hasVisibleBrand = !!gift.brandId;
+    if (!hasVisibleStore && !hasVisibleBrand) {
       return res.status(404).json({
         success: false,
         message: "Gift not found",
@@ -51,14 +85,34 @@ const getGiftById = async (req, res) => {
 // Get gifts by store
 const getGiftsByStore = async (req, res) => {
   try {
+    const storeVisible = await Store.exists({
+      _id: req.params.storeId,
+      statusAll: { $ne: "off" },
+    });
+    if (!storeVisible) {
+      return res.json({ success: true, data: [] });
+    }
+
     const gifts = await Gift.find({ storeId: req.params.storeId })
-      .populate("storeId", "name logo storecity")
-      .populate("brandId", "name logo")
+      .populate({
+        path: "storeId",
+        select: "name logo storecity",
+        match: { statusAll: { $ne: "off" } },
+      })
+      .populate({
+        path: "brandId",
+        select: "name logo",
+        match: { statusAll: { $ne: "off" } },
+      })
       .sort({ createdAt: -1 });
+
+    const visibleGifts = gifts.filter(
+      (gift) => Array.isArray(gift.storeId) && gift.storeId.length > 0
+    );
 
     res.json({
       success: true,
-      data: gifts,
+      data: visibleGifts,
     });
   } catch (error) {
     res.status(500).json({
@@ -72,14 +126,32 @@ const getGiftsByStore = async (req, res) => {
 // Get gifts by brand
 const getGiftsByBrand = async (req, res) => {
   try {
+    const brandVisible = await Brand.exists({
+      _id: req.params.brandId,
+      statusAll: { $ne: "off" },
+    });
+    if (!brandVisible) {
+      return res.json({ success: true, data: [] });
+    }
+
     const gifts = await Gift.find({ brandId: req.params.brandId })
-      .populate("storeId", "name logo storecity")
-      .populate("brandId", "name logo")
+      .populate({
+        path: "storeId",
+        select: "name logo storecity",
+        match: { statusAll: { $ne: "off" } },
+      })
+      .populate({
+        path: "brandId",
+        select: "name logo",
+        match: { statusAll: { $ne: "off" } },
+      })
       .sort({ createdAt: -1 });
+
+    const visibleGifts = gifts.filter((gift) => !!gift.brandId);
 
     res.json({
       success: true,
-      data: gifts,
+      data: visibleGifts,
     });
   } catch (error) {
     res.status(500).json({

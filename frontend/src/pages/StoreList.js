@@ -9,6 +9,7 @@ import {
   IconButton,
   Fade,
   useTheme,
+  Skeleton,
 } from "@mui/material";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { storeAPI, adAPI, storeTypeAPI } from "../services/api";
@@ -183,7 +184,7 @@ const StoreCard = ({ store, index, theme, t, onClick }) => {
             <Chip
               label={t(
                 store.storeType.charAt(0).toUpperCase() +
-                  store.storeType.slice(1)
+                  store.storeType.slice(1),
               )}
               icon={
                 <span style={{ fontSize: "1rem" }}>
@@ -280,7 +281,7 @@ const StoreList = () => {
       // Filter by store type
       if (selectedTypeId && selectedTypeId !== "all") {
         filtered = filtered.filter(
-          (s) => getID(s.storeTypeId) === selectedTypeId
+          (s) => getID(s.storeTypeId) === selectedTypeId,
         );
       }
 
@@ -301,7 +302,7 @@ const StoreList = () => {
         err.response?.data?.message ||
           err.response?.data?.msg ||
           err.message ||
-          t("Network error. Please check your connection.")
+          t("Network error. Please check your connection."),
       );
     } finally {
       setLoading(false);
@@ -343,81 +344,99 @@ const StoreList = () => {
     ],
   };
 
-  const fallbackBannerImages = [];
-  const bannerImages = useMemo(() => {
-    if (bannerAds && bannerAds.length > 0) {
-      return bannerAds
-        .filter((a) => !!a.image)
-        .map((a) =>
-          a.image.startsWith("http")
-            ? a.image
-            : `${process.env.REACT_APP_BACKEND_URL}${a.image}`
-        );
-    }
-    return fallbackBannerImages;
-  }, [bannerAds]);
+  const bannerAdsWithImages = useMemo(
+    () =>
+      (bannerAds || [])
+        .filter((ad) => !!ad.image)
+        .map((ad) => ({
+          _id: ad._id,
+          src: ad.image.startsWith("http")
+            ? ad.image
+            : `${process.env.REACT_APP_BACKEND_URL}${ad.image}`,
+          brandId: ad.brandId,
+          storeId: ad.storeId,
+          giftId: ad.giftId,
+        })),
+    [bannerAds],
+  );
 
   const handleStoreClick = (store) => navigate(`/stores/${store._id}`);
 
-  if (loading) return <Loader message={t("Loading...")} />;
+  if (loading)
+    return (
+      <Box sx={{ py: { xs: 5, md: 10 }, px: { xs: 0.5, sm: 1.5, md: 3 } }}>
+        <Skeleton
+          variant="rounded"
+          sx={{ width: "100%", height: { xs: 150, md: 250 }, mb: 3 }}
+        />
+        <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} variant="rounded" width={96} height={32} />
+          ))}
+        </Box>
+        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i} sx={{ width: { xs: "100%", sm: 260, md: 280 } }}>
+              <Skeleton variant="rectangular" sx={{ height: 180 }} />
+              <CardContent>
+                <Skeleton variant="text" width="70%" height={30} />
+                <Skeleton variant="text" width="95%" />
+                <Skeleton variant="text" width="50%" />
+              </CardContent>
+            </Card>
+          ))}
+        </Box>
+      </Box>
+    );
   if (error) return <Loader message={error} />;
 
   return (
-    <Box sx={{ py: 6, px: { xs: 1, sm: 2, md: 4 } }}>
+    <Box sx={{ py: { xs: 5, md: 10 }, px: { xs: 0.5, sm: 1.5, md: 3 } }}>
       {/* Banner Slider Section (from Ads: pages includes stores/all) */}
       <Box
         sx={{
           mb: 2,
           // position: { xs: "sticky", md: "static" },
-          top: { xs: 60, md: "auto" },
+          top: { xs: 100, md: "auto" },
           zIndex: { xs: 1000, md: "auto" },
         }}
       >
         <Box
           sx={{
             width: "100%",
-            height: { xs: "100px", sm: "150px", md: "250px" },
+            height: { xs: "150px", sm: "150px", md: "250px" },
             borderRadius: { xs: 2, md: 3 },
             overflow: "hidden",
             boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
-            mb: 3,
-            mt: { xs: 2, md: 5 },
+            mb: 4,
+            mt: { xs: 0, md: 5 },
           }}
         >
-          {bannerImages.length > 0 && (
+          {bannerAdsWithImages.length > 0 && (
             <Slider {...bannerSettings}>
-              {bannerAds
-                .filter((a) => !!a.image)
-                .map((ad, index) => (
-                  <div key={ad._id || index}>
-                    <img
-                      onClick={() =>
-                        ad.brandId
-                          ? navigate(`/brands/${ad.brandId}`)
-                          : ad.storeId
+              {bannerAdsWithImages.map((ad, index) => (
+                <div key={ad._id || index}>
+                  <img
+                    onClick={() =>
+                      ad.brandId
+                        ? navigate(`/brands/${ad.brandId}`)
+                        : ad.storeId
                           ? navigate(`/stores/${ad.storeId}`)
                           : ad.giftId
-                          ? navigate(`/gifts/${ad.giftId}`)
-                          : null
-                      }
-                      src={
-                        ad.image.startsWith("http")
-                          ? ad.image
-                          : `${process.env.REACT_APP_BACKEND_URL}${ad.image}`
-                      }
-                      alt={`Banner ${index + 1}`}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "contain",
-                        cursor:
-                          ad.brandId || ad.storeId || ad.giftId
-                            ? "pointer"
-                            : "default",
-                      }}
-                    />
-                  </div>
-                ))}
+                            ? navigate(`/gifts/${ad.giftId}`)
+                            : null
+                    }
+                    src={ad.src}
+                    alt={`Banner ${index + 1}`}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "contain",
+                      cursor: ad.brandId ? "pointer" : "default",
+                    }}
+                  />
+                </div>
+              ))}
             </Slider>
           )}
         </Box>
@@ -451,7 +470,7 @@ const StoreList = () => {
                 color: selectedTypeId === tItem._id ? "white" : "inherit",
               }}
             />
-          )
+          ),
         )}
       </Box>
       {/* <Typography

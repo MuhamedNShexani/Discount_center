@@ -45,9 +45,7 @@ export const createAppTheme = ({ darkMode = false, language = "en" } = {}) =>
     },
     typography: {
       fontFamily:
-        language === "ku"
-          ? "'NRT', 'Noto Sans Kurdish', 'Scheherazade New', 'Arial', sans-serif"
-          : "'Roboto', 'Helvetica', 'Arial', sans-serif",
+        "'NRT', 'Noto Sans Kurdish', 'Scheherazade New', 'Arial', sans-serif",
       h1: { color: darkMode ? "#F9FAFB" : BRAND.primaryBlue },
       h2: { color: darkMode ? "#F9FAFB" : BRAND.primaryBlue },
       h3: { color: darkMode ? "#F9FAFB" : BRAND.primaryBlue },

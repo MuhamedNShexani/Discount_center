@@ -1,7 +1,27 @@
 const Product = require("../models/Product");
 const Store = require("../models/Store");
-const Brand = require("../models/Brand");
 const Category = require("../models/Category");
+
+const getPublicStoreIds = async () => {
+  const stores = await Store.find({ statusAll: { $ne: "off" } }).select("_id").lean();
+  return stores.map((s) => s._id);
+};
+
+const applyPublicVisibilityToProductQuery = (baseQuery, storeIds) => {
+  const query = { ...baseQuery };
+  const andConditions = Array.isArray(query.$and) ? [...query.$and] : [];
+
+  andConditions.push({
+    $or: [
+      { storeId: { $exists: false } },
+      { storeId: null },
+      ...(storeIds.length ? [{ storeId: { $in: storeIds } }] : []),
+    ],
+  });
+
+  query.$and = andConditions;
+  return query;
+};
 
 // @desc    Get all products
 // @route   GET /api/products
@@ -22,8 +42,11 @@ const getProducts = async (req, res) => {
       query.categoryId = category;
     }
 
-    const products = await Product.find(query)
-      .populate("brandId", "name logo")
+    const storeIds = await getPublicStoreIds();
+    const products = await Product.find(
+      applyPublicVisibilityToProductQuery(query, storeIds)
+    )
+      .populate("brandId", "name logo statusAll")
       .populate("storeId", "name logo storecity")
       .populate("categoryId", "name types")
       .populate("storeTypeId", "name icon")
@@ -40,8 +63,25 @@ const getProducts = async (req, res) => {
 // @access  Public
 const getProductById = async (req, res) => {
   try {
+    const productRaw = await Product.findById(req.params.id).select("_id storeId");
+
+    if (!productRaw) {
+      return res.status(404).json({ msg: "Product not found" });
+    }
+
+    const storeVisible = productRaw.storeId
+      ? await Store.exists({
+          _id: productRaw.storeId,
+          statusAll: { $ne: "off" },
+        })
+      : true;
+
+    if (!storeVisible) {
+      return res.status(404).json({ msg: "Product not found" });
+    }
+
     const product = await Product.findById(req.params.id)
-      .populate("brandId", "name logo address phone description")
+      .populate("brandId", "name logo address phone description statusAll")
       .populate("storeId", "name address phone description")
       .populate("categoryId", "name types description")
       .populate("storeTypeId", "name icon");
@@ -175,8 +215,11 @@ const createProduct = async (req, res) => {
 // @access  Public
 const getProductsByBrand = async (req, res) => {
   try {
-    const products = await Product.find({ brandId: req.params.brandId })
-      .populate("brandId", "name logo")
+    const storeIds = await getPublicStoreIds();
+    const products = await Product.find(
+      applyPublicVisibilityToProductQuery({ brandId: req.params.brandId }, storeIds)
+    )
+      .populate("brandId", "name logo statusAll")
       .populate("storeId", "name logo storecity")
       .populate("categoryId", "name types")
       .populate("storeTypeId", "name icon")
@@ -193,8 +236,19 @@ const getProductsByBrand = async (req, res) => {
 // @access  Public
 const getProductsByStore = async (req, res) => {
   try {
-    const products = await Product.find({ storeId: req.params.storeId })
-      .populate("brandId", "name logo")
+    const storeVisible = await Store.exists({
+      _id: req.params.storeId,
+      statusAll: { $ne: "off" },
+    });
+    if (!storeVisible) {
+      return res.json([]);
+    }
+
+    const storeIds = await getPublicStoreIds();
+    const products = await Product.find(
+      applyPublicVisibilityToProductQuery({ storeId: req.params.storeId }, storeIds)
+    )
+      .populate("brandId", "name logo statusAll")
       .populate("storeId", "name logo storecity")
       .populate("categoryId", "name types")
       .populate("storeTypeId", "name icon")
@@ -212,8 +266,11 @@ const getProductsByStore = async (req, res) => {
 const getProductsByCategory = async (req, res) => {
   try {
     // The param is a Category ID. Match on categoryId, not the legacy `type` field
-    const products = await Product.find({ categoryId: req.params.category })
-      .populate("brandId", "name logo")
+    const storeIds = await getPublicStoreIds();
+    const products = await Product.find(
+      applyPublicVisibilityToProductQuery({ categoryId: req.params.category }, storeIds)
+    )
+      .populate("brandId", "name logo statusAll")
       .populate("storeId", "name logo storecity")
       .populate("categoryId", "name types")
       .populate("storeTypeId", "name icon")

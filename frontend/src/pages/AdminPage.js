@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import * as XLSX from "xlsx";
-import { adminAPI } from "../services/api";
+import { adminAPI, storeAPI, brandAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import {
@@ -36,6 +36,7 @@ import {
   Visibility as VisibilityIcon,
   Star as StarIcon,
   FileDownload as FileDownloadIcon,
+  AccessTime as AccessTimeIcon,
 } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 
@@ -66,6 +67,9 @@ const AdminPage = () => {
   const [brandNameFilter, setBrandNameFilter] = useState("");
   const [brandFromDate, setBrandFromDate] = useState("");
   const [brandToDate, setBrandToDate] = useState("");
+  const [expirePlanFilter, setExpirePlanFilter] = useState("all");
+  const [expireStores, setExpireStores] = useState([]);
+  const [expireBrands, setExpireBrands] = useState([]);
   const [tabLoading, setTabLoading] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(20); // 20, 50, 100, -1 = all
@@ -102,6 +106,8 @@ const AdminPage = () => {
         fromDate: brandFromDate || undefined,
         toDate: brandToDate || undefined,
       });
+    } else if (activeTab === 4) {
+      loadExpirePlanData();
     }
   }, [
     activeTab,
@@ -184,6 +190,24 @@ const AdminPage = () => {
     }
   };
 
+  const loadExpirePlanData = async () => {
+    setTabLoading(true);
+    try {
+      const [storesRes, brandsRes] = await Promise.all([
+        storeAPI.getAllIncludingHidden(),
+        brandAPI.getAllIncludingHidden(),
+      ]);
+      setExpireStores(Array.isArray(storesRes.data) ? storesRes.data : []);
+      setExpireBrands(Array.isArray(brandsRes.data) ? brandsRes.data : []);
+    } catch (error) {
+      console.error("Error loading expire plan data:", error);
+      setExpireStores([]);
+      setExpireBrands([]);
+    } finally {
+      setTabLoading(false);
+    }
+  };
+
   const handleDeleteExpiredProducts = async () => {
     if (
       !window.confirm(
@@ -219,6 +243,8 @@ const AdminPage = () => {
           fromDate: brandFromDate || undefined,
           toDate: brandToDate || undefined,
         });
+      } else if (activeTab === 4) {
+        loadExpirePlanData();
       }
     } catch (error) {
       console.error("Error deleting expired products:", error);
@@ -239,11 +265,12 @@ const AdminPage = () => {
 
   const formatDate = (dateStr) => {
     if (!dateStr) return "-";
-    return new Date(dateStr).toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+    const date = new Date(dateStr);
+    if (Number.isNaN(date.getTime())) return "-";
+    const dd = String(date.getDate()).padStart(2, "0");
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const yyyy = date.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
   };
 
   const formatDateForExcel = (dateStr) => {
@@ -282,6 +309,86 @@ const AdminPage = () => {
     XLSX.writeFile(workbook, `${sheetName}_${date}.xlsx`);
   };
 
+  const getDaysLeft = (dateStr) => {
+    if (!dateStr) return null;
+    const dateObj = new Date(dateStr);
+    if (Number.isNaN(dateObj.getTime())) return null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const target = new Date(dateObj);
+    target.setHours(0, 0, 0, 0);
+    return Math.ceil((target.getTime() - today.getTime()) / 86400000);
+  };
+
+  const expirePlanRows = useMemo(() => {
+    const merged = [
+      ...(expireStores || []).map((s) => ({
+        _id: `store-${s._id}`,
+        type: t("Store"),
+        name: s.name || "-",
+        statusAll: s.statusAll === "off" ? "off" : "on",
+        expireDate: s.expireDate || null,
+        daysLeft: getDaysLeft(s.expireDate),
+      })),
+      ...(expireBrands || []).map((b) => ({
+        _id: `brand-${b._id}`,
+        type: t("Brand"),
+        name: b.name || "-",
+        statusAll: b.statusAll === "off" ? "off" : "on",
+        expireDate: b.expireDate || null,
+        daysLeft: getDaysLeft(b.expireDate),
+      })),
+    ];
+
+    const limitMap = {
+      less7: 7,
+      less14: 14,
+      less30: 30,
+    };
+
+    const filtered = merged.filter((row) => {
+      if (expirePlanFilter === "all") return true;
+      if (expirePlanFilter === "expired") {
+        return row.daysLeft !== null && row.daysLeft < 0;
+      }
+      const limit = limitMap[expirePlanFilter];
+      if (!limit || row.daysLeft === null) return false;
+      return row.daysLeft >= 0 && row.daysLeft <= limit;
+    });
+
+    filtered.sort((a, b) => {
+      if (a.expireDate && b.expireDate) {
+        return new Date(a.expireDate) - new Date(b.expireDate);
+      }
+      if (a.expireDate) return -1;
+      if (b.expireDate) return 1;
+      return (a.name || "").localeCompare(b.name || "");
+    });
+
+    return filtered;
+  }, [expireStores, expireBrands, expirePlanFilter, t]);
+
+  const exportExpirePlanToExcel = () => {
+    const rows = expirePlanRows.map((r) => ({
+      [t("Type")]: r.type,
+      [t("Name")]: r.name,
+      [t("Status All")]: r.statusAll,
+      [t("Expire Date")]: formatDateForExcel(r.expireDate),
+      [t("Days Left")]:
+        r.daysLeft === null
+          ? "-"
+          : r.daysLeft < 0
+            ? `${t("Expired")} (${Math.abs(r.daysLeft)})`
+            : r.daysLeft,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "ExpireDatePlan");
+    const date = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(workbook, `ExpireDatePlan_${date}.xlsx`);
+  };
+
   const handleRowsPerPageChange = (event) => {
     const value = parseInt(event.target.value, 10);
     setRowsPerPage(value);
@@ -300,6 +407,7 @@ const AdminPage = () => {
     if (activeTab === 1) return mostViewedProducts;
     if (activeTab === 2) return storeReport;
     if (activeTab === 3) return brandReport;
+    if (activeTab === 4) return expirePlanRows;
     return [];
   };
 
@@ -486,6 +594,11 @@ const AdminPage = () => {
           <Tab label={t("Most viewed products list")} />
           <Tab label={t("Report for stores")} />
           <Tab label={t("Report for brands")} />
+          <Tab
+            label={t("ExpireDate Plan")}
+            icon={<AccessTimeIcon />}
+            iconPosition="start"
+          />
         </Tabs>
 
         <Box sx={{ p: 3 }}>
@@ -699,6 +812,90 @@ const AdminPage = () => {
                 </Box>
               ) : (
                 <ProductTable products={getPagedData(brandReport)} showBrand />
+              )}
+            </Box>
+          )}
+          {activeTab === 4 && (
+            <Box>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: 2,
+                  mb: 2,
+                }}
+              >
+                <Typography variant="h5">{t("ExpireDate Plan")}</Typography>
+                <Button
+                  variant="outlined"
+                  startIcon={<FileDownloadIcon />}
+                  onClick={exportExpirePlanToExcel}
+                  disabled={tabLoading || expirePlanRows.length === 0}
+                >
+                  {t("Export to Excel")}
+                </Button>
+              </Box>
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 2 }}>
+                <TextField
+                  select
+                  size="small"
+                  label={t("Near Expire Duration")}
+                  value={expirePlanFilter}
+                  onChange={(e) => setExpirePlanFilter(e.target.value)}
+                  sx={{ minWidth: 220 }}
+                >
+                  <MenuItem value="all">{t("All")}</MenuItem>
+                  <MenuItem value="expired">{t("Expired")}</MenuItem>
+                  <MenuItem value="less7">{t("less 7 days")}</MenuItem>
+                  <MenuItem value="less14">{t("less 2 weeks")}</MenuItem>
+                  <MenuItem value="less30">{t("less 1 month")}</MenuItem>
+                </TextField>
+              </Box>
+              {tabLoading ? (
+                <Box display="flex" justifyContent="center" py={4}>
+                  <CircularProgress />
+                </Box>
+              ) : (
+                <TableContainer component={Paper} variant="outlined">
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow sx={{ bgcolor: "action.hover" }}>
+                        <TableCell>{t("Type")}</TableCell>
+                        <TableCell>{t("Name")}</TableCell>
+                        <TableCell>{t("Status All")}</TableCell>
+                        <TableCell>{t("Expire Contact")}</TableCell>
+                        <TableCell>{t("Days Left")}</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {getPagedData(expirePlanRows).length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={5} align="center">
+                            {t("No data to display")}
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        getPagedData(expirePlanRows).map((row) => (
+                          <TableRow key={row._id} hover>
+                            <TableCell>{row.type}</TableCell>
+                            <TableCell>{row.name}</TableCell>
+                            <TableCell>{row.statusAll}</TableCell>
+                            <TableCell>{formatDate(row.expireDate)}</TableCell>
+                            <TableCell>
+                              {row.daysLeft === null
+                                ? "-"
+                                : row.daysLeft < 0
+                                  ? `${t("Expired")} (${Math.abs(row.daysLeft)})`
+                                  : row.daysLeft}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
               )}
             </Box>
           )}

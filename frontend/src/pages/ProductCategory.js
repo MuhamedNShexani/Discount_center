@@ -35,6 +35,8 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Skeleton,
+  useMediaQuery,
 } from "@mui/material";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { productAPI, categoryAPI, storeTypeAPI } from "../services/api";
@@ -61,6 +63,7 @@ import { useCityFilter } from "../context/CityFilterContext";
 
 const ProductCategory = () => {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -1404,14 +1407,108 @@ const ProductCategory = () => {
   );
 
   if (loading) {
+    if (isMobile) {
+      return (
+        <Box sx={{ display: { xs: "block", md: "none" } }}>
+          {/* Mobile-like left store-type rail skeleton */}
+          <Box
+            sx={{
+              position: "fixed",
+              top: 64,
+              left: 0,
+              width: 88,
+              bottom: 0,
+              borderRight: "1px solid #eee",
+              backgroundColor: "#fafafa",
+              py: 2,
+              px: 1,
+            }}
+          >
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Box key={i} sx={{ mb: 1.5, textAlign: "center" }}>
+                <Skeleton
+                  variant="circular"
+                  width={40}
+                  height={40}
+                  sx={{ mx: "auto", mb: 0.5 }}
+                />
+                <Skeleton variant="text" width={56} sx={{ mx: "auto" }} />
+              </Box>
+            ))}
+          </Box>
+
+          {/* Mobile right content skeleton */}
+          <Box sx={{ pl: "96px", pt: 8, pr: 2 }}>
+            <Skeleton variant="text" width={120} height={34} sx={{ my: 2 }} />
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                gap: 1.5,
+              }}
+            >
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <Card key={i} sx={{ borderRadius: 2 }}>
+                  <CardContent sx={{ textAlign: "center", p: 1.5 }}>
+                    <Skeleton
+                      variant="circular"
+                      width={64}
+                      height={64}
+                      sx={{ mx: "auto", mb: 1 }}
+                    />
+                    <Skeleton variant="text" width="80%" sx={{ mx: "auto" }} />
+                  </CardContent>
+                </Card>
+              ))}
+            </Box>
+          </Box>
+        </Box>
+      );
+    }
+
     return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="400px"
-      >
-        <CircularProgress />
+      <Box sx={{ py: { xs: 5, md: 8 }, px: { xs: 1, sm: 2, md: 3 } }}>
+        {/* Filters / categories row */}
+        <Box sx={{ display: "flex", gap: 1, mb: 2, flexWrap: "wrap" }}>
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} variant="rounded" width={100} height={36} />
+          ))}
+        </Box>
+
+        {/* Category cards preview */}
+        <Grid container spacing={1.5} sx={{ mb: 2 }}>
+          {[1, 2, 3, 4].map((i) => (
+            <Grid item xs={6} sm={3} key={`cat-${i}`}>
+              <Card sx={{ borderRadius: 2 }}>
+                <CardContent sx={{ textAlign: "center", p: 1.2 }}>
+                  <Skeleton
+                    variant="circular"
+                    width={48}
+                    height={48}
+                    sx={{ mx: "auto", mb: 1 }}
+                  />
+                  <Skeleton variant="text" width="80%" sx={{ mx: "auto" }} />
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+
+        {/* Product cards preview */}
+        <Grid container spacing={2}>
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+            <Grid item xs={6} sm={4} md={3} key={i}>
+              <Card sx={{ borderRadius: 2 }}>
+                <Skeleton variant="rectangular" sx={{ height: { xs: 130, sm: 160 } }} />
+                <CardContent sx={{ p: 1.2 }}>
+                  <Skeleton variant="text" width="90%" height={22} />
+                  <Skeleton variant="text" width="70%" height={20} />
+                  <Skeleton variant="rounded" width="60%" height={26} />
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
       </Box>
     );
   }
