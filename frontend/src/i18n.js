@@ -1312,6 +1312,10 @@ const resources = {
       "Premium Store": "فرۆشگا",
       Electronic: "ئەلکترۆنیک",
       Cosmetic: "کۆسمێتیک",
+      Brand: "بڕاند",
+      Store: "فرۆشگا",
+      store: "فرۆشگا",
+      brand: "بڕاند",
       "No discount products available": "هیچ کاڵایەک نەدۆزرایەوە",
       "This brand hasn't added any regular products yet.":
         "ئەم بڕاندە لە ئێستادا هیچ کاڵایەکى بەردەست نییە ",
