@@ -11,8 +11,8 @@
     "generate-vapid": "node scripts/generate-vapid.js"
   },
   "engines": {
-    "node": "18.x",
-    "npm": "9.x"
+    "node": "18.20.8",
+    "npm": ">=9"
   },
   "keywords": [],
   "author": "",
@@ -20,7 +20,7 @@
   "type": "commonjs",
   "description": "",
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1014.0",
+    "@aws-sdk/client-s3": "3.800.0",
     "axios": "^1.10.0",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
