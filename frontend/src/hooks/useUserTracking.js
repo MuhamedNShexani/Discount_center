@@ -112,6 +112,78 @@ export const useUserTracking = () => {
     [isAuthenticated, deviceId, getAuthHeaders],
   );
 
+  // Toggle reel like (works for both logged-in and anonymous/device users)
+  const toggleVideoLike = useCallback(
+    async (videoId) => {
+      if (!isAuthenticated && !deviceId) {
+        return {
+          success: false,
+          message: "Please wait for app to load",
+          requiresAuth: false,
+        };
+      }
+
+      try {
+        const headers = getAuthHeaders();
+        const response = await userAPI.toggleVideoLike(
+          isAuthenticated ? null : deviceId,
+          videoId,
+          headers,
+        );
+
+        if (response.data.success) {
+          if (!isAuthenticated) {
+            setUser((prevUser) => {
+              if (!prevUser) return prevUser;
+              const likedVideos = prevUser.likedVideos || [];
+              const isCurrentlyLiked = likedVideos.some(
+                (id) => id.toString() === videoId || id === videoId,
+              );
+              if (isCurrentlyLiked) {
+                return {
+                  ...prevUser,
+                  likedVideos: likedVideos.filter(
+                    (id) => id.toString() !== videoId && id !== videoId,
+                  ),
+                };
+              }
+              return {
+                ...prevUser,
+                likedVideos: [...likedVideos, videoId],
+              };
+            });
+          } else {
+            const authUser = JSON.parse(localStorage.getItem("user"));
+            if (authUser) {
+              const likedVideos = authUser.likedVideos || [];
+              const isCurrentlyLiked = likedVideos.some(
+                (id) => id === videoId || id?.toString?.() === videoId,
+              );
+              if (isCurrentlyLiked) {
+                authUser.likedVideos = likedVideos.filter(
+                  (id) => id !== videoId && id?.toString?.() !== videoId,
+                );
+              } else {
+                authUser.likedVideos = [...likedVideos, videoId];
+              }
+              localStorage.setItem("user", JSON.stringify(authUser));
+            }
+          }
+        }
+
+        return response.data;
+      } catch (error) {
+        console.error("Error toggling video like:", error);
+        return {
+          success: false,
+          message:
+            error.response?.data?.message || error.message || "Failed to toggle like",
+        };
+      }
+    },
+    [isAuthenticated, deviceId, getAuthHeaders],
+  );
+
   // Record product view (works for both authenticated and anonymous users)
   const recordView = useCallback(
     async (productId) => {
@@ -168,6 +240,24 @@ export const useUserTracking = () => {
       return user.likedProducts.some((item) => {
         const id = item?._id ?? item;
         return id?.toString() === productId || id === productId;
+      });
+    },
+    [isAuthenticated, user],
+  );
+
+  const isVideoLiked = useCallback(
+    (videoId) => {
+      if (isAuthenticated) {
+        const authUser = JSON.parse(localStorage.getItem("user"));
+        if (!authUser || !authUser.likedVideos) return false;
+        return authUser.likedVideos.some(
+          (id) => id === videoId || id?.toString?.() === videoId,
+        );
+      }
+      if (!user?.likedVideos) return false;
+      return user.likedVideos.some((item) => {
+        const id = item?._id ?? item;
+        return id?.toString() === videoId || id === videoId;
       });
     },
     [isAuthenticated, user],
@@ -367,10 +457,12 @@ export const useUserTracking = () => {
     loading,
     isAuthenticated,
     toggleLike,
+    toggleVideoLike,
     toggleFollowStore,
     recordView,
     updateGuestName,
     isProductLiked,
+    isVideoLiked,
     isStoreFollowed,
     getLikedProducts,
     getFollowedStores,

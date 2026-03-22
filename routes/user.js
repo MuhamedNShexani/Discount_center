@@ -3,6 +3,7 @@ const router = express.Router();
 const {
   getUserByDevice,
   toggleProductLike,
+  toggleVideoLike,
   toggleFollowStore,
   recordProductView,
   getLikedProducts,
@@ -20,6 +21,7 @@ router.post("/push-subscribe", optionalAuth, pushSubscribe);
 
 // Like/product routes - work with auth OR deviceId (anonymous)
 router.post("/like-product", optionalAuth, toggleProductLike);
+router.post("/like-video", optionalAuth, toggleVideoLike);
 router.post("/follow-store", optionalAuth, toggleFollowStore);
 router.get("/liked-products", optionalAuth, getLikedProducts);
 router.get("/followed-stores", optionalAuth, getFollowedStores);

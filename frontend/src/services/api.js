@@ -137,6 +137,24 @@ export const adAPI = {
   delete: (id) => api.delete(`/ads/${id}`),
 };
 
+// Video/Reels API calls
+export const videoAPI = {
+  getAll: () => api.get("/videos"),
+  create: (data) =>
+    api.post("/videos", data, {
+      timeout: 120000,
+    }),
+  delete: (id) => api.delete(`/videos/${id}`),
+  incrementLike: (id) => api.post(`/videos/${id}/like`),
+  incrementView: (id) => api.post(`/videos/${id}/view`),
+  incrementShare: (id) => api.post(`/videos/${id}/share`),
+  upload: (formData) =>
+    api.post("/videos/upload", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+      timeout: 300000,
+    }),
+};
+
 // User API calls (work with auth token OR deviceId for anonymous users)
 export const userAPI = {
   getByDevice: (deviceId) => api.get(`/users/device/${deviceId}`),
@@ -144,6 +162,12 @@ export const userAPI = {
     api.post(
       "/users/like-product",
       { productId, ...(deviceId && { deviceId }) },
+      { headers },
+    ),
+  toggleVideoLike: (deviceId, videoId, headers = {}) =>
+    api.post(
+      "/users/like-video",
+      { videoId, ...(deviceId && { deviceId }) },
       { headers },
     ),
   toggleFollowStore: (deviceId, storeId, headers = {}) =>

@@ -1,7 +1,12 @@
 import "./i18n";
 import "./styles/kurdishFonts.css";
 import React, { useState, useMemo, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useLocation,
+} from "react-router-dom";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import {
@@ -70,12 +75,14 @@ const Footer = () => (
 );
 
 function AppContent() {
+  const location = useLocation();
   const [darkMode, setDarkMode] = useState(false);
   const { t, i18n } = useTranslation();
   const { refreshKey } = useContentRefresh();
   const [lang, setLang] = useState(i18n.language || "en");
   const muiTheme = useTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down("sm"));
+  const isReelsPage = location.pathname === "/reels";
 
   // RTL/LTR direction effect and language data attribute
   useEffect(() => {
@@ -133,12 +140,12 @@ function AppContent() {
             key={refreshKey}
             sx={{
               flexGrow: 1, // Allows this Box to expand and push the footer down
-              py: 3,
+              py: isReelsPage ? 0 : 3,
               pb: isMobile ? 10 : 3, // Add bottom padding for mobile to account for bottom navigation
               backgroundColor: (theme) => theme.palette.background.default,
             }}
           >
-            <Container maxWidth="lg">
+            <Container maxWidth={isReelsPage ? false : "lg"} disableGutters={isReelsPage}>
               <Routes>
                 <Route path="/" element={<MainPage />} />
                 <Route path="/reels" element={<ReelsPage />} />

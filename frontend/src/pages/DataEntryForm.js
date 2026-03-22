@@ -51,6 +51,7 @@ import {
   brandTypeAPI,
   settingsAPI,
   adminAPI,
+  videoAPI,
 } from "../services/api";
 import * as XLSX from "xlsx";
 
@@ -72,6 +73,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import SettingsIcon from "@mui/icons-material/Settings";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
+import VideoLibraryIcon from "@mui/icons-material/VideoLibrary";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 import { useAppSettings } from "../context/AppSettingsContext";
@@ -84,6 +86,7 @@ const DataEntryForm = () => {
   const { getAuthHeaders, user } = useAuth();
   const isAdmin =
     user?.email === "mshexani45@gmail.com" || user?.email === "admin@gmail.com";
+  const reelsTabIndex = isAdmin ? 10 : 9;
   const { contactWhatsAppNumber, setContactWhatsAppNumber, fetchSettings } =
     useAppSettings();
   const [settingsContactNumber, setSettingsContactNumber] = useState("");
@@ -96,6 +99,7 @@ const DataEntryForm = () => {
   const [products, setProducts] = useState([]);
   const [gifts, setGifts] = useState([]);
   const [ads, setAds] = useState([]);
+  const [reels, setReels] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
 
@@ -105,6 +109,7 @@ const DataEntryForm = () => {
   const [productsPage, setProductsPage] = useState(0);
   const [giftsPage, setGiftsPage] = useState(0);
   const [adsPage, setAdsPage] = useState(0);
+  const [reelsPage, setReelsPage] = useState(0);
   const [rowsPerPage] = useState(10);
   const [storeTypes, setStoreTypes] = useState([]);
   const [brandTypes, setBrandTypes] = useState([]);
@@ -126,6 +131,7 @@ const DataEntryForm = () => {
   const editGiftImageFileRef = useRef(null);
   const adImageFileRef = useRef(null);
   const editAdImageFileRef = useRef(null);
+  const videoFileRef = useRef(null);
 
   // Brand form state
   const [brandForm, setBrandForm] = useState({
@@ -188,6 +194,17 @@ const DataEntryForm = () => {
   });
 
   const [selectedAdImage, setSelectedAdImage] = useState(null);
+
+  const [videoForm, setVideoForm] = useState({
+    title: "",
+    storeId: "",
+    brandId: "",
+    expireDate: "",
+    like: 0,
+    views: 0,
+    shares: 0,
+  });
+  const [selectedVideoFile, setSelectedVideoFile] = useState(null);
 
   // Gift form state
   const [giftForm, setGiftForm] = useState({
@@ -268,6 +285,7 @@ const DataEntryForm = () => {
     fetchCategories();
     fetchGifts();
     fetchAds();
+    fetchReels();
   }, []);
 
   useEffect(() => {
@@ -342,6 +360,16 @@ const DataEntryForm = () => {
       setAds(response.data);
     } catch (err) {
       console.error("Error fetching ads:", err);
+    }
+  };
+
+  const fetchReels = async () => {
+    try {
+      const response = await videoAPI.getAll();
+      setReels(response.data || []);
+    } catch (err) {
+      console.error("Error fetching reels:", err);
+      setReels([]);
     }
   };
 
@@ -524,6 +552,13 @@ const DataEntryForm = () => {
     }
   };
 
+  const handleVideoFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedVideoFile(file);
+    }
+  };
+
   // Upload brand logo
   const uploadBrandLogo = async (file) => {
     const formData = new FormData();
@@ -617,6 +652,13 @@ const DataEntryForm = () => {
       console.error("Error uploading gift image:", error);
       throw error;
     }
+  };
+
+  const uploadVideoFile = async (file) => {
+    const formData = new FormData();
+    formData.append("video", file);
+    const response = await videoAPI.upload(formData);
+    return response.data;
   };
 
   // Handle Excel file selection
@@ -764,6 +806,93 @@ const DataEntryForm = () => {
       });
       console.error("Error creating ad:", err);
     } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVideoSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!videoForm.title.trim()) {
+      setMessage({ type: "error", text: t("Please enter a video title.") });
+      return;
+    }
+
+    if (!selectedVideoFile) {
+      setMessage({ type: "error", text: t("Please select a video file.") });
+      return;
+    }
+
+    const hasStore = Boolean(videoForm.storeId);
+    const hasBrand = Boolean(videoForm.brandId);
+    if (hasStore === hasBrand) {
+      setMessage({
+        type: "error",
+        text: t("Please select exactly one owner (Store or Brand)."),
+      });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setUploadLoading(true);
+      setMessage({ type: "", text: "" });
+
+      const uploaded = await uploadVideoFile(selectedVideoFile);
+
+      await videoAPI.create({
+        title: videoForm.title.trim(),
+        videoUrl: uploaded.videoUrl,
+        key: uploaded.key,
+        storeId: videoForm.storeId || undefined,
+        brandId: videoForm.brandId || undefined,
+        expireDate: videoForm.expireDate
+          ? new Date(videoForm.expireDate).toISOString()
+          : undefined,
+        like: Number(videoForm.like) || 0,
+        views: Number(videoForm.views) || 0,
+        shares: Number(videoForm.shares) || 0,
+      });
+
+      setMessage({
+        type: "success",
+        text: t("Video reel created successfully!"),
+      });
+      setVideoForm({
+        title: "",
+        storeId: "",
+        brandId: "",
+        expireDate: "",
+        like: 0,
+        views: 0,
+        shares: 0,
+      });
+      setSelectedVideoFile(null);
+      if (videoFileRef.current) {
+        videoFileRef.current.value = "";
+      }
+      fetchReels();
+      setAddDialog({ open: false, type: "" });
+    } catch (err) {
+      console.error("Error creating video reel:", err);
+      if (err?.code === "ECONNABORTED") {
+        setMessage({
+          type: "error",
+          text: t(
+            "Video upload timed out. Please wait and check Reels list before retrying (file may have uploaded).",
+          ),
+        });
+        return;
+      }
+      setMessage({
+        type: "error",
+        text:
+          err?.response?.data?.message ||
+          err?.message ||
+          t("Failed to create video reel. Please try again."),
+      });
+    } finally {
+      setUploadLoading(false);
       setLoading(false);
     }
   };
@@ -1604,6 +1733,10 @@ const DataEntryForm = () => {
         await adAPI.delete(deleteDialog.data._id);
         setMessage({ type: "success", text: t("Ad deleted successfully!") });
         fetchAds();
+      } else if (deleteDialog.type === "video") {
+        await videoAPI.delete(deleteDialog.data._id);
+        setMessage({ type: "success", text: t("Reel deleted successfully!") });
+        fetchReels();
       }
       setDeleteDialog({ open: false, type: "", data: null });
     } catch (err) {
@@ -1691,6 +1824,10 @@ const DataEntryForm = () => {
         await adAPI.delete(deleteDialog.data._id);
         setMessage({ type: "success", text: t("Ad deleted successfully!") });
         fetchAds();
+      } else if (deleteDialog.type === "video") {
+        await videoAPI.delete(deleteDialog.data._id);
+        setMessage({ type: "success", text: t("Reel deleted successfully!") });
+        fetchReels();
       }
       setDeleteDialog({ open: false, type: "", data: null });
     } catch (err) {
@@ -2010,6 +2147,11 @@ const DataEntryForm = () => {
                 iconPosition="start"
               />
             )}
+            <Tab
+              label={t("Reels")}
+              icon={<VideoLibraryIcon />}
+              iconPosition="start"
+            />
           </Tabs>
 
           {/* Store List Panel */}
@@ -2999,6 +3141,13 @@ const DataEntryForm = () => {
                   </Button>
                   <Button
                     variant="outlined"
+                    startIcon={<VideoLibraryIcon />}
+                    onClick={() => setAddDialog({ open: true, type: "video" })}
+                  >
+                    {t("New Reel")}
+                  </Button>
+                  <Button
+                    variant="outlined"
                     sx={{
                       justifyContent: "flex-start",
                     }}
@@ -3706,7 +3855,12 @@ const DataEntryForm = () => {
           {activeListTab === 5 && (
             <Box>
               <Box
-                sx={{ display: "flex", justifyContent: "flex-start", mb: 2 }}
+                sx={{
+                  display: "flex",
+                  justifyContent: "flex-start",
+                  mb: 2,
+                  gap: 1,
+                }}
               >
                 <Button
                   variant="contained"
@@ -3714,6 +3868,13 @@ const DataEntryForm = () => {
                   onClick={() => setAddDialog({ open: true, type: "ad" })}
                 >
                   {t("New Ad")}
+                </Button>
+                <Button
+                  variant="outlined"
+                  startIcon={<VideoLibraryIcon />}
+                  onClick={() => setAddDialog({ open: true, type: "video" })}
+                >
+                  {t("New Reel")}
                 </Button>
               </Box>
               <TableContainer component={Paper}>
@@ -3945,6 +4106,126 @@ const DataEntryForm = () => {
               />
             </Box>
           )}
+
+          {/* Reels List Panel */}
+          {activeListTab === reelsTabIndex && (
+            <Box>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "flex-start",
+                  mb: 2,
+                  gap: 1,
+                }}
+              >
+                <Button
+                  variant="contained"
+                  startIcon={<VideoLibraryIcon />}
+                  onClick={() => setAddDialog({ open: true, type: "video" })}
+                >
+                  {t("New Reel")}
+                </Button>
+                <Button
+                  variant="outlined"
+                  onClick={fetchReels}
+                  disabled={loading}
+                >
+                  {t("Refresh")}
+                </Button>
+              </Box>
+              <TableContainer component={Paper}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>{t("No.")}</TableCell>
+                      <TableCell>{t("Title")}</TableCell>
+                      {/* <TableCell>{t("Video")}</TableCell> */}
+                      <TableCell>{t("Store")}</TableCell>
+                      <TableCell>{t("Brand")}</TableCell>
+                      <TableCell>{t("Like")}</TableCell>
+                      <TableCell>{t("Views")}</TableCell>
+                      <TableCell>{t("Shares")}</TableCell>
+                      <TableCell>{t("Created Date")}</TableCell>
+                      <TableCell>{t("Actions")}</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {reels
+                      .slice(
+                        reelsPage * rowsPerPage,
+                        reelsPage * rowsPerPage + rowsPerPage,
+                      )
+                      .map((reel, idx) => (
+                        <TableRow key={reel._id}>
+                          <TableCell>
+                            {reelsPage * rowsPerPage + idx + 1}
+                          </TableCell>
+                          <TableCell>{reel.title || "-"}</TableCell>
+                          {/* <TableCell>
+                            {reel.videoUrl ? (
+                              <video
+                                src={
+                                  reel.videoUrl.startsWith("http")
+                                    ? reel.videoUrl
+                                    : `${API_URL}${reel.videoUrl}`
+                                }
+                                muted
+                                playsInline
+                                controls
+                                preload="metadata"
+                                style={{
+                                  width: 120,
+                                  height: 180,
+                                  objectFit: "cover",
+                                  borderRadius: 8,
+                                }}
+                              />
+                            ) : (
+                              "-"
+                            )}
+                          </TableCell> */}
+                          <TableCell>{reel.storeId?.name || "-"}</TableCell>
+                          <TableCell>{reel.brandId?.name || "-"}</TableCell>
+                          <TableCell>{reel.like ?? 0}</TableCell>
+                          <TableCell>{reel.views ?? 0}</TableCell>
+                          <TableCell>{reel.shares ?? 0}</TableCell>
+                          <TableCell>
+                            {reel.createdAt
+                              ? new Date(reel.createdAt).toLocaleDateString()
+                              : "-"}
+                          </TableCell>
+                          <TableCell>
+                            <IconButton
+                              color="error"
+                              onClick={() =>
+                                setDeleteDialog({
+                                  open: true,
+                                  type: "video",
+                                  data: reel,
+                                })
+                              }
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              <TablePagination
+                component="div"
+                count={reels.length}
+                page={reelsPage}
+                onPageChange={(e, p) => setReelsPage(p)}
+                rowsPerPage={rowsPerPage}
+                rowsPerPageOptions={[10]}
+                labelDisplayedRows={({ from, to, count }) =>
+                  `${from}-${to} of ${count !== -1 ? count : `more than ${to}`}`
+                }
+              />
+            </Box>
+          )}
         </CardContent>
       </Card>
 
@@ -3966,11 +4247,13 @@ const DataEntryForm = () => {
                   ? t("Add Category")
                   : addDialog.type === "ad"
                     ? t("Add Ad")
-                    : addDialog.type === "storeType"
-                      ? t("Add Store Type")
-                      : addDialog.type === "brandType"
-                        ? t("Add Brand Type")
-                        : t("Add Product")}
+                    : addDialog.type === "video"
+                      ? t("Add Reel")
+                      : addDialog.type === "storeType"
+                        ? t("Add Store Type")
+                        : addDialog.type === "brandType"
+                          ? t("Add Brand Type")
+                          : t("Add Product")}
         </DialogTitle>
         <DialogContent dividers>
           {message.text && (
@@ -5233,6 +5516,173 @@ const DataEntryForm = () => {
                     fullWidth
                   >
                     {loading || uploadLoading ? t("Creating...") : t("Add Ad")}
+                  </Button>
+                </Grid>
+              </Grid>
+            </Box>
+          )}
+
+          {addDialog.type === "video" && (
+            <Box component="form" onSubmit={handleVideoSubmit} sx={{ mt: 1 }}>
+              <Grid container spacing={2}>
+                <Grid xs={12}>
+                  <TextField
+                    fullWidth
+                    required
+                    label={t("Video Title")}
+                    value={videoForm.title}
+                    onChange={(e) =>
+                      setVideoForm({ ...videoForm, title: e.target.value })
+                    }
+                  />
+                </Grid>
+                <Grid xs={12}>
+                  <input
+                    accept="video/*"
+                    style={{ display: "none" }}
+                    id="dialog-video-file"
+                    type="file"
+                    ref={videoFileRef}
+                    onChange={handleVideoFileChange}
+                  />
+                  <label htmlFor="dialog-video-file">
+                    <Button
+                      variant="outlined"
+                      component="span"
+                      fullWidth
+                      startIcon={<VideoLibraryIcon />}
+                    >
+                      {selectedVideoFile
+                        ? selectedVideoFile.name
+                        : t("Upload Video")}
+                    </Button>
+                  </label>
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel shrink>{t("Store")}</InputLabel>
+                    <Select
+                      value={videoForm.storeId}
+                      onChange={(e) =>
+                        setVideoForm({
+                          ...videoForm,
+                          storeId: e.target.value,
+                          brandId: e.target.value ? "" : videoForm.brandId,
+                        })
+                      }
+                      label={t("Store")}
+                      displayEmpty
+                      disabled={Boolean(videoForm.brandId)}
+                    >
+                      <MenuItem value="">
+                        <em>{t("None")}</em>
+                      </MenuItem>
+                      {stores.map((store) => (
+                        <MenuItem key={store._id} value={store._id}>
+                          {store.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel shrink>{t("Brand")}</InputLabel>
+                    <Select
+                      value={videoForm.brandId}
+                      onChange={(e) =>
+                        setVideoForm({
+                          ...videoForm,
+                          brandId: e.target.value,
+                          storeId: e.target.value ? "" : videoForm.storeId,
+                        })
+                      }
+                      label={t("Brand")}
+                      displayEmpty
+                      disabled={Boolean(videoForm.storeId)}
+                    >
+                      <MenuItem value="">
+                        <em>{t("None")}</em>
+                      </MenuItem>
+                      {brands.map((brand) => (
+                        <MenuItem key={brand._id} value={brand._id}>
+                          {brand.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    type="date"
+                    label={t("Expire Date")}
+                    InputLabelProps={{ shrink: true }}
+                    value={videoForm.expireDate}
+                    onChange={(e) =>
+                      setVideoForm({ ...videoForm, expireDate: e.target.value })
+                    }
+                  />
+                </Grid>
+                <Grid xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    type="number"
+                    label={t("Like")}
+                    value={videoForm.like}
+                    onChange={(e) =>
+                      setVideoForm({
+                        ...videoForm,
+                        like: Number(e.target.value),
+                      })
+                    }
+                  />
+                </Grid>
+                <Grid xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    type="number"
+                    label={t("Views")}
+                    value={videoForm.views}
+                    onChange={(e) =>
+                      setVideoForm({
+                        ...videoForm,
+                        views: Number(e.target.value),
+                      })
+                    }
+                  />
+                </Grid>
+                <Grid xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    type="number"
+                    label={t("Shares")}
+                    value={videoForm.shares}
+                    onChange={(e) =>
+                      setVideoForm({
+                        ...videoForm,
+                        shares: Number(e.target.value),
+                      })
+                    }
+                  />
+                </Grid>
+                <Grid xs={12}>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    disabled={loading || uploadLoading}
+                    startIcon={
+                      loading || uploadLoading ? (
+                        <CircularProgress size={20} />
+                      ) : (
+                        <SaveIcon />
+                      )
+                    }
+                    fullWidth
+                  >
+                    {loading || uploadLoading
+                      ? t("Uploading...")
+                      : t("Add Reel")}
                   </Button>
                 </Grid>
               </Grid>
@@ -6718,48 +7168,29 @@ const DataEntryForm = () => {
                 ? handleDeleteBrandConfirm()
                 : deleteDialog.type === "gift"
                   ? handleDeleteBrandConfirm()
-                  : deleteDialog.type === "category"
-                    ? handleDeleteCategoryConfirm()
-                    : deleteDialog.type === "storeType"
-                      ? handleDeleteStoreTypeConfirm()
-                      : deleteDialog.type === "brandType"
-                        ? (async () => {
-                            setDeleteLoading(true);
-                            try {
-                              await brandTypeAPI.delete(deleteDialog.data._id);
-                              const res = await brandTypeAPI.getAll();
-                              setBrandTypes(res.data || []);
-                              setMessage({
-                                type: "success",
-                                text: t("Brand Type deleted successfully!"),
-                              });
-                            } catch (e) {
-                              setMessage({
-                                type: "error",
-                                text: t("Failed to delete brand type."),
-                              });
-                            } finally {
-                              setDeleteLoading(false);
-                              setDeleteDialog({
-                                open: false,
-                                type: "",
-                                data: null,
-                              });
-                            }
-                          })()
-                        : (async () => {
+                  : deleteDialog.type === "video"
+                    ? handleDeleteStoreConfirm()
+                    : deleteDialog.type === "category"
+                      ? handleDeleteCategoryConfirm()
+                      : deleteDialog.type === "storeType"
+                        ? handleDeleteStoreTypeConfirm()
+                        : deleteDialog.type === "brandType"
+                          ? (async () => {
                               setDeleteLoading(true);
                               try {
-                                await categoryAPI.delete(deleteDialog.data._id);
+                                await brandTypeAPI.delete(
+                                  deleteDialog.data._id,
+                                );
+                                const res = await brandTypeAPI.getAll();
+                                setBrandTypes(res.data || []);
                                 setMessage({
                                   type: "success",
-                                  text: t("Category deleted successfully!"),
+                                  text: t("Brand Type deleted successfully!"),
                                 });
-                                fetchCategories();
                               } catch (e) {
                                 setMessage({
                                   type: "error",
-                                  text: t("Failed to delete category."),
+                                  text: t("Failed to delete brand type."),
                                 });
                               } finally {
                                 setDeleteLoading(false);
@@ -6770,8 +7201,33 @@ const DataEntryForm = () => {
                                 });
                               }
                             })()
-                          ? handleDeleteStoreConfirm()
-                          : null
+                          : (async () => {
+                                setDeleteLoading(true);
+                                try {
+                                  await categoryAPI.delete(
+                                    deleteDialog.data._id,
+                                  );
+                                  setMessage({
+                                    type: "success",
+                                    text: t("Category deleted successfully!"),
+                                  });
+                                  fetchCategories();
+                                } catch (e) {
+                                  setMessage({
+                                    type: "error",
+                                    text: t("Failed to delete category."),
+                                  });
+                                } finally {
+                                  setDeleteLoading(false);
+                                  setDeleteDialog({
+                                    open: false,
+                                    type: "",
+                                    data: null,
+                                  });
+                                }
+                              })()
+                            ? handleDeleteStoreConfirm()
+                            : null
             }
             disabled={deleteLoading}
           >

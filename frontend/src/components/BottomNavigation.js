@@ -55,7 +55,7 @@ const BottomNavigationBar = () => {
 
   const navItems = [
     { name: t("Home"), path: "/", icon: <HomeIcon /> },
-    // { name: t("Reels"), path: "/reels", icon: <VideoLibraryIcon /> },
+    { name: t("Reels"), path: "/reels", icon: <VideoLibraryIcon /> },
     // { name: t("Favourites"), path: "/favourites", icon: <FavoriteIcon /> },
     { name: t("Categories"), path: "/categories", icon: <CategoryIcon /> },
     { name: t("Stores"), path: "/stores", icon: <StoreIcon /> },

@@ -56,6 +56,7 @@ app.use("/api/notifications", require("./routes/notification"));
 app.use("/api/admin", require("./routes/admin"));
 app.use("/api/settings", require("./routes/settings"));
 app.use("/api/search", require("./routes/search"));
+app.use("/api/videos", require("./routes/video"));
 
 const PORT = process.env.PORT || 5000;
 // app.listen(PORT, () => console.log(`Server started on port ${PORT}`));

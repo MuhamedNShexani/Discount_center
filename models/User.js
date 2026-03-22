@@ -62,6 +62,12 @@ const userSchema = new mongoose.Schema({
       ref: "Product",
     },
   ],
+  likedVideos: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Video",
+    },
+  ],
   followedStores: [
     {
       type: mongoose.Schema.Types.ObjectId,
@@ -157,6 +163,7 @@ userSchema.methods.getPublicProfile = function () {
         deviceId: this.deviceId,
         isAnonymous: true,
         likedProducts: this.likedProducts,
+        likedVideos: this.likedVideos,
         viewedProducts: this.viewedProducts,
         createdAt: this.createdAt,
       };
@@ -171,6 +178,7 @@ userSchema.methods.getPublicProfile = function () {
       avatar: this.avatar,
       isActive: this.isActive,
       likedProducts: this.likedProducts,
+      likedVideos: this.likedVideos,
       viewedProducts: this.viewedProducts,
       createdAt: this.createdAt,
     };
@@ -183,6 +191,7 @@ userSchema.methods.getPublicProfile = function () {
       email: this.email || "",
       isActive: this.isActive || false,
       likedProducts: this.likedProducts || [],
+      likedVideos: this.likedVideos || [],
       viewedProducts: this.viewedProducts || [],
       createdAt: this.createdAt,
     };

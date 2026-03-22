@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const Product = require("../models/Product");
 const Store = require("../models/Store");
+const Video = require("../models/Video");
 
 // @desc    Get or create user by device ID (for anonymous tracking)
 // @route   GET /api/users/device/:deviceId
@@ -116,6 +117,96 @@ const toggleProductLike = async (req, res) => {
   } catch (error) {
     console.error("Error toggling product like:", error);
     res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// @desc    Like/unlike a video reel (works with auth token OR deviceId for anonymous)
+// @route   POST /api/users/like-video
+// @access  Public (optionalAuth)
+const toggleVideoLike = async (req, res) => {
+  try {
+    const { videoId, deviceId } = req.body;
+    const userId = req.userId;
+
+    if (!videoId) {
+      return res.status(400).json({
+        success: false,
+        message: "Video ID is required",
+      });
+    }
+
+    let user;
+    if (userId) {
+      user = await User.findById(userId);
+    } else if (deviceId) {
+      user = await User.findOne({ deviceId });
+      if (!user) {
+        user = new User({ deviceId });
+        await user.save();
+      }
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Either login or provide device ID to like videos",
+      });
+    }
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const video = await Video.findById(videoId);
+    if (!video) {
+      return res.status(404).json({
+        success: false,
+        message: "Video not found",
+      });
+    }
+
+    const likedVideos = user.likedVideos || [];
+    const isLiked = likedVideos.some(
+      (id) => id.toString() === videoId || id === videoId,
+    );
+
+    let updatedVideo;
+    if (isLiked) {
+      user.likedVideos = likedVideos.filter((id) => id.toString() !== videoId);
+      updatedVideo = await Video.findByIdAndUpdate(
+        videoId,
+        { $inc: { like: -1 } },
+        { new: true },
+      );
+      if (updatedVideo.like < 0) {
+        updatedVideo = await Video.findByIdAndUpdate(
+          videoId,
+          { like: 0 },
+          { new: true },
+        );
+      }
+    } else {
+      user.likedVideos.push(videoId);
+      updatedVideo = await Video.findByIdAndUpdate(
+        videoId,
+        { $inc: { like: 1 } },
+        { new: true },
+      );
+    }
+
+    await user.save();
+
+    return res.json({
+      success: true,
+      data: {
+        isLiked: !isLiked,
+        likeCount: updatedVideo.like,
+      },
+    });
+  } catch (error) {
+    console.error("Error toggling video like:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
@@ -455,6 +546,7 @@ const updateDeviceProfile = async (req, res) => {
 module.exports = {
   getUserByDevice,
   toggleProductLike,
+  toggleVideoLike,
   toggleFollowStore,
   recordProductView,
   getLikedProducts,
