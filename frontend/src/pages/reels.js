@@ -86,6 +86,7 @@ const ReelCard = memo(function ReelCard({
     : 10;
   const progressRef = useRef(null);
   const isDraggingSeekRef = useRef(false);
+  const [isLandscapeVideo, setIsLandscapeVideo] = useState(false);
 
   useEffect(() => {
     const stopDragging = () => {
@@ -132,6 +133,10 @@ const ReelCard = memo(function ReelCard({
           defaultMuted={isMuted}
           playsInline
           preload="metadata"
+          onLoadedMetadata={(e) => {
+            const { videoWidth, videoHeight } = e.currentTarget;
+            setIsLandscapeVideo(videoWidth > videoHeight);
+          }}
           onLoadedData={(e) => {
             if (isActive && !isPaused) {
               e.currentTarget.play().catch(() => {});
@@ -142,7 +147,8 @@ const ReelCard = memo(function ReelCard({
           style={{
             width: "100%",
             height: "100%",
-            objectFit: "cover",
+            objectFit: isLandscapeVideo ? "contain" : "cover",
+            objectPosition: "center center",
             transform: "translateZ(0)",
           }}
         />
