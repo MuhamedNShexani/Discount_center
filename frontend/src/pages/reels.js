@@ -645,24 +645,70 @@ const ReelsPage = () => {
   }, [activeIndex, reels.length, videoRefs]);
 
   useEffect(() => {
-    const onVisibilityChange = () => {
-      if (document.hidden) {
-        videoRefs.current.forEach((video) => {
-          if (video) video.pause();
-        });
-        if (!isPausedRef.current) {
-          resumePlaybackAfterVisibleRef.current = true;
+    const pauseAllForBackground = () => {
+      videoRefs.current.forEach((video) => {
+        if (video) {
+          try {
+            video.pause();
+          } catch (_) {
+            /* ignore */
+          }
         }
-        setIsPaused(true);
-      } else if (resumePlaybackAfterVisibleRef.current) {
-        resumePlaybackAfterVisibleRef.current = false;
-        setIsPaused(false);
+      });
+      if (!isPausedRef.current) {
+        resumePlaybackAfterVisibleRef.current = true;
+      }
+      setIsPaused(true);
+    };
+
+    const tryResumeAfterForeground = () => {
+      if (!resumePlaybackAfterVisibleRef.current) return;
+      if (document.visibilityState === "hidden") return;
+      resumePlaybackAfterVisibleRef.current = false;
+      setIsPaused(false);
+    };
+
+    const onVisibilityChange = () => {
+      if (document.hidden || document.visibilityState !== "visible") {
+        pauseAllForBackground();
+      } else {
+        tryResumeAfterForeground();
       }
     };
 
+    const onPageHide = () => pauseAllForBackground();
+    const onPageShow = () =>
+      requestAnimationFrame(() => tryResumeAfterForeground());
+
+    const onWindowBlur = () => pauseAllForBackground();
+    const onWindowFocus = () =>
+      requestAnimationFrame(() => tryResumeAfterForeground());
+
+    const onFreeze = () => pauseAllForBackground();
+
     document.addEventListener("visibilitychange", onVisibilityChange);
-    return () =>
+    window.addEventListener("pagehide", onPageHide);
+    window.addEventListener("pageshow", onPageShow);
+    window.addEventListener("blur", onWindowBlur);
+    window.addEventListener("focus", onWindowFocus);
+    document.addEventListener("freeze", onFreeze);
+
+    // Android WebView often skips visibilitychange; native host can call this from Activity.onPause.
+    if (typeof window !== "undefined") {
+      window.patrisPauseReels = pauseAllForBackground;
+    }
+
+    return () => {
       document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("pagehide", onPageHide);
+      window.removeEventListener("pageshow", onPageShow);
+      window.removeEventListener("blur", onWindowBlur);
+      window.removeEventListener("focus", onWindowFocus);
+      document.removeEventListener("freeze", onFreeze);
+      if (typeof window !== "undefined" && window.patrisPauseReels) {
+        delete window.patrisPauseReels;
+      }
+    };
   }, []);
 
   useEffect(() => {
