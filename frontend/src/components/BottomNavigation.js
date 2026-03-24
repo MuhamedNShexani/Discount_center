@@ -44,7 +44,7 @@ const BottomNavigationBar = () => {
     if (pathname.startsWith("/stores")) return "/stores";
 
     // Check for brands (including nested routes)
-    if (pathname.startsWith("/brands")) return "/brands";
+    // if (pathname.startsWith("/brands")) return "/brands";
 
     // Default to home if no match
     return "/";
@@ -55,11 +55,12 @@ const BottomNavigationBar = () => {
 
   const navItems = [
     { name: t("Home"), path: "/", icon: <HomeIcon /> },
+    { name: t("Categories"), path: "/categories", icon: <CategoryIcon /> },
+
     { name: t("Reels"), path: "/reels", icon: <VideoLibraryIcon /> },
     // { name: t("Favourites"), path: "/favourites", icon: <FavoriteIcon /> },
-    { name: t("Categories"), path: "/categories", icon: <CategoryIcon /> },
     { name: t("Stores"), path: "/stores", icon: <StoreIcon /> },
-    { name: t("Brands"), path: "/brands", icon: <BusinessIcon /> },
+    // { name: t("Brands"), path: "/brands", icon: <BusinessIcon /> },
     { name: t("Gifts"), path: "/gifts", icon: <CardGiftcardIcon /> },
   ];
 

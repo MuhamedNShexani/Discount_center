@@ -944,6 +944,22 @@ const MainPage = () => {
     selectedCityCanonical,
   ]);
 
+  useEffect(() => {
+    if (mainPageTab !== 1 || followLoadingTab) return undefined;
+    if (filteredFollowedStoresWithProducts.length > 0) return undefined;
+
+    const id = window.setTimeout(() => {
+      setMainPageTab(0);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }, 3000);
+
+    return () => window.clearTimeout(id);
+  }, [
+    mainPageTab,
+    followLoadingTab,
+    filteredFollowedStoresWithProducts.length,
+  ]);
+
   // Effect for pagination
   useEffect(() => {
     setStoresPage(1); // Reset to first page on filter change
@@ -1108,7 +1124,9 @@ const MainPage = () => {
           }}
           onChange={(_, v) => {
             setMainPageTab(v);
-
+            if (v === 1) {
+              setFollowLoadingTab(true);
+            }
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
           sx={{

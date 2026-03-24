@@ -499,6 +499,9 @@ const ReelsPage = () => {
   const { selectedCity } = useCityFilter();
 
   const handleTabSwitch = useCallback((tabIndex) => {
+    if (tabIndex === 1) {
+      setFollowLoadingTab(true);
+    }
     setMainPageTab(tabIndex);
     if (containerRef.current) {
       containerRef.current.scrollTo({ top: 0, behavior: "smooth" });
@@ -926,6 +929,25 @@ const ReelsPage = () => {
     };
     loadFollowedStores();
   }, [mainPageTab, getFollowedStores]);
+
+  useEffect(() => {
+    if (mainPageTab !== 1 || followLoadingTab || loading) return undefined;
+    if (displayedReels.length > 0) return undefined;
+
+    const id = window.setTimeout(() => {
+      setMainPageTab(0);
+      if (containerRef.current) {
+        containerRef.current.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }, 3000);
+
+    return () => window.clearTimeout(id);
+  }, [
+    mainPageTab,
+    followLoadingTab,
+    loading,
+    displayedReels.length,
+  ]);
 
   const handleOwnerFollowToggle = useCallback(
     async (storeId) => {
