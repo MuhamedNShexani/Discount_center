@@ -80,12 +80,17 @@ const ProfilePage = () => {
     if (!url || typeof url !== "string") return null;
     const trimmed = url.trim();
     if (type === "whatsapp" || type === "viber" || type === "telegram") {
-      if (/^(https?:\/\/)?(wa\.me|api\.whatsapp\.com|viber\.com|t\.me|telegram\.me)\//i.test(trimmed)) {
+      if (
+        /^(https?:\/\/)?(wa\.me|api\.whatsapp\.com|viber\.com|t\.me|telegram\.me)\//i.test(
+          trimmed,
+        )
+      ) {
         return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
       }
       const digits = trimmed.replace(/[^\d]/g, "");
       if (type === "whatsapp") return digits ? `https://wa.me/${digits}` : null;
-      if (type === "viber") return digits ? `viber://chat?number=${digits}` : null;
+      if (type === "viber")
+        return digits ? `viber://chat?number=${digits}` : null;
       if (type === "telegram") return digits ? `https://t.me/+${digits}` : null;
     }
     if (type === "gmail") {
@@ -97,7 +102,11 @@ const ProfilePage = () => {
   const contactItems = [
     { key: "whatsapp", value: contactInfo?.whatsapp, icon: <WhatsAppIcon /> },
     { key: "facebook", value: contactInfo?.facebook, icon: <FacebookIcon /> },
-    { key: "instagram", value: contactInfo?.instagram, icon: <InstagramIcon /> },
+    {
+      key: "instagram",
+      value: contactInfo?.instagram,
+      icon: <InstagramIcon />,
+    },
     { key: "snapchat", value: contactInfo?.snapchat, icon: <SnapchatIcon /> },
     { key: "gmail", value: contactInfo?.gmail, icon: <GmailIcon /> },
     { key: "tiktok", value: contactInfo?.tiktok, icon: <TikTokIcon /> },
