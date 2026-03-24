@@ -489,6 +489,8 @@ const ReelsPage = () => {
   const randomOrderKeyRef = useRef({});
   const isPausedRef = useRef(isPaused);
   const resumePlaybackAfterVisibleRef = useRef(false);
+  /** True while we treat the app as backgrounded — blocks observer/activeIndex from forcing play. */
+  const reelsAppSuspendedRef = useRef(false);
   const isMobile = useIsMobileLayout();
   const observerThreshold = useMemo(() => [0.45, 0.65, 0.9], []);
   const {
@@ -646,6 +648,7 @@ const ReelsPage = () => {
 
   useEffect(() => {
     const pauseAllForBackground = () => {
+      reelsAppSuspendedRef.current = true;
       videoRefs.current.forEach((video) => {
         if (video) {
           try {
@@ -663,26 +666,31 @@ const ReelsPage = () => {
 
     const tryResumeAfterForeground = () => {
       if (!resumePlaybackAfterVisibleRef.current) return;
-      if (document.visibilityState === "hidden") return;
       resumePlaybackAfterVisibleRef.current = false;
       setIsPaused(false);
+    };
+
+    const onReturnToForeground = () => {
+      requestAnimationFrame(() => {
+        if (document.visibilityState === "hidden") return;
+        reelsAppSuspendedRef.current = false;
+        tryResumeAfterForeground();
+      });
     };
 
     const onVisibilityChange = () => {
       if (document.hidden || document.visibilityState !== "visible") {
         pauseAllForBackground();
       } else {
-        tryResumeAfterForeground();
+        onReturnToForeground();
       }
     };
 
     const onPageHide = () => pauseAllForBackground();
-    const onPageShow = () =>
-      requestAnimationFrame(() => tryResumeAfterForeground());
+    const onPageShow = () => onReturnToForeground();
 
     const onWindowBlur = () => pauseAllForBackground();
-    const onWindowFocus = () =>
-      requestAnimationFrame(() => tryResumeAfterForeground());
+    const onWindowFocus = () => onReturnToForeground();
 
     const onFreeze = () => pauseAllForBackground();
 
@@ -709,6 +717,19 @@ const ReelsPage = () => {
         delete window.patrisPauseReels;
       }
     };
+  }, []);
+
+  useEffect(() => {
+    const onPlayCapture = (e) => {
+      const v = e.target;
+      if (!v || v.tagName !== "VIDEO") return;
+      if (containerRef.current && !containerRef.current.contains(v)) return;
+      if (reelsAppSuspendedRef.current || document.hidden) {
+        v.pause();
+      }
+    };
+    document.addEventListener("play", onPlayCapture, true);
+    return () => document.removeEventListener("play", onPlayCapture, true);
   }, []);
 
   useEffect(() => {

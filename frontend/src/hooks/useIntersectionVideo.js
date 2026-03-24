@@ -59,17 +59,6 @@ const useIntersectionVideo = ({
     return () => observer.disconnect();
   }, [itemCount, rootRef, threshold]);
 
-  useEffect(() => {
-    videoRefs.current.forEach((video, index) => {
-      if (!video) return;
-      if (index === activeIndex) {
-        video.play().catch(() => {});
-      } else {
-        video.pause();
-      }
-    });
-  }, [activeIndex]);
-
   return {
     activeIndex,
     registerSectionRef,
