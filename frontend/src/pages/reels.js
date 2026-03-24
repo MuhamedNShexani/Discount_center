@@ -487,6 +487,8 @@ const ReelsPage = () => {
   const pullStartYRef = useRef(null);
   const pullTriggeredRef = useRef(false);
   const randomOrderKeyRef = useRef({});
+  const isPausedRef = useRef(isPaused);
+  const resumePlaybackAfterVisibleRef = useRef(false);
   const isMobile = useIsMobileLayout();
   const observerThreshold = useMemo(() => [0.45, 0.65, 0.9], []);
   const {
@@ -497,6 +499,10 @@ const ReelsPage = () => {
     getFollowedStores,
   } = useUserTracking();
   const { selectedCity } = useCityFilter();
+
+  useEffect(() => {
+    isPausedRef.current = isPaused;
+  }, [isPaused]);
 
   const handleTabSwitch = useCallback((tabIndex) => {
     if (tabIndex === 1) {
@@ -637,6 +643,27 @@ const ReelsPage = () => {
       }
     });
   }, [activeIndex, reels.length, videoRefs]);
+
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        videoRefs.current.forEach((video) => {
+          if (video) video.pause();
+        });
+        if (!isPausedRef.current) {
+          resumePlaybackAfterVisibleRef.current = true;
+        }
+        setIsPaused(true);
+      } else if (resumePlaybackAfterVisibleRef.current) {
+        resumePlaybackAfterVisibleRef.current = false;
+        setIsPaused(false);
+      }
+    };
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () =>
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, []);
 
   useEffect(() => {
     let frameId;
