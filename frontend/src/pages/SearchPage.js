@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Box,
@@ -17,6 +17,9 @@ import {
   Button,
   useTheme,
 } from "@mui/material";
+import Slider from "react-slick";
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
 import SearchIcon from "@mui/icons-material/Search";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import BusinessIcon from "@mui/icons-material/Business";
@@ -24,7 +27,7 @@ import CategoryIcon from "@mui/icons-material/Category";
 import HistoryIcon from "@mui/icons-material/History";
 import ClearIcon from "@mui/icons-material/Clear";
 import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
-import { searchAPI } from "../services/api";
+import { searchAPI, adAPI } from "../services/api";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 import { useCityFilter } from "../context/CityFilterContext";
@@ -56,6 +59,7 @@ const SearchPage = () => {
   });
   const [searched, setSearched] = useState(false);
   const [recentSearches, setRecentSearches] = useState([]);
+  const [bannerAds, setBannerAds] = useState([]);
 
   const userId = user?.id || user?._id || null;
   const deviceId = userId ? null : getDeviceId();
@@ -67,6 +71,25 @@ const SearchPage = () => {
   useEffect(() => {
     refreshRecentSearches();
   }, [refreshRecentSearches]);
+
+  useEffect(() => {
+    const fetchBannerAds = async () => {
+      try {
+        const res = await adAPI.getAll({ page: "search" });
+        const ads = Array.isArray(res?.data) ? res.data : [];
+        if (ads.length > 0) {
+          setBannerAds(ads);
+          return;
+        }
+        const fallbackRes = await adAPI.getAll({ page: "home" });
+        setBannerAds(Array.isArray(fallbackRes?.data) ? fallbackRes.data : []);
+      } catch (err) {
+        console.error("Error loading search banners:", err);
+        setBannerAds([]);
+      }
+    };
+    fetchBannerAds();
+  }, []);
 
   const performSearch = useCallback(
     async (q) => {
@@ -81,8 +104,15 @@ const SearchPage = () => {
       try {
         const res = await searchAPI.search(trimmed, selectedCity || null);
         const data = res?.data?.data || res?.data || {};
+        const now = new Date();
+        const visibleProducts = (data.products || []).filter((product) => {
+          if (!product?.expireDate) return true;
+          const expireDate = new Date(product.expireDate);
+          if (Number.isNaN(expireDate.getTime())) return true;
+          return expireDate >= now;
+        });
         setResults({
-          products: data.products || [],
+          products: visibleProducts,
           stores: data.stores || [],
           brands: data.brands || [],
         });
@@ -150,6 +180,45 @@ const SearchPage = () => {
   };
 
   const backendUrl = process.env.REACT_APP_BACKEND_URL || "";
+  // const bannerAdsWithImages = useMemo(
+  //   () =>
+  //     (bannerAds || [])
+  //       .filter((a) => !!a.image)
+  //       .map((a) => ({
+  //         _id: a._id,
+  //         src: a.image.startsWith("http")
+  //           ? a.image
+  //           : `${process.env.REACT_APP_BACKEND_URL}${a.image}`,
+  //         brandId: a.brandId,
+  //         storeId: a.storeId,
+  //         giftId: a.giftId,
+  //       })),
+  //   [bannerAds],
+  // );
+  // const bannerSettings = {
+  //   dots: true,
+  //   infinite: true,
+  //   speed: 500,
+  //   slidesToShow: 1,
+  //   slidesToScroll: 1,
+  //   autoplay: true,
+  //   autoplaySpeed: 3000,
+  //   responsive: [
+  //     {
+  //       breakpoint: 1024,
+  //       settings: { dots: true, arrows: false },
+  //     },
+  //     {
+  //       breakpoint: 600,
+  //       settings: { dots: true, arrows: false, autoplaySpeed: 4000 },
+  //     },
+  //   ],
+  // };
+  const formatPrice = (value) => {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return null;
+    return `${n.toLocaleString()} ${t("ID")}`;
+  };
   const hasResults =
     results.products.length > 0 ||
     results.stores.length > 0 ||
@@ -157,6 +226,60 @@ const SearchPage = () => {
 
   return (
     <Box sx={{ pt: 5 }}>
+      {/* {bannerAdsWithImages.length > 0 && (
+        <Box
+          sx={{
+            position: "relative",
+            backgroundColor:
+              theme.palette.mode === "dark" ? "#121212" : "#ffffff",
+            borderRadius: { xs: 2, md: 3 },
+            mb: 2,
+            boxSizing: "border-box",
+          }}
+        >
+          <Box
+            sx={{
+              width: "100%",
+              maxWidth: "lg",
+              margin: "0 auto",
+              height: { xs: "150px", sm: "200px", md: "250px" },
+              borderRadius: { xs: 2, md: 3 },
+              overflow: "hidden",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
+            }}
+          >
+            <Slider {...bannerSettings}>
+              {bannerAdsWithImages.map((ad, index) => (
+                <div key={ad._id || index}>
+                  <img
+                    onClick={() =>
+                      ad.brandId
+                        ? navigate(`/brands/${ad.brandId}`)
+                        : ad.storeId
+                          ? navigate(`/stores/${ad.storeId}`)
+                          : ad.giftId
+                            ? navigate(`/gifts/${ad.giftId}`)
+                            : null
+                    }
+                    src={ad.src || ad}
+                    alt={`Banner ${index + 1}`}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      cursor:
+                        ad.brandId || ad.storeId || ad.giftId
+                          ? "pointer"
+                          : "default",
+                    }}
+                  />
+                </div>
+              ))}
+            </Slider>
+          </Box>
+        </Box>
+      )} */}
+
       <Paper
         elevation={0}
         sx={{
@@ -375,10 +498,11 @@ const SearchPage = () => {
                       primary={getLocalizedName(p, "name", lang) || p.name}
                       secondary={
                         [
+                          formatPrice(p.newPrice) || formatPrice(p.price),
                           p.brandId?.statusAll === "off"
                             ? null
-                            : (getLocalizedName(p.brandId, "name", lang) ||
-                              p.brandId?.name),
+                            : getLocalizedName(p.brandId, "name", lang) ||
+                              p.brandId?.name,
                           getLocalizedName(p.storeId, "name", lang) ||
                             p.storeId?.name,
                         ]

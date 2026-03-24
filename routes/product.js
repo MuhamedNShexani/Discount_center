@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const upload = require("../middleware/upload");
 const XLSX = require("xlsx");
+const Store = require("../models/Store");
 const {
   getProducts,
   getProductById,
@@ -140,6 +141,11 @@ router.post("/bulk-upload", upload.single("excelFile"), async (req, res) => {
 
         const newProduct = new Product(productData);
         await newProduct.save();
+        if (productData.storeId) {
+          await Store.findByIdAndUpdate(productData.storeId, {
+            $set: { lastReleaseDiscountDate: new Date() },
+          });
+        }
         createdCount++;
       } catch (error) {
         errors.push(`Row ${i + 2}: ${error.message}`);

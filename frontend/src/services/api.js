@@ -144,6 +144,10 @@ export const videoAPI = {
     api.post("/videos", data, {
       timeout: 120000,
     }),
+  update: (id, data) =>
+    api.put(`/videos/${id}`, data, {
+      timeout: 120000,
+    }),
   delete: (id) => api.delete(`/videos/${id}`),
   incrementLike: (id) => api.post(`/videos/${id}/like`),
   incrementView: (id) => api.post(`/videos/${id}/view`),

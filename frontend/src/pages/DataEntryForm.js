@@ -87,9 +87,24 @@ const DataEntryForm = () => {
   const isAdmin =
     user?.email === "mshexani45@gmail.com" || user?.email === "admin@gmail.com";
   const reelsTabIndex = isAdmin ? 10 : 9;
-  const { contactWhatsAppNumber, setContactWhatsAppNumber, fetchSettings } =
-    useAppSettings();
+  const {
+    contactWhatsAppNumber,
+    setContactWhatsAppNumber,
+    contactInfo,
+    setContactInfo,
+    fetchSettings,
+  } = useAppSettings();
   const [settingsContactNumber, setSettingsContactNumber] = useState("");
+  const [settingsContactInfo, setSettingsContactInfo] = useState({
+    whatsapp: "",
+    facebook: "",
+    instagram: "",
+    snapchat: "",
+    gmail: "",
+    tiktok: "",
+    viber: "",
+    telegram: "",
+  });
   const [activeTab, setActiveTab] = useState(0);
   const [activeListTab, setActiveListTab] = useState(0); // State for list tabs
   const [stores, setStores] = useState([]);
@@ -111,6 +126,9 @@ const DataEntryForm = () => {
   const [adsPage, setAdsPage] = useState(0);
   const [reelsPage, setReelsPage] = useState(0);
   const [rowsPerPage] = useState(10);
+  const [storeNameSearch, setStoreNameSearch] = useState("");
+  const [brandNameSearch, setBrandNameSearch] = useState("");
+  const [categoryStoreTypeFilter, setCategoryStoreTypeFilter] = useState("all");
   const [storeTypes, setStoreTypes] = useState([]);
   const [brandTypes, setBrandTypes] = useState([]);
 
@@ -139,6 +157,14 @@ const DataEntryForm = () => {
     logo: "",
     address: "",
     phone: "",
+    whatsapp: "",
+    facebook: "",
+    instagram: "",
+    tiktok: "",
+    snapchat: "",
+    googleMaps: "",
+    appleMaps: "",
+    waze: "",
     description: "",
     isVip: false,
     brandTypeId: "",
@@ -151,6 +177,14 @@ const DataEntryForm = () => {
     logo: "",
     address: "",
     phone: "",
+    whatsapp: "",
+    facebook: "",
+    instagram: "",
+    tiktok: "",
+    snapchat: "",
+    googleMaps: "",
+    appleMaps: "",
+    waze: "",
     description: "",
     isVip: false,
     storeTypeId: "",
@@ -195,16 +229,20 @@ const DataEntryForm = () => {
 
   const [selectedAdImage, setSelectedAdImage] = useState(null);
 
-  const [videoForm, setVideoForm] = useState({
+  const defaultVideoForm = {
     title: "",
     storeId: "",
     brandId: "",
+    videoUrl: "",
+    key: "",
     expireDate: "",
     like: 0,
     views: 0,
     shares: 0,
-  });
+  };
+  const [videoForm, setVideoForm] = useState(defaultVideoForm);
   const [selectedVideoFile, setSelectedVideoFile] = useState(null);
+  const [editingVideoId, setEditingVideoId] = useState("");
 
   // Gift form state
   const [giftForm, setGiftForm] = useState({
@@ -293,15 +331,33 @@ const DataEntryForm = () => {
   }, [selectedStoreFilter]);
 
   useEffect(() => {
+    setStoresPage(0);
+  }, [storeNameSearch]);
+
+  useEffect(() => {
+    setBrandsPage(0);
+  }, [brandNameSearch]);
+
+  useEffect(() => {
     if (activeListTab === 8) {
       setSettingsContactNumber(contactWhatsAppNumber || "");
+      setSettingsContactInfo({
+        whatsapp: contactInfo?.whatsapp || contactWhatsAppNumber || "",
+        facebook: contactInfo?.facebook || "",
+        instagram: contactInfo?.instagram || "",
+        snapchat: contactInfo?.snapchat || "",
+        gmail: contactInfo?.gmail || "",
+        tiktok: contactInfo?.tiktok || "",
+        viber: contactInfo?.viber || "",
+        telegram: contactInfo?.telegram || "",
+      });
     }
     if (activeListTab === 9 && isAdmin) {
       setNotificationTitle("");
       setNotificationBody("");
       setNotificationType("general");
     }
-  }, [activeListTab, contactWhatsAppNumber, isAdmin]);
+  }, [activeListTab, contactWhatsAppNumber, contactInfo, isAdmin]);
 
   const fetchStores = async () => {
     try {
@@ -450,6 +506,25 @@ const DataEntryForm = () => {
     setBrandsPage(newPage);
   };
 
+  const filteredStores = stores.filter((store) =>
+    (store?.name || "")
+      .toLowerCase()
+      .includes((storeNameSearch || "").trim().toLowerCase()),
+  );
+
+  const filteredBrands = brands.filter((brand) =>
+    (brand?.name || "")
+      .toLowerCase()
+      .includes((brandNameSearch || "").trim().toLowerCase()),
+  );
+
+  const filteredCategoriesByStoreType = categories.filter((cat) => {
+    if (categoryStoreTypeFilter === "all") return true;
+    const catStoreTypeId =
+      cat?.storeTypeId?._id || cat?.storeTypeId || cat?.storeType?._id || "";
+    return String(catStoreTypeId) === String(categoryStoreTypeFilter);
+  });
+
   const handleProductsPageChange = (event, newPage) => {
     setProductsPage(newPage);
   };
@@ -557,6 +632,38 @@ const DataEntryForm = () => {
     if (file) {
       setSelectedVideoFile(file);
     }
+  };
+
+  const openCreateVideoDialog = () => {
+    setEditingVideoId("");
+    setVideoForm(defaultVideoForm);
+    setSelectedVideoFile(null);
+    if (videoFileRef.current) {
+      videoFileRef.current.value = "";
+    }
+    setAddDialog({ open: true, type: "video" });
+  };
+
+  const openEditVideoDialog = (reel) => {
+    setEditingVideoId(reel?._id || "");
+    setVideoForm({
+      title: reel?.title || "",
+      storeId: reel?.storeId?._id || reel?.storeId || "",
+      brandId: reel?.brandId?._id || reel?.brandId || "",
+      videoUrl: reel?.videoUrl || "",
+      key: reel?.key || "",
+      expireDate: reel?.expireDate
+        ? new Date(reel.expireDate).toISOString().slice(0, 10)
+        : "",
+      like: Number(reel?.like) || 0,
+      views: Number(reel?.views) || 0,
+      shares: Number(reel?.shares) || 0,
+    });
+    setSelectedVideoFile(null);
+    if (videoFileRef.current) {
+      videoFileRef.current.value = "";
+    }
+    setAddDialog({ open: true, type: "video" });
   };
 
   // Upload brand logo
@@ -818,7 +925,7 @@ const DataEntryForm = () => {
       return;
     }
 
-    if (!selectedVideoFile) {
+    if (!selectedVideoFile && !editingVideoId) {
       setMessage({ type: "error", text: t("Please select a video file.") });
       return;
     }
@@ -838,12 +945,15 @@ const DataEntryForm = () => {
       setUploadLoading(true);
       setMessage({ type: "", text: "" });
 
-      const uploaded = await uploadVideoFile(selectedVideoFile);
+      let uploaded = null;
+      if (selectedVideoFile) {
+        uploaded = await uploadVideoFile(selectedVideoFile);
+      }
 
-      await videoAPI.create({
+      const payload = {
         title: videoForm.title.trim(),
-        videoUrl: uploaded.videoUrl,
-        key: uploaded.key,
+        videoUrl: uploaded?.videoUrl || videoForm.videoUrl || undefined,
+        key: uploaded?.key || videoForm.key || undefined,
         storeId: videoForm.storeId || undefined,
         brandId: videoForm.brandId || undefined,
         expireDate: videoForm.expireDate
@@ -852,21 +962,22 @@ const DataEntryForm = () => {
         like: Number(videoForm.like) || 0,
         views: Number(videoForm.views) || 0,
         shares: Number(videoForm.shares) || 0,
-      });
+      };
+
+      if (editingVideoId) {
+        await videoAPI.update(editingVideoId, payload);
+      } else {
+        await videoAPI.create(payload);
+      }
 
       setMessage({
         type: "success",
-        text: t("Video reel created successfully!"),
+        text: editingVideoId
+          ? t("Video reel updated successfully!")
+          : t("Video reel created successfully!"),
       });
-      setVideoForm({
-        title: "",
-        storeId: "",
-        brandId: "",
-        expireDate: "",
-        like: 0,
-        views: 0,
-        shares: 0,
-      });
+      setVideoForm(defaultVideoForm);
+      setEditingVideoId("");
       setSelectedVideoFile(null);
       if (videoFileRef.current) {
         videoFileRef.current.value = "";
@@ -874,7 +985,7 @@ const DataEntryForm = () => {
       fetchReels();
       setAddDialog({ open: false, type: "" });
     } catch (err) {
-      console.error("Error creating video reel:", err);
+      console.error("Error saving video reel:", err);
       if (err?.code === "ECONNABORTED") {
         setMessage({
           type: "error",
@@ -889,7 +1000,7 @@ const DataEntryForm = () => {
         text:
           err?.response?.data?.message ||
           err?.message ||
-          t("Failed to create video reel. Please try again."),
+          t("Failed to save video reel. Please try again."),
       });
     } finally {
       setUploadLoading(false);
@@ -1095,6 +1206,19 @@ const DataEntryForm = () => {
       const brandData = {
         ...brandForm,
         logo: logoUrl,
+        contactInfo: {
+          phone: brandForm.phone || "",
+          whatsapp: brandForm.whatsapp || "",
+          facebook: brandForm.facebook || "",
+          instagram: brandForm.instagram || "",
+          tiktok: brandForm.tiktok || "",
+          snapchat: brandForm.snapchat || "",
+        },
+        locationInfo: {
+          googleMaps: brandForm.googleMaps || "",
+          appleMaps: brandForm.appleMaps || "",
+          waze: brandForm.waze || "",
+        },
       };
 
       const result = await brandAPI.create(brandData);
@@ -1104,6 +1228,14 @@ const DataEntryForm = () => {
         logo: "",
         address: "",
         phone: "",
+        whatsapp: "",
+        facebook: "",
+        instagram: "",
+        tiktok: "",
+        snapchat: "",
+        googleMaps: "",
+        appleMaps: "",
+        waze: "",
         brandTypeId: "",
         description: "",
         isVip: false,
@@ -1147,6 +1279,19 @@ const DataEntryForm = () => {
       const storeData = {
         ...storeForm,
         logo: logoUrl,
+        contactInfo: {
+          phone: storeForm.phone || "",
+          whatsapp: storeForm.whatsapp || "",
+          facebook: storeForm.facebook || "",
+          instagram: storeForm.instagram || "",
+          tiktok: storeForm.tiktok || "",
+          snapchat: storeForm.snapchat || "",
+        },
+        locationInfo: {
+          googleMaps: storeForm.googleMaps || "",
+          appleMaps: storeForm.appleMaps || "",
+          waze: storeForm.waze || "",
+        },
       };
 
       await storeAPI.create(storeData);
@@ -1156,6 +1301,14 @@ const DataEntryForm = () => {
         logo: "",
         address: "",
         phone: "",
+        whatsapp: "",
+        facebook: "",
+        instagram: "",
+        tiktok: "",
+        snapchat: "",
+        googleMaps: "",
+        appleMaps: "",
+        waze: "",
         description: "",
         isVip: false,
         storeTypeId: "",
@@ -1390,7 +1543,15 @@ const DataEntryForm = () => {
         name: data.name,
         logo: data.logo,
         address: data.address,
-        phone: data.phone,
+        phone: data.contactInfo?.phone || data.phone || "",
+        whatsapp: data.contactInfo?.whatsapp || "",
+        facebook: data.contactInfo?.facebook || "",
+        instagram: data.contactInfo?.instagram || "",
+        tiktok: data.contactInfo?.tiktok || "",
+        snapchat: data.contactInfo?.snapchat || "",
+        googleMaps: data.locationInfo?.googleMaps || "",
+        appleMaps: data.locationInfo?.appleMaps || "",
+        waze: data.locationInfo?.waze || "",
         isVip: !!data.isVip,
         brandTypeId:
           (data.brandTypeId && data.brandTypeId._id) || data.brandTypeId || "",
@@ -1405,7 +1566,15 @@ const DataEntryForm = () => {
         name: data.name,
         logo: data.logo,
         address: data.address,
-        phone: data.phone,
+        phone: data.contactInfo?.phone || data.phone || "",
+        whatsapp: data.contactInfo?.whatsapp || "",
+        facebook: data.contactInfo?.facebook || "",
+        instagram: data.contactInfo?.instagram || "",
+        tiktok: data.contactInfo?.tiktok || "",
+        snapchat: data.contactInfo?.snapchat || "",
+        googleMaps: data.locationInfo?.googleMaps || "",
+        appleMaps: data.locationInfo?.appleMaps || "",
+        waze: data.locationInfo?.waze || "",
         isVip: !!data.isVip,
         storeTypeId:
           (data.storeTypeId && data.storeTypeId._id) || data.storeTypeId || "",
@@ -1415,6 +1584,9 @@ const DataEntryForm = () => {
         show: data.show !== undefined ? data.show : true,
         expireDate: data.expireDate
           ? new Date(data.expireDate).toISOString().split("T")[0]
+          : "",
+        lastReleaseDiscountDate: data.lastReleaseDiscountDate
+          ? new Date(data.lastReleaseDiscountDate).toISOString().split("T")[0]
           : "",
         statusAll: data.statusAll === "off" ? "off" : "on",
       });
@@ -1530,9 +1702,25 @@ const DataEntryForm = () => {
         if (selectedEditImage) {
           logoUrl = await uploadBrandLogo(selectedEditImage);
         }
-        await brandAPI.update(editDialog.data._id, {
+        const brandUpdateData = {
           ...editForm,
           logo: logoUrl,
+          contactInfo: {
+            phone: editForm.phone || "",
+            whatsapp: editForm.whatsapp || "",
+            facebook: editForm.facebook || "",
+            instagram: editForm.instagram || "",
+            tiktok: editForm.tiktok || "",
+            snapchat: editForm.snapchat || "",
+          },
+          locationInfo: {
+            googleMaps: editForm.googleMaps || "",
+            appleMaps: editForm.appleMaps || "",
+            waze: editForm.waze || "",
+          },
+        };
+        await brandAPI.update(editDialog.data._id, {
+          ...brandUpdateData,
         });
         setMessage({
           type: "success",
@@ -1544,10 +1732,25 @@ const DataEntryForm = () => {
         if (selectedEditImage) {
           logoUrl = await uploadStoreLogo(selectedEditImage);
         }
-
-        await storeAPI.update(editDialog.data._id, {
+        const storeUpdateData = {
           ...editForm,
           logo: logoUrl,
+          contactInfo: {
+            phone: editForm.phone || "",
+            whatsapp: editForm.whatsapp || "",
+            facebook: editForm.facebook || "",
+            instagram: editForm.instagram || "",
+            tiktok: editForm.tiktok || "",
+            snapchat: editForm.snapchat || "",
+          },
+          locationInfo: {
+            googleMaps: editForm.googleMaps || "",
+            appleMaps: editForm.appleMaps || "",
+            waze: editForm.waze || "",
+          },
+        };
+        await storeAPI.update(editDialog.data._id, {
+          ...storeUpdateData,
         });
         setMessage({
           type: "success",
@@ -2160,7 +2363,8 @@ const DataEntryForm = () => {
               <Box
                 sx={{
                   display: "flex",
-                  justifyContent: "flex-start",
+                  justifyContent: "space-between",
+                  alignItems: "center",
                   mb: 2,
                 }}
               >
@@ -2180,6 +2384,13 @@ const DataEntryForm = () => {
                     {t("Bulk Upload")}
                   </Button>
                 </Box>
+                <TextField
+                  size="small"
+                  label={t("Search by Store Name")}
+                  value={storeNameSearch}
+                  onChange={(e) => setStoreNameSearch(e.target.value)}
+                  sx={{ minWidth: { xs: 180, sm: 260 } }}
+                />
               </Box>
               <TableContainer component={Paper}>
                 <Table>
@@ -2296,7 +2507,7 @@ const DataEntryForm = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {stores
+                    {filteredStores
                       .slice(
                         storesPage * rowsPerPage,
                         storesPage * rowsPerPage + rowsPerPage,
@@ -2445,7 +2656,7 @@ const DataEntryForm = () => {
               </TableContainer>
               <TablePagination
                 component="div"
-                count={stores.length}
+                count={filteredStores.length}
                 page={storesPage}
                 onPageChange={handleStoresPageChange}
                 rowsPerPage={rowsPerPage}
@@ -2631,24 +2842,121 @@ const DataEntryForm = () => {
           {activeListTab === 8 && (
             <Box>
               <Typography variant="h6" gutterBottom>
-                {t("Contact WhatsApp Number")}
+                {t("Contact Us Info")}
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 {t(
-                  "WhatsApp number for Contact Us (with country code, e.g. +9647503683478)",
+                  "Contact links shown in profile page. Fill only what you need.",
                 )}
               </Typography>
               <Grid container spacing={2} alignItems="center">
-                <Grid item xs={12} sm={8} md={6}>
+                <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    label={t("Contact WhatsApp Number")}
+                    label={t("WhatsApp")}
                     value={settingsContactNumber}
-                    onChange={(e) => setSettingsContactNumber(e.target.value)}
+                    onChange={(e) => {
+                      setSettingsContactNumber(e.target.value);
+                      setSettingsContactInfo((prev) => ({
+                        ...prev,
+                        whatsapp: e.target.value,
+                      }));
+                    }}
                     placeholder="+9647503683478"
                   />
                 </Grid>
-                <Grid item xs={12} sm={4} md={6}>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("Facebook")}
+                    value={settingsContactInfo.facebook}
+                    onChange={(e) =>
+                      setSettingsContactInfo((prev) => ({
+                        ...prev,
+                        facebook: e.target.value,
+                      }))
+                    }
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("Instagram")}
+                    value={settingsContactInfo.instagram}
+                    onChange={(e) =>
+                      setSettingsContactInfo((prev) => ({
+                        ...prev,
+                        instagram: e.target.value,
+                      }))
+                    }
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("Snapchat")}
+                    value={settingsContactInfo.snapchat}
+                    onChange={(e) =>
+                      setSettingsContactInfo((prev) => ({
+                        ...prev,
+                        snapchat: e.target.value,
+                      }))
+                    }
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("Gmail")}
+                    value={settingsContactInfo.gmail}
+                    onChange={(e) =>
+                      setSettingsContactInfo((prev) => ({
+                        ...prev,
+                        gmail: e.target.value,
+                      }))
+                    }
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("TikTok")}
+                    value={settingsContactInfo.tiktok}
+                    onChange={(e) =>
+                      setSettingsContactInfo((prev) => ({
+                        ...prev,
+                        tiktok: e.target.value,
+                      }))
+                    }
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("Viber")}
+                    value={settingsContactInfo.viber}
+                    onChange={(e) =>
+                      setSettingsContactInfo((prev) => ({
+                        ...prev,
+                        viber: e.target.value,
+                      }))
+                    }
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("Telegram")}
+                    value={settingsContactInfo.telegram}
+                    onChange={(e) =>
+                      setSettingsContactInfo((prev) => ({
+                        ...prev,
+                        telegram: e.target.value,
+                      }))
+                    }
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
                   <Button
                     variant="contained"
                     startIcon={<SaveIcon />}
@@ -2658,10 +2966,20 @@ const DataEntryForm = () => {
                         const headers = getAuthHeaders();
                         const num = settingsContactNumber.trim();
                         await settingsAPI.update(
-                          { contactWhatsAppNumber: num },
+                          {
+                            contactWhatsAppNumber: num,
+                            contactInfo: {
+                              ...settingsContactInfo,
+                              whatsapp: num,
+                            },
+                          },
                           getAuthHeaders(),
                         );
                         setContactWhatsAppNumber(num);
+                        setContactInfo({
+                          ...settingsContactInfo,
+                          whatsapp: num,
+                        });
                         await fetchSettings();
                         setMessage({
                           type: "success",
@@ -2857,7 +3175,7 @@ const DataEntryForm = () => {
               <Box
                 sx={{
                   display: "flex",
-                  justifyContent: "flex-start",
+                  justifyContent: "space-between",
                   alignItems: "center",
                   mb: 2,
                 }}
@@ -2891,6 +3209,13 @@ const DataEntryForm = () => {
                     {t("Export to Excel")}
                   </Button>
                 </Box>
+                <TextField
+                  size="small"
+                  label={t("Search by Brand Name")}
+                  value={brandNameSearch}
+                  onChange={(e) => setBrandNameSearch(e.target.value)}
+                  sx={{ minWidth: { xs: 180, sm: 260 } }}
+                />
               </Box>
               <TableContainer component={Paper}>
                 <Table>
@@ -2989,7 +3314,7 @@ const DataEntryForm = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {brands
+                    {filteredBrands
                       .slice(
                         brandsPage * rowsPerPage,
                         brandsPage * rowsPerPage + rowsPerPage,
@@ -3100,7 +3425,7 @@ const DataEntryForm = () => {
               </TableContainer>
               <TablePagination
                 component="div"
-                count={brands.length}
+                count={filteredBrands.length}
                 page={brandsPage}
                 onPageChange={handleBrandsPageChange}
                 rowsPerPage={rowsPerPage}
@@ -3142,7 +3467,7 @@ const DataEntryForm = () => {
                   <Button
                     variant="outlined"
                     startIcon={<VideoLibraryIcon />}
-                    onClick={() => setAddDialog({ open: true, type: "video" })}
+                    onClick={openCreateVideoDialog}
                   >
                     {t("New Reel")}
                   </Button>
@@ -3445,7 +3770,13 @@ const DataEntryForm = () => {
           {activeListTab === 3 && (
             <Box>
               <Box
-                sx={{ display: "flex", justifyContent: "flex-start", mb: 2 }}
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: 2,
+                  mb: 2,
+                }}
               >
                 <Button
                   variant="contained"
@@ -3454,6 +3785,21 @@ const DataEntryForm = () => {
                 >
                   {t("New Category")}
                 </Button>
+                <FormControl size="small" sx={{ minWidth: 220 }}>
+                  <InputLabel>{t("Store Type Filter")}</InputLabel>
+                  <Select
+                    value={categoryStoreTypeFilter}
+                    label={t("Store Type Filter")}
+                    onChange={(e) => setCategoryStoreTypeFilter(e.target.value)}
+                  >
+                    <MenuItem value="all">{t("All Store Types")}</MenuItem>
+                    {storeTypes.map((st) => (
+                      <MenuItem key={st._id} value={st._id}>
+                        {st.icon || "🏪"} {t(st.name)}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               </Box>
               <TableContainer component={Paper}>
                 <Table>
@@ -3516,7 +3862,7 @@ const DataEntryForm = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {categories.map((cat, idx) => (
+                    {filteredCategoriesByStoreType.map((cat, idx) => (
                       <TableRow key={cat._id}>
                         <TableCell>{idx + 1}</TableCell>
                         <TableCell>{cat.name}</TableCell>
@@ -3872,7 +4218,7 @@ const DataEntryForm = () => {
                 <Button
                   variant="outlined"
                   startIcon={<VideoLibraryIcon />}
-                  onClick={() => setAddDialog({ open: true, type: "video" })}
+                  onClick={openCreateVideoDialog}
                 >
                   {t("New Reel")}
                 </Button>
@@ -4121,7 +4467,7 @@ const DataEntryForm = () => {
                 <Button
                   variant="contained"
                   startIcon={<VideoLibraryIcon />}
-                  onClick={() => setAddDialog({ open: true, type: "video" })}
+                  onClick={openCreateVideoDialog}
                 >
                   {t("New Reel")}
                 </Button>
@@ -4196,6 +4542,12 @@ const DataEntryForm = () => {
                           </TableCell>
                           <TableCell>
                             <IconButton
+                              color="primary"
+                              onClick={() => openEditVideoDialog(reel)}
+                            >
+                              <EditIcon />
+                            </IconButton>
+                            <IconButton
                               color="error"
                               onClick={() =>
                                 setDeleteDialog({
@@ -4232,7 +4584,14 @@ const DataEntryForm = () => {
       {/* Add Dialog */}
       <Dialog
         open={addDialog.open}
-        onClose={() => setAddDialog({ open: false, type: "" })}
+        onClose={() => {
+          setAddDialog({ open: false, type: "" });
+          if (addDialog.type === "video") {
+            setEditingVideoId("");
+            setVideoForm(defaultVideoForm);
+            setSelectedVideoFile(null);
+          }
+        }}
         fullWidth
         maxWidth="md"
       >
@@ -4248,7 +4607,9 @@ const DataEntryForm = () => {
                   : addDialog.type === "ad"
                     ? t("Add Ad")
                     : addDialog.type === "video"
-                      ? t("Add Reel")
+                      ? editingVideoId
+                        ? t("Edit Reel")
+                        : t("Add Reel")
                       : addDialog.type === "storeType"
                         ? t("Add Store Type")
                         : addDialog.type === "brandType"
@@ -4341,6 +4702,78 @@ const DataEntryForm = () => {
                     label={t("Phone")}
                     name="phone"
                     value={storeForm.phone}
+                    onChange={handleStoreFormChange}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("WhatsApp")}
+                    name="whatsapp"
+                    value={storeForm.whatsapp}
+                    onChange={handleStoreFormChange}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("Facebook")}
+                    name="facebook"
+                    value={storeForm.facebook}
+                    onChange={handleStoreFormChange}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("Instagram")}
+                    name="instagram"
+                    value={storeForm.instagram}
+                    onChange={handleStoreFormChange}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("TikTok")}
+                    name="tiktok"
+                    value={storeForm.tiktok}
+                    onChange={handleStoreFormChange}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("Snapchat")}
+                    name="snapchat"
+                    value={storeForm.snapchat}
+                    onChange={handleStoreFormChange}
+                  />
+                </Grid>
+                <Grid xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    label={t("Google Maps")}
+                    name="googleMaps"
+                    value={storeForm.googleMaps}
+                    onChange={handleStoreFormChange}
+                  />
+                </Grid>
+                <Grid xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    label={t("Apple Maps")}
+                    name="appleMaps"
+                    value={storeForm.appleMaps}
+                    onChange={handleStoreFormChange}
+                  />
+                </Grid>
+                <Grid xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    label={t("Waze")}
+                    name="waze"
+                    value={storeForm.waze}
                     onChange={handleStoreFormChange}
                   />
                 </Grid>
@@ -4674,6 +5107,78 @@ const DataEntryForm = () => {
                     label={t("Phone")}
                     name="phone"
                     value={brandForm.phone}
+                    onChange={handleBrandFormChange}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("WhatsApp")}
+                    name="whatsapp"
+                    value={brandForm.whatsapp}
+                    onChange={handleBrandFormChange}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("Facebook")}
+                    name="facebook"
+                    value={brandForm.facebook}
+                    onChange={handleBrandFormChange}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("Instagram")}
+                    name="instagram"
+                    value={brandForm.instagram}
+                    onChange={handleBrandFormChange}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("TikTok")}
+                    name="tiktok"
+                    value={brandForm.tiktok}
+                    onChange={handleBrandFormChange}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("Snapchat")}
+                    name="snapchat"
+                    value={brandForm.snapchat}
+                    onChange={handleBrandFormChange}
+                  />
+                </Grid>
+                <Grid xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    label={t("Google Maps")}
+                    name="googleMaps"
+                    value={brandForm.googleMaps}
+                    onChange={handleBrandFormChange}
+                  />
+                </Grid>
+                <Grid xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    label={t("Apple Maps")}
+                    name="appleMaps"
+                    value={brandForm.appleMaps}
+                    onChange={handleBrandFormChange}
+                  />
+                </Grid>
+                <Grid xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    label={t("Waze")}
+                    name="waze"
+                    value={brandForm.waze}
                     onChange={handleBrandFormChange}
                   />
                 </Grid>
@@ -5554,7 +6059,9 @@ const DataEntryForm = () => {
                     >
                       {selectedVideoFile
                         ? selectedVideoFile.name
-                        : t("Upload Video")}
+                        : editingVideoId
+                          ? t("Change Video (optional)")
+                          : t("Upload Video")}
                     </Button>
                   </label>
                 </Grid>
@@ -5682,7 +6189,9 @@ const DataEntryForm = () => {
                   >
                     {loading || uploadLoading
                       ? t("Uploading...")
-                      : t("Add Reel")}
+                      : editingVideoId
+                        ? t("Update Reel")
+                        : t("Add Reel")}
                   </Button>
                 </Grid>
               </Grid>
@@ -5690,7 +6199,16 @@ const DataEntryForm = () => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setAddDialog({ open: false, type: "" })}>
+          <Button
+            onClick={() => {
+              setAddDialog({ open: false, type: "" });
+              if (addDialog.type === "video") {
+                setEditingVideoId("");
+                setVideoForm(defaultVideoForm);
+                setSelectedVideoFile(null);
+              }
+            }}
+          >
             {t("Close")}
           </Button>
         </DialogActions>
@@ -6148,6 +6666,70 @@ const DataEntryForm = () => {
               <TextField
                 margin="normal"
                 fullWidth
+                label={t("WhatsApp")}
+                name="whatsapp"
+                value={editForm.whatsapp || ""}
+                onChange={handleEditFormChange}
+              />
+              <TextField
+                margin="normal"
+                fullWidth
+                label={t("Facebook")}
+                name="facebook"
+                value={editForm.facebook || ""}
+                onChange={handleEditFormChange}
+              />
+              <TextField
+                margin="normal"
+                fullWidth
+                label={t("Instagram")}
+                name="instagram"
+                value={editForm.instagram || ""}
+                onChange={handleEditFormChange}
+              />
+              <TextField
+                margin="normal"
+                fullWidth
+                label={t("TikTok")}
+                name="tiktok"
+                value={editForm.tiktok || ""}
+                onChange={handleEditFormChange}
+              />
+              <TextField
+                margin="normal"
+                fullWidth
+                label={t("Snapchat")}
+                name="snapchat"
+                value={editForm.snapchat || ""}
+                onChange={handleEditFormChange}
+              />
+              <TextField
+                margin="normal"
+                fullWidth
+                label={t("Google Maps")}
+                name="googleMaps"
+                value={editForm.googleMaps || ""}
+                onChange={handleEditFormChange}
+              />
+              <TextField
+                margin="normal"
+                fullWidth
+                label={t("Apple Maps")}
+                name="appleMaps"
+                value={editForm.appleMaps || ""}
+                onChange={handleEditFormChange}
+              />
+              <TextField
+                margin="normal"
+                fullWidth
+                label={t("Waze")}
+                name="waze"
+                value={editForm.waze || ""}
+                onChange={handleEditFormChange}
+              />
+              <TextField
+                margin="normal"
+                fullWidth
                 label={t("Description")}
                 name="description"
                 value={editForm.description}
@@ -6304,6 +6886,70 @@ const DataEntryForm = () => {
               <TextField
                 margin="normal"
                 fullWidth
+                label={t("WhatsApp")}
+                name="whatsapp"
+                value={editForm.whatsapp || ""}
+                onChange={handleEditFormChange}
+              />
+              <TextField
+                margin="normal"
+                fullWidth
+                label={t("Facebook")}
+                name="facebook"
+                value={editForm.facebook || ""}
+                onChange={handleEditFormChange}
+              />
+              <TextField
+                margin="normal"
+                fullWidth
+                label={t("Instagram")}
+                name="instagram"
+                value={editForm.instagram || ""}
+                onChange={handleEditFormChange}
+              />
+              <TextField
+                margin="normal"
+                fullWidth
+                label={t("TikTok")}
+                name="tiktok"
+                value={editForm.tiktok || ""}
+                onChange={handleEditFormChange}
+              />
+              <TextField
+                margin="normal"
+                fullWidth
+                label={t("Snapchat")}
+                name="snapchat"
+                value={editForm.snapchat || ""}
+                onChange={handleEditFormChange}
+              />
+              <TextField
+                margin="normal"
+                fullWidth
+                label={t("Google Maps")}
+                name="googleMaps"
+                value={editForm.googleMaps || ""}
+                onChange={handleEditFormChange}
+              />
+              <TextField
+                margin="normal"
+                fullWidth
+                label={t("Apple Maps")}
+                name="appleMaps"
+                value={editForm.appleMaps || ""}
+                onChange={handleEditFormChange}
+              />
+              <TextField
+                margin="normal"
+                fullWidth
+                label={t("Waze")}
+                name="waze"
+                value={editForm.waze || ""}
+                onChange={handleEditFormChange}
+              />
+              <TextField
+                margin="normal"
+                fullWidth
                 label={t("Description")}
                 name="description"
                 value={editForm.description}
@@ -6316,6 +6962,16 @@ const DataEntryForm = () => {
                 name="expireDate"
                 type="date"
                 value={editForm.expireDate || ""}
+                onChange={handleEditFormChange}
+                InputLabelProps={{ shrink: true }}
+              />
+              <TextField
+                margin="normal"
+                fullWidth
+                label={t("Last Release Discount Date")}
+                name="lastReleaseDiscountDate"
+                type="date"
+                value={editForm.lastReleaseDiscountDate || ""}
                 onChange={handleEditFormChange}
                 InputLabelProps={{ shrink: true }}
               />

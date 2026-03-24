@@ -126,12 +126,72 @@ router.post("/", async (req, res) => {
   }
 });
 
+router.put("/:id", async (req, res) => {
+  try {
+    const {
+      title,
+      videoUrl,
+      key,
+      storeId,
+      brandId,
+      expireDate,
+      like,
+      views,
+      shares,
+    } = req.body;
+
+    const video = await Video.findById(req.params.id);
+    if (!video) {
+      return res.status(404).json({ message: "Video not found" });
+    }
+
+    if (!title || !String(title).trim()) {
+      return res.status(400).json({ message: "title is required" });
+    }
+
+    const nextStoreId =
+      storeId === undefined ? video.storeId : storeId || null;
+    const nextBrandId =
+      brandId === undefined ? video.brandId : brandId || null;
+
+    const hasStore = Boolean(nextStoreId);
+    const hasBrand = Boolean(nextBrandId);
+    if (hasStore === hasBrand) {
+      return res.status(400).json({
+        message: "Please select exactly one owner: store OR brand.",
+      });
+    }
+
+    video.title = String(title).trim();
+    if (videoUrl) video.videoUrl = videoUrl;
+    if (key !== undefined) video.key = key || video.key;
+    video.storeId = nextStoreId;
+    video.brandId = nextBrandId;
+    video.expireDate = expireDate ? new Date(expireDate) : null;
+    video.like = Number.isFinite(Number(like)) ? Number(like) : video.like || 0;
+    video.views = Number.isFinite(Number(views))
+      ? Number(views)
+      : video.views || 0;
+    video.shares = Number.isFinite(Number(shares))
+      ? Number(shares)
+      : video.shares || 0;
+
+    await video.save();
+    return res.json(video);
+  } catch (error) {
+    console.error("Update video error:", error);
+    return res.status(500).json({
+      message: error.message || "Failed to update video",
+    });
+  }
+});
+
 router.get("/", async (req, res) => {
   try {
     const videos = await Video.find()
       .sort({ createdAt: -1 })
-      .populate("storeId", "name logo")
-      .populate("brandId", "name logo");
+      .populate("storeId", "name logo storecity city")
+      .populate("brandId", "name logo brandcity storecity city");
 
     return res.json(videos);
   } catch (error) {

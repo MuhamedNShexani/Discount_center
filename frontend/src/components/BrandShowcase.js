@@ -1,6 +1,7 @@
 import React from "react";
-import { Box, Typography, Avatar, Paper } from "@mui/material";
+import { Box, Typography, Avatar, Paper, Button } from "@mui/material";
 import { Link } from "react-router-dom";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { useTheme } from "@mui/material/styles";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
@@ -64,20 +65,41 @@ const BrandShowcase = ({ brands }) => {
             : "10px 10px 20px #d4d4d4, -10px -10px 20px #ffffff",
       }}
     >
-      <Typography
-        variant="h5"
-        gutterBottom
-        textAlign="left"
+      <Box
         sx={{
-          fontWeight: 700,
-          color: theme.palette.text.primary,
-          textTransform: "uppercase",
-          letterSpacing: "1px",
-          mb: 3,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          mb: 2,
+          gap: 1,
+          flexWrap: "wrap",
         }}
       >
-        {t("Featured Brands")}
-      </Typography>
+        <Typography
+          variant="h5"
+          gutterBottom
+          textAlign="left"
+          sx={{
+            fontWeight: 700,
+            color: theme.palette.text.primary,
+            textTransform: "uppercase",
+            letterSpacing: "1px",
+            mb: 0,
+          }}
+        >
+          {t("Featured Brands")}
+        </Typography>
+        <Button
+          component={Link}
+          to="/brands"
+          size="small"
+          variant="outlined"
+          sx={{ textTransform: "none" }}
+        >
+          {t("See All")}{" "}
+          <ArrowForwardIcon sx={{ transform: "rotate(180deg)" }} />
+        </Button>
+      </Box>
       <Slider {...settings}>
         {brands.map((brand) => (
           <Box

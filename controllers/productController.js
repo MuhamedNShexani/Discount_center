@@ -202,6 +202,13 @@ const createProduct = async (req, res) => {
     });
 
     const product = await newProduct.save();
+
+    if (storeId) {
+      await Store.findByIdAndUpdate(storeId, {
+        $set: { lastReleaseDiscountDate: new Date() },
+      });
+    }
+
     console.log("[createProduct] Product created successfully:", product);
     res.json(product);
   } catch (err) {

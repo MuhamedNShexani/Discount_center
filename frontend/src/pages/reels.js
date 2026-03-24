@@ -12,20 +12,19 @@ import {
   CircularProgress,
   IconButton,
   Typography,
-  useMediaQuery,
 } from "@mui/material";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import ShareIcon from "@mui/icons-material/Share";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
-import VolumeUpIcon from "@mui/icons-material/VolumeUp";
-import VolumeOffIcon from "@mui/icons-material/VolumeOff";
 import PauseIcon from "@mui/icons-material/Pause";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { videoAPI } from "../services/api";
 import useIntersectionVideo from "../hooks/useIntersectionVideo";
 import { useUserTracking } from "../hooks/useUserTracking";
+import useIsMobileLayout from "../hooks/useIsMobileLayout";
+import { useCityFilter } from "../context/CityFilterContext";
 
 const MotionBox = motion(Box);
 const MotionIconButton = motion(IconButton);
@@ -41,10 +40,8 @@ const ReelCard = memo(function ReelCard({
   onLike,
   onShare,
   isMobile,
-  isMuted,
   isPaused,
   onTogglePlayback,
-  onToggleMute,
   progress,
   buffered,
   onSeek,
@@ -129,8 +126,8 @@ const ReelCard = memo(function ReelCard({
           src={src}
           autoPlay={isActive && !isPaused}
           loop
-          muted={isMuted}
-          defaultMuted={isMuted}
+          muted={false}
+          defaultMuted={false}
           playsInline
           preload="metadata"
           onLoadedMetadata={(e) => {
@@ -350,23 +347,6 @@ const ReelCard = memo(function ReelCard({
           </Typography>
         </Box>
         <Box sx={{ textAlign: "center" }}>
-          <MotionIconButton
-            whileTap={{ scale: 0.92 }}
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleMute();
-            }}
-            sx={{
-              color: "#fff",
-              backgroundColor: "rgba(0,0,0,0.35)",
-              "&:hover": { backgroundColor: "rgba(0,0,0,0.5)" },
-            }}
-          >
-            {isMuted ? <VolumeOffIcon /> : <VolumeUpIcon />}
-          </MotionIconButton>
-        </Box>
-
-        <Box sx={{ textAlign: "center" }}>
           <IconButton
             disableRipple
             sx={{
@@ -489,11 +469,11 @@ const ReelCard = memo(function ReelCard({
 });
 
 const ReelsPage = () => {
+  const { videoId: sharedVideoId } = useParams();
   const [mainPageTab, setMainPageTab] = useState(0); // 0 = For You, 1 = Following
   const [reels, setReels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [isMuted, setIsMuted] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
   const [progressById, setProgressById] = useState({});
   const [bufferedById, setBufferedById] = useState({});
@@ -507,7 +487,7 @@ const ReelsPage = () => {
   const pullStartYRef = useRef(null);
   const pullTriggeredRef = useRef(false);
   const randomOrderKeyRef = useRef({});
-  const isMobile = useMediaQuery("(max-width:900px)");
+  const isMobile = useIsMobileLayout();
   const observerThreshold = useMemo(() => [0.45, 0.65, 0.9], []);
   const {
     toggleVideoLike,
@@ -516,6 +496,7 @@ const ReelsPage = () => {
     isStoreFollowed,
     getFollowedStores,
   } = useUserTracking();
+  const { selectedCity } = useCityFilter();
 
   const handleTabSwitch = useCallback((tabIndex) => {
     setMainPageTab(tabIndex);
@@ -534,26 +515,89 @@ const ReelsPage = () => {
 
   const displayedReels = useMemo(() => {
     const now = Date.now();
-    const unexpired = reels.filter((reel) => {
-      if (!reel?.expireDate) return true;
-      const expireTs = new Date(reel.expireDate).getTime();
-      if (Number.isNaN(expireTs)) return true;
-      return expireTs > now;
+    const normalizeCity = (value) =>
+      String(value || "")
+        .trim()
+        .toLowerCase();
+    const cityCanonicalMap = {
+      erbil: "erbil",
+      hawler: "erbil",
+      hewler: "erbil",
+      sulaimani: "sulaimani",
+      sulaymaniyah: "sulaimani",
+      sulaimany: "sulaimani",
+      duhok: "duhok",
+      dahuk: "duhok",
+      kerkuk: "kerkuk",
+      kirkuk: "kerkuk",
+      halabja: "halabja",
+      helebce: "halabja",
+    };
+    const toCanonicalCity = (value) => {
+      const normalized = normalizeCity(value);
+      return cityCanonicalMap[normalized] || normalized;
+    };
+    const selectedCityCanonical = toCanonicalCity(selectedCity);
+
+    const unexpiredAndCityMatched = reels.filter((reel) => {
+      if (reel?.expireDate) {
+        const expireTs = new Date(reel.expireDate).getTime();
+        if (!Number.isNaN(expireTs) && expireTs <= now) return false;
+      }
+
+      if (!selectedCityCanonical) return true;
+
+      const hasBrandOwner = Boolean(reel?.brandId?._id || reel?.brandId);
+      if (hasBrandOwner) return true;
+
+      const storeCity = reel?.storeId?.storecity || reel?.storeId?.city || "";
+      const brandCity =
+        reel?.brandId?.brandcity ||
+        reel?.brandId?.city ||
+        reel?.brandId?.storecity ||
+        "";
+      const ownerCityCanonical = toCanonicalCity(storeCity || brandCity);
+      return ownerCityCanonical && ownerCityCanonical === selectedCityCanonical;
     });
 
     const baseList =
       mainPageTab !== 1
-        ? unexpired
-        : unexpired.filter((reel) => {
+        ? unexpiredAndCityMatched
+        : unexpiredAndCityMatched.filter((reel) => {
             const storeId = reel?.storeId?._id || reel?.storeId;
             return storeId && followedStoreIds.includes(String(storeId));
           });
 
-    return [...baseList].sort(
+    const randomized = [...baseList].sort(
       (a, b) =>
         getRandomOrderKey(String(a?._id)) - getRandomOrderKey(String(b?._id)),
     );
-  }, [mainPageTab, reels, followedStoreIds, getRandomOrderKey]);
+
+    if (!sharedVideoId) return randomized;
+
+    const sharedIndex = randomized.findIndex(
+      (reel) => String(reel?._id) === String(sharedVideoId),
+    );
+    if (sharedIndex <= 0) return randomized;
+
+    const sharedReel = randomized[sharedIndex];
+    const rest = randomized.filter((_, idx) => idx !== sharedIndex);
+    return [sharedReel, ...rest];
+  }, [
+    mainPageTab,
+    reels,
+    followedStoreIds,
+    getRandomOrderKey,
+    sharedVideoId,
+    selectedCity,
+  ]);
+
+  useEffect(() => {
+    if (sharedVideoId) {
+      // Shared link should always open in For You and show that reel first.
+      setMainPageTab(0);
+    }
+  }, [sharedVideoId]);
 
   const { activeIndex, registerSectionRef, registerVideoRef, videoRefs } =
     useIntersectionVideo({
@@ -570,21 +614,16 @@ const ReelsPage = () => {
   useEffect(() => {
     videoRefs.current.forEach((video, idx) => {
       if (!video) return;
-      video.muted = isMuted;
+      video.muted = false;
       if (idx === activeIndex) {
         if (isPaused) {
           video.pause();
         } else {
-          video.play().catch(() => {
-            // If autoplay with audio is blocked, gracefully fallback to muted playback.
-            video.muted = true;
-            setIsMuted(true);
-            video.play().catch(() => {});
-          });
+          video.play().catch(() => {});
         }
       }
     });
-  }, [activeIndex, isMuted, isPaused, videoRefs]);
+  }, [activeIndex, isPaused, videoRefs]);
 
   useEffect(() => {
     // Hard guard: keep non-active videos paused at all times.
@@ -664,10 +703,6 @@ const ReelsPage = () => {
       setIsPaused(true);
     }
   }, [activeIndex, videoRefs]);
-
-  const toggleMute = useCallback(() => {
-    setIsMuted((prev) => !prev);
-  }, []);
 
   const seekActiveVideo = useCallback(
     (percent) => {
@@ -847,9 +882,7 @@ const ReelsPage = () => {
   );
 
   const handleShare = useCallback(async (reel) => {
-    const shareUrl = reel.videoUrl?.startsWith("http")
-      ? reel.videoUrl
-      : `${API_URL}${reel.videoUrl}`;
+    const shareUrl = `${window.location.origin}/reels/${reel._id}`;
 
     try {
       if (navigator.share) {
@@ -1062,10 +1095,8 @@ const ReelsPage = () => {
                 onLike={handleLike}
                 onShare={handleShare}
                 isMobile={isMobile}
-                isMuted={isMuted}
                 isPaused={isPaused}
                 onTogglePlayback={togglePlayback}
-                onToggleMute={toggleMute}
                 progress={progressById[reel._id] || 0}
                 buffered={bufferedById[reel._id] || 0}
                 onSeek={seekActiveVideo}

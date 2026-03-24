@@ -5,6 +5,19 @@ const storeSchema = new mongoose.Schema({
   logo: { type: String },
   address: { type: String },
   phone: { type: String },
+  contactInfo: {
+    phone: { type: String, default: "" },
+    whatsapp: { type: String, default: "" },
+    facebook: { type: String, default: "" },
+    instagram: { type: String, default: "" },
+    tiktok: { type: String, default: "" },
+    snapchat: { type: String, default: "" },
+  },
+  locationInfo: {
+    googleMaps: { type: String, default: "" },
+    appleMaps: { type: String, default: "" },
+    waze: { type: String, default: "" },
+  },
   description: { type: String },
   storeTypeId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -32,6 +45,7 @@ const storeSchema = new mongoose.Schema({
   ],
   show: { type: Boolean, default: true },
   followerCount: { type: Number, default: 0 },
+  lastReleaseDiscountDate: { type: Date, default: null },
 });
 
 module.exports = mongoose.model("Store", storeSchema);

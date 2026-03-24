@@ -7,7 +7,6 @@ import {
   CardMedia,
   useTheme,
   Container,
-  Fade,
   Chip,
   IconButton,
   Skeleton,
@@ -280,10 +279,10 @@ const BrandList = () => {
           alignItems: "center",
         }}
       >
-        {filteredBrands.map((brand, index) => (
-          <Fade in={true} timeout={300 + index * 100} key={brand._id}>
-            <Card
-              sx={{
+        {filteredBrands.map((brand) => (
+          <Card
+            key={brand._id}
+            sx={{
                 height: { xs: "200px", sm: "400px", md: "420px" },
                 width: { xs: "100%", sm: "280px", md: "280px" },
                 maxWidth: { xs: "100%", sm: "280px", md: "280px" },
@@ -318,9 +317,9 @@ const BrandList = () => {
                     transform: "scale(1.1)",
                   },
                 },
-              }}
-              onClick={() => handleBrandClick(brand)}
-            >
+            }}
+            onClick={() => handleBrandClick(brand)}
+          >
               {/* Brand Image/Logo */}
               <Box
                 sx={{
@@ -593,7 +592,6 @@ const BrandList = () => {
                 </Box>
               </CardContent>
             </Card>
-          </Fade>
         ))}
       </Box>
 

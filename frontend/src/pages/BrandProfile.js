@@ -49,6 +49,11 @@ import {
   FilterList,
   ExpandMore,
   ExpandLess,
+  WhatsApp,
+  Facebook,
+  Instagram,
+  MusicNote,
+  CameraAlt,
 } from "@mui/icons-material";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
@@ -1062,6 +1067,129 @@ const BrandProfile = () => {
 
   const discountedProducts = getDiscountedProducts();
   const nonDiscountedProducts = getNonDiscountedProducts();
+  const brandContactInfo = brand.contactInfo || {};
+  const brandLocationInfo = brand.locationInfo || {};
+  const displayPhone = brandContactInfo.phone || brand.phone || null;
+  const socialLinks = [
+    { key: "whatsapp", value: brandContactInfo.whatsapp, icon: <WhatsApp /> },
+    { key: "facebook", value: brandContactInfo.facebook, icon: <Facebook /> },
+    { key: "instagram", value: brandContactInfo.instagram, icon: <Instagram /> },
+    { key: "tiktok", value: brandContactInfo.tiktok, icon: <MusicNote /> },
+    { key: "snapchat", value: brandContactInfo.snapchat, icon: <CameraAlt /> },
+  ];
+
+  const normalizeUrl = (url, type) => {
+    if (!url || typeof url !== "string") return null;
+    const trimmed = url.trim();
+    if (type === "whatsapp") {
+      if (/^(https?:\/\/)?(wa\.me|api\.whatsapp\.com)\//i.test(trimmed)) {
+        return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+      }
+      const digits = trimmed.replace(/[^\d]/g, "");
+      return digits ? `https://wa.me/${digits}` : null;
+    }
+    return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  };
+
+  const locationLinks = [
+    { key: "googleMaps", label: "Google Maps", value: brandLocationInfo.googleMaps },
+    { key: "appleMaps", label: "Apple Maps", value: brandLocationInfo.appleMaps },
+    { key: "waze", label: "Waze", value: brandLocationInfo.waze },
+  ].filter((item) => Boolean(item.value));
+
+  const renderLocationRow = () => (
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 1,
+        flexWrap: "nowrap",
+        overflowX: "auto",
+        mb: 1,
+      }}
+    >
+      <LocationOn sx={{ fontSize: { xs: 18, md: 24 }, opacity: 0.9 }} />
+      {locationLinks.length > 0 ? (
+        locationLinks.map((item) => (
+          <Button
+            key={item.key}
+            component="a"
+            href={normalizeUrl(item.value)}
+            target="_blank"
+            rel="noopener noreferrer"
+            size="small"
+            variant="outlined"
+            sx={{
+              color: "white",
+              borderColor: "rgba(255,255,255,0.45)",
+              textTransform: "none",
+              whiteSpace: "nowrap",
+              "&:hover": {
+                borderColor: "white",
+                backgroundColor: "rgba(255,255,255,0.15)",
+              },
+            }}
+          >
+            {item.label}
+          </Button>
+        ))
+      ) : (
+        <Typography
+          variant="body2"
+          sx={{ color: "white", opacity: 0.9, whiteSpace: "nowrap" }}
+        >
+          null
+        </Typography>
+      )}
+    </Box>
+  );
+
+  const renderContactRow = () => (
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 1,
+        flexWrap: "nowrap",
+        overflowX: "auto",
+      }}
+    >
+      <Phone sx={{ fontSize: { xs: 18, md: 24 }, opacity: 0.9 }} />
+      <Typography
+        variant={displayPhone ? "h6" : "body2"}
+        sx={{
+          fontSize: { xs: "0.875rem", md: "1.125rem" },
+          fontFamily: "monospace",
+          textShadow: "0 2px 4px rgba(0,0,0,0.3)",
+          color: "white",
+          mr: 0.5,
+          whiteSpace: "nowrap",
+        }}
+      >
+        {displayPhone || "null"}
+      </Typography>
+      {socialLinks
+        .filter((item) => Boolean(item.value))
+        .map((item) => (
+          <IconButton
+            key={item.key}
+            component="a"
+            href={normalizeUrl(item.value, item.key)}
+            target="_blank"
+            rel="noopener noreferrer"
+            size="small"
+            sx={{
+              color: "white",
+              bgcolor: "rgba(255,255,255,0.15)",
+              "&:hover": { bgcolor: "rgba(255,255,255,0.25)" },
+              flexShrink: 0,
+            }}
+          >
+            {item.icon}
+          </IconButton>
+        ))}
+    </Box>
+  );
 
   return (
     <Box sx={{ py: 8, px: { xs: 0.5, sm: 1.5, md: 3 } }}>
@@ -1219,22 +1347,9 @@ const BrandProfile = () => {
               </Box>
             )}
 
-            {brand.phone && (
-              <Box display="flex" mb={1}>
-                <Phone sx={{ mr: 1, fontSize: 18, opacity: 0.9 }} />
-                <Typography
-                  variant="body2"
-                  sx={{
-                    fontSize: "0.875rem",
-                    fontFamily: "monospace",
-                    textShadow: "0 1px 2px rgba(0,0,0,0.3)",
-                    color: "white",
-                  }}
-                >
-                  {brand.phone}
-                </Typography>
-              </Box>
-            )}
+            {renderLocationRow()}
+
+            <Box sx={{ mb: 1 }}>{renderContactRow()}</Box>
 
             {brand.description && (
               <Typography
@@ -1409,27 +1524,17 @@ const BrandProfile = () => {
                     </Box>
                   )}
 
-                  {brand.phone && (
-                    <Box
-                      display="flex"
-                      alignItems="center"
-                      mb={1.5}
-                      justifyContent={{ xs: "center", md: "flex-start" }}
-                    >
-                      <Phone sx={{ mr: 1.5, fontSize: 24, opacity: 0.9 }} />
-                      <Typography
-                        variant="h6"
-                        sx={{
-                          fontSize: "1.125rem",
-                          fontFamily: "monospace",
-                          textShadow: "0 2px 4px rgba(0,0,0,0.3)",
-                          color: "white",
-                        }}
-                      >
-                        {brand.phone}
-                      </Typography>
-                    </Box>
-                  )}
+                  {renderLocationRow()}
+
+                  <Box
+                    sx={{
+                      mb: 1.5,
+                      display: "flex",
+                      justifyContent: { xs: "center", md: "flex-start" },
+                    }}
+                  >
+                    {renderContactRow()}
+                  </Box>
                 </Box>
 
                 {brand.description && (

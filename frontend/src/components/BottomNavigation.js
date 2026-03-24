@@ -5,7 +5,6 @@ import {
   BottomNavigationAction,
   Box,
   useTheme,
-  useMediaQuery,
 } from "@mui/material";
 import {
   Home as HomeIcon,
@@ -20,13 +19,14 @@ import {
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
+import useIsMobileLayout from "../hooks/useIsMobileLayout";
 
 const BottomNavigationBar = () => {
   const theme = useTheme();
   const { t } = useTranslation();
   const { user } = useAuth();
   const location = useLocation();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isMobile = useIsMobileLayout();
   // No popup on mobile for stores
 
   // Function to determine the active navigation item

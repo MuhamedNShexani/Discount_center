@@ -9,13 +9,7 @@ import {
 } from "react-router-dom";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
-import {
-  Container,
-  Typography,
-  Box,
-  useMediaQuery,
-  useTheme,
-} from "@mui/material";
+import { Container, Typography, Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { CacheProvider } from "@emotion/react";
 import createCache from "@emotion/cache";
@@ -44,12 +38,17 @@ import { AppSettingsProvider } from "./context/AppSettingsContext";
 import { NotificationProvider } from "./context/NotificationContext";
 import LoginPage from "./pages/LoginPage";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import ProfilePage from "./pages/ProfilePage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ScrollToTop from "./components/ScrollToTop";
 import ErrorBoundary from "./components/ErrorBoundary";
 import NotificationEnableBanner from "./components/NotificationEnableBanner";
-import { ContentRefreshProvider, useContentRefresh } from "./context/ContentRefreshContext";
+import {
+  ContentRefreshProvider,
+  useContentRefresh,
+} from "./context/ContentRefreshContext";
 import { createAppTheme } from "./theme";
+import useIsMobileLayout from "./hooks/useIsMobileLayout";
 
 // Footer component remains the same
 const Footer = () => (
@@ -69,7 +68,7 @@ const Footer = () => (
     }}
   >
     <Typography variant="body2" color="text.secondary">
-      Powered By Muhamed N.Shexani@2025
+      Powered By MK2026
     </Typography>
   </Box>
 );
@@ -80,8 +79,7 @@ function AppContent() {
   const { t, i18n } = useTranslation();
   const { refreshKey } = useContentRefresh();
   const [lang, setLang] = useState(i18n.language || "en");
-  const muiTheme = useTheme();
-  const isMobile = useMediaQuery(muiTheme.breakpoints.down("sm"));
+  const isMobile = useIsMobileLayout();
   const isReelsPage = location.pathname === "/reels";
 
   // RTL/LTR direction effect and language data attribute
@@ -101,7 +99,7 @@ function AppContent() {
         key: isRtl ? "muirtl" : "muiltr",
         stylisPlugins: isRtl ? [rtlPlugin] : [],
       }),
-    [isRtl]
+    [isRtl],
   );
 
   const handleLangChange = (event) => {
@@ -112,7 +110,7 @@ function AppContent() {
 
   const theme = useMemo(
     () => createAppTheme({ darkMode, language: i18n.language }),
-    [darkMode, i18n.language]
+    [darkMode, i18n.language],
   );
 
   return (
@@ -145,10 +143,14 @@ function AppContent() {
               backgroundColor: (theme) => theme.palette.background.default,
             }}
           >
-            <Container maxWidth={isReelsPage ? false : "lg"} disableGutters={isReelsPage}>
+            <Container
+              maxWidth={isReelsPage ? false : "lg"}
+              disableGutters={isReelsPage}
+            >
               <Routes>
                 <Route path="/" element={<MainPage />} />
                 <Route path="/reels" element={<ReelsPage />} />
+                <Route path="/reels/:videoId" element={<ReelsPage />} />
                 <Route path="/stores" element={<StoreList />} />
                 <Route path="/stores/:id" element={<StoreProfile />} />
                 <Route path="/categories" element={<ProductCategory />} />
@@ -159,7 +161,12 @@ function AppContent() {
                 <Route
                   path="/admin"
                   element={
-                    <ProtectedRoute allowedEmails={["mshexani45@gmail.com", "admin@gmail.com"]}>
+                    <ProtectedRoute
+                      allowedEmails={[
+                        "mshexani45@gmail.com",
+                        "admin@gmail.com",
+                      ]}
+                    >
                       <DataEntryForm />
                     </ProtectedRoute>
                   }
@@ -175,7 +182,12 @@ function AppContent() {
                 <Route
                   path="/admin/users"
                   element={
-                    <ProtectedRoute allowedEmails={["mshexani45@gmail.com", "admin@gmail.com"]}>
+                    <ProtectedRoute
+                      allowedEmails={[
+                        "mshexani45@gmail.com",
+                        "admin@gmail.com",
+                      ]}
+                    >
                       <AdminUsersPage />
                     </ProtectedRoute>
                   }
@@ -183,6 +195,7 @@ function AppContent() {
                 <Route path="/search" element={<SearchPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/products/:id" element={<ProductDetail />} />
               </Routes>
             </Container>

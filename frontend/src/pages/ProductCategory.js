@@ -36,7 +36,6 @@ import {
   ListItemIcon,
   ListItemText,
   Skeleton,
-  useMediaQuery,
 } from "@mui/material";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { productAPI, categoryAPI, storeTypeAPI } from "../services/api";
@@ -60,10 +59,11 @@ import { useTheme } from "@mui/material/styles";
 import { useUserTracking } from "../hooks/useUserTracking";
 import { useAuth } from "../context/AuthContext";
 import { useCityFilter } from "../context/CityFilterContext";
+import useIsMobileLayout from "../hooks/useIsMobileLayout";
 
 const ProductCategory = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const isMobile = useIsMobileLayout();
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();

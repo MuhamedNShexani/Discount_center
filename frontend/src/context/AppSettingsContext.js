@@ -4,16 +4,43 @@ import { settingsAPI } from "../services/api";
 const AppSettingsContext = createContext(null);
 
 const DEFAULT_WHATSAPP = "+9647503683478";
+const EMPTY_CONTACT_INFO = {
+  whatsapp: "",
+  facebook: "",
+  instagram: "",
+  snapchat: "",
+  gmail: "",
+  tiktok: "",
+  viber: "",
+  telegram: "",
+};
 
 export const AppSettingsProvider = ({ children }) => {
   const [contactWhatsAppNumber, setContactWhatsAppNumber] =
     useState(DEFAULT_WHATSAPP);
+  const [contactInfo, setContactInfo] = useState({
+    ...EMPTY_CONTACT_INFO,
+    whatsapp: DEFAULT_WHATSAPP,
+  });
 
   const fetchSettings = async () => {
     try {
       const res = await settingsAPI.get();
       const num = res?.data?.contactWhatsAppNumber;
       if (num) setContactWhatsAppNumber(num);
+      const info = res?.data?.contactInfo;
+      if (info && typeof info === "object") {
+        setContactInfo({
+          ...EMPTY_CONTACT_INFO,
+          ...info,
+          whatsapp: info.whatsapp || num || DEFAULT_WHATSAPP,
+        });
+      } else {
+        setContactInfo((prev) => ({
+          ...prev,
+          whatsapp: num || DEFAULT_WHATSAPP,
+        }));
+      }
     } catch (err) {
       console.error("Failed to fetch settings:", err);
     }
@@ -35,6 +62,8 @@ export const AppSettingsProvider = ({ children }) => {
       value={{
         contactWhatsAppNumber,
         setContactWhatsAppNumber,
+        contactInfo,
+        setContactInfo,
         fetchSettings,
         openWhatsApp,
       }}

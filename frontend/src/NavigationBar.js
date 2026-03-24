@@ -6,7 +6,6 @@ import {
   Button,
   Box,
   IconButton,
-  useMediaQuery,
   useTheme,
   Select,
   MenuItem,
@@ -65,6 +64,7 @@ import { useCityFilter } from "./context/CityFilterContext";
 import { useAppSettings } from "./context/AppSettingsContext";
 import { useNotifications } from "./context/NotificationContext";
 import { useContentRefresh } from "./context/ContentRefreshContext";
+import useIsMobileLayout from "./hooks/useIsMobileLayout";
 
 // Set to true to show notification center (bell, profile toggle, enable banner)
 const NOTIFICATIONS_CENTER_ENABLED = false;
@@ -92,7 +92,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
     pushEnableError,
     setPushEnableError,
   } = useNotifications();
-  const isSmUp = useMediaQuery(theme.breakpoints.up("sm"));
+  const isSmUp = !useIsMobileLayout();
   const { triggerRefresh } = useContentRefresh();
   const lang = i18n.language;
   const location = useLocation();
@@ -268,8 +268,8 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
           transform: isSmUp
             ? "translateY(0)"
             : showMobileNavbar
-            ? "translateY(0)"
-            : "translateY(-110%)",
+              ? "translateY(0)"
+              : "translateY(-110%)",
           transition: "transform 260ms ease",
           willChange: "transform",
         }}
@@ -396,7 +396,8 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   <FavoriteIcon />
                 </IconButton>
                 <IconButton
-                  onClick={handleProfileMenuOpen}
+                  component={Link}
+                  to="/profile"
                   sx={{
                     color: "white",
                     backgroundColor: "rgba(255,255,255,0.1)",
@@ -726,7 +727,8 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
               )}
               {/* Desktop Profile Icon (contains Favourites, Login/Logout, City, Mode) */}
               <IconButton
-                onClick={handleProfileMenuOpen}
+                component={Link}
+                to="/profile"
                 sx={{
                   color: "white",
                   backgroundColor: "rgba(255,255,255,0.1)",

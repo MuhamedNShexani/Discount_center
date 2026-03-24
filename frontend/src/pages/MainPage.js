@@ -23,7 +23,6 @@ import {
   Tabs,
   Tab,
   Skeleton,
-  useMediaQuery,
 } from "@mui/material";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
@@ -61,10 +60,11 @@ import { useTheme } from "@mui/material/styles";
 import { useUserTracking } from "../hooks/useUserTracking";
 import { useCityFilter } from "../context/CityFilterContext";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
+import useIsMobileLayout from "../hooks/useIsMobileLayout";
 
 const MainPage = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isMobile = useIsMobileLayout();
   const navigate = useNavigate();
   const [stores, setStores] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
@@ -102,6 +102,10 @@ const MainPage = () => {
   const [storesPage, setStoresPage] = useState(1);
   const [storesPerPage] = useState(8);
   const [hasMoreStores, setHasMoreStores] = useState(true);
+  const [sortByNewestDiscount, setSortByNewestDiscount] = useState(true);
+  const [sortByNearMe, setSortByNearMe] = useState(false);
+  const [userCoords, setUserCoords] = useState(null);
+  const [geoLoading, setGeoLoading] = useState(false);
 
   // User tracking hook (user = device user for guests)
   const {
@@ -509,6 +513,32 @@ const MainPage = () => {
     return id;
   }
 
+  const normalizeCity = (value) =>
+    String(value || "")
+      .trim()
+      .toLowerCase();
+  const cityCanonicalMap = {
+    erbil: "erbil",
+    hawler: "erbil",
+    hewler: "erbil",
+    sulaimani: "sulaimani",
+    sulaymaniyah: "sulaimani",
+    sulaimany: "sulaimani",
+    duhok: "duhok",
+    dahuk: "duhok",
+    kerkuk: "kerkuk",
+    kirkuk: "kerkuk",
+    halabja: "halabja",
+    helebce: "halabja",
+  };
+  const toCanonicalCity = (value) => {
+    const normalized = normalizeCity(value);
+    return cityCanonicalMap[normalized] || normalized;
+  };
+  const selectedCityCanonical = toCanonicalCity(selectedCity);
+  const doesCityMatch = (candidateCity) =>
+    toCanonicalCity(candidateCity) === selectedCityCanonical;
+
   const getRemainingDays = (expireDate) => {
     if (!expireDate) return null;
     const today = new Date();
@@ -518,6 +548,60 @@ const MainPage = () => {
     const diffTime = expire.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
+  };
+
+  const extractLatLngFromText = (text) => {
+    if (!text || typeof text !== "string") return null;
+    const cleaned = text.trim();
+    const patterns = [
+      /@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/,
+      /[?&](?:q|ll|query|daddr|saddr)=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/,
+      /(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/,
+    ];
+    for (const pattern of patterns) {
+      const match = cleaned.match(pattern);
+      if (match) {
+        const lat = Number(match[1]);
+        const lng = Number(match[2]);
+        if (
+          Number.isFinite(lat) &&
+          Number.isFinite(lng) &&
+          lat >= -90 &&
+          lat <= 90 &&
+          lng >= -180 &&
+          lng <= 180
+        ) {
+          return { lat, lng };
+        }
+      }
+    }
+    return null;
+  };
+
+  const getStoreCoordinates = (store) => {
+    if (!store) return null;
+    const locationInfo = store.locationInfo || {};
+    return (
+      extractLatLngFromText(locationInfo.googleMaps) ||
+      extractLatLngFromText(locationInfo.appleMaps) ||
+      extractLatLngFromText(locationInfo.waze)
+    );
+  };
+
+  const toRad = (deg) => (deg * Math.PI) / 180;
+  const getDistanceKm = (from, to) => {
+    if (!from || !to) return Number.POSITIVE_INFINITY;
+    const earthRadiusKm = 6371;
+    const dLat = toRad(to.lat - from.lat);
+    const dLng = toRad(to.lng - from.lng);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(from.lat)) *
+        Math.cos(toRad(to.lat)) *
+        Math.sin(dLng / 2) *
+        Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return earthRadiusKm * c;
   };
 
   // Helper function to check if a discounted product has expired
@@ -646,13 +730,84 @@ const MainPage = () => {
         getID(store.storeTypeId) === selectedStoreTypeId;
 
       // And the store must match the city filter
-      const cityMatch = store.storecity === selectedCity;
+      const cityMatch = doesCityMatch(store.storecity || store.city);
 
       return (
         (hasMatchingProducts || storeNameMatch) && storeTypeMatch && cityMatch
       );
     });
-  }, [filteredProducts, stores, search, selectedStoreTypeId, selectedCity]);
+  }, [
+    filteredProducts,
+    stores,
+    search,
+    selectedStoreTypeId,
+    selectedCityCanonical,
+  ]);
+
+  const sortedFilteredStores = useMemo(() => {
+    const baseStores = [...finalFilteredStores];
+    if (!sortByNewestDiscount && !(sortByNearMe && userCoords)) {
+      return baseStores;
+    }
+
+    return baseStores.sort((a, b) => {
+      let byDistance = 0;
+      if (sortByNearMe && userCoords) {
+        const distanceA = getDistanceKm(userCoords, getStoreCoordinates(a));
+        const distanceB = getDistanceKm(userCoords, getStoreCoordinates(b));
+        byDistance = distanceA - distanceB;
+      }
+
+      let byNewest = 0;
+      if (sortByNewestDiscount) {
+        const timeA = a?.lastReleaseDiscountDate
+          ? new Date(a.lastReleaseDiscountDate).getTime()
+          : 0;
+        const timeB = b?.lastReleaseDiscountDate
+          ? new Date(b.lastReleaseDiscountDate).getTime()
+          : 0;
+        byNewest = timeB - timeA;
+      }
+
+      // If both are enabled, Near Me has higher priority.
+      if (byDistance !== 0) return byDistance;
+      return byNewest;
+    });
+  }, [finalFilteredStores, sortByNewestDiscount, sortByNearMe, userCoords]);
+
+  const storeNameById = useMemo(() => {
+    const map = {};
+    stores.forEach((store) => {
+      map[String(getID(store?._id))] = store?.name || "";
+    });
+    return map;
+  }, [stores]);
+
+  const storeCityById = useMemo(() => {
+    const map = {};
+    stores.forEach((store) => {
+      map[String(getID(store?._id))] = store?.storecity || "";
+    });
+    return map;
+  }, [stores]);
+
+  const topViewedProducts = useMemo(() => {
+    const getViews = (product) => {
+      const raw = product?.viewCount ?? product?.views ?? product?.view ?? 0;
+      const count = Number(raw);
+      return Number.isFinite(count) ? count : 0;
+    };
+
+    return [...filteredProducts]
+      .filter((product) => {
+        const productStoreId = String(getID(product?.storeId));
+        const productStoreCity =
+          product?.storeId?.storecity || storeCityById[productStoreId];
+        return !selectedCityCanonical || doesCityMatch(productStoreCity);
+      })
+      .sort((a, b) => getViews(b) - getViews(a))
+      .slice(0, 15);
+  }, [filteredProducts, selectedCityCanonical, storeCityById]);
 
   // Filtered followed stores and their products for Following tab
   const filteredFollowedStoresWithProducts = useMemo(() => {
@@ -666,7 +821,7 @@ const MainPage = () => {
           return false;
         }
         // City filter
-        if (store.storecity !== selectedCity) {
+        if (!doesCityMatch(store.storecity || store.city)) {
           return false;
         }
         // Store name search match (if search, store can show if name matches)
@@ -786,23 +941,41 @@ const MainPage = () => {
     search,
     priceRange,
     showOnlyDiscount,
-    selectedCity,
+    selectedCityCanonical,
   ]);
 
   // Effect for pagination
   useEffect(() => {
     setStoresPage(1); // Reset to first page on filter change
-    const initialDisplayed = finalFilteredStores.slice(0, storesPerPage);
+    const initialDisplayed = sortedFilteredStores.slice(0, storesPerPage);
     setDisplayedStores(initialDisplayed);
-    setHasMoreStores(finalFilteredStores.length > storesPerPage);
-  }, [finalFilteredStores, storesPerPage]);
+    setHasMoreStores(sortedFilteredStores.length > storesPerPage);
+  }, [sortedFilteredStores, storesPerPage]);
 
   const loadMoreStores = () => {
     const nextPage = storesPage + 1;
-    const newStores = finalFilteredStores.slice(0, nextPage * storesPerPage);
+    const newStores = sortedFilteredStores.slice(0, nextPage * storesPerPage);
     setDisplayedStores(newStores);
     setStoresPage(nextPage);
-    setHasMoreStores(newStores.length < finalFilteredStores.length);
+    setHasMoreStores(newStores.length < sortedFilteredStores.length);
+  };
+
+  const requestUserLocation = () => {
+    if (!navigator?.geolocation) return;
+    setGeoLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserCoords({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+        setGeoLoading(false);
+      },
+      () => {
+        setGeoLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
   };
 
   const formatPrice = (price) => {
@@ -922,8 +1095,8 @@ const MainPage = () => {
           transform: !isMobile
             ? "translateY(0)"
             : showMainTabs
-            ? "translateY(0)"
-            : "translateY(-130%)",
+              ? "translateY(0)"
+              : "translateY(-130%)",
           transition: "transform 240ms ease",
           willChange: "transform",
         }}
@@ -1047,51 +1220,6 @@ const MainPage = () => {
           position: "relative",
         }}
       >
-        {/* Top Left Icon Buttons - Mobile Only */}
-        <Box
-          sx={{
-            position: "absolute",
-            top: 8,
-            right: 8,
-            display: { xs: "flex", md: "none" },
-            gap: 1,
-            zIndex: 10,
-          }}
-          mb={1}
-        >
-          {/* Mobile Filter clean Button */}
-          <IconButton
-            onClick={clearAllFilters}
-            sx={{
-              color: "white",
-              backgroundColor: "rgba(255,255,255,0.1)",
-              "&:hover": {
-                backgroundColor: "rgba(255,255,255,0.2)",
-              },
-              width: 32,
-              height: 32,
-            }}
-          >
-            <ClearAllIcon sx={{ fontSize: "18px" }} />
-          </IconButton>
-
-          {/* Mobile Filter Toggle Button */}
-          <IconButton
-            onClick={() => setFiltersOpen(!filtersOpen)}
-            sx={{
-              color: "white",
-              backgroundColor: "rgba(255,255,255,0.1)",
-              "&:hover": {
-                backgroundColor: "rgba(255,255,255,0.2)",
-              },
-              width: 32,
-              height: 32,
-            }}
-          >
-            <SearchIcon sx={{ fontSize: "18px" }} />
-          </IconButton>
-        </Box>
-
         {/* Filter Content */}
         <Box>
           {/* Search and Basic Filters */}
@@ -1577,6 +1705,282 @@ const MainPage = () => {
       >
         {mainPageTab === 0 ? (
           <>
+            <Box
+              sx={{
+                display: "flex",
+                gap: 1,
+                flexWrap: "nowrap",
+                overflowX: "auto",
+                alignItems: "center",
+              }}
+            >
+              <Button
+                variant={sortByNewestDiscount ? "contained" : "outlined"}
+                onClick={() =>
+                  setSortByNewestDiscount((prev) => !prev)
+                }
+                sx={{
+                  textTransform: "none",
+                  borderRadius: 2,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {t("Newest Discounts")}
+              </Button>
+              <Button
+                variant={sortByNearMe ? "contained" : "outlined"}
+                onClick={() => {
+                  setSortByNearMe((prev) => {
+                    const next = !prev;
+                    if (next && !userCoords) requestUserLocation();
+                    return next;
+                  });
+                }}
+                disabled={geoLoading}
+                sx={{
+                  textTransform: "none",
+                  borderRadius: 2,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {geoLoading ? t("Locating...") : t("Near Me")}
+              </Button>
+            </Box>
+
+            {topViewedProducts.length > 0 && (
+              <Card
+                sx={{
+                  borderRadius: { xs: 2, md: 3 },
+                  overflow: "hidden",
+                  background:
+                    theme.palette.mode === "dark"
+                      ? "linear-gradient(135deg, #1E6FD9 0%, #4A90E2 100%)"
+                      : "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
+                  border: `1px solid ${
+                    theme.palette.mode === "dark" ? "#1E6FD9" : "#e9ecef"
+                  }`,
+                }}
+              >
+                <Box
+                  sx={{
+                    background:
+                      theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
+                    px: { xs: 1.2, sm: 2 },
+                    py: { xs: 1, sm: 1.4 },
+                    color: "white",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Typography
+                    sx={{ fontWeight: 800, fontSize: { xs: 14, sm: 18 } }}
+                  >
+                    {t("Most Viewed")}
+                  </Typography>
+                  <Chip
+                    size="small"
+                    icon={
+                      <VisibilityIcon
+                        sx={{
+                          color: "white !important",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          textAlign: "center",
+                        }}
+                      />
+                    }
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      textAlign: "center",
+                      color: "white",
+                      backgroundColor: "rgba(255,255,255,0.18)",
+                      border: "1px solid rgba(255,255,255,0.35)",
+                    }}
+                  />
+                </Box>
+
+                <Box
+                  sx={{
+                    px: { xs: 0.8, sm: 1.2 },
+                    py: { xs: 1, sm: 1.4 },
+                    display: "flex",
+                    gap: { xs: 0.8, sm: 1.4 },
+                    overflowX: "auto",
+                    overflowY: "hidden",
+                    "&::-webkit-scrollbar": { height: 8 },
+                    "&::-webkit-scrollbar-track": {
+                      backgroundColor:
+                        theme.palette.mode === "dark" ? "#4a5568" : "#f1f1f1",
+                      borderRadius: 4,
+                    },
+                    "&::-webkit-scrollbar-thumb": {
+                      backgroundColor:
+                        theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
+                      borderRadius: 4,
+                    },
+                  }}
+                >
+                  {topViewedProducts.map((product) => {
+                    const views = Number(
+                      product?.viewCount ??
+                        product?.views ??
+                        product?.view ??
+                        0,
+                    );
+                    const hasPreviousPrice =
+                      product.previousPrice &&
+                      product.newPrice &&
+                      product.previousPrice > product.newPrice;
+                    const storeName =
+                      product?.storeId?.name ||
+                      storeNameById[String(getID(product?.storeId))] ||
+                      t("Unknown Store");
+
+                    return (
+                      <Card
+                        key={`most-viewed-${product._id}`}
+                        sx={{
+                          width: { xs: 150, sm: 185, md: 210 },
+                          minWidth: { xs: 150, sm: 185, md: 210 },
+                          borderRadius: 2,
+                          overflow: "hidden",
+                          border: "1px solid #e2e8f0",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Box sx={{ px: 1, pt: 0.8 }}>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              display: "block",
+                              fontWeight: 700,
+                              color: "#1E6FD9",
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
+                          >
+                            {storeName}
+                          </Typography>
+                        </Box>
+
+                        <Box
+                          sx={{
+                            position: "relative",
+                            height: { xs: 110, sm: 130 },
+                            backgroundColor: "#f8f9fa",
+                            cursor: "pointer",
+                          }}
+                          onClick={() => handleProductClick(product)}
+                        >
+                          {product.image ? (
+                            <CardMedia
+                              component="img"
+                              image={`${process.env.REACT_APP_BACKEND_URL}${product.image}`}
+                              alt={product.name}
+                              sx={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "contain",
+                              }}
+                            />
+                          ) : (
+                            <Box
+                              sx={{
+                                width: "100%",
+                                height: "100%",
+                                display: "grid",
+                                placeItems: "center",
+                              }}
+                            >
+                              <StorefrontIcon
+                                sx={{ fontSize: 44, color: "#a0aec0" }}
+                              />
+                            </Box>
+                          )}
+                        </Box>
+
+                        <CardContent sx={{ p: 1 }}>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              fontWeight: 700,
+                              minHeight: "2.6em",
+                              lineHeight: 1.3,
+                              display: "-webkit-box",
+                              textAlign: "center",
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: "vertical",
+                              overflow: "hidden",
+                            }}
+                          >
+                            {product.name}
+                          </Typography>
+
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 0.5,
+                              mt: 0.4,
+                            }}
+                          >
+                            <VisibilityIcon
+                              sx={{ fontSize: 15, color: "text.secondary" }}
+                            />
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
+                              {Number.isFinite(views) ? views : 0}
+                            </Typography>
+                          </Box>
+
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              textDecoration: hasPreviousPrice
+                                ? "line-through"
+                                : "none",
+                              color: "red",
+                              display: "block",
+                              mt: 0.3,
+                              minHeight: "1.2em",
+                              visibility: hasPreviousPrice
+                                ? "visible"
+                                : "hidden",
+                            }}
+                          >
+                            {hasPreviousPrice
+                              ? formatPrice(product.previousPrice)
+                              : "\u00A0"}
+                          </Typography>
+
+                          <Typography
+                            variant="body1"
+                            sx={{
+                              color: "#fff",
+                              backgroundColor: "var(--brand-accent-orange)",
+                              borderRadius: 1,
+                              px: 0.7,
+                              py: 0.2,
+                              fontWeight: 800,
+                              width: "fit-content",
+                            }}
+                          >
+                            {formatPrice(product.newPrice)}
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </Box>
+              </Card>
+            )}
+
             {displayedStores.map((store, index) => {
               // 3. Get the products for this card from the master filtered list
               const productsForCard = filteredProducts
@@ -1949,7 +2353,7 @@ const MainPage = () => {
                                 flexShrink: 0,
                                 minHeight:
                                   productRows.length > 1
-                                    ? { xs: "200px", sm: "330px" }
+                                    ? { xs: "170px", sm: "330px" }
                                     : "auto",
                                 alignItems: "stretch",
                               }}
@@ -2013,14 +2417,14 @@ const MainPage = () => {
                                       {product.image ? (
                                         <CardMedia
                                           component="img"
-                                          height="130"
+                                          height="150"
                                           image={`${process.env.REACT_APP_BACKEND_URL}${product.image}`}
                                           alt={product.name}
                                           sx={{
                                             objectFit: "contain",
                                             width: "100%",
                                             height: {
-                                              xs: "130px", // Reduced height
+                                              xs: "150px", // Reduced height
                                               sm: "200px", // Reduced height
                                               md: "250px",
                                             },
@@ -2034,7 +2438,7 @@ const MainPage = () => {
                                         <Box
                                           sx={{
                                             height: {
-                                              xs: "130px",
+                                              xs: "150px",
                                               sm: "200px",
                                               md: "250px",
                                             },
@@ -2053,49 +2457,66 @@ const MainPage = () => {
                                           />
                                         </Box>
                                       )}
-                                      <IconButton
-                                        onClick={(e) =>
-                                          handleLikeClick(product._id, e)
-                                        }
-                                        disabled={likeLoading[product._id]}
+                                      <Box
                                         sx={{
                                           position: "absolute",
                                           top: 8,
                                           right: 8,
                                           display: "flex",
-                                          alignItems: "center",
-                                          gap: 0.5,
-                                          backgroundColor: "rgba(0, 0, 0, 0.7)",
-                                          px: 1,
-                                          py: 0.5,
-                                          borderRadius: 1,
-                                          fontSize: "0.7rem",
-                                          bgcolor: "white",
-                                          color:
-                                            likeStates[product._id] ||
-                                            isProductLiked(product._id)
-                                              ? "#e53e3e"
-                                              : "#666",
-                                          "&:hover": {
-                                            color: "#e53e3e",
-                                            transform: "scale(1.1)",
-                                          },
-                                          transition: "all 0.2s ease",
-                                          p: 0.5,
+                                          gap: 5,
+                                          justifyContent: "space-between",
                                         }}
-                                        size="small"
                                       >
-                                        {likeStates[product._id] ||
-                                        isProductLiked(product._id) ? (
-                                          <FavoriteIcon
-                                            sx={{ fontSize: "1.2rem" }}
-                                          />
-                                        ) : (
-                                          <FavoriteBorderIcon
-                                            sx={{ fontSize: "1.2rem" }}
+                                        {hasPreviousPrice && (
+                                          <Chip
+                                            icon={
+                                              <LocalOfferIcon
+                                                sx={{ fontSize: 14 }}
+                                              />
+                                            }
+                                            label={`-${discount}%`}
+                                            color="error"
+                                            size="small"
+                                            sx={{
+                                              fontSize: "0.7rem",
+                                              height: 24,
+                                              "& .MuiChip-label": { px: 0.7 },
+                                            }}
                                           />
                                         )}
-                                      </IconButton>
+                                        <IconButton
+                                          onClick={(e) =>
+                                            handleLikeClick(product._id, e)
+                                          }
+                                          disabled={likeLoading[product._id]}
+                                          sx={{
+                                            bgcolor: "white",
+                                            color:
+                                              likeStates[product._id] ||
+                                              isProductLiked(product._id)
+                                                ? "#e53e3e"
+                                                : "#666",
+                                            "&:hover": {
+                                              color: "#e53e3e",
+                                              transform: "scale(1.1)",
+                                            },
+                                            transition: "all 0.2s ease",
+                                            p: 0.5,
+                                          }}
+                                          size="small"
+                                        >
+                                          {likeStates[product._id] ||
+                                          isProductLiked(product._id) ? (
+                                            <FavoriteIcon
+                                              sx={{ fontSize: "1.2rem" }}
+                                            />
+                                          ) : (
+                                            <FavoriteBorderIcon
+                                              sx={{ fontSize: "1.2rem" }}
+                                            />
+                                          )}
+                                        </IconButton>
+                                      </Box>
                                       {(() => {
                                         const remainingDays = getRemainingDays(
                                           product.expireDate,
@@ -2198,28 +2619,6 @@ const MainPage = () => {
                                           minHeight: { xs: "56px", sm: "78px" },
                                         }}
                                       >
-                                        <Typography
-                                          variant="body2"
-                                          sx={{
-                                            textDecoration: hasPreviousPrice
-                                              ? "line-through"
-                                              : "none",
-                                            color: "red",
-                                            fontSize: {
-                                              xs: "0.8rem",
-                                              sm: "0.9rem",
-                                            },
-                                            fontWeight: 500,
-                                            minHeight: "1.4em",
-                                            visibility: hasPreviousPrice
-                                              ? "visible"
-                                              : "hidden",
-                                          }}
-                                        >
-                                          {hasPreviousPrice
-                                            ? formatPrice(product.previousPrice)
-                                            : "\u00A0"}
-                                        </Typography>
                                         <Typography
                                           variant="h6"
                                           sx={{
@@ -2614,12 +3013,16 @@ const MainPage = () => {
                             flexShrink: 0,
                             minHeight:
                               productRows.length > 1
-                                ? { xs: "200px", sm: "330px" }
+                                ? { xs: "170px", sm: "330px" }
                                 : "auto",
                             alignItems: "stretch",
                           }}
                         >
                           {row.map((product) => {
+                            const discount = calculateDiscount(
+                              product.previousPrice,
+                              product.newPrice,
+                            );
                             const hasPreviousPrice =
                               product.previousPrice &&
                               product.newPrice &&
@@ -2630,7 +3033,7 @@ const MainPage = () => {
                                 sx={{
                                   cursor: "pointer",
                                   height: { xs: "auto", sm: "330px" },
-                                  minHeight: { xs: "200px", sm: "330px" },
+                                  minHeight: { xs: "170px", sm: "330px" },
                                   width: {
                                     xs: "140px",
                                     sm: "200px",
@@ -2675,12 +3078,12 @@ const MainPage = () => {
                                       component="img"
                                       image={`${process.env.REACT_APP_BACKEND_URL}${product.image}`}
                                       alt={product.name}
-                                      height="130"
+                                      height="150"
                                       sx={{
                                         objectFit: "contain",
                                         width: "100%",
                                         height: {
-                                          xs: "130px",
+                                          xs: "150px",
                                           sm: "200px",
                                           md: "250px",
                                         },
@@ -2691,7 +3094,7 @@ const MainPage = () => {
                                     <Box
                                       sx={{
                                         height: {
-                                          xs: "130px",
+                                          xs: "150px",
                                           sm: "200px",
                                           md: "250px",
                                         },
@@ -2710,49 +3113,66 @@ const MainPage = () => {
                                       />
                                     </Box>
                                   )}
-                                  <IconButton
-                                    onClick={(e) =>
-                                      handleLikeClick(product._id, e)
-                                    }
-                                    disabled={likeLoading[product._id]}
+                                  <Box
                                     sx={{
                                       position: "absolute",
                                       top: 8,
                                       right: 8,
                                       display: "flex",
-                                      alignItems: "center",
-                                      gap: 0.5,
-                                      backgroundColor: "rgba(0, 0, 0, 0.7)",
-                                      px: 1,
-                                      py: 0.5,
-                                      borderRadius: 1,
-                                      fontSize: "0.7rem",
-                                      bgcolor: "white",
-                                      color:
-                                        likeStates[product._id] ||
-                                        isProductLiked(product._id)
-                                          ? "#e53e3e"
-                                          : "#666",
-                                      "&:hover": {
-                                        color: "#e53e3e",
-                                        transform: "scale(1.1)",
-                                      },
-                                      transition: "all 0.2s ease",
-                                      p: 0.5,
+                                      gap: 5,
+                                      justifyContent: "space-between",
                                     }}
-                                    size="small"
                                   >
-                                    {likeStates[product._id] ||
-                                    isProductLiked(product._id) ? (
-                                      <FavoriteIcon
-                                        sx={{ fontSize: "1.2rem" }}
-                                      />
-                                    ) : (
-                                      <FavoriteBorderIcon
-                                        sx={{ fontSize: "1.2rem" }}
+                                    {hasPreviousPrice && (
+                                      <Chip
+                                        icon={
+                                          <LocalOfferIcon
+                                            sx={{ fontSize: 14 }}
+                                          />
+                                        }
+                                        label={`-${discount}%`}
+                                        color="error"
+                                        size="small"
+                                        sx={{
+                                          fontSize: "0.7rem",
+                                          height: 24,
+                                          "& .MuiChip-label": { px: 0.7 },
+                                        }}
                                       />
                                     )}
-                                  </IconButton>
+                                    <IconButton
+                                      onClick={(e) =>
+                                        handleLikeClick(product._id, e)
+                                      }
+                                      disabled={likeLoading[product._id]}
+                                      sx={{
+                                        bgcolor: "white",
+                                        color:
+                                          likeStates[product._id] ||
+                                          isProductLiked(product._id)
+                                            ? "#e53e3e"
+                                            : "#666",
+                                        "&:hover": {
+                                          color: "#e53e3e",
+                                          transform: "scale(1.1)",
+                                        },
+                                        transition: "all 0.2s ease",
+                                        p: 0.5,
+                                      }}
+                                      size="small"
+                                    >
+                                      {likeStates[product._id] ||
+                                      isProductLiked(product._id) ? (
+                                        <FavoriteIcon
+                                          sx={{ fontSize: "1.2rem" }}
+                                        />
+                                      ) : (
+                                        <FavoriteBorderIcon
+                                          sx={{ fontSize: "1.2rem" }}
+                                        />
+                                      )}
+                                    </IconButton>
+                                  </Box>
                                   {product.expireDate &&
                                     (() => {
                                       const remainingDays = getRemainingDays(
@@ -2829,28 +3249,6 @@ const MainPage = () => {
                                       minHeight: { xs: "56px", sm: "78px" },
                                     }}
                                   >
-                                    <Typography
-                                      variant="body2"
-                                      sx={{
-                                        textDecoration: hasPreviousPrice
-                                          ? "line-through"
-                                          : "none",
-                                        color: "red",
-                                        fontSize: {
-                                          xs: "0.8rem",
-                                          sm: "0.9rem",
-                                        },
-                                        fontWeight: 500,
-                                        minHeight: "1.4em",
-                                        visibility: hasPreviousPrice
-                                          ? "visible"
-                                          : "hidden",
-                                      }}
-                                    >
-                                      {hasPreviousPrice
-                                        ? formatPrice(product.previousPrice)
-                                        : "\u00A0"}
-                                    </Typography>
                                     <Typography
                                       variant="h6"
                                       sx={{
@@ -3259,7 +3657,7 @@ const MainPage = () => {
                               label={`-${calculateDiscount(
                                 selectedProduct.previousPrice,
                                 selectedProduct.newPrice,
-                              )}% OFF`}
+                              )}%`}
                               color="error"
                               size="small"
                               sx={{

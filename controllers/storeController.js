@@ -71,6 +71,7 @@ const createStore = async (req, res) => {
       show: rest.show !== undefined ? rest.show : true,
       statusAll: rest.statusAll === "off" ? "off" : "on",
       expireDate: rest.expireDate || null,
+      lastReleaseDiscountDate: rest.lastReleaseDiscountDate || null,
     };
 
     const store = new Store(storeData);
@@ -113,6 +114,9 @@ const updateStore = async (req, res) => {
     }
     if (rest.expireDate !== undefined) {
       updateDoc.expireDate = rest.expireDate || null;
+    }
+    if (rest.lastReleaseDiscountDate !== undefined) {
+      updateDoc.lastReleaseDiscountDate = rest.lastReleaseDiscountDate || null;
     }
 
     const store = await Store.findByIdAndUpdate(req.params.id, updateDoc, {
