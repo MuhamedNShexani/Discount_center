@@ -1,0 +1,253 @@
+import React from "react";
+import {
+  Box,
+  Typography,
+  Paper,
+  Button,
+  Card,
+  CardContent,
+  CardMedia,
+  Chip,
+} from "@mui/material";
+import { Link } from "react-router-dom";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import WorkOutlineIcon from "@mui/icons-material/WorkOutline";
+import BusinessIcon from "@mui/icons-material/Business";
+import StorefrontIcon from "@mui/icons-material/Storefront";
+import { useTheme } from "@mui/material/styles";
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
+import Slider from "react-slick";
+import { useTranslation } from "react-i18next";
+
+const API = process.env.REACT_APP_BACKEND_URL || "";
+
+const mediaSrc = (path) => {
+  if (!path) return "";
+  return path.startsWith("http") ? path : `${API}${path}`;
+};
+
+const genderLabel = (t, g) => {
+  const v = String(g || "any").toLowerCase();
+  if (v === "male") return t("Male");
+  if (v === "female") return t("Female");
+  return t("Any");
+};
+
+const FindJobShowcase = ({ jobs }) => {
+  const theme = useTheme();
+  const { t } = useTranslation();
+
+  const displayJobs = Array.isArray(jobs) ? jobs.slice(-5) : [];
+  if (displayJobs.length === 0) return null;
+
+  const settings = {
+    dots: false,
+    infinite: true,
+    speed: 800,
+    autoplay: true,
+    autoplaySpeed: 6500,
+    cssEase: "linear",
+    slidesToShow: 1,
+    slidesToScroll: 1,
+    arrows: false,
+    swipeToSlide: true,
+  };
+
+  return (
+    <Paper
+      elevation={4}
+      sx={{
+        my: 2,
+        p: 2,
+        borderRadius: 4,
+        background:
+          theme.palette.mode === "dark"
+            ? "linear-gradient(145deg, #0f172a, #1e293b)"
+            : "linear-gradient(145deg, #eff6ff, #ffffff)",
+        boxShadow:
+          theme.palette.mode === "dark"
+            ? "10px 10px 20px #111827, -10px -10px 20px #1f2937"
+            : "10px 10px 20px #d4d4d4, -10px -10px 20px #ffffff",
+      }}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          mb: 2,
+          gap: 1,
+          flexWrap: "wrap",
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <WorkOutlineIcon color="primary" />
+          <Typography
+            variant="h5"
+            gutterBottom
+            textAlign="left"
+            sx={{
+              fontWeight: 800,
+              color: theme.palette.text.primary,
+              textTransform: "uppercase",
+              letterSpacing: "1px",
+              mb: 0,
+            }}
+          >
+            {t("Find Job")}
+          </Typography>
+        </Box>
+        <Button
+          component={Link}
+          to="/findjob"
+          size="small"
+          variant="outlined"
+          sx={{ textTransform: "none" }}
+        >
+          {t("See All")} <ArrowForwardIcon sx={{ transform: "rotate(180deg)" }} />
+        </Button>
+      </Box>
+
+      <Slider {...settings}>
+        {displayJobs.map((job) => {
+          const ownerName = job?.storeId?.name || job?.brandId?.name || "";
+          const ownerIsBrand = Boolean(job?.brandId?._id);
+          const label = job?.title || t("Job");
+
+          return (
+            <Box key={job._id} sx={{ px: 0.5, width: "100%" }}>
+              <Card
+                component={Link}
+                to="/findjob"
+                sx={{
+                  display: "flex",
+                  height: { xs: 150, sm: 250, md: 280 },
+                  width: "100%",
+                  borderRadius: 2,
+                  overflow: "hidden",
+                  background:
+                    theme.palette.mode === "dark"
+                      ? "linear-gradient(135deg, #4A90E2 0%, #1E6FD9 100%)"
+                      : "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
+                  border: `1px solid ${
+                    theme.palette.mode === "dark" ? "#4a5568" : "#e2e8f0"
+                  }`,
+                  boxShadow:
+                    theme.palette.mode === "dark"
+                      ? "0 4px 16px rgba(0,0,0,0.3)"
+                      : "0 4px 16px rgba(0,0,0,0.1)",
+                  transition: "all 0.3s ease",
+                  "&:hover": {
+                    transform: "translateY(-2px)",
+                    boxShadow:
+                      theme.palette.mode === "dark"
+                        ? "0 8px 24px rgba(0,0,0,0.4)"
+                        : "0 8px 24px rgba(0,0,0,0.15)",
+                  },
+                  textDecoration: "none",
+                }}
+              >
+                <Box
+                  sx={{
+                    width: "100%",
+                    height: "100%",
+                    flexShrink: 0,
+                    position: "relative",
+                  }}
+                >
+                  {job?.image ? (
+                    <CardMedia
+                      component="img"
+                      image={mediaSrc(job.image)}
+                      alt={label}
+                      sx={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  ) : (
+                    <Box
+                      sx={{
+                        width: "100%",
+                        height: "100%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background:
+                          theme.palette.mode === "dark"
+                            ? "rgba(0,0,0,0.35)"
+                            : "rgba(30,111,217,0.08)",
+                      }}
+                    >
+                      <WorkOutlineIcon sx={{ fontSize: 64, color: "rgba(255,255,255,0.85)" }} />
+                    </Box>
+                  )}
+
+                  <CardContent
+                    sx={{
+                      position: "absolute",
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      p: 1.5,
+                      background:
+                        "linear-gradient(to top, rgba(0,0,0,0.72), rgba(0,0,0,0))",
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        color: "white",
+                        fontWeight: 900,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        mb: 0.6,
+                      }}
+                    >
+                      {label}
+                    </Typography>
+                    <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                      <Chip
+                        size="small"
+                        label={genderLabel(t, job?.gender)}
+                        sx={{
+                          backgroundColor: "rgba(255,255,255,0.18)",
+                          color: "white",
+                          border: "1px solid rgba(255,255,255,0.25)",
+                        }}
+                      />
+                      {ownerName ? (
+                        <Chip
+                          size="small"
+                          icon={
+                            ownerIsBrand ? (
+                              <BusinessIcon sx={{ color: "white !important" }} />
+                            ) : (
+                              <StorefrontIcon sx={{ color: "white !important" }} />
+                            )
+                          }
+                          label={ownerName}
+                          sx={{
+                            backgroundColor: "rgba(255,255,255,0.18)",
+                            color: "white",
+                            border: "1px solid rgba(255,255,255,0.25)",
+                            maxWidth: "100%",
+                          }}
+                        />
+                      ) : null}
+                    </Box>
+                  </CardContent>
+                </Box>
+              </Card>
+            </Box>
+          );
+        })}
+      </Slider>
+    </Paper>
+  );
+};
+
+export default FindJobShowcase;
+

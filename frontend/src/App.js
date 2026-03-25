@@ -1,5 +1,6 @@
 import "./i18n";
 import "./styles/kurdishFonts.css";
+import "./styles/themes.css";
 import React, { useState, useMemo, useEffect } from "react";
 import {
   BrowserRouter as Router,
@@ -9,11 +10,12 @@ import {
 } from "react-router-dom";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
-import { Container, Typography, Box } from "@mui/material";
+import { Container, Typography, Box, Alert, IconButton, Collapse } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { CacheProvider } from "@emotion/react";
 import createCache from "@emotion/cache";
 import rtlPlugin from "stylis-plugin-rtl";
+import CloseIcon from "@mui/icons-material/Close";
 
 // Import pages
 import MainPage from "./pages/MainPage";
@@ -30,6 +32,7 @@ import Gifts from "./pages/Gifts";
 import FavouritesPage from "./pages/FavouritesPage";
 import AdminPage from "./pages/AdminPage";
 import AdminUsersPage from "./pages/AdminUsersPage";
+import CustomizationPage from "./pages/CustomizationPage";
 import NavigationBar from "./NavigationBar";
 import BottomNavigationBar from "./components/BottomNavigation";
 import { AuthProvider } from "./context/AuthContext";
@@ -39,6 +42,7 @@ import { NotificationProvider } from "./context/NotificationContext";
 import LoginPage from "./pages/LoginPage";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import ProfilePage from "./pages/ProfilePage";
+import FindJob from "./pages/FindJob";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ScrollToTop from "./components/ScrollToTop";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -49,6 +53,10 @@ import {
 } from "./context/ContentRefreshContext";
 import { createAppTheme } from "./theme";
 import useIsMobileLayout from "./hooks/useIsMobileLayout";
+import {
+  ActiveThemeProvider,
+  useActiveTheme,
+} from "./context/ActiveThemeContext";
 
 // Footer component remains the same
 const Footer = () => (
@@ -81,6 +89,14 @@ function AppContent() {
   const [lang, setLang] = useState(i18n.language || "en");
   const isMobile = useIsMobileLayout();
   const isReelsPage = location.pathname === "/reels";
+  const { effectiveTheme, activeFontKey } = useActiveTheme();
+  const [showTestBanner, setShowTestBanner] = useState(() => {
+    try {
+      return localStorage.getItem("testBannerClosed.v1") !== "1";
+    } catch {
+      return true;
+    }
+  });
 
   // RTL/LTR direction effect and language data attribute
   useEffect(() => {
@@ -109,8 +125,14 @@ function AppContent() {
   };
 
   const theme = useMemo(
-    () => createAppTheme({ darkMode, language: i18n.language }),
-    [darkMode, i18n.language],
+    () =>
+      createAppTheme({
+        darkMode,
+        language: i18n.language,
+        activeTheme: effectiveTheme,
+        activeFontKey,
+      }),
+    [darkMode, i18n.language, effectiveTheme, activeFontKey],
   );
 
   return (
@@ -124,6 +146,41 @@ function AppContent() {
             minHeight: "100vh", // Make the Box cover the full viewport height
           }}
         >
+          <Collapse in={showTestBanner} appear={false}>
+            <Alert
+              severity="warning"
+              variant="filled"
+              action={
+                <IconButton
+                  aria-label={t("Close")}
+                  color="inherit"
+                  size="small"
+                  onClick={() => {
+                    setShowTestBanner(false);
+                    try {
+                      localStorage.setItem("testBannerClosed.v1", "1");
+                    } catch {
+                      // ignore
+                    }
+                  }}
+                >
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              }
+              sx={{
+                borderRadius: 0,
+                fontWeight: 700,
+                textAlign: "center",
+                py: 0.75,
+                px: 1.5,
+                position: "sticky",
+                top: 0,
+                zIndex: (t) => t.zIndex.appBar + 1,
+              }}
+            >
+              {t("All data is just test, nothing is real yet")}
+            </Alert>
+          </Collapse>
           <NavigationBar
             darkMode={darkMode}
             setDarkMode={setDarkMode}
@@ -192,10 +249,24 @@ function AppContent() {
                     </ProtectedRoute>
                   }
                 />
+                <Route
+                  path="/admin/customization"
+                  element={
+                    <ProtectedRoute
+                      allowedEmails={[
+                        "mshexani45@gmail.com",
+                        "admin@gmail.com",
+                      ]}
+                    >
+                      <CustomizationPage />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route path="/search" element={<SearchPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/findjob" element={<FindJob />} />
                 <Route path="/products/:id" element={<ProductDetail />} />
               </Routes>
             </Container>
@@ -221,12 +292,14 @@ const Root = () => (
     <AuthProvider>
       <CityFilterProvider>
         <AppSettingsProvider>
-          <NotificationProvider>
-            <Router>
-              <ScrollToTop />
-              <App />
-            </Router>
-          </NotificationProvider>
+          <ActiveThemeProvider>
+            <NotificationProvider>
+              <Router>
+                <ScrollToTop />
+                <App />
+              </Router>
+            </NotificationProvider>
+          </ActiveThemeProvider>
         </AppSettingsProvider>
       </CityFilterProvider>
     </AuthProvider>

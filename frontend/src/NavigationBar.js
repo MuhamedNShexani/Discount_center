@@ -54,6 +54,7 @@ import {
   People as PeopleIcon,
   Block as BlockIcon,
   Refresh as RefreshIcon,
+  VideoLibrary as VideoLibraryIcon,
 } from "@mui/icons-material";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -65,6 +66,7 @@ import { useAppSettings } from "./context/AppSettingsContext";
 import { useNotifications } from "./context/NotificationContext";
 import { useContentRefresh } from "./context/ContentRefreshContext";
 import useIsMobileLayout from "./hooks/useIsMobileLayout";
+import { useActiveTheme } from "./context/ActiveThemeContext";
 
 // Set to true to show notification center (bell, profile toggle, enable banner)
 const NOTIFICATIONS_CENTER_ENABLED = false;
@@ -94,6 +96,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
   } = useNotifications();
   const isSmUp = !useIsMobileLayout();
   const { triggerRefresh } = useContentRefresh();
+  const { navConfig } = useActiveTheme();
   const lang = i18n.language;
   const location = useLocation();
   const isAuthenticated = !!user;
@@ -254,13 +257,13 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
         elevation={0}
         sx={{
           background:
-            "linear-gradient(120deg, #1E6FD9 0%, #4A90E2 56%, #FF7A1A 100%)",
+            "linear-gradient(120deg, var(--color-primary) 0%, var(--color-secondary) 56%, var(--color-secondary) 100%)",
           backdropFilter: "blur(20px)",
-          borderBottom: `1px solid ${
-            theme.palette.mode === "dark"
-              ? "rgba(255,255,255,0.1)"
-              : "rgba(255,255,255,0.2)"
-          }`,
+          // borderBottom: `1px solid ${
+          //   theme.palette.mode === "dark"
+          //     ? "rgba(255,255,255,0.1)"
+          //     : theme.palette.primary.main
+          // }`,
           boxShadow:
             theme.palette.mode === "dark"
               ? "0 8px 32px rgba(0,0,0,0.3)"
@@ -278,11 +281,13 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
           sx={{
             justifyContent: isSmUp ? "space-between" : "flex-start",
             px: { xs: 1, sm: 2, md: 4 },
+            borderBottomLeftRadius: "50%",
+            borderBottomRightRadius: "50%",
             ...(isSmUp ? {} : { minHeight: 56 }),
           }}
         >
-          {/* Mobile navbar: Notification | Favourites | App name (center) | Search | Profile */}
-          {!isSmUp && (
+          {/* Mobile navbar templates */}
+          {!isSmUp && (navConfig?.template || "template1") === "template1" && (
             <Box
               sx={{
                 display: "flex",
@@ -293,7 +298,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
               }}
             >
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.9 }}>
-                {NOTIFICATIONS_CENTER_ENABLED && (
+                {/* {NOTIFICATIONS_CENTER_ENABLED && (
                   <IconButton
                     onClick={handleNotificationMenuOpen}
                     sx={{
@@ -314,7 +319,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                       <NotificationsIcon />
                     </Badge>
                   </IconButton>
-                )}
+                )} */}
                 <IconButton
                   component={Link}
                   to="/search"
@@ -381,7 +386,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   to="/favourites"
                   sx={{
                     color: "white",
-                    backgroundColor: "rgba(255,255,255,0.1)",
+                    // backgroundColor: "rgba(255,255,255,0.1)",
                     backdropFilter: "blur(10px)",
                     border: "1px solid rgba(255,255,255,0.2)",
                     transition: "all 0.3s ease",
@@ -400,7 +405,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   to="/profile"
                   sx={{
                     color: "white",
-                    backgroundColor: "rgba(255,255,255,0.1)",
+                    // backgroundColor: "rgba(255,255,255,0.1)",
                     backdropFilter: "blur(10px)",
                     border: "1px solid rgba(255,255,255,0.2)",
                     transition: "all 0.3s ease",
@@ -418,6 +423,178 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
             </Box>
           )}
 
+          {!isSmUp && (navConfig?.template || "template1") === "template2" && (
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                width: "100%",
+                justifyContent: "space-between",
+                gap: 0.5,
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.9 }}>
+                <IconButton
+                  component={Link}
+                  to="/search"
+                  sx={{
+                    color: "white",
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    backdropFilter: "blur(10px)",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    transition: "all 0.3s ease",
+                    width: 40,
+                    height: 40,
+                    "&:hover": {
+                      backgroundColor: "rgba(255,255,255,0.2)",
+                      transform: "scale(1.05)",
+                    },
+                  }}
+                  aria-label={t("Search")}
+                >
+                  <SearchIcon />
+                </IconButton>
+              </Box>
+
+              <Typography
+                sx={{
+                  flex: 1,
+                  textAlign: "center",
+                  color: "white",
+                  fontWeight: 700,
+                  fontSize: "1.15rem",
+                  textShadow: "0 2px 4px rgba(0,0,0,0.3)",
+                  background: "linear-gradient(45deg, #ffffff, #FFF5EC)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                }}
+              >
+                {t("Discount Center")}
+              </Typography>
+
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.9 }}>
+                <IconButton
+                  onClick={() => triggerRefresh?.()}
+                  sx={{
+                    color: "white",
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    backdropFilter: "blur(10px)",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    transition: "all 0.3s ease",
+                    width: 40,
+                    height: 40,
+                    "&:hover": {
+                      backgroundColor: "rgba(255,255,255,0.2)",
+                      transform: "scale(1.05)",
+                    },
+                  }}
+                  aria-label={t("Refresh")}
+                >
+                  <RefreshIcon />
+                </IconButton>
+              </Box>
+            </Box>
+          )}
+
+          {!isSmUp && (navConfig?.template || "template1") === "custom" && (
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                width: "100%",
+                justifyContent: "space-between",
+                gap: 0.5,
+              }}
+            >
+              {(() => {
+                const top = navConfig?.topSlots || {};
+                const sxBtn = {
+                  color: "white",
+                  backgroundColor: "rgba(255,255,255,0.1)",
+                  backdropFilter: "blur(10px)",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                  transition: "all 0.3s ease",
+                  width: 40,
+                  height: 40,
+                  "&:hover": {
+                    backgroundColor: "rgba(255,255,255,0.2)",
+                    transform: "scale(1.05)",
+                  },
+                };
+
+                const map = {
+                  home: { to: "/", icon: <HomeIcon /> },
+                  search: { to: "/search", icon: <SearchIcon /> },
+                  categories: { to: "/categories", icon: <CategoryIcon /> },
+                  reels: { to: "/reels", icon: <VideoLibraryIcon /> },
+                  favourites: { to: "/favourites", icon: <FavoriteIcon /> },
+                  stores: { to: "/stores", icon: <StoreIcon /> },
+                  gifts: { to: "/gifts", icon: <CardGiftcardIcon /> },
+                  profile: { to: "/profile", icon: <PersonIcon /> },
+                };
+
+                const renderAction = (action, key) => {
+                  if (!action || action === "none") {
+                    return <Box key={key} sx={{ width: 40, height: 40 }} />;
+                  }
+                  if (action === "label") return <Box key={key} sx={{ width: 40, height: 40 }} />;
+                  if (action === "refresh") {
+                    return (
+                      <IconButton key={key} onClick={() => triggerRefresh?.()} sx={sxBtn}>
+                        <RefreshIcon />
+                      </IconButton>
+                    );
+                  }
+                  const cfg = map[action];
+                  if (!cfg) return <Box key={key} sx={{ width: 40, height: 40 }} />;
+                  return (
+                    <IconButton key={key} component={Link} to={cfg.to} sx={sxBtn}>
+                      {cfg.icon}
+                    </IconButton>
+                  );
+                };
+
+                const centerIsLabel = (top.center || "label") === "label";
+                return (
+                  <>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.9 }}>
+                      {renderAction(top.topleft1, "topleft1")}
+                      {renderAction(top.topleft2, "topleft2")}
+                    </Box>
+
+                    <Typography
+                      component={centerIsLabel ? Link : "div"}
+                      to={centerIsLabel ? "/" : undefined}
+                      sx={{
+                        flex: 1,
+                        textAlign: "center",
+                        textDecoration: "none",
+                        color: "white",
+                        fontWeight: 700,
+                        fontSize: "1.15rem",
+                        textShadow: "0 2px 4px rgba(0,0,0,0.3)",
+                        background: "linear-gradient(45deg, #ffffff, #FFF5EC)",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                        backgroundClip: "text",
+                        opacity: centerIsLabel ? 1 : 0,
+                        pointerEvents: centerIsLabel ? "auto" : "none",
+                      }}
+                    >
+                      {t("Discount Center")}
+                    </Typography>
+
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.9 }}>
+                      {renderAction(top.topright1, "topright1")}
+                      {renderAction(top.topright2, "topright2")}
+                    </Box>
+                  </>
+                );
+              })()}
+            </Box>
+          )}
+
           {/* Desktop: Logo and Brand */}
           {isSmUp && (
             <Box display="flex" alignItems="center">
@@ -426,7 +603,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   mr: 2,
                   width: 40,
                   height: 40,
-                  background: "linear-gradient(135deg, #ffffff20, #ffffff40)",
+                  // background: "linear-gradient(135deg, #ffffff20, #ffffff40)",
                   backdropFilter: "blur(10px)",
                   border: "2px solid rgba(255,255,255,0.3)",
                 }}
@@ -484,10 +661,10 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                     minWidth: "auto",
                     position: "relative",
                     transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                    backgroundColor:
-                      location.pathname === item.path
-                        ? "rgba(255,255,255,0.2)"
-                        : "transparent",
+                    // backgroundColor:
+                    //   location.pathname === item.path
+                    //     ? "rgba(255,255,255,0.2)"
+                    //     : "transparent",
                     backdropFilter:
                       location.pathname === item.path ? "blur(10px)" : "none",
                     border:
@@ -508,7 +685,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                       transform: "translateX(-50%)",
                       width: location.pathname === item.path ? "80%" : "0%",
                       height: 2,
-                      backgroundColor: "white",
+                      // backgroundColor: "white",
                       borderRadius: 1,
                       transition: "width 0.3s ease",
                     },
@@ -533,9 +710,9 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   minWidth: "auto",
                   position: "relative",
                   transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                  backgroundColor: location.pathname.startsWith("/stores")
-                    ? "rgba(255,255,255,0.2)"
-                    : "transparent",
+                  // backgroundColor: location.pathname.startsWith("/stores")
+                  //   ? "rgba(255,255,255,0.2)"
+                  //   : "transparent",
                   backdropFilter: location.pathname.startsWith("/stores")
                     ? "blur(10px)"
                     : "none",
@@ -558,7 +735,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                       ? "80%"
                       : "0%",
                     height: 2,
-                    backgroundColor: "white",
+                    // backgroundColor: "white",
                     borderRadius: 1,
                     transition: "width 0.3s ease",
                   },
@@ -587,10 +764,10 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                       minWidth: "auto",
                       position: "relative",
                       transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                      backgroundColor:
-                        location.pathname === item.path
-                          ? "rgba(255,255,255,0.2)"
-                          : "transparent",
+                      // backgroundColor:
+                      //   location.pathname === item.path
+                      //     ? "rgba(255,255,255,0.2)"
+                      //     : "transparent",
                       backdropFilter:
                         location.pathname === item.path ? "blur(10px)" : "none",
                       border:
@@ -611,7 +788,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                         transform: "translateX(-50%)",
                         width: location.pathname === item.path ? "80%" : "0%",
                         height: 2,
-                        backgroundColor: "white",
+                        // backgroundColor: "white",
                         borderRadius: 1,
                         transition: "width 0.3s ease",
                       },
@@ -660,7 +837,9 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                         mt: 1.5,
                         minWidth: 180,
                         backgroundColor:
-                          theme.palette.mode === "dark" ? "#1E6FD9" : "#fff",
+                          theme.palette.mode === "dark"
+                            ? "var(--brand-primary-blue)"
+                            : "#fff",
                         border: `1px solid ${theme.palette.divider}`,
                         borderRadius: 2,
                       },
@@ -699,10 +878,21 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                       </ListItemIcon>
                       <ListItemText primary={t("Admin Dashboard")} />
                     </MenuItem>
+                    <MenuItem
+                      component={Link}
+                      to="/admin/customization"
+                      onClick={handleAdminMenuClose}
+                      selected={location.pathname === "/admin/customization"}
+                    >
+                      <ListItemIcon>
+                        <SettingsIcon fontSize="small" />
+                      </ListItemIcon>
+                      <ListItemText primary={t("Customization")} />
+                    </MenuItem>
                   </Menu>
                 </>
               )}
-              {NOTIFICATIONS_CENTER_ENABLED && (
+              {/* {NOTIFICATIONS_CENTER_ENABLED && (
                 <IconButton
                   onClick={handleNotificationMenuOpen}
                   sx={{
@@ -724,7 +914,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                     <NotificationsIcon />
                   </Badge>
                 </IconButton>
-              )}
+              )} */}
               {/* Desktop Profile Icon (contains Favourites, Login/Logout, City, Mode) */}
               <IconButton
                 component={Link}
@@ -750,70 +940,10 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
           )}
 
           {/* Controls - desktop only (mobile has its own navbar above) */}
-          {isSmUp && (
-            <Box display="flex" alignItems="center" gap={{ xs: 2, sm: 1 }}>
-              {/* Desktop Controls */}
-              <>
-                {/* Language Selector (desktop - stays in navbar) */}
-                <Paper
-                  elevation={0}
-                  sx={{
-                    backgroundColor: "rgba(255,255,255,0.1)",
-                    backdropFilter: "blur(10px)",
-                    border: "1px solid rgba(255,255,255,0.2)",
-                    borderRadius: 2,
-                  }}
-                >
-                  <Select
-                    value={lang}
-                    onChange={handleLangChange}
-                    size="small"
-                    variant="standard"
-                    disableUnderline
-                    sx={{
-                      color: "white",
-                      minWidth: { xs: 60, sm: 80 },
-                      px: { xs: 0.5, sm: 1 },
-                      "& .MuiSvgIcon-root": {
-                        color: "white",
-                      },
-                      "& .MuiSelect-select": {
-                        py: 0.5,
-                        fontSize: { xs: "0.8rem", sm: "0.9rem" },
-                      },
-                    }}
-                  >
-                    <MenuItem value="en">🇺🇸 EN</MenuItem>
-                    <MenuItem value="ar">🇸🇦 AR</MenuItem>
-                    <MenuItem value="ku">
-                      <Box
-                        component="span"
-                        display="flex"
-                        alignItems="center"
-                        gap={1}
-                      >
-                        <img
-                          src={kurdishFlag}
-                          alt="Kurdish"
-                          style={{
-                            width: 20,
-                            height: 14,
-                            objectFit: "cover",
-                            borderRadius: 2,
-                          }}
-                        />
-                        {t("Kurdish")}
-                      </Box>
-                    </MenuItem>
-                  </Select>
-                </Paper>
-              </>
-            </Box>
-          )}
         </Toolbar>
       </AppBar>
 
-      {NOTIFICATIONS_CENTER_ENABLED && (
+      {/* {NOTIFICATIONS_CENTER_ENABLED && (
         <Menu
           anchorEl={notificationAnchorEl}
           open={Boolean(notificationAnchorEl)}
@@ -957,856 +1087,9 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
             )}
           </Box>
         </Menu>
-      )}
+      )} */}
 
-      {/* Guest name dialog */}
-      <Dialog
-        open={guestNameDialogOpen}
-        onClose={() => setGuestNameDialogOpen(false)}
-        maxWidth="xs"
-        fullWidth
-      >
-        <DialogTitle>{t("Change account name")}</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            fullWidth
-            margin="normal"
-            label={t("Name")}
-            value={guestNameInput}
-            onChange={(e) => setGuestNameInput(e.target.value)}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setGuestNameDialogOpen(false)}>
-            {t("Cancel")}
-          </Button>
-          <Button
-            onClick={async () => {
-              const name = guestNameInput.trim();
-              if (!name) return;
-              const res = await updateGuestName(name);
-              if (res?.success) {
-                setGuestNameDialogOpen(false);
-              } else {
-                alert(res?.message || t("Failed to update name"));
-              }
-            }}
-          >
-            {t("Save")}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Mobile Profile Menu */}
-      <Menu
-        anchorEl={profileAnchorEl}
-        open={Boolean(profileAnchorEl)}
-        onClose={handleProfileMenuClose}
-        PaperProps={{
-          sx: {
-            mt: 1,
-            minWidth: 200,
-            backgroundColor:
-              theme.palette.mode === "dark" ? "#1E6FD9" : "#ffffff",
-            backdropFilter: "blur(20px)",
-            border: `1px solid ${
-              theme.palette.mode === "dark"
-                ? "rgba(255,255,255,0.1)"
-                : "rgba(0,0,0,0.1)"
-            }`,
-            boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
-            borderRadius: 2,
-          },
-        }}
-        transformOrigin={{ horizontal: "right", vertical: "top" }}
-        anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
-      >
-        {/* User Info */}
-        <Box
-          sx={{
-            px: 2,
-            py: 2,
-            borderBottom: `1px solid ${theme.palette.divider}`,
-            backgroundColor:
-              theme.palette.mode === "dark"
-                ? "rgba(255,255,255,0.05)"
-                : "rgba(0,0,0,0.02)",
-          }}
-        >
-          {user ? (
-            <>
-              <Box display="flex" alignItems="center" gap={1.5} mb={1}>
-                <Avatar
-                  sx={{
-                    width: 40,
-                    height: 40,
-                    backgroundColor:
-                      theme.palette.mode === "dark" ? "#1E6FD9" : "#1E6FD9",
-                    fontSize: "1rem",
-                    fontWeight: 600,
-                  }}
-                >
-                  {(user.displayName || user.username || "U")
-                    .charAt(0)
-                    .toUpperCase()}
-                </Avatar>
-                <Box>
-                  <Typography
-                    variant="subtitle1"
-                    color="text.primary"
-                    fontWeight={600}
-                    sx={{ fontSize: "1rem" }}
-                  >
-                    {user.displayName || user.username || t("User")}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ fontSize: "0.8rem" }}
-                  >
-                    {user.email}
-                  </Typography>
-                </Box>
-              </Box>
-            </>
-          ) : (
-            <Box display="flex" alignItems="center" gap={1.5}>
-              <Avatar
-                sx={{
-                  width: 40,
-                  height: 40,
-                  backgroundColor:
-                    theme.palette.mode === "dark" ? "#6c757d" : "#adb5bd",
-                  fontSize: "1rem",
-                  fontWeight: 600,
-                }}
-              >
-                {(guestUser?.displayName || "G").charAt(0).toUpperCase()}
-              </Avatar>
-              <Box>
-                <Typography
-                  variant="subtitle1"
-                  color="text.primary"
-                  fontWeight={600}
-                  sx={{ fontSize: "1rem" }}
-                >
-                  {guestUser?.displayName || t("Guest User")}
-                </Typography>
-                {/* <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ fontSize: "0.8rem" }}
-                >
-                  {t("Not logged in")}
-                </Typography> */}
-              </Box>
-            </Box>
-          )}
-        </Box>
-        {!user && (
-          <MenuItem
-            onClick={() => {
-              setGuestNameInput(guestUser?.displayName || "");
-              setGuestNameDialogOpen(true);
-            }}
-            sx={{
-              py: 1.5,
-              px: 2,
-              "&:hover": {
-                backgroundColor:
-                  theme.palette.mode === "dark"
-                    ? "rgba(255,255,255,0.08)"
-                    : "rgba(0,0,0,0.04)",
-              },
-            }}
-          >
-            <ListItemIcon>
-              <PersonIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText
-              primary={t("Change name")}
-              primaryTypographyProps={{
-                fontSize: "0.875rem",
-                fontWeight: 500,
-              }}
-            />
-          </MenuItem>
-        )}
-        {/* Favourites - desktop only (mobile has separate Favourites icon in navbar) */}
-        {isSmUp && (
-          <MenuItem
-            component={Link}
-            to="/favourites"
-            onClick={handleProfileMenuClose}
-            sx={{
-              py: 1.5,
-              px: 2,
-              "&:hover": {
-                backgroundColor:
-                  theme.palette.mode === "dark"
-                    ? "rgba(255,255,255,0.08)"
-                    : "rgba(0,0,0,0.04)",
-              },
-            }}
-          >
-            <ListItemIcon>
-              <FavoriteIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText
-              primary={t("Favourites")}
-              primaryTypographyProps={{
-                fontSize: "0.875rem",
-                fontWeight: 500,
-              }}
-            />
-          </MenuItem>
-        )}
-
-        {/* City Selector - in profile (desktop & mobile) - single button with submenu */}
-        {
-          <>
-            <ListItemButton
-              onClick={(e) =>
-                setCityAnchorEl(cityAnchorEl ? null : e.currentTarget)
-              }
-              sx={{
-                py: 1.5,
-                px: 2,
-                "&:hover": {
-                  backgroundColor:
-                    theme.palette.mode === "dark"
-                      ? "rgba(255,255,255,0.08)"
-                      : "rgba(0,0,0,0.04)",
-                },
-              }}
-            >
-              <ListItemIcon>
-                <LocationOnIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText
-                primary={t("City")}
-                secondary={(() => {
-                  const city = cities.find((c) => c.value === selectedCity);
-                  return city ? `${city.flag} ${city.label}` : "";
-                })()}
-                primaryTypographyProps={{
-                  fontSize: "0.875rem",
-                  fontWeight: 500,
-                }}
-                secondaryTypographyProps={{
-                  fontSize: "0.8rem",
-                  color: "text.secondary",
-                }}
-              />
-              {cityAnchorEl ? (
-                <ExpandLessIcon fontSize="small" />
-              ) : (
-                <ExpandMoreIcon fontSize="small" />
-              )}
-            </ListItemButton>
-            <Menu
-              anchorEl={cityAnchorEl}
-              open={Boolean(cityAnchorEl)}
-              onClose={() => setCityAnchorEl(null)}
-              anchorOrigin={{ vertical: "top", horizontal: "right" }}
-              transformOrigin={{ vertical: "top", horizontal: "left" }}
-              PaperProps={{
-                sx: {
-                  mt: -1,
-                  ml: 0.5,
-                  minWidth: 160,
-                  backgroundColor:
-                    theme.palette.mode === "dark" ? "#1E6FD9" : "#fff",
-                  border: `1px solid ${theme.palette.divider}`,
-                  borderRadius: 2,
-                },
-              }}
-            >
-              {cities.map((city) => (
-                <MenuItem
-                  key={city.value}
-                  onClick={() => {
-                    changeCity(city.value);
-                    setCityAnchorEl(null);
-                  }}
-                  selected={selectedCity === city.value}
-                  sx={{
-                    py: 1,
-                    px: 2,
-                    "&:hover": {
-                      backgroundColor:
-                        theme.palette.mode === "dark"
-                          ? "rgba(255,255,255,0.08)"
-                          : "rgba(0,0,0,0.04)",
-                    },
-                  }}
-                >
-                  <ListItemIcon>
-                    <LocationOnIcon fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={`${city.flag} ${city.label}`}
-                    primaryTypographyProps={{ fontSize: "0.875rem" }}
-                  />
-                </MenuItem>
-              ))}
-            </Menu>
-
-            <Divider />
-          </>
-        }
-
-        {/* Theme / Mode Toggle */}
-        {/* <MenuItem
-          onClick={() => {
-            setDarkMode(!darkMode);
-            handleProfileMenuClose();
-          }}
-          sx={{
-            py: 1.5,
-            px: 2,
-            "&:hover": {
-              backgroundColor:
-                theme.palette.mode === "dark"
-                  ? "rgba(255,255,255,0.08)"
-                  : "rgba(0,0,0,0.04)",
-            },
-          }}
-        >
-          <ListItemIcon>
-            {darkMode ? <Brightness7Icon /> : <Brightness4Icon />}
-          </ListItemIcon>
-          <ListItemText
-            primary={darkMode ? t("Light Mode") : t("Dark Mode")}
-            primaryTypographyProps={{
-              fontSize: "0.875rem",
-              fontWeight: 500,
-            }}
-          />
-        </MenuItem> */}
-
-        {NOTIFICATIONS_CENTER_ENABLED && (
-          <>
-            {/* Push / Notification Center On/Off - always visible in profile */}
-            <MenuItem
-              component="div"
-              disableRipple
-              onClick={(e) => e.stopPropagation()}
-              sx={{
-                py: 1.5,
-                px: 2,
-                "&:hover": {
-                  backgroundColor:
-                    theme.palette.mode === "dark"
-                      ? "rgba(255,255,255,0.08)"
-                      : "rgba(0,0,0,0.04)",
-                },
-              }}
-            >
-              <ListItemIcon>
-                <NotificationsIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText
-                primary={t("Notification center")}
-                secondary={
-                  !pushSupported
-                    ? t("Not supported")
-                    : pushEnabled
-                      ? t("On")
-                      : t("Off")
-                }
-                primaryTypographyProps={{
-                  fontSize: "0.875rem",
-                  fontWeight: 500,
-                }}
-                secondaryTypographyProps={{
-                  fontSize: "0.75rem",
-                  color: "text.secondary",
-                }}
-              />
-              <Switch
-                size="small"
-                checked={pushEnabled}
-                disabled={!pushSupported || pushSubscribing}
-                onChange={(e) => {
-                  if (e.target.checked) {
-                    setConfirmPushOpen(true);
-                  } else {
-                    setPushEnabled(false);
-                  }
-                }}
-                color="primary"
-              />
-            </MenuItem>
-
-            {/* Confirm enable notification center */}
-            <Dialog
-              open={confirmPushOpen}
-              onClose={() => setConfirmPushOpen(false)}
-              maxWidth="xs"
-              fullWidth
-            >
-              <DialogTitle>{t("Notification center")}</DialogTitle>
-              <DialogContent>
-                <Typography variant="body2" color="text.secondary">
-                  {t(
-                    "Enable notifications to receive updates and offers from the app?",
-                  )}
-                </Typography>
-              </DialogContent>
-              <DialogActions sx={{ px: 2, pb: 2 }}>
-                <Button onClick={() => setConfirmPushOpen(false)}>
-                  {t("Cancel")}
-                </Button>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  disabled={pushSubscribing}
-                  onClick={async () => {
-                    setConfirmPushOpen(false);
-                    if (pushPermission === "default") {
-                      await requestPushPermission();
-                    } else {
-                      await setPushEnabled(true);
-                    }
-                  }}
-                >
-                  {pushSubscribing ? t("Enabling...") : t("Enable")}
-                </Button>
-              </DialogActions>
-            </Dialog>
-          </>
-        )}
-
-        <Divider />
-
-        {/* Language options (mobile - inside profile, one row) */}
-        {!isSmUp && (
-          <>
-            <Box sx={{ px: 2, py: 1 }}>
-              <Typography variant="caption" color="text.secondary">
-                {t("Language")}
-              </Typography>
-            </Box>
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "row",
-                gap: 1,
-                px: 2,
-                py: 1.5,
-                flexWrap: "nowrap",
-              }}
-            >
-              <Button
-                size="small"
-                variant={lang === "en" ? "contained" : "outlined"}
-                onClick={() => {
-                  i18n.changeLanguage("en");
-                  handleProfileMenuClose();
-                }}
-                sx={{
-                  minWidth: "auto",
-                  px: 1.5,
-                  py: 0.75,
-                  fontSize: "0.75rem",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                🇺🇸 EN
-              </Button>
-              <Button
-                size="small"
-                variant={lang === "ar" ? "contained" : "outlined"}
-                onClick={() => {
-                  i18n.changeLanguage("ar");
-                  handleProfileMenuClose();
-                }}
-                sx={{
-                  minWidth: "auto",
-                  px: 1.5,
-                  py: 0.75,
-                  fontSize: "0.75rem",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                🇸🇦 AR
-              </Button>
-              <Button
-                size="small"
-                variant={lang === "ku" ? "contained" : "outlined"}
-                onClick={() => {
-                  i18n.changeLanguage("ku");
-                  handleProfileMenuClose();
-                }}
-                sx={{
-                  minWidth: "auto",
-                  px: 1.5,
-                  py: 0.75,
-                  fontSize: "0.75rem",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                <Box
-                  component="span"
-                  display="flex"
-                  alignItems="center"
-                  gap={0.5}
-                >
-                  <img
-                    src={kurdishFlag}
-                    alt=""
-                    style={{
-                      width: 16,
-                      height: 12,
-                      objectFit: "cover",
-                      borderRadius: 2,
-                    }}
-                  />
-                  {t("Kurdish")}
-                </Box>
-              </Button>
-            </Box>
-            <Divider />
-          </>
-        )}
-
-        {/* Admin group (Data Entry + Dashboard) and Logout / Login */}
-        {user ? (
-          <>
-            {isAdmin && (
-              <>
-                <MenuItem
-                  component={Link}
-                  to="/admin"
-                  onClick={handleProfileMenuClose}
-                  sx={{
-                    py: 1.5,
-                    px: 2,
-                    color:
-                      theme.palette.mode === "dark" ? "#e2e8f0" : "#1E6FD9",
-                    "&:hover": {
-                      backgroundColor:
-                        theme.palette.mode === "dark"
-                          ? "rgba(255,255,255,0.08)"
-                          : "rgba(0,0,0,0.04)",
-                    },
-                  }}
-                >
-                  <ListItemIcon>
-                    <AdminPanelSettingsIcon />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={t("Data Entry")}
-                    primaryTypographyProps={{
-                      fontSize: "0.875rem",
-                      fontWeight: 500,
-                    }}
-                  />
-                </MenuItem>
-                <MenuItem
-                  component={Link}
-                  to="/admin/dashboard"
-                  onClick={handleProfileMenuClose}
-                  sx={{
-                    py: 1.5,
-                    px: 2,
-                    color:
-                      theme.palette.mode === "dark" ? "#e2e8f0" : "#1E6FD9",
-                    "&:hover": {
-                      backgroundColor:
-                        theme.palette.mode === "dark"
-                          ? "rgba(255,255,255,0.08)"
-                          : "rgba(0,0,0,0.04)",
-                    },
-                  }}
-                >
-                  <ListItemIcon>
-                    <DashboardIcon />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={t("Admin Dashboard")}
-                    primaryTypographyProps={{
-                      fontSize: "0.875rem",
-                      fontWeight: 500,
-                    }}
-                  />
-                </MenuItem>
-                <Divider />
-              </>
-            )}
-            <>
-              {/* Privacy Policy - shown for both mobile and desktop */}
-              <MenuItem
-                component={Link}
-                to="/privacy-policy"
-                onClick={handleProfileMenuClose}
-                sx={{
-                  py: 1.5,
-                  px: 2,
-                  "&:hover": {
-                    backgroundColor:
-                      theme.palette.mode === "dark"
-                        ? "rgba(255,255,255,0.08)"
-                        : "rgba(0,0,0,0.04)",
-                  },
-                }}
-              >
-                <ListItemIcon>
-                  <PrivacyTipIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText
-                  primary={t("Privacy Policy")}
-                  primaryTypographyProps={{
-                    fontSize: "0.875rem",
-                    fontWeight: 500,
-                  }}
-                />
-              </MenuItem>
-              {/* Contact Us - opens WhatsApp */}
-              <MenuItem
-                onClick={() => {
-                  openWhatsApp();
-                  handleProfileMenuClose();
-                }}
-                sx={{
-                  py: 1.5,
-                  px: 2,
-                  "&:hover": {
-                    backgroundColor:
-                      theme.palette.mode === "dark"
-                        ? "rgba(255,255,255,0.08)"
-                        : "rgba(0,0,0,0.04)",
-                  },
-                }}
-              >
-                <ListItemIcon>
-                  <ContactSupportIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText
-                  primary={t("Contact Us")}
-                  primaryTypographyProps={{
-                    fontSize: "0.875rem",
-                    fontWeight: 500,
-                  }}
-                />
-              </MenuItem>
-              <Divider />
-              {/* Deactivate Account - 30-day grace period then permanent deletion */}
-              <MenuItem
-                onClick={handleDeactivateClick}
-                sx={{
-                  py: 1.5,
-                  px: 2,
-                  color: theme.palette.secondary.main,
-                  "&:hover": {
-                    backgroundColor: "rgba(255,122,26,0.10)",
-                  },
-                }}
-              >
-                <ListItemIcon>
-                  <BlockIcon sx={{ color: theme.palette.secondary.main }} />
-                </ListItemIcon>
-                <ListItemText
-                  primary={t("Deactivate Account")}
-                  primaryTypographyProps={{
-                    fontSize: "0.875rem",
-                    fontWeight: 500,
-                  }}
-                />
-              </MenuItem>
-              {/* Logout - now available on both desktop and mobile */}
-              <MenuItem
-                onClick={handleLogout}
-                sx={{
-                  py: 1.5,
-                  px: 2,
-                  color: "#e53e3e",
-                  "&:hover": {
-                    backgroundColor: "rgba(229, 62, 62, 0.08)",
-                  },
-                }}
-              >
-                <ListItemIcon>
-                  <LogoutIcon sx={{ color: "#e53e3e" }} />
-                </ListItemIcon>
-                <ListItemText
-                  primary={t("Logout")}
-                  primaryTypographyProps={{
-                    fontSize: "0.875rem",
-                    fontWeight: 500,
-                  }}
-                />
-              </MenuItem>
-            </>
-          </>
-        ) : (
-          <>
-            <Divider />
-            {/* Privacy Policy - shown for both mobile and desktop */}
-            <MenuItem
-              component={Link}
-              to="/privacy-policy"
-              onClick={handleProfileMenuClose}
-              sx={{
-                py: 1.5,
-                px: 2,
-                "&:hover": {
-                  backgroundColor:
-                    theme.palette.mode === "dark"
-                      ? "rgba(255,255,255,0.08)"
-                      : "rgba(0,0,0,0.04)",
-                },
-              }}
-            >
-              <ListItemIcon>
-                <PrivacyTipIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText
-                primary={t("Privacy Policy")}
-                primaryTypographyProps={{
-                  fontSize: "0.875rem",
-                  fontWeight: 500,
-                }}
-              />
-            </MenuItem>
-            {/* Contact Us - opens WhatsApp */}
-            <MenuItem
-              onClick={() => {
-                openWhatsApp();
-                handleProfileMenuClose();
-              }}
-              sx={{
-                py: 1.5,
-                px: 2,
-                "&:hover": {
-                  backgroundColor:
-                    theme.palette.mode === "dark"
-                      ? "rgba(255,255,255,0.08)"
-                      : "rgba(0,0,0,0.04)",
-                },
-              }}
-            >
-              <ListItemIcon>
-                <ContactSupportIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText
-                primary={t("Contact Us")}
-                primaryTypographyProps={{
-                  fontSize: "0.875rem",
-                  fontWeight: 500,
-                }}
-              />
-            </MenuItem>
-            <Divider />
-            {/* Login - now available on both desktop and mobile */}
-            <MenuItem
-              component={Link}
-              to="/login"
-              onClick={handleProfileMenuClose}
-              sx={{
-                py: 1.5,
-                px: 2,
-                color: theme.palette.primary.main,
-                "&:hover": {
-                  backgroundColor: "rgba(30,111,217,0.08)",
-                },
-              }}
-            >
-              <ListItemIcon>
-                <LoginIcon sx={{ color: theme.palette.primary.main }} />
-              </ListItemIcon>
-              <ListItemText
-                primary={t("Login")}
-                primaryTypographyProps={{
-                  fontSize: "0.875rem",
-                  fontWeight: 500,
-                }}
-              />
-            </MenuItem>
-          </>
-        )}
-      </Menu>
-
-      {/* Deactivate Account confirmation dialog */}
-      <Dialog
-        open={deactivateDialogOpen}
-        onClose={() => !deactivating && setDeactivateDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>{t("Deactivate Account")}</DialogTitle>
-        <DialogContent>
-          <Box component="ul" sx={{ mt: 1, pl: 2 }}>
-            <Typography
-              component="li"
-              variant="body2"
-              color="text.secondary"
-              sx={{ mb: 0.5 }}
-            >
-              {t(
-                "Your account will be inactive immediately and you will be logged out.",
-              )}
-            </Typography>
-            <Typography
-              component="li"
-              variant="body2"
-              color="text.secondary"
-              sx={{ mb: 0.5 }}
-            >
-              {t(
-                "You have 30 days to log in again to reactivate your account and cancel deletion.",
-              )}
-            </Typography>
-            <Typography component="li" variant="body2" color="text.secondary">
-              {t(
-                "If you do not log in within 30 days, your account and all data will be permanently deleted.",
-              )}
-            </Typography>
-          </Box>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-            {t("Are you sure you want to deactivate your account?")}
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ px: 2, pb: 2 }}>
-          <Button
-            onClick={() => setDeactivateDialogOpen(false)}
-            disabled={deactivating}
-          >
-            {t("Cancel")}
-          </Button>
-          <Button
-            variant="contained"
-            sx={{
-              color: "white",
-              backgroundColor: "red",
-            }}
-            onClick={handleDeactivateConfirm}
-            disabled={deactivating}
-          >
-            {deactivating ? t("Deactivating...") : t("Deactivate Account")}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Deactivate result snackbar */}
-      <Snackbar
-        open={deactivateSnackbar.open}
-        autoHideDuration={6000}
-        onClose={() => setDeactivateSnackbar((s) => ({ ...s, open: false }))}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert
-          onClose={() => setDeactivateSnackbar((s) => ({ ...s, open: false }))}
-          severity={deactivateSnackbar.severity}
-          sx={{ width: "100%" }}
-        >
-          {deactivateSnackbar.message}
-        </Alert>
-      </Snackbar>
-
-      {NOTIFICATIONS_CENTER_ENABLED && (
+      {/* {NOTIFICATIONS_CENTER_ENABLED && (
         <Snackbar
           open={!!pushEnableError}
           autoHideDuration={5000}
@@ -1825,7 +1108,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
               : t("Could not enable notifications. Try again.")}
           </Alert>
         </Snackbar>
-      )}
+      )} */}
 
       {/* Stores Dropdown removed */}
     </>

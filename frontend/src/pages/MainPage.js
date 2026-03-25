@@ -36,6 +36,8 @@ import {
   adAPI,
   storeTypeAPI,
   brandAPI,
+  giftAPI,
+  jobAPI,
 } from "../services/api";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import BusinessIcon from "@mui/icons-material/Business";
@@ -54,7 +56,10 @@ import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import PersonAddDisabledIcon from "@mui/icons-material/PersonAddDisabled";
 import Loader from "../components/Loader";
-import BrandShowcase from "../components/BrandShowcase"; // Import BrandShowcase
+import BrandShowcase from "../components/BrandShowcase";
+import StoreShowcase from "../components/StoreShowcase";
+import GiftShowcase from "../components/GiftShowcase";
+import FindJobShowcase from "../components/FindJobShowcase";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@mui/material/styles";
 import { useUserTracking } from "../hooks/useUserTracking";
@@ -80,7 +85,9 @@ const MainPage = () => {
   const [priceRange, setPriceRange] = useState([0, 1000000]);
   const [showOnlyDiscount, setShowOnlyDiscount] = useState(true); // Default to showing only discounted products
   const [allCategories, setAllCategories] = useState([]);
-  const [brands, setBrands] = useState([]); // Added brands state
+  const [brands, setBrands] = useState([]);
+  const [gifts, setGifts] = useState([]);
+  const [jobs, setJobs] = useState([]);
 
   // Notification dialog state
   const [loginNotificationOpen, setLoginNotificationOpen] = useState(false);
@@ -106,6 +113,9 @@ const MainPage = () => {
   const [sortByNearMe, setSortByNearMe] = useState(false);
   const [userCoords, setUserCoords] = useState(null);
   const [geoLoading, setGeoLoading] = useState(false);
+
+  // Cache random store selections for rotating showcases (stable during renders).
+  const randomShowcaseStoresRef = useRef({});
 
   // User tracking hook (user = device user for guests)
   const {
@@ -396,21 +406,31 @@ const MainPage = () => {
         productsResponse,
         adsResponse,
         storeTypesResponse,
-        brandsResponse, // Add brandsResponse
+        brandsResponse,
+        giftsResponse,
+        jobsResponse,
       ] = await Promise.all([
         storeAPI.getAll(),
         categoryAPI.getAll(),
         productAPI.getAll(),
         adAPI.getAll({ page: "home" }),
         storeTypeAPI.getAll(),
-        brandAPI.getAll(), // Add brandAPI call
+        brandAPI.getAll(),
+        giftAPI.getAll().catch(() => ({ data: { data: [] } })),
+        jobAPI.getAll().catch(() => ({ data: [] })),
       ]);
 
       const storesData = storesResponse.data;
       const categoriesData = categoriesResponse.data;
       const productsData = productsResponse.data;
       const adsData = adsResponse.data || [];
-      const brandsData = brandsResponse.data || []; // Get brandsData
+      const brandsData = brandsResponse.data || [];
+      const giftsData = Array.isArray(giftsResponse.data?.data)
+        ? giftsResponse.data.data
+        : Array.isArray(giftsResponse.data)
+          ? giftsResponse.data
+          : [];
+      const jobsData = Array.isArray(jobsResponse.data) ? jobsResponse.data : [];
 
       // Shuffle stores logic
       const vipStores = storesData
@@ -430,7 +450,9 @@ const MainPage = () => {
       setAllCategories(categoriesData);
       setAllProducts(productsData);
       setStoreTypes(storeTypesResponse?.data || []);
-      setBrands(brandsData); // Set brands state
+      setBrands(brandsData);
+      setGifts(giftsData);
+      setJobs(jobsData);
 
       // Group products by store and initialize like counts/states
       const productsMap = {};
@@ -472,12 +494,12 @@ const MainPage = () => {
   }, [allCategories, selectedStoreTypeId]);
 
   // Memoized list of category types based on the selected category
-  const categoryTypes = useMemo(() => {
-    if (!selectedCategory) {
-      return [];
-    }
-    return selectedCategory.types || [];
-  }, [selectedCategory]);
+  // const categoryTypes = useMemo(() => {
+  //   if (!selectedCategory) {
+  //     return [];
+  //   }
+  //   return selectedCategory.types || [];
+  // }, [selectedCategory]);
 
   const handleStoreTypeChange = (storeTypeId) => {
     setSelectedStoreTypeId(storeTypeId);
@@ -490,9 +512,9 @@ const MainPage = () => {
     setSelectedCategoryType(null);
   };
 
-  const handleCategoryTypeChange = (categoryType) => {
-    setSelectedCategoryType(categoryType);
-  };
+  // const handleCategoryTypeChange = (categoryType) => {
+  //   setSelectedCategoryType(categoryType);
+  // };
 
   const clearAllFilters = () => {
     setSearch("");
@@ -774,6 +796,23 @@ const MainPage = () => {
       return byNewest;
     });
   }, [finalFilteredStores, sortByNewestDiscount, sortByNearMe, userCoords]);
+
+  const showcaseEligibleGifts = useMemo(() => {
+    const now = new Date();
+    return (gifts || []).filter((g) => {
+      if (!g?.expireDate) return true;
+      return new Date(g.expireDate) >= now;
+    });
+  }, [gifts]);
+
+  const showcaseEligibleJobs = useMemo(() => {
+    const now = new Date();
+    return (jobs || []).filter((j) => {
+      if (j?.active === false) return false;
+      if (!j?.expireDate) return true;
+      return new Date(j.expireDate) >= now;
+    });
+  }, [jobs]);
 
   const storeNameById = useMemo(() => {
     const map = {};
@@ -1227,9 +1266,9 @@ const MainPage = () => {
       {/* Enhanced Filters Section */}
       <Box
         sx={{
-          backgroundColor:
-            theme.palette.mode === "dark" ? "#4A90E2" : "#FF7A1A",
-          borderRadius: { xs: 2, md: 3 },
+          // backgroundColor: theme.palette.mode === "dark" ? "#4A90E2" : "black",
+          borderBottom: "1px solid var(--brand-accent-orange)",
+          borderRadius: "8px",
           p: { xs: 2, md: 3 },
 
           mb: 3,
@@ -1392,7 +1431,7 @@ const MainPage = () => {
             <Typography
               variant="subtitle2"
               sx={{
-                color: "white",
+                color: "black",
                 mb: 0.5,
                 fontSize: "0.9rem",
                 fontWeight: 500,
@@ -1422,13 +1461,11 @@ const MainPage = () => {
                   sx={{
                     backgroundColor:
                       selectedStoreTypeId === type._id
-                        ? theme.palette.mode === "dark"
-                          ? "#1E6FD9"
-                          : "#4A90E2"
+                        ? "var(--brand-primary-blue)"
                         : "transparent",
-                    color: "white",
-                    border: "1px solid rgba(255,255,255,0.3)",
-                    borderRadius: 2,
+                    color: selectedStoreTypeId === type._id ? "white" : "black",
+                    // borderBottom: "1px solid var(--brand-accent-orange)",
+                    borderRadius: "8px",
                     px: { xs: 1.5, md: 2 },
                     py: 0.5,
                     fontSize: { xs: "0.75rem", md: "0.875rem" },
@@ -1477,7 +1514,7 @@ const MainPage = () => {
               <Typography
                 variant="subtitle2"
                 sx={{
-                  color: "white",
+                  color: "black",
                   mb: 0.5,
                   fontSize: "0.9rem",
                   fontWeight: 600,
@@ -1508,13 +1545,11 @@ const MainPage = () => {
                   sx={{
                     backgroundColor:
                       selectedCategory === null
-                        ? theme.palette.mode === "dark"
-                          ? "#4A90E2"
-                          : "#1E6FD9"
+                        ? theme.palette.primary.main
                         : "transparent",
-                    color: "white",
-                    border: "1px solid rgba(255,255,255,0.3)",
-                    borderRadius: 2,
+                    color: selectedCategory === null ? "white" : "black",
+                    borderBottom: "1px solid var(--brand-accent-orange)",
+                    borderRadius: "8px",
                     px: { xs: 1.5, md: 2 },
                     py: 0.5,
                     fontSize: { xs: "0.75rem", md: "0.875rem" },
@@ -1525,7 +1560,7 @@ const MainPage = () => {
                       backgroundColor:
                         selectedCategory === null
                           ? theme.palette.mode === "dark"
-                            ? "#1E6FD9"
+                            ? theme.palette.primary.main
                             : "#4A90E2"
                           : "rgba(255,255,255,0.1)",
                       borderColor: "rgba(255,255,255,0.5)",
@@ -1549,13 +1584,14 @@ const MainPage = () => {
                     sx={{
                       backgroundColor:
                         selectedCategory?._id === category._id
-                          ? theme.palette.mode === "dark"
-                            ? "#1E6FD9"
-                            : "#4A90E2"
+                          ? theme.palette.primary.main
                           : "transparent",
-                      color: "white",
-                      border: "1px solid rgba(255,255,255,0.3)",
-                      borderRadius: 2,
+                      color:
+                        selectedCategory?._id === category._id
+                          ? "white"
+                          : "black",
+                      borderBottom: "1px solid var(--brand-accent-orange)",
+                      borderRadius: "8px",
                       px: { xs: 1.5, md: 2 },
                       py: 0.5,
                       fontSize: { xs: "0.75rem", md: "0.875rem" },
@@ -1567,7 +1603,7 @@ const MainPage = () => {
                         backgroundColor:
                           selectedCategory?._id === category._id
                             ? theme.palette.mode === "dark"
-                              ? "#1E6FD9"
+                              ? theme.palette.primary.main
                               : "#4A90E2"
                             : "rgba(255,255,255,0.1)",
                         borderColor: "rgba(255,255,255,0.5)",
@@ -1734,9 +1770,7 @@ const MainPage = () => {
             >
               <Button
                 variant={sortByNewestDiscount ? "contained" : "outlined"}
-                onClick={() =>
-                  setSortByNewestDiscount((prev) => !prev)
-                }
+                onClick={() => setSortByNewestDiscount((prev) => !prev)}
                 sx={{
                   textTransform: "none",
                   borderRadius: 2,
@@ -1765,6 +1799,8 @@ const MainPage = () => {
               </Button>
             </Box>
 
+            <FindJobShowcase jobs={showcaseEligibleJobs} />
+
             {topViewedProducts.length > 0 && (
               <Card
                 sx={{
@@ -1781,8 +1817,8 @@ const MainPage = () => {
               >
                 <Box
                   sx={{
-                    background:
-                      theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
+                    background: "var(--color-secondary)",
+                    // theme.palette.mode === "dark" ? "#4A90E2" : theme.palette.primary.main,
                     px: { xs: 1.2, sm: 2 },
                     py: { xs: 1, sm: 1.4 },
                     color: "white",
@@ -1980,12 +2016,14 @@ const MainPage = () => {
                           <Typography
                             variant="body1"
                             sx={{
-                              color: "#fff",
-                              backgroundColor: "var(--brand-accent-orange)",
-                              borderRadius: 1,
+                              color: "black",
+                              // backgroundColor: "var(--brand-accent-orange)",
+                              borderRadius: "8px",
+                              borderBottom:
+                                "1px solid var(--brand-accent-orange)",
                               px: 0.7,
                               py: 0.2,
-                              fontWeight: 800,
+                              fontWeight: 900,
                               width: "fit-content",
                             }}
                           >
@@ -2027,16 +2065,41 @@ const MainPage = () => {
                     p.previousPrice > p.newPrice),
               ).length;
 
-              // Logic to insert BrandShowcase
-              const brandShowcase =
-                (index + 1) % 5 === 0 ? (
-                  <BrandShowcase
-                    brands={brands.slice(
-                      ((index + 1) / 5 - 1) * 5,
-                      ((index + 1) / 5) * 5,
-                    )}
-                  />
-                ) : null;
+              // Every 8 store cards: Brand (8) → Store (random 20) → Gift (last 5) (repeat).
+              const rotatingShowcase =
+                (index + 1) % 8 === 0
+                  ? (() => {
+                      const blockIndex = (index + 1) / 8 - 1; // 0-based showcase block
+                      const variant = blockIndex % 3;
+
+                      if (variant === 0) {
+                        const offset = blockIndex * 8;
+                        return (
+                          <BrandShowcase
+                            brands={brands.slice(offset, offset + 8)}
+                          />
+                        );
+                      }
+
+                      if (variant === 1) {
+                        if (!randomShowcaseStoresRef.current[blockIndex]) {
+                          const shuffled = [...sortedFilteredStores].sort(
+                            () => Math.random() - 0.5,
+                          );
+                          randomShowcaseStoresRef.current[blockIndex] =
+                            shuffled.slice(0, 20);
+                        }
+
+                        return (
+                          <StoreShowcase
+                            stores={randomShowcaseStoresRef.current[blockIndex]}
+                          />
+                        );
+                      }
+
+                      return <GiftShowcase gifts={showcaseEligibleGifts} />;
+                    })()
+                  : null;
 
               return (
                 <React.Fragment key={store._id}>
@@ -2048,10 +2111,12 @@ const MainPage = () => {
                       overflow: "hidden",
                       background:
                         theme.palette.mode === "dark"
-                          ? "linear-gradient(135deg, #1E6FD9 0%, #4A90E2 100%)"
+                          ? "linear-gradient(135deg, var(--brand-primary-blue) 0%, var(--brand-secondary-blue) 100%)"
                           : "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
                       border: `1px solid ${
-                        theme.palette.mode === "dark" ? "#1E6FD9" : "#e9ecef"
+                        theme.palette.mode === "dark"
+                          ? "rgba(255,255,255,0.18)"
+                          : "#e9ecef"
                       }`,
                       boxShadow:
                         theme.palette.mode === "dark"
@@ -2071,7 +2136,9 @@ const MainPage = () => {
                     <Box
                       sx={{
                         background:
-                          theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
+                          theme.palette.mode === "dark"
+                            ? "var(--brand-secondary-blue)"
+                            : "var(--brand-primary-blue)",
                         p: { xs: 1, sm: 2, md: 3, lg: 1 }, // Reduced padding on xs
                         color: "white",
                         position: "relative",
@@ -2607,7 +2674,7 @@ const MainPage = () => {
                                       <Typography
                                         variant="h6"
                                         sx={{
-                                          color: "#000000",
+                                          color: "black",
                                           fontWeight: 600,
                                           fontSize: {
                                             xs: "0.9rem",
@@ -2640,19 +2707,19 @@ const MainPage = () => {
                                         <Typography
                                           variant="h6"
                                           sx={{
-                                            color: "white",
-                                            backgroundColor:
-                                              "var(--brand-accent-orange)",
-                                            border:
+                                            color: "black",
+                                            // backgroundColor:
+                                            //   "var(--brand-accent-orange)",
+                                            borderBottom:
                                               "1px solid var(--brand-accent-orange)",
                                             borderRadius: "8px",
                                             padding: "2px 4px",
                                             boxShadow:
                                               "0 2px 4px rgba(0, 0, 0, 0.1)",
-                                            fontWeight: 800,
+                                            fontWeight: 900,
                                             fontSize: {
-                                              xs: "1.2rem",
-                                              sm: "1.3rem",
+                                              xs: "1.3rem",
+                                              sm: "1.4rem",
                                             },
                                           }}
                                         >
@@ -2669,7 +2736,7 @@ const MainPage = () => {
                       </Box>
                     </Box>
                   </Card>
-                  {brandShowcase}
+                  {rotatingShowcase}
                 </React.Fragment>
               );
             })}
@@ -2759,7 +2826,9 @@ const MainPage = () => {
                   <Box
                     sx={{
                       background:
-                        theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
+                        theme.palette.mode === "dark"
+                          ? "#4A90E2"
+                          : theme.palette.primary.main,
                       p: { xs: 1, sm: 2, md: 3, lg: 1 },
                       color: "white",
                       position: "relative",
@@ -3270,19 +3339,19 @@ const MainPage = () => {
                                     <Typography
                                       variant="h6"
                                       sx={{
-                                        color: "white",
-                                        backgroundColor:
-                                          "var(--brand-accent-orange)",
-                                        border:
+                                        color: "black",
+                                        // backgroundColor:
+                                        //   "var(--brand-accent-orange)",
+                                        borderBottom:
                                           "1px solid var(--brand-accent-orange)",
                                         borderRadius: "8px",
                                         padding: "2px 4px",
                                         boxShadow:
                                           "0 2px 4px rgba(0, 0, 0, 0.1)",
-                                        fontWeight: 800,
+                                        fontWeight: 900,
                                         fontSize: {
-                                          xs: "1.2rem",
-                                          sm: "1.3rem",
+                                          xs: "1.3rem",
+                                          sm: "1.4rem",
                                         },
                                       }}
                                     >
@@ -3424,7 +3493,7 @@ const MainPage = () => {
                           color:
                             theme.palette.mode === "dark"
                               ? "white"
-                              : "primary.main",
+                              : "text.secondary",
                         }}
                       />
                       <Typography
@@ -3636,11 +3705,8 @@ const MainPage = () => {
                           {t("Price")}:{" "}
                           <span
                             style={{
-                              color:
-                                theme.palette.mode === "dark"
-                                  ? "white"
-                                  : "var(--brand-light-orange)",
-                              fontWeight: 700,
+                              color: "black",
+                              fontWeight: 900,
                             }}
                           >
                             {formatPrice(selectedProduct.newPrice)}

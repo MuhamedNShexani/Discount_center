@@ -40,14 +40,14 @@ const StoreCard = ({ store, index, theme, t, onClick }) => {
           width: { xs: "100%", sm: 260, md: 280 }, // full width on mobile
           height: { xs: 180, sm: "auto" },
           transition: "0.35s ease",
-          boxShadow: "0 6px 18px rgba(0,0,0,0.1)",
+          boxShadow: "5 6px 18px rgba(0,0,0,0.1)",
           background:
             theme.palette.mode === "dark"
               ? "linear-gradient(135deg, #1E6FD9 0%, #4A90E2 100%)"
               : "#ffffff",
           "&:hover": {
             transform: { xs: "none", sm: "translateY(-8px) scale(1.02)" },
-            boxShadow: "0 12px 28px rgba(0,0,0,0.2)",
+            boxShadow: "5 12px 28px rgba(0,0,0,0.2)",
             "& .store-image": { transform: { xs: "none", sm: "scale(1.08)" } },
             "& .store-arrow": { opacity: 1, transform: "translateX(6px)" },
           },
@@ -59,10 +59,10 @@ const StoreCard = ({ store, index, theme, t, onClick }) => {
             position: "relative",
             height: { xs: "100%", sm: 180 },
             width: { xs: 120, sm: "100%" },
-            background:
-              theme.palette.mode === "dark"
-                ? "linear-gradient(135deg,rgb(255, 255, 255) 0%, #4A90E2 100%)"
-                : "linear-gradient(135deg,rgb(0, 0, 0) 0%, #1E6FD9 100%)",
+            background: theme.palette.background.paper,
+            // theme.palette.mode === "dark"
+            //   ? "linear-gradient(135deg,rgb(255, 255, 255) 0%, #4A90E2 100%)"
+            //   : "linear-gradient(135deg,rgb(0, 0, 0) 0%, #1E6FD9 100%)",
             flexShrink: { xs: 0, sm: 1 },
           }}
         >

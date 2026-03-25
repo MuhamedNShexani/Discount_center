@@ -1,0 +1,391 @@
+:root {
+  --theme-transition: 300ms;
+}
+
+html {
+  transition: background-color var(--theme-transition) ease,
+    color var(--theme-transition) ease;
+}
+
+/* Default (current) */
+html[data-theme="default"] {
+  --color-primary: #1e6fd9;
+  --color-secondary: #ff7a1a;
+  --color-bg: #f5f7fa;
+  --color-surface: #ffffff;
+  --color-text: #1a1a1a;
+  --color-text-muted: #6b7280;
+
+  /* Map to existing app tokens */
+  --brand-primary-blue: var(--color-primary);
+  --brand-secondary-blue: #4a90e2;
+  --brand-accent-orange: var(--color-secondary);
+  --brand-light-orange: #ffa94d;
+  --brand-bg: var(--color-bg);
+  --brand-surface: var(--color-surface);
+  --brand-text-primary: var(--color-text);
+  --brand-text-secondary: var(--color-text-muted);
+}
+
+/* Black & White */
+html[data-theme="blackWhite"] {
+  --color-primary: #000000;
+  --color-secondary: #ffffff;
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-text: #000000;
+  --color-text-muted: #444444;
+
+  --brand-primary-blue: var(--color-primary);
+  --brand-secondary-blue: #111111;
+  --brand-accent-orange: var(--color-primary);
+  --brand-light-orange: #222222;
+  --brand-bg: var(--color-bg);
+  --brand-surface: var(--color-surface);
+  --brand-text-primary: var(--color-text);
+  --brand-text-secondary: var(--color-text-muted);
+}
+
+/* Ramadan */
+html[data-theme="ramadan"] {
+  --color-primary: #d4af37;
+  --color-secondary: #ff7a1a;
+  --color-bg: #0d1b2a;
+  --color-surface: rgba(255, 255, 255, 0.06);
+  --color-text: #f9fafb;
+  --color-text-muted: rgba(249, 250, 251, 0.7);
+
+  --brand-primary-blue: var(--color-primary);
+  --brand-secondary-blue: rgba(212, 175, 55, 0.7);
+  --brand-accent-orange: var(--color-primary);
+  --brand-light-orange: rgba(212, 175, 55, 0.85);
+  --brand-bg: var(--color-bg);
+  --brand-surface: var(--color-surface);
+  --brand-text-primary: var(--color-text);
+  --brand-text-secondary: var(--color-text-muted);
+}
+
+/* Rain */
+html[data-theme="rain"] {
+  --color-primary: #4a90e2;
+  --color-secondary: #1e6fd9;
+  --color-bg: #0b1220;
+  --color-surface: rgba(255, 255, 255, 0.08);
+  --color-text: #f9fafb;
+  --color-text-muted: rgba(249, 250, 251, 0.7);
+
+  --brand-primary-blue: var(--color-primary);
+  --brand-secondary-blue: rgba(74, 144, 226, 0.8);
+  --brand-accent-orange: #22d3ee;
+  --brand-light-orange: rgba(34, 211, 238, 0.8);
+  --brand-bg: var(--color-bg);
+  --brand-surface: var(--color-surface);
+  --brand-text-primary: var(--color-text);
+  --brand-text-secondary: var(--color-text-muted);
+}
+
+/* Neon 1 (blue/purple) */
+html[data-theme="neon1"] {
+  --color-primary: #7c3aed;
+  --color-secondary: #22d3ee;
+  --color-bg: #070a12;
+  --color-surface: rgba(255, 255, 255, 0.06);
+  --color-text: #f9fafb;
+  --color-text-muted: rgba(249, 250, 251, 0.72);
+
+  --brand-primary-blue: var(--color-primary);
+  --brand-secondary-blue: rgba(34, 211, 238, 0.8);
+  --brand-accent-orange: var(--color-secondary);
+  --brand-light-orange: rgba(34, 211, 238, 0.7);
+  --brand-bg: var(--color-bg);
+  --brand-surface: var(--color-surface);
+  --brand-text-primary: var(--color-text);
+  --brand-text-secondary: var(--color-text-muted);
+}
+
+/* Neon 2 (orange/pink) */
+html[data-theme="neon2"] {
+  --color-primary: #ff2d8d;
+  --color-secondary: #ff7a1a;
+  --color-bg: #0a0610;
+  --color-surface: rgba(255, 255, 255, 0.06);
+  --color-text: #f9fafb;
+  --color-text-muted: rgba(249, 250, 251, 0.72);
+
+  --brand-primary-blue: var(--color-primary);
+  --brand-secondary-blue: rgba(255, 45, 141, 0.75);
+  --brand-accent-orange: var(--color-secondary);
+  --brand-light-orange: rgba(255, 122, 26, 0.8);
+  --brand-bg: var(--color-bg);
+  --brand-surface: var(--color-surface);
+  --brand-text-primary: var(--color-text);
+  --brand-text-secondary: var(--color-text-muted);
+}
+
+/* -------------------- NEW THEMES (10) -------------------- */
+
+/* 1. flash-sale */
+html[data-theme="flash-sale"] {
+  --color-primary: #ff3b30;
+  --color-secondary: #ffd60a;
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-text: #1a1a1a;
+  --color-text-muted: #444444;
+
+  --brand-primary-blue: var(--color-primary);
+  --brand-secondary-blue: #ff6b61;
+  --brand-accent-orange: var(--color-secondary);
+  --brand-light-orange: #ffe580;
+  --brand-bg: var(--color-bg);
+  --brand-surface: var(--color-surface);
+  --brand-text-primary: var(--color-text);
+  --brand-text-secondary: var(--color-text-muted);
+}
+
+/* 2. luxury */
+html[data-theme="luxury"] {
+  --color-primary: #0b0b0b;
+  --color-secondary: #d4af37;
+  --color-bg: #121212;
+  --color-surface: rgba(255, 255, 255, 0.06);
+  --color-text: #f5f5f5;
+  --color-text-muted: rgba(245, 245, 245, 0.72);
+
+  --brand-primary-blue: var(--color-secondary);
+  --brand-secondary-blue: rgba(212, 175, 55, 0.65);
+  --brand-accent-orange: var(--color-secondary);
+  --brand-light-orange: rgba(212, 175, 55, 0.85);
+  --brand-bg: var(--color-bg);
+  --brand-surface: var(--color-surface);
+  --brand-text-primary: var(--color-text);
+  --brand-text-secondary: var(--color-text-muted);
+}
+
+/* 3. eco-green */
+html[data-theme="eco-green"] {
+  --color-primary: #2ecc71;
+  --color-secondary: #1e8449;
+  --color-bg: #f0fff4;
+  --color-surface: #ffffff;
+  --color-text: #1a1a1a;
+  --color-text-muted: #4b5563;
+
+  --brand-primary-blue: var(--color-primary);
+  --brand-secondary-blue: rgba(46, 204, 113, 0.7);
+  --brand-accent-orange: var(--color-secondary);
+  --brand-light-orange: rgba(30, 132, 73, 0.65);
+  --brand-bg: var(--color-bg);
+  --brand-surface: var(--color-surface);
+  --brand-text-primary: var(--color-text);
+  --brand-text-secondary: var(--color-text-muted);
+}
+
+/* 4. ice */
+html[data-theme="ice"] {
+  --color-primary: #aee6f9;
+  --color-secondary: #e0f7ff;
+  --color-bg: #ffffff;
+  --color-surface: rgba(15, 23, 42, 0.04);
+  --color-text: #0f172a;
+  --color-text-muted: rgba(15, 23, 42, 0.7);
+
+  --brand-primary-blue: #3b82f6;
+  --brand-secondary-blue: rgba(174, 230, 249, 0.9);
+  --brand-accent-orange: #22d3ee;
+  --brand-light-orange: rgba(224, 247, 255, 0.9);
+  --brand-bg: var(--color-bg);
+  --brand-surface: var(--color-surface);
+  --brand-text-primary: var(--color-text);
+  --brand-text-secondary: var(--color-text-muted);
+}
+
+/* 5. festival */
+html[data-theme="festival"] {
+  --color-primary: #7b2cbf;
+  --color-secondary: #ffb703;
+  --color-bg: #1a1a2e;
+  --color-surface: rgba(255, 255, 255, 0.06);
+  --color-text: #ffffff;
+  --color-text-muted: rgba(255, 255, 255, 0.72);
+
+  --brand-primary-blue: var(--color-primary);
+  --brand-secondary-blue: rgba(255, 183, 3, 0.75);
+  --brand-accent-orange: var(--color-secondary);
+  --brand-light-orange: rgba(255, 183, 3, 0.85);
+  --brand-bg: var(--color-bg);
+  --brand-surface: var(--color-surface);
+  --brand-text-primary: var(--color-text);
+  --brand-text-secondary: var(--color-text-muted);
+}
+
+/* 6. tech */
+html[data-theme="tech"] {
+  --color-primary: #22d3ee;
+  --color-secondary: #3b82f6;
+  --color-bg: #0f172a;
+  --color-surface: rgba(255, 255, 255, 0.06);
+  --color-text: #e5e7eb;
+  --color-text-muted: rgba(229, 231, 235, 0.7);
+
+  --brand-primary-blue: var(--color-primary);
+  --brand-secondary-blue: var(--color-secondary);
+  --brand-accent-orange: var(--color-primary);
+  --brand-light-orange: rgba(34, 211, 238, 0.75);
+  --brand-bg: var(--color-bg);
+  --brand-surface: var(--color-surface);
+  --brand-text-primary: var(--color-text);
+  --brand-text-secondary: var(--color-text-muted);
+}
+
+/* 7. minimal */
+html[data-theme="minimal"] {
+  --color-primary: #111827;
+  --color-secondary: #6b7280;
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-text: #111827;
+  --color-text-muted: #6b7280;
+
+  --brand-primary-blue: var(--color-primary);
+  --brand-secondary-blue: #1f2937;
+  --brand-accent-orange: var(--color-secondary);
+  --brand-light-orange: rgba(107, 114, 128, 0.65);
+  --brand-bg: var(--color-bg);
+  --brand-surface: var(--color-surface);
+  --brand-text-primary: var(--color-text);
+  --brand-text-secondary: var(--color-text-muted);
+}
+
+/* 8. sunset */
+html[data-theme="sunset"] {
+  --color-primary: #ff7a1a;
+  --color-secondary: #ff4d6d;
+  --color-bg: #fff7ed;
+  --color-surface: #ffffff;
+  --color-text: #1a1a1a;
+  --color-text-muted: #4b5563;
+
+  --brand-primary-blue: var(--color-primary);
+  --brand-secondary-blue: var(--color-secondary);
+  --brand-accent-orange: var(--color-primary);
+  --brand-light-orange: rgba(255, 77, 109, 0.7);
+  --brand-bg: var(--color-bg);
+  --brand-surface: var(--color-surface);
+  --brand-text-primary: var(--color-text);
+  --brand-text-secondary: var(--color-text-muted);
+}
+
+/* 9. middle-east */
+html[data-theme="middle-east"] {
+  --color-primary: #1e3a8a;
+  --color-secondary: #14b8a6;
+  --color-bg: #f8fafc;
+  --color-surface: #ffffff;
+  --color-text: #0f172a;
+  --color-text-muted: #475569;
+
+  --brand-primary-blue: var(--color-primary);
+  --brand-secondary-blue: rgba(30, 58, 138, 0.7);
+  --brand-accent-orange: var(--color-secondary);
+  --brand-light-orange: rgba(20, 184, 166, 0.7);
+  --brand-bg: var(--color-bg);
+  --brand-surface: var(--color-surface);
+  --brand-text-primary: var(--color-text);
+  --brand-text-secondary: var(--color-text-muted);
+}
+
+/* 10. marketplace */
+html[data-theme="marketplace"] {
+  --color-primary: #2563eb;
+  --color-secondary: #f97316;
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-text: #1f2937;
+  --color-text-muted: #6b7280;
+
+  --brand-primary-blue: var(--color-primary);
+  --brand-secondary-blue: rgba(37, 99, 235, 0.75);
+  --brand-accent-orange: var(--color-secondary);
+  --brand-light-orange: rgba(249, 115, 22, 0.75);
+  --brand-bg: var(--color-bg);
+  --brand-surface: var(--color-surface);
+  --brand-text-primary: var(--color-text);
+  --brand-text-secondary: var(--color-text-muted);
+}
+
+/* Effects layer (lightweight, disabled via prefers-reduced-motion) */
+html[data-theme="rain"] body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+      rgba(255, 255, 255, 0.08),
+      rgba(255, 255, 255, 0)
+    ),
+    repeating-linear-gradient(
+      120deg,
+      rgba(255, 255, 255, 0.06) 0,
+      rgba(255, 255, 255, 0.06) 1px,
+      rgba(255, 255, 255, 0) 6px,
+      rgba(255, 255, 255, 0) 18px
+    );
+  opacity: 0.25;
+  filter: blur(0.3px);
+  transform: translateZ(0);
+  animation: rainMove 3.5s linear infinite;
+}
+
+@keyframes rainMove {
+  0% {
+    background-position: 0 0, 0 0;
+  }
+  100% {
+    background-position: 0 0, 0 220px;
+  }
+}
+
+html[data-theme="neon1"] body,
+html[data-theme="neon2"] body {
+  text-shadow: 0 0 10px rgba(124, 58, 237, 0.12);
+}
+
+html[data-theme="ramadan"] body::after {
+  content: "";
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  width: 64px;
+  height: 64px;
+  pointer-events: none;
+  opacity: 0.35;
+  filter: drop-shadow(0 0 12px rgba(212, 175, 55, 0.35));
+  background: radial-gradient(circle at 35% 35%, #d4af37 0 26%, transparent 27%),
+    radial-gradient(circle at 55% 45%, #0d1b2a 0 22%, transparent 23%);
+  border-radius: 50%;
+  animation: pulseGlow 2.6s ease-in-out infinite;
+}
+
+@keyframes pulseGlow {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.28;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    transition: none;
+  }
+  html[data-theme="rain"] body::before,
+  html[data-theme="ramadan"] body::after {
+    animation: none;
+  }
+}
+

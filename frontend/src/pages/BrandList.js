@@ -257,8 +257,8 @@ const BrandList = () => {
               backgroundColor:
                 selectedType === tItem.key
                   ? theme.palette.mode === "dark"
-                    ? "#4A90E2"
-                    : "#1E6FD9"
+                    ? theme.palette.secondary.main
+                    : theme.palette.primary.main
                   : "transparent",
               color: selectedType === tItem.key ? "white" : "inherit",
             }}
@@ -283,315 +283,321 @@ const BrandList = () => {
           <Card
             key={brand._id}
             sx={{
-                height: { xs: "200px", sm: "400px", md: "420px" },
-                width: { xs: "100%", sm: "280px", md: "280px" },
-                maxWidth: { xs: "100%", sm: "280px", md: "280px" },
-                minWidth: { xs: "auto", sm: "280px", md: "280px" },
-                cursor: "pointer",
-                display: "flex",
-                flexDirection: "column",
-                borderRadius: { xs: 2, sm: 3, md: 3 },
-                overflow: "hidden",
-                background:
-                  theme.palette.mode === "dark"
-                    ? "linear-gradient(135deg, #1E6FD9 0%, #4A90E2 100%)"
-                    : "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
-                border: "none",
+              height: { xs: "200px", sm: "400px", md: "420px" },
+              width: { xs: "100%", sm: "280px", md: "280px" },
+              maxWidth: { xs: "100%", sm: "280px", md: "280px" },
+              minWidth: { xs: "auto", sm: "280px", md: "280px" },
+              cursor: "pointer",
+              display: "flex",
+              flexDirection: "column",
+              borderRadius: { xs: 2, sm: 3, md: 3 },
+              overflow: "hidden",
+              background:
+                theme.palette.mode === "dark"
+                  ? "linear-gradient(135deg, theme.palette.primary.main 0%, theme.palette.secondary.main 100%)"
+                  : "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
+              border: "none",
+              boxShadow:
+                theme.palette.mode === "dark"
+                  ? "0 8px 32px rgba(0,0,0,0.3)"
+                  : "0 8px 32px rgba(0,0,0,0.1)",
+              transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+              position: "relative",
+              "&:hover": {
+                transform: "translateY(-12px) scale(1.02)",
                 boxShadow:
                   theme.palette.mode === "dark"
-                    ? "0 8px 32px rgba(0,0,0,0.3)"
-                    : "0 8px 32px rgba(0,0,0,0.1)",
-                transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
-                position: "relative",
-                "&:hover": {
-                  transform: "translateY(-12px) scale(1.02)",
-                  boxShadow:
-                    theme.palette.mode === "dark"
-                      ? "0 24px 48px rgba(0,0,0,0.4)"
-                      : "0 24px 48px rgba(0,0,0,0.15)",
-                  "& .brand-arrow": {
-                    transform: "translateX(8px)",
-                    opacity: 1,
-                  },
-                  "& .brand-image": {
-                    transform: "scale(1.1)",
-                  },
+                    ? "0 24px 48px rgba(0,0,0,0.4)"
+                    : "0 24px 48px rgba(0,0,0,0.15)",
+                "& .brand-arrow": {
+                  transform: "translateX(8px)",
+                  opacity: 1,
                 },
+                "& .brand-image": {
+                  transform: "scale(1.1)",
+                },
+              },
             }}
             onClick={() => handleBrandClick(brand)}
           >
-              {/* Brand Image/Logo */}
-              <Box
-                sx={{
-                  position: "relative",
+            {/* Brand Image/Logo */}
+            <Box
+              sx={{
+                position: "relative",
 
-                  height: { xs: "140px", sm: "200px", md: "200px" },
-                  flexShrink: 0,
-                  overflow: "hidden",
-                  background:
-                    theme.palette.mode === "dark"
-                      ? "linear-gradient(135deg, #FFA94D 0%, #FF7A1A 100%)"
-                      : "linear-gradient(135deg, #1E6FD9 0%, #4A90E2 100%)",
-                }}
-              >
-                {brand.logo ? (
-                  <CardMedia
-                    component="img"
-                    height="200"
-                    image={`${process.env.REACT_APP_BACKEND_URL}${brand.logo}`}
-                    alt={brand.name}
-                    className="brand-image"
-                    sx={{
-                      objectFit: "cover",
-                      transition: "transform 0.4s ease",
-                      width: "100%",
-                      height: "100%",
-                      p: { xs: 0, sm: 0, md: 0 },
-                    }}
-                  />
-                ) : (
-                  <Box
-                    sx={{
-                      width: "100%",
-                      height: "100%",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "white",
-                    }}
-                  >
-                    <StorefrontIcon sx={{ fontSize: 80, opacity: 0.8 }} />
-                  </Box>
-                )}
-
-                {/* Gradient Overlay */}
-                <Box
+                height: { xs: "140px", sm: "200px", md: "200px" },
+                flexShrink: 0,
+                overflow: "hidden",
+                background:
+                  theme.palette.mode === "dark"
+                    ? "linear-gradient(135deg, theme.palette.secondary.main 0%, theme.palette.secondary.main 100%)"
+                    : "linear-gradient(135deg, theme.palette.primary.main 0%, theme.palette.secondary.main 100%)",
+              }}
+            >
+              {brand.logo ? (
+                <CardMedia
+                  component="img"
+                  height="200"
+                  image={`${process.env.REACT_APP_BACKEND_URL}${brand.logo}`}
+                  alt={brand.name}
+                  className="brand-image"
                   sx={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background:
-                      "linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.3) 100%)",
+                    objectFit: "cover",
+                    transition: "transform 0.4s ease",
+                    width: "100%",
+                    height: "100%",
+                    p: { xs: 0, sm: 0, md: 0 },
                   }}
                 />
-
-                {/* Arrow Icon - Hidden on mobile */}
-                <IconButton
-                  className="brand-arrow"
+              ) : (
+                <Box
                   sx={{
-                    position: "absolute",
-                    top: 16,
-                    right: 16,
-                    backgroundColor: "rgba(255,255,255,0.2)",
+                    width: "100%",
+                    height: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                     color: "white",
-                    opacity: 0,
-                    transition: "all 0.3s ease",
-                    backdropFilter: "blur(10px)",
-                    display: { xs: "none", sm: "flex" },
-                    "&:hover": {
-                      backgroundColor: "rgba(255,255,255,0.3)",
-                    },
                   }}
                 >
-                  <ArrowForwardIcon />
-                </IconButton>
-              </Box>
+                  <StorefrontIcon sx={{ fontSize: 80, opacity: 0.8 }} />
+                </Box>
+              )}
 
-              {/* Brand Content */}
-              <CardContent
-                align="center"
+              {/* Gradient Overlay */}
+              <Box
                 sx={{
-                  p: { xs: 1, sm: 3, md: 3 },
-                  flex: 1,
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  height: { xs: "60px", sm: "200px", md: "200px" },
-                  overflow: "hidden",
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  background:
+                    "linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.3) 100%)",
+                }}
+              />
+
+              {/* Arrow Icon - Hidden on mobile */}
+              <IconButton
+                className="brand-arrow"
+                sx={{
+                  position: "absolute",
+                  top: 16,
+                  right: 16,
+                  backgroundColor: "rgba(255,255,255,0.2)",
+                  color: "white",
+                  opacity: 0,
+                  transition: "all 0.3s ease",
+                  backdropFilter: "blur(10px)",
+                  display: { xs: "none", sm: "flex" },
+                  "&:hover": {
+                    backgroundColor: "rgba(255,255,255,0.3)",
+                  },
                 }}
               >
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: 1,
-                  }}
-                >
-                  <Typography
-                    variant="h6"
-                    component="h2"
-                    sx={{
-                      fontWeight: 700,
-                      color: theme.palette.text.primary,
-                      fontSize: { xs: "0.8rem", sm: "1.3rem", md: "1.3rem" },
-                      lineHeight: 1.2,
-                      mb: { xs: 0, sm: 1, md: 1 },
-                      height: { xs: "auto", sm: "50px", md: "50px" },
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      display: "-webkit-box",
-                      WebkitLineClamp: { xs: 2, sm: 1, md: 1 },
-                      WebkitBoxOrient: "vertical",
-                      textAlign: "center",
-                    }}
-                  >
-                    {brand.statusAll === "off" ? "" : brand.name}
-                  </Typography>
-                  {brand.isVip && (
-                    <Box
-                      sx={{
-                        position: "absolute",
-                        top: 8,
-                        left: 8,
-                        zIndex: 2,
-                        borderRadius: "50%",
-                        width: { xs: 30, sm: 36 },
-                        height: { xs: 30, sm: 36 },
-                        display: "flex",
-                        backgroundColor: "white",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
-                        "&::before": {
-                          content: '"👑"',
-                          fontSize: { xs: "14px", sm: "25px" },
-                        },
-                      }}
-                    />
-                  )}
-                </Box>
+                <ArrowForwardIcon />
+              </IconButton>
+            </Box>
 
-                {/* Brand Details - Hidden on mobile */}
-                <Box
+            {/* Brand Content */}
+            <CardContent
+              align="center"
+              sx={{
+                p: { xs: 1, sm: 3, md: 3 },
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                height: { xs: "60px", sm: "200px", md: "200px" },
+                overflow: "hidden",
+              }}
+            >
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 1,
+                }}
+              >
+                <Typography
+                  variant="h6"
+                  component="h2"
                   sx={{
-                    mb: 2,
+                    fontWeight: 700,
+                    color: theme.palette.text.primary,
+                    fontSize: { xs: "0.8rem", sm: "1.3rem", md: "1.3rem" },
+                    lineHeight: 1.2,
+                    mb: { xs: 0, sm: 1, md: 1 },
+                    height: { xs: "auto", sm: "50px", md: "50px" },
                     overflow: "hidden",
-                    display: { xs: "none", sm: "block" },
+                    textOverflow: "ellipsis",
+                    display: "-webkit-box",
+                    WebkitLineClamp: { xs: 2, sm: 1, md: 1 },
+                    WebkitBoxOrient: "vertical",
+                    textAlign: "center",
                   }}
                 >
-                  {/* Address - Always show with fixed height */}
+                  {brand.statusAll === "off" ? "" : brand.name}
+                </Typography>
+                {brand.isVip && (
                   <Box
-                    display="flex"
-                    alignItems="flex-start"
-                    mb={1}
-                    sx={{ height: "30px" }}
-                  >
-                    <LocationOnIcon
-                      sx={{
-                        fontSize: 16,
-                        mr: 1,
-                        mt: 0.25,
-                        color:
-                          theme.palette.mode === "dark" ? "#FFA94D" : "#FF7A1A",
-                      }}
-                    />
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: theme.palette.text.secondary,
-                        lineHeight: 1.3,
-                        fontSize: "0.875rem",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        display: "-webkit-box",
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: "vertical",
-                      }}
-                    >
-                      {brand.address || t("address not provided")}
-                    </Typography>
-                  </Box>
+                    sx={{
+                      position: "absolute",
+                      top: 8,
+                      left: 8,
+                      zIndex: 2,
+                      borderRadius: "50%",
+                      width: { xs: 30, sm: 36 },
+                      height: { xs: 30, sm: 36 },
+                      display: "flex",
+                      backgroundColor: "white",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+                      "&::before": {
+                        content: '"👑"',
+                        fontSize: { xs: "14px", sm: "25px" },
+                      },
+                    }}
+                  />
+                )}
+              </Box>
 
-                  {/* Phone - Always show with fixed height */}
-                  <Box
-                    display="flex"
-                    alignItems="center"
-                    mb={1}
-                    sx={{ height: "30px" }}
-                  >
-                    <PhoneIcon
-                      sx={{
-                        fontSize: 16,
-                        mr: 1,
-                        color:
-                          theme.palette.mode === "dark" ? "#FFA94D" : "#FF7A1A",
-                      }}
-                    />
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: theme.palette.text.secondary,
-                        fontFamily: "monospace",
-                        fontSize: "0.875rem",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {brand.phone || t("phone not provided")}
-                    </Typography>
-                  </Box>
-
-                  {/* Description - Always show with fixed height */}
+              {/* Brand Details - Hidden on mobile */}
+              <Box
+                sx={{
+                  mb: 2,
+                  overflow: "hidden",
+                  display: { xs: "none", sm: "block" },
+                }}
+              >
+                {/* Address - Always show with fixed height */}
+                <Box
+                  display="flex"
+                  alignItems="flex-start"
+                  mb={1}
+                  sx={{ height: "30px" }}
+                >
+                  <LocationOnIcon
+                    sx={{
+                      fontSize: 16,
+                      mr: 1,
+                      mt: 0.25,
+                      color:
+                        theme.palette.mode === "dark"
+                          ? theme.palette.secondary.main
+                          : theme.palette.secondary.main,
+                    }}
+                  />
                   <Typography
                     variant="body2"
                     sx={{
                       color: theme.palette.text.secondary,
                       lineHeight: 1.3,
                       fontSize: "0.875rem",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
                       display: "-webkit-box",
                       WebkitLineClamp: 2,
                       WebkitBoxOrient: "vertical",
-                      overflow: "hidden",
-                      height: "45px",
                     }}
                   >
-                    {brand.description || t("description not provided")}
+                    {brand.address || t("address not provided")}
                   </Typography>
                 </Box>
 
-                {/* Action Area - Hidden on mobile */}
+                {/* Phone - Always show with fixed height */}
                 <Box
-                  sx={{
-                    mt: "auto",
-                    height: "60px",
-                    display: { xs: "none", sm: "flex" },
-                    alignItems: "center",
-                  }}
+                  display="flex"
+                  alignItems="center"
+                  mb={1}
+                  sx={{ height: "30px" }}
                 >
-                  <Box
+                  <PhoneIcon
                     sx={{
-                      background:
+                      fontSize: 16,
+                      mr: 1,
+                      color:
                         theme.palette.mode === "dark"
-                          ? "linear-gradient(135deg, rgba(255, 169, 77, 0.14) 0%, rgba(255, 122, 26, 0.14) 100%)"
-                          : "linear-gradient(135deg, rgba(255, 169, 77, 0.08) 0%, rgba(255, 122, 26, 0.08) 100%)",
-                      borderRadius: 2,
-                      py: 1,
-                      px: 2,
-                      width: "100%",
-                      border: "none",
+                          ? theme.palette.secondary.main
+                          : theme.palette.secondary.main,
+                    }}
+                  />
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: theme.palette.text.secondary,
+                      fontFamily: "monospace",
+                      fontSize: "0.875rem",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
                     }}
                   >
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color:
-                          theme.palette.mode === "dark" ? "#FFA94D" : "#FF7A1A",
-                        fontWeight: 600,
-                        textAlign: "center",
-                        fontSize: "0.875rem",
-                        lineHeight: 1,
-                      }}
-                    >
-                      {t("View Products")}
-                    </Typography>
-                  </Box>
+                    {brand.phone || t("phone not provided")}
+                  </Typography>
                 </Box>
-              </CardContent>
-            </Card>
+
+                {/* Description - Always show with fixed height */}
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: theme.palette.text.secondary,
+                    lineHeight: 1.3,
+                    fontSize: "0.875rem",
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                    height: "45px",
+                  }}
+                >
+                  {brand.description || t("description not provided")}
+                </Typography>
+              </Box>
+
+              {/* Action Area - Hidden on mobile */}
+              <Box
+                sx={{
+                  mt: "auto",
+                  height: "60px",
+                  display: { xs: "none", sm: "flex" },
+                  alignItems: "center",
+                }}
+              >
+                <Box
+                  sx={{
+                    background:
+                      theme.palette.mode === "dark"
+                        ? "linear-gradient(135deg, rgba(255, 169, 77, 0.14) 0%, rgba(255, 122, 26, 0.14) 100%)"
+                        : "linear-gradient(135deg, rgba(255, 169, 77, 0.08) 0%, rgba(255, 122, 26, 0.08) 100%)",
+                    borderRadius: 2,
+                    py: 1,
+                    px: 2,
+                    width: "100%",
+                    border: "none",
+                  }}
+                >
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color:
+                        theme.palette.mode === "dark"
+                          ? theme.palette.secondary.main
+                          : theme.palette.secondary.main,
+                      fontWeight: 600,
+                      textAlign: "center",
+                      fontSize: "0.875rem",
+                      lineHeight: 1,
+                    }}
+                  >
+                    {t("View Products")}
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
         ))}
       </Box>
 
@@ -607,7 +613,10 @@ const BrandList = () => {
           <StorefrontIcon
             sx={{
               fontSize: 120,
-              color: theme.palette.mode === "dark" ? "#4a5568" : "#cbd5e0",
+              color:
+                theme.palette.mode === "dark"
+                  ? theme.palette.text.secondary
+                  : theme.palette.primary.main,
               mb: 3,
             }}
           />

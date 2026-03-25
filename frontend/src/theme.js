@@ -11,12 +11,64 @@ const BRAND = {
   textSecondary: "#6B7280",
 };
 
-export const createAppTheme = ({ darkMode = false, language = "en" } = {}) =>
-  createTheme({
+const isValidHex = (value) =>
+  typeof value === "string" && /^#([0-9a-fA-F]{6})$/.test(value.trim());
+
+export const createAppTheme = (
+  {
+    darkMode = false,
+    language = "en",
+    primaryColor = "",
+    fontFamily = "",
+    activeFontKey = "default",
+    activeTheme = "default",
+  } = {},
+) => {
+  const themePrimaryMap = {
+    default: BRAND.primaryBlue,
+    blackWhite: "#000000",
+    ramadan: "#D4AF37",
+    rain: "#4A90E2",
+    neon1: "#7C3AED",
+    neon2: "#FF2D8D",
+    "flash-sale": "#FF3B30",
+    luxury: "#0B0B0B",
+    "eco-green": "#2ECC71",
+    ice: "#AEE6F9",
+    festival: "#7B2CBF",
+    tech: "#22D3EE",
+    minimal: "#111827",
+    sunset: "#FF7A1A",
+    "middle-east": "#1E3A8A",
+    marketplace: "#2563EB",
+  };
+
+  const primaryMain = isValidHex(primaryColor)
+    ? primaryColor.trim()
+    : themePrimaryMap[activeTheme] || BRAND.primaryBlue;
+  const typographyFontFamily =
+    typeof fontFamily === "string" && fontFamily.trim().length > 0
+      ? fontFamily.trim()
+      : (() => {
+          const fontByKey = {
+            default:
+              "'NRT', 'Noto Sans Kurdish', 'Scheherazade New', 'Arial', sans-serif",
+            nrt:
+              "'NRT', 'Noto Sans Kurdish', 'Scheherazade New', 'Arial', sans-serif",
+            system: "system-ui, sans-serif",
+            arial: "Arial, sans-serif",
+            roboto: "Roboto, Arial, sans-serif",
+          };
+          if (fontByKey[activeFontKey]) return fontByKey[activeFontKey];
+          // Treat any other key as a registered public font-family name.
+          return `'${activeFontKey}', ${fontByKey.default}`;
+        })();
+
+  return createTheme({
     palette: {
       mode: darkMode ? "dark" : "light",
       primary: {
-        main: BRAND.primaryBlue,
+        main: primaryMain,
         light: BRAND.secondaryBlue,
         dark: "#155AB2",
         contrastText: "#FFFFFF",
@@ -44,20 +96,19 @@ export const createAppTheme = ({ darkMode = false, language = "en" } = {}) =>
       borderRadius: 12,
     },
     typography: {
-      fontFamily:
-        "'NRT', 'Noto Sans Kurdish', 'Scheherazade New', 'Arial', sans-serif",
-      h1: { color: darkMode ? "#F9FAFB" : BRAND.primaryBlue },
-      h2: { color: darkMode ? "#F9FAFB" : BRAND.primaryBlue },
-      h3: { color: darkMode ? "#F9FAFB" : BRAND.primaryBlue },
-      h4: { color: darkMode ? "#F9FAFB" : BRAND.primaryBlue },
-      h5: { color: darkMode ? "#F9FAFB" : BRAND.primaryBlue },
-      h6: { color: darkMode ? "#F9FAFB" : BRAND.primaryBlue },
+      fontFamily: typographyFontFamily,
+      h1: { color: darkMode ? "#F9FAFB" : primaryMain },
+      h2: { color: darkMode ? "#F9FAFB" : primaryMain },
+      h3: { color: darkMode ? "#F9FAFB" : primaryMain },
+      h4: { color: darkMode ? "#F9FAFB" : primaryMain },
+      h5: { color: darkMode ? "#F9FAFB" : primaryMain },
+      h6: { color: darkMode ? "#F9FAFB" : primaryMain },
     },
     components: {
       MuiCssBaseline: {
         styleOverrides: {
           ":root": {
-            "--brand-primary-blue": BRAND.primaryBlue,
+            "--brand-primary-blue": primaryMain,
             "--brand-secondary-blue": BRAND.secondaryBlue,
             "--brand-accent-orange": BRAND.accentOrange,
             "--brand-light-orange": BRAND.lightOrange,
@@ -67,6 +118,10 @@ export const createAppTheme = ({ darkMode = false, language = "en" } = {}) =>
             "--brand-text-secondary": BRAND.textSecondary,
             "--brand-radius": "12px",
             "--brand-transition": "all 240ms ease",
+            "--app-font-family": typographyFontFamily,
+          },
+          body: {
+            fontFamily: "var(--app-font-family)",
           },
         },
       },
@@ -74,7 +129,7 @@ export const createAppTheme = ({ darkMode = false, language = "en" } = {}) =>
         styleOverrides: {
           root: {
             background:
-              "linear-gradient(120deg, #1E6FD9 0%, #4A90E2 56%, #FF7A1A 100%)",
+              `linear-gradient(120deg, ${primaryMain} 0%, #4A90E2 56%, #FF7A1A 100%)`,
           },
         },
       },
@@ -102,8 +157,8 @@ export const createAppTheme = ({ darkMode = false, language = "en" } = {}) =>
           {
             props: { variant: "outlined" },
             style: {
-              borderColor: BRAND.primaryBlue,
-              color: BRAND.primaryBlue,
+              borderColor: primaryMain,
+              color: primaryMain,
               "&:hover": {
                 borderColor: BRAND.secondaryBlue,
                 backgroundColor: "rgba(74,144,226,0.08)",
@@ -158,4 +213,5 @@ export const createAppTheme = ({ darkMode = false, language = "en" } = {}) =>
       },
     },
   });
+};
 

@@ -2,6 +2,33 @@ const mongoose = require("mongoose");
 
 const settingsSchema = new mongoose.Schema(
   {
+    activeTheme: {
+      type: String,
+      default: "default",
+      trim: true,
+    },
+    activeFontKey: {
+      type: String,
+      default: "default",
+      trim: true,
+    },
+    navConfig: {
+      template: { type: String, default: "template1", trim: true },
+      topSlots: {
+        topleft1: { type: String, default: "", trim: true },
+        topleft2: { type: String, default: "", trim: true },
+        center: { type: String, default: "label", trim: true },
+        topright1: { type: String, default: "", trim: true },
+        topright2: { type: String, default: "", trim: true },
+      },
+      bottomSlots: {
+        bottomleft1: { type: String, default: "home", trim: true },
+        bottomleft2: { type: String, default: "categories", trim: true },
+        center: { type: String, default: "reels", trim: true },
+        bottomright1: { type: String, default: "favourites", trim: true },
+        bottomright2: { type: String, default: "profile", trim: true },
+      },
+    },
     contactWhatsAppNumber: {
       type: String,
       default: "+9647503683478",

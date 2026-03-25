@@ -52,6 +52,7 @@ import {
   settingsAPI,
   adminAPI,
   videoAPI,
+  jobAPI,
 } from "../services/api";
 import * as XLSX from "xlsx";
 
@@ -74,6 +75,7 @@ import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import SettingsIcon from "@mui/icons-material/Settings";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import VideoLibraryIcon from "@mui/icons-material/VideoLibrary";
+import WorkOutlineIcon from "@mui/icons-material/WorkOutline";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 import { useAppSettings } from "../context/AppSettingsContext";
@@ -86,7 +88,7 @@ const DataEntryForm = () => {
   const { getAuthHeaders, user } = useAuth();
   const isAdmin =
     user?.email === "mshexani45@gmail.com" || user?.email === "admin@gmail.com";
-  const reelsTabIndex = isAdmin ? 10 : 9;
+  const reelsTabIndex = isAdmin ? 11 : 10;
   const {
     contactWhatsAppNumber,
     setContactWhatsAppNumber,
@@ -115,6 +117,7 @@ const DataEntryForm = () => {
   const [gifts, setGifts] = useState([]);
   const [ads, setAds] = useState([]);
   const [reels, setReels] = useState([]);
+  const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
 
@@ -125,6 +128,7 @@ const DataEntryForm = () => {
   const [giftsPage, setGiftsPage] = useState(0);
   const [adsPage, setAdsPage] = useState(0);
   const [reelsPage, setReelsPage] = useState(0);
+  const [jobsPage, setJobsPage] = useState(0);
   const [rowsPerPage] = useState(10);
   const [storeNameSearch, setStoreNameSearch] = useState("");
   const [brandNameSearch, setBrandNameSearch] = useState("");
@@ -229,6 +233,20 @@ const DataEntryForm = () => {
 
   const [selectedAdImage, setSelectedAdImage] = useState(null);
 
+  const defaultJobForm = {
+    title: "",
+    description: "",
+    gender: "any",
+    storeId: "",
+    brandId: "",
+    image: "",
+    expireDate: "",
+    active: true,
+  };
+  const [jobForm, setJobForm] = useState(defaultJobForm);
+  const [selectedJobImage, setSelectedJobImage] = useState(null);
+  const [editingJobId, setEditingJobId] = useState("");
+
   const defaultVideoForm = {
     title: "",
     storeId: "",
@@ -324,6 +342,7 @@ const DataEntryForm = () => {
     fetchGifts();
     fetchAds();
     fetchReels();
+    fetchJobs();
   }, []);
 
   useEffect(() => {
@@ -339,7 +358,7 @@ const DataEntryForm = () => {
   }, [brandNameSearch]);
 
   useEffect(() => {
-    if (activeListTab === 8) {
+    if (activeListTab === 9) {
       setSettingsContactNumber(contactWhatsAppNumber || "");
       setSettingsContactInfo({
         whatsapp: contactInfo?.whatsapp || contactWhatsAppNumber || "",
@@ -352,7 +371,7 @@ const DataEntryForm = () => {
         telegram: contactInfo?.telegram || "",
       });
     }
-    if (activeListTab === 9 && isAdmin) {
+    if (activeListTab === 10 && isAdmin) {
       setNotificationTitle("");
       setNotificationBody("");
       setNotificationType("general");
@@ -426,6 +445,16 @@ const DataEntryForm = () => {
     } catch (err) {
       console.error("Error fetching reels:", err);
       setReels([]);
+    }
+  };
+
+  const fetchJobs = async () => {
+    try {
+      const response = await jobAPI.getAll();
+      setJobs(response.data || []);
+    } catch (err) {
+      console.error("Error fetching jobs:", err);
+      setJobs([]);
     }
   };
 
@@ -914,6 +943,80 @@ const DataEntryForm = () => {
       console.error("Error creating ad:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleJobSubmit = async (e) => {
+    e?.preventDefault?.();
+    try {
+      setLoading(true);
+      setMessage({ type: "", text: "" });
+
+      if (!jobForm.title?.trim()) {
+        setMessage({ type: "error", text: t("Please enter a title.") });
+        return;
+      }
+      if (!jobForm.description?.trim()) {
+        setMessage({ type: "error", text: t("Please enter a description.") });
+        return;
+      }
+      const hasStore = Boolean(jobForm.storeId);
+      const hasBrand = Boolean(jobForm.brandId);
+      if (hasStore === hasBrand) {
+        setMessage({
+          type: "error",
+          text: t("Please select exactly one owner (Store or Brand)."),
+        });
+        return;
+      }
+
+      let imageUrl = jobForm.image || "";
+      if (selectedJobImage) {
+        setUploadLoading(true);
+        const formData = new FormData();
+        formData.append("image", selectedJobImage);
+        const resp = await jobAPI.uploadImage(formData);
+        imageUrl = resp?.data?.url || imageUrl;
+        setUploadLoading(false);
+      }
+
+      const payload = {
+        title: jobForm.title.trim(),
+        description: jobForm.description.trim(),
+        gender: jobForm.gender || "any",
+        image: imageUrl || "",
+        storeId: jobForm.storeId || undefined,
+        brandId: jobForm.brandId || undefined,
+        expireDate: jobForm.expireDate
+          ? new Date(jobForm.expireDate).toISOString()
+          : undefined,
+        active: jobForm.active !== false,
+      };
+
+      if (editingJobId) {
+        await jobAPI.update(editingJobId, payload);
+      } else {
+        await jobAPI.create(payload);
+      }
+
+      setMessage({
+        type: "success",
+        text: editingJobId ? t("Job updated successfully!") : t("Job created successfully!"),
+      });
+      setJobForm(defaultJobForm);
+      setEditingJobId("");
+      setSelectedJobImage(null);
+      setAddDialog({ open: false, type: "" });
+      fetchJobs();
+    } catch (err) {
+      setMessage({
+        type: "error",
+        text: err?.response?.data?.message || t("Failed to save job. Please try again."),
+      });
+      console.error("Error saving job:", err);
+    } finally {
+      setLoading(false);
+      setUploadLoading(false);
     }
   };
 
@@ -1940,6 +2043,10 @@ const DataEntryForm = () => {
         await videoAPI.delete(deleteDialog.data._id);
         setMessage({ type: "success", text: t("Reel deleted successfully!") });
         fetchReels();
+      } else if (deleteDialog.type === "job") {
+        await jobAPI.delete(deleteDialog.data._id);
+        setMessage({ type: "success", text: t("Job deleted successfully!") });
+        fetchJobs();
       }
       setDeleteDialog({ open: false, type: "", data: null });
     } catch (err) {
@@ -2329,6 +2436,11 @@ const DataEntryForm = () => {
               iconPosition="start"
             />
             <Tab
+              label={t("Jobs")}
+              icon={<WorkOutlineIcon />}
+              iconPosition="start"
+            />
+            <Tab
               label={t("Store Types")}
               icon={<CategoryIcon />}
               iconPosition="start"
@@ -2669,7 +2781,7 @@ const DataEntryForm = () => {
           )}
 
           {/* Store Types List Panel */}
-          {activeListTab === 6 && (
+          {activeListTab === 7 && (
             <Box>
               <Grid container spacing={2} alignItems="center">
                 <Grid xs={12} sm={6}>
@@ -2754,7 +2866,7 @@ const DataEntryForm = () => {
           )}
 
           {/* Brand Types List Panel */}
-          {activeListTab === 7 && (
+          {activeListTab === 8 && (
             <Box>
               <Grid container spacing={2} alignItems="center">
                 <Grid xs={12} sm={6}>
@@ -2839,7 +2951,7 @@ const DataEntryForm = () => {
           )}
 
           {/* Settings Panel */}
-          {activeListTab === 8 && (
+          {activeListTab === 9 && (
             <Box>
               <Typography variant="h6" gutterBottom>
                 {t("Contact Us Info")}
@@ -3001,7 +3113,7 @@ const DataEntryForm = () => {
           )}
 
           {/* Notifications Panel - Send to all users */}
-          {activeListTab === 9 && (
+          {activeListTab === 10 && (
             <Box>
               <Typography variant="h6" gutterBottom>
                 {t("Send Notification to All Users")}
@@ -4453,6 +4565,169 @@ const DataEntryForm = () => {
             </Box>
           )}
 
+          {/* Jobs List Panel */}
+          {activeListTab === 6 && (
+            <Box>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "flex-start",
+                  mb: 2,
+                  gap: 1,
+                  flexWrap: "wrap",
+                }}
+              >
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => {
+                    setEditingJobId("");
+                    setJobForm(defaultJobForm);
+                    setSelectedJobImage(null);
+                    setAddDialog({ open: true, type: "job" });
+                  }}
+                >
+                  {t("New Job")}
+                </Button>
+                <Button variant="outlined" onClick={fetchJobs}>
+                  {t("Refresh")}
+                </Button>
+              </Box>
+
+              <TableContainer component={Paper}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("No.")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Title")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Owner")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Gender")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Expire Date")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {t("Actions")}
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {(jobs || [])
+                      .slice(jobsPage * rowsPerPage, jobsPage * rowsPerPage + rowsPerPage)
+                      .map((job, index) => {
+                        const ownerName =
+                          job?.storeId?.name || job?.brandId?.name || "";
+                        const gender = String(job?.gender || "any");
+                        return (
+                          <TableRow key={job._id}>
+                            <TableCell>{jobsPage * rowsPerPage + index + 1}</TableCell>
+                            <TableCell>{job.title}</TableCell>
+                            <TableCell>{ownerName || "-"}</TableCell>
+                            <TableCell>{gender}</TableCell>
+                            <TableCell>
+                              {job.expireDate
+                                ? new Date(job.expireDate).toLocaleDateString()
+                                : t("No expiry")}
+                            </TableCell>
+                            <TableCell>
+                              <IconButton
+                                onClick={() => {
+                                  setEditingJobId(job._id);
+                                  setSelectedJobImage(null);
+                                  setJobForm({
+                                    title: job.title || "",
+                                    description: job.description || "",
+                                    gender: job.gender || "any",
+                                    storeId: job?.storeId?._id || job?.storeId || "",
+                                    brandId: job?.brandId?._id || job?.brandId || "",
+                                    image: job.image || "",
+                                    expireDate: job.expireDate
+                                      ? new Date(job.expireDate).toISOString().slice(0, 10)
+                                      : "",
+                                    active: job.active !== false,
+                                  });
+                                  setAddDialog({ open: true, type: "job" });
+                                }}
+                                size="small"
+                                sx={{ color: "primary.main" }}
+                              >
+                                <EditIcon />
+                              </IconButton>
+                              <IconButton
+                                onClick={() =>
+                                  setDeleteDialog({
+                                    open: true,
+                                    type: "job",
+                                    data: job,
+                                  })
+                                }
+                                size="small"
+                                sx={{ color: "error.main" }}
+                              >
+                                <DeleteIcon />
+                              </IconButton>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+
+              <TablePagination
+                component="div"
+                count={(jobs || []).length}
+                page={jobsPage}
+                onPageChange={(e, p) => setJobsPage(p)}
+                rowsPerPage={rowsPerPage}
+                rowsPerPageOptions={[10]}
+              />
+            </Box>
+          )}
+
           {/* Reels List Panel */}
           {activeListTab === reelsTabIndex && (
             <Box>
@@ -4591,6 +4866,11 @@ const DataEntryForm = () => {
             setVideoForm(defaultVideoForm);
             setSelectedVideoFile(null);
           }
+          if (addDialog.type === "job") {
+            setEditingJobId("");
+            setJobForm(defaultJobForm);
+            setSelectedJobImage(null);
+          }
         }}
         fullWidth
         maxWidth="md"
@@ -4606,6 +4886,10 @@ const DataEntryForm = () => {
                   ? t("Add Category")
                   : addDialog.type === "ad"
                     ? t("Add Ad")
+                    : addDialog.type === "job"
+                      ? editingJobId
+                        ? t("Edit Job")
+                        : t("Add Job")
                     : addDialog.type === "video"
                       ? editingVideoId
                         ? t("Edit Reel")
@@ -6027,6 +6311,134 @@ const DataEntryForm = () => {
             </Box>
           )}
 
+          {addDialog.type === "job" && (
+            <Box component="form" onSubmit={handleJobSubmit} sx={{ mt: 1 }}>
+              <Grid container spacing={2}>
+                <Grid xs={12}>
+                  <input
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    id="dialog-job-image-file"
+                    type="file"
+                    onChange={(e) => setSelectedJobImage(e.target.files?.[0] || null)}
+                  />
+                  <label htmlFor="dialog-job-image-file">
+                    <Button variant="outlined" component="span" fullWidth startIcon={<AddIcon />}>
+                      {selectedJobImage ? selectedJobImage.name : t("Upload Image")}
+                    </Button>
+                  </label>
+                </Grid>
+
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t("Title")}
+                    value={jobForm.title}
+                    onChange={(e) => setJobForm((p) => ({ ...p, title: e.target.value }))}
+                    required
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>{t("Gender")}</InputLabel>
+                    <Select
+                      value={jobForm.gender || "any"}
+                      label={t("Gender")}
+                      onChange={(e) => setJobForm((p) => ({ ...p, gender: e.target.value }))}
+                    >
+                      <MenuItem value="any">{t("Any")}</MenuItem>
+                      <MenuItem value="male">{t("Male")}</MenuItem>
+                      <MenuItem value="female">{t("Female")}</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel shrink>{t("Store")}</InputLabel>
+                    <Select
+                      value={jobForm.storeId || ""}
+                      label={t("Store")}
+                      displayEmpty
+                      disabled={Boolean(jobForm.brandId)}
+                      onChange={(e) =>
+                        setJobForm((p) => ({ ...p, storeId: e.target.value, brandId: "" }))
+                      }
+                    >
+                      <MenuItem value="">
+                        <em>{t("None")}</em>
+                      </MenuItem>
+                      {stores.map((s) => (
+                        <MenuItem key={s._id} value={s._id}>
+                          {s.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel shrink>{t("Brand")}</InputLabel>
+                    <Select
+                      value={jobForm.brandId || ""}
+                      label={t("Brand")}
+                      displayEmpty
+                      disabled={Boolean(jobForm.storeId)}
+                      onChange={(e) =>
+                        setJobForm((p) => ({ ...p, brandId: e.target.value, storeId: "" }))
+                      }
+                    >
+                      <MenuItem value="">
+                        <em>{t("None")}</em>
+                      </MenuItem>
+                      {brands.map((b) => (
+                        <MenuItem key={b._id} value={b._id}>
+                          {b.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    type="date"
+                    label={t("Expire Date")}
+                    InputLabelProps={{ shrink: true }}
+                    value={jobForm.expireDate || ""}
+                    onChange={(e) => setJobForm((p) => ({ ...p, expireDate: e.target.value }))}
+                  />
+                </Grid>
+
+                <Grid xs={12}>
+                  <TextField
+                    fullWidth
+                    label={t("Description")}
+                    value={jobForm.description}
+                    onChange={(e) => setJobForm((p) => ({ ...p, description: e.target.value }))}
+                    required
+                    multiline
+                    minRows={3}
+                  />
+                </Grid>
+
+                <Grid xs={12}>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    disabled={loading || uploadLoading}
+                    startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
+                    fullWidth
+                  >
+                    {loading ? t("Saving...") : editingJobId ? t("Save Changes") : t("Create Job")}
+                  </Button>
+                </Grid>
+              </Grid>
+            </Box>
+          )}
+
           {addDialog.type === "video" && (
             <Box component="form" onSubmit={handleVideoSubmit} sx={{ mt: 1 }}>
               <Grid container spacing={2}>
@@ -7228,7 +7640,7 @@ const DataEntryForm = () => {
                 <Select
                   multiple
                   name="storeId"
-                  value={editForm.storeId}
+                  value={Array.isArray(editForm.storeId) ? editForm.storeId : []}
                   onChange={handleEditFormChange}
                   label={t("Stores")}
                   renderValue={(selected) => (
@@ -7711,10 +8123,13 @@ const DataEntryForm = () => {
                 <InputLabel>{t("Store")}</InputLabel>
                 <Select
                   name="storeId"
-                  value={editForm.storeId}
+                  value={editForm.storeId || ""}
                   onChange={handleEditFormChange}
                   label={t("Store")}
                 >
+                  <MenuItem value="">
+                    <em>{t("Select Store")}</em>
+                  </MenuItem>
                   {stores.map((store) => (
                     <MenuItem key={store._id} value={store._id}>
                       {store.name}
@@ -7824,6 +8239,8 @@ const DataEntryForm = () => {
                 ? handleDeleteBrandConfirm()
                 : deleteDialog.type === "gift"
                   ? handleDeleteBrandConfirm()
+                  : deleteDialog.type === "job"
+                    ? handleDeleteBrandConfirm()
                   : deleteDialog.type === "video"
                     ? handleDeleteStoreConfirm()
                     : deleteDialog.type === "category"

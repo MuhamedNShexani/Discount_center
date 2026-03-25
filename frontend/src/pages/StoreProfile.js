@@ -54,13 +54,15 @@ import {
   Instagram,
   MusicNote,
   CameraAlt,
+  VideoLibrary,
+  WorkOutline,
 } from "@mui/icons-material";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import PersonAddDisabledIcon from "@mui/icons-material/PersonAddDisabled";
 import StarIcon from "@mui/icons-material/Star";
-import { storeAPI, productAPI, giftAPI } from "../services/api";
+import { storeAPI, productAPI, giftAPI, videoAPI, jobAPI } from "../services/api";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import StorefrontIcon from "@mui/icons-material/Storefront";
@@ -71,6 +73,9 @@ import Loader from "../components/Loader";
 import { useUserTracking } from "../hooks/useUserTracking";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { useAuth } from "../context/AuthContext";
+import JobCardRow from "../components/JobCardRow";
+
+const API_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
 
 const StoreProfile = () => {
   const { id } = useParams();
@@ -92,11 +97,16 @@ const StoreProfile = () => {
   const [store, setStore] = useState(null);
   const [products, setProducts] = useState([]);
   const [gifts, setGifts] = useState([]);
+  const [reels, setReels] = useState([]);
+  const [jobs, setJobs] = useState([]);
+  const [selectedJob, setSelectedJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState(() => {
     const tabParam = searchParams.get("tab");
     if (tabParam === "gifts") return 1;
+    if (tabParam === "reels") return 2;
+    if (tabParam === "jobs") return 3;
     return 0;
   });
   const [expandedTypes, setExpandedTypes] = useState({});
@@ -168,6 +178,41 @@ const StoreProfile = () => {
       // Fetch gifts for this store
       const giftsResponse = await giftAPI.getByStore(id);
       setGifts(giftsResponse.data.data || []);
+
+      // Fetch reels for this store (exclude expired)
+      try {
+        const videosRes = await videoAPI.getAll();
+        const list = Array.isArray(videosRes?.data) ? videosRes.data : [];
+        const now = Date.now();
+        const filtered = list.filter((v) => {
+          const storeId = v?.storeId?._id || v?.storeId || "";
+          if (String(storeId) !== String(id)) return false;
+          if (!v?.expireDate) return true;
+          const exp = new Date(v.expireDate).getTime();
+          return Number.isFinite(exp) ? exp > now : true;
+        });
+        setReels(filtered);
+      } catch {
+        setReels([]);
+      }
+
+      // Fetch jobs for this store (exclude expired)
+      try {
+        const jobsRes = await jobAPI.getAll();
+        const list = Array.isArray(jobsRes?.data) ? jobsRes.data : [];
+        const now = Date.now();
+        const filtered = list.filter((j) => {
+          const storeId = j?.storeId?._id || j?.storeId || "";
+          if (String(storeId) !== String(id)) return false;
+          if (j?.active === false) return false;
+          if (!j?.expireDate) return true;
+          const exp = new Date(j.expireDate).getTime();
+          return Number.isFinite(exp) ? exp > now : true;
+        });
+        setJobs(filtered);
+      } catch {
+        setJobs([]);
+      }
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -1135,7 +1180,7 @@ const StoreProfile = () => {
           variant="body2"
           sx={{ color: "white", opacity: 0.9, whiteSpace: "nowrap" }}
         >
-          null
+          {t("address not provided")}
         </Typography>
       )}
     </Box>
@@ -1159,11 +1204,10 @@ const StoreProfile = () => {
           fontFamily: "monospace",
           textShadow: "0 2px 4px rgba(0,0,0,0.3)",
           color: "white",
-          mr: 0.5,
           whiteSpace: "nowrap",
         }}
       >
-        {displayPhone || "null"}
+        {displayPhone || t("phone not provided")}
       </Typography>
       {socialLinks
         .filter((item) => Boolean(item.value))
@@ -1220,9 +1264,14 @@ const StoreProfile = () => {
           mb: 4,
           borderRadius: 4,
           overflow: "hidden",
-          background: theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
+          background:
+            theme.palette.mode === "dark"
+              ? "#4A90E2"
+              : theme.palette.primary.main,
           border: `1px solid ${
-            theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9"
+            theme.palette.mode === "dark"
+              ? "#4A90E2"
+              : theme.palette.primary.main
           }`,
           boxShadow:
             theme.palette.mode === "dark"
@@ -1233,7 +1282,10 @@ const StoreProfile = () => {
         {/* Header Background */}
         <Box
           sx={{
-            background: theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
+            background:
+              theme.palette.mode === "dark"
+                ? "#4A90E2"
+                : theme.palette.primary.main,
             p: { xs: 2, sm: 3, md: 4 },
             color: "white",
             position: "relative",
@@ -1534,29 +1586,25 @@ const StoreProfile = () => {
                   />
                 </Box>
                 <Box sx={{ mb: 3 }}>
-                  {store.address && (
-                    <Box
-                      display="flex"
-                      alignItems="center"
-                      mb={1.5}
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    mb={1.5}
+                    color="white"
+                    justifyContent={{ xs: "center", md: "flex-start" }}
+                  >
+                    <LocationOn sx={{ mr: 1.5, fontSize: 24, opacity: 0.9 }} />
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        fontSize: "1.125rem",
+                        textShadow: "0 2px 4px rgba(0,0,0,0.3)",
+                      }}
                       color="white"
-                      justifyContent={{ xs: "center", md: "flex-start" }}
                     >
-                      <LocationOn
-                        sx={{ mr: 1.5, fontSize: 24, opacity: 0.9 }}
-                      />
-                      <Typography
-                        variant="h6"
-                        sx={{
-                          fontSize: "1.125rem",
-                          textShadow: "0 2px 4px rgba(0,0,0,0.3)",
-                        }}
-                        color="white"
-                      >
-                        {store.address}
-                      </Typography>
-                    </Box>
-                  )}
+                      {store.address || t("address not provided")}
+                    </Typography>
+                  </Box>
 
                   {renderLocationRow()}
 
@@ -1906,7 +1954,9 @@ const StoreProfile = () => {
                 fontSize: { xs: "0.875rem", sm: "1rem" },
                 "&.Mui-selected": {
                   backgroundColor:
-                    theme.palette.mode === "dark" ? "#4A90E2" : "#FFA94D",
+                    theme.palette.mode === "dark"
+                      ? "#4A90E2"
+                      : "var(--brand-secondary-blue)",
                   color: "white",
                   boxShadow: "0 4px 12px rgba(255, 122, 26, 0.3)",
                 },
@@ -1928,6 +1978,24 @@ const StoreProfile = () => {
             <Tab
               label={`${t("Gifts")} (${gifts.length})`}
               icon={<CardGiftcardIcon />}
+              iconPosition="start"
+              sx={{
+                textTransform: "none",
+                width: { xs: "100px", sm: "100px", md: "100%" },
+              }}
+            />
+            <Tab
+              label={`${t("Reels")} (${reels.length})`}
+              icon={<VideoLibrary />}
+              iconPosition="start"
+              sx={{
+                textTransform: "none",
+                width: { xs: "100px", sm: "100px", md: "100%" },
+              }}
+            />
+            <Tab
+              label={`${t("Jobs")} (${jobs.length})`}
+              icon={<WorkOutline />}
               iconPosition="start"
               sx={{
                 textTransform: "none",
@@ -2044,7 +2112,190 @@ const StoreProfile = () => {
             )}
           </Box>
         )}
+
+        {activeTab === 2 && (
+          <Box>
+            {reels.length === 0 ? (
+              <Box
+                sx={{
+                  textAlign: "center",
+                  py: 8,
+                  px: 4,
+                }}
+              >
+                <VideoLibrary
+                  sx={{
+                    fontSize: 80,
+                    color:
+                      theme.palette.mode === "dark" ? "#4a5568" : "#cbd5e0",
+                    mb: 3,
+                  }}
+                />
+                <Typography
+                  variant="h4"
+                  gutterBottom
+                  sx={{
+                    color: theme.palette.text.secondary,
+                    fontWeight: 150,
+                    mb: 2,
+                  }}
+                >
+                  {t("No reels available")}
+                </Typography>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    color: theme.palette.mode === "dark" ? "white" : "black",
+                    maxWidth: 500,
+                    mx: "auto",
+                    lineHeight: 1.6,
+                  }}
+                >
+                  {t("This store hasn't added any reels yet.")}
+                </Typography>
+              </Box>
+            ) : (
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                  gap: 2,
+                  width: "100%",
+                }}
+              >
+                {reels.map((reel) => {
+                  const src = reel?.videoUrl?.startsWith("http")
+                    ? reel.videoUrl
+                    : `${process.env.REACT_APP_BACKEND_URL || "http://localhost:5000"}${reel.videoUrl || ""}`;
+
+                  return (
+                    <Card
+                      key={reel._id}
+                      sx={{
+                        borderRadius: 3,
+                        overflow: "hidden",
+                        cursor: "pointer",
+                        border: `1px solid ${theme.palette.divider}`,
+                        "&:hover": { boxShadow: 6 },
+                      }}
+                      onClick={() => navigate(`/reels/${reel._id}`)}
+                    >
+                      <Box sx={{ position: "relative", backgroundColor: "black" }}>
+                        <video
+                          src={src}
+                          muted
+                          playsInline
+                          preload="metadata"
+                          style={{
+                            width: "100%",
+                            height: 220,
+                            objectFit: "cover",
+                            display: "block",
+                          }}
+                        />
+                        <Box
+                          sx={{
+                            position: "absolute",
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            p: 1,
+                            background:
+                              "linear-gradient(to top, rgba(0,0,0,0.65), rgba(0,0,0,0))",
+                          }}
+                        >
+                          <Typography sx={{ color: "white", fontWeight: 700 }} noWrap>
+                            {reel?.title || t("Reel")}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Card>
+                  );
+                })}
+              </Box>
+            )}
+          </Box>
+        )}
+
+        {activeTab === 3 && (
+          <Box>
+            {jobs.length === 0 ? (
+              <Box sx={{ textAlign: "center", py: 6 }}>
+                <WorkOutline
+                  sx={{
+                    fontSize: 80,
+                    color: theme.palette.mode === "dark" ? "#4a5568" : "#cbd5e0",
+                    mb: 2,
+                  }}
+                />
+                <Typography variant="h5" sx={{ color: theme.palette.text.secondary, fontWeight: 700 }}>
+                  {t("No jobs available")}
+                </Typography>
+              </Box>
+            ) : (
+              <Box sx={{ display: "grid", gridTemplateColumns: "1fr", gap: 1.5 }}>
+                {jobs.map((job) => (
+                  <JobCardRow key={job._id} job={job} onClick={() => setSelectedJob(job)} />
+                ))}
+              </Box>
+            )}
+          </Box>
+        )}
       </Box>
+
+      <Dialog
+        open={!!selectedJob}
+        onClose={() => setSelectedJob(null)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle sx={{ fontWeight: 900 }}>
+          {selectedJob?.title || t("Job")}
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
+            <Box
+              component="img"
+              src={
+                selectedJob?.image
+                  ? String(selectedJob.image).startsWith("http")
+                    ? selectedJob.image
+                    : `${API_URL}${selectedJob.image}`
+                  : "/logo192.png"
+              }
+              alt="job"
+              onError={(e) => {
+                e.currentTarget.src = "/logo192.png";
+              }}
+              sx={{
+                width: 110,
+                height: 110,
+                borderRadius: 2,
+                objectFit: "cover",
+                border: `1px solid ${theme.palette.divider}`,
+              }}
+            />
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography sx={{ fontWeight: 800, mb: 0.5 }}>
+                {t("Gender")}:{" "}
+                {String(selectedJob?.gender || "any") === "male"
+                  ? t("Male")
+                  : String(selectedJob?.gender || "any") === "female"
+                    ? t("Female")
+                    : t("Any")}
+              </Typography>
+              <Typography sx={{ fontWeight: 800 }}>
+                {selectedJob?.storeId?.name || selectedJob?.brandId?.name || "-"}
+              </Typography>
+            </Box>
+          </Box>
+          <Divider sx={{ mb: 2 }} />
+          <Typography sx={{ fontWeight: 900, mb: 0.75 }}>{t("Description")}</Typography>
+          <Typography sx={{ whiteSpace: "pre-wrap" }} color="text.secondary">
+            {selectedJob?.description || "-"}
+          </Typography>
+        </DialogContent>
+      </Dialog>
       {/* Gift Details Dialog */}
       <Dialog
         open={dialogOpen}

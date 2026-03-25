@@ -85,19 +85,10 @@ const search = async (req, res) => {
         .limit(limit)
         .lean();
       products = productDocs;
-      const brandIdsFromProducts = [
-        ...new Set(
-          productDocs
-            .map((p) => {
-              const id = p.brandId && (p.brandId._id || p.brandId);
-              return id != null ? String(id) : null;
-            })
-            .filter(Boolean)
-        ),
-      ];
-      brands = brandsAll.filter((b) =>
-        brandIdsFromProducts.includes(b._id.toString())
-      );
+      // In city mode, still allow direct brand name search results.
+      // Previously we limited brands to only those present in matching products,
+      // which caused "2 letters works, more letters shows nothing" for brands.
+      brands = brandsAll;
     } else {
       products = (productsRaw || []).filter((p) => {
         const storeId = p.storeId && (p.storeId._id || p.storeId);

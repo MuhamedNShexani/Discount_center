@@ -4,12 +4,12 @@ const Ad = require("../models/Ad");
 // @route   GET /api/ads
 const getAds = async (req, res) => {
   try {
-    // Optional filter by page via query param: ?page=home|brands|stores|gifts|all
+    // Optional filter by page via query param: ?page=home|brands|stores|gifts|search|findjob|all
     const { page } = req.query;
     const filter = {};
     if (page) {
       const normalized = String(page).toLowerCase();
-      if (["all", "home", "brands", "stores", "gifts"].includes(normalized)) {
+      if (["all", "home", "brands", "stores", "gifts", "search", "findjob"].includes(normalized)) {
         // Match ads that are for this page or include "all" in pages
         filter.$or = [
           { pages: { $in: [normalized] } },

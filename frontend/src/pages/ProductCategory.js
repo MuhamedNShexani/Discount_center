@@ -504,16 +504,16 @@ const ProductCategory = () => {
                 selectedStoreTypeId === type._id
                   ? theme.palette.mode === "dark"
                     ? "#1E6FD9"
-                    : "#1E6FD9"
-                  : "primary.main",
-              color: "white",
+                    : "var(--brand-primary-blue)"
+                  : "theme.palette.text.secondary",
+              color: selectedStoreTypeId === type._id ? "white" : "inherit",
               "&:hover": {
                 backgroundColor:
                   selectedStoreTypeId === type._id
                     ? theme.palette.mode === "dark"
                       ? "#4A90E2"
-                      : "white"
-                    : "primary.main",
+                      : "var(--brand-primary-blue)"
+                    : "var(--brand-primary-blue)",
               },
             }}
           >
@@ -543,7 +543,14 @@ const ProductCategory = () => {
                   {type.icon || "🏪"}
                 </Typography>
               </Avatar>
-              <Typography variant="caption" sx={{ textAlign: "center" }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  textAlign: "center",
+                  fontWeight: 600,
+                  fontSize: "0.875rem",
+                }}
+              >
                 {t(type.name)}
               </Typography>
             </Box>
@@ -882,7 +889,7 @@ const ProductCategory = () => {
                                   <Typography
                                     variant="h6"
                                     sx={{
-                                      color: "var(--brand-light-orange)",
+                                      color: "black",
                                       fontWeight: 700,
                                       fontSize: { xs: "1.1rem", sm: "1.3rem" },
                                     }}
@@ -1363,7 +1370,7 @@ const ProductCategory = () => {
                                 <Typography
                                   variant="h6"
                                   sx={{
-                                    color: "var(--brand-light-orange)",
+                                    color: "black",
                                     fontWeight: 700,
                                     fontSize: { xs: "1.1rem", sm: "1.3rem" },
                                   }}
@@ -1499,7 +1506,10 @@ const ProductCategory = () => {
           {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
             <Grid item xs={6} sm={4} md={3} key={i}>
               <Card sx={{ borderRadius: 2 }}>
-                <Skeleton variant="rectangular" sx={{ height: { xs: 130, sm: 160 } }} />
+                <Skeleton
+                  variant="rectangular"
+                  sx={{ height: { xs: 130, sm: 160 } }}
+                />
                 <CardContent sx={{ p: 1.2 }}>
                   <Skeleton variant="text" width="90%" height={22} />
                   <Skeleton variant="text" width="70%" height={20} />
@@ -1630,7 +1640,7 @@ const ProductCategory = () => {
                     <Typography
                       variant="h6"
                       sx={{
-                        color: "var(--brand-light-orange)",
+                        color: "black",
                         fontWeight: 700,
                         fontSize: { xs: "1.1rem", sm: "1.3rem" },
                       }}

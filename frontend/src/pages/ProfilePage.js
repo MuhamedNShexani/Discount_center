@@ -34,6 +34,7 @@ import {
   Dashboard as DashboardIcon,
   People as PeopleIcon,
   Block as BlockIcon,
+  Palette as PaletteIcon,
   WhatsApp as WhatsAppIcon,
   Facebook as FacebookIcon,
   Instagram as InstagramIcon,
@@ -48,7 +49,27 @@ import { useAuth } from "../context/AuthContext";
 import { useUserTracking } from "../hooks/useUserTracking";
 import { useCityFilter } from "../context/CityFilterContext";
 import { useAppSettings } from "../context/AppSettingsContext";
+import { useActiveTheme } from "../context/ActiveThemeContext";
 import kurdishFlag from "../styles/kurdish_flag.jpg";
+
+const THEME_OPTIONS = [
+  { id: "default", label: "Default Theme" },
+  { id: "blackWhite", label: "Black & White Theme" },
+  { id: "ramadan", label: "Ramadan Theme" },
+  { id: "rain", label: "Rain Theme" },
+  { id: "neon1", label: "Neon Theme 1" },
+  { id: "neon2", label: "Neon Theme 2" },
+  { id: "flash-sale", label: "Flash Sale" },
+  { id: "luxury", label: "Luxury" },
+  { id: "eco-green", label: "Eco Green" },
+  { id: "ice", label: "Ice" },
+  { id: "festival", label: "Festival" },
+  { id: "tech", label: "Tech" },
+  { id: "minimal", label: "Minimal" },
+  { id: "sunset", label: "Sunset" },
+  { id: "middle-east", label: "Middle East" },
+  { id: "marketplace", label: "Marketplace" },
+];
 
 const ProfilePage = () => {
   const theme = useTheme();
@@ -58,6 +79,12 @@ const ProfilePage = () => {
   const { user: guestUser, updateGuestName } = useUserTracking();
   const { selectedCity, changeCity, cities } = useCityFilter();
   const { openWhatsApp, contactInfo } = useAppSettings();
+  const {
+    activeTheme,
+    userThemeOverride,
+    setUserThemeOverride,
+    clearUserThemeOverride,
+  } = useActiveTheme();
 
   const [guestNameDialogOpen, setGuestNameDialogOpen] = useState(false);
   const [guestNameInput, setGuestNameInput] = useState("");
@@ -193,6 +220,12 @@ const ProfilePage = () => {
                 </ListItemIcon>
                 <ListItemText primary={t("Data Entry")} />
               </ListItemButton>
+              <ListItemButton component={Link} to="/admin/customization">
+                <ListItemIcon>
+                  <PaletteIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary={t("Customization")} />
+              </ListItemButton>
               <ListItemButton component={Link} to="/admin/users">
                 <ListItemIcon>
                   <PeopleIcon fontSize="small" />
@@ -216,6 +249,49 @@ const ProfilePage = () => {
               color="text.secondary"
               sx={{ mb: 1, display: "block" }}
             >
+              {t("Theme")}
+            </Typography>
+            <FormControl fullWidth size="small">
+              {/* <InputLabel>{t("Theme")}</InputLabel> */}
+              <Select
+                label={t("Theme")}
+                value={userThemeOverride || "__global__"}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v === "__global__") {
+                    clearUserThemeOverride();
+                  } else {
+                    setUserThemeOverride(v);
+                  }
+                }}
+              >
+                <MenuItem value="__global__">
+                  {t("Use Global Theme")} ({activeTheme})
+                </MenuItem>
+                {THEME_OPTIONS.map((opt) => (
+                  <MenuItem key={opt.id} value={opt.id}>
+                    {opt.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ mt: 1, display: "block" }}
+            >
+              {t("This changes theme only for you on this device.")}
+            </Typography>
+          </Box>
+
+          <Divider />
+
+          <Box sx={{ px: 2, py: 2 }}>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ mb: 1, display: "block" }}
+            >
               {t("City")}
             </Typography>
             <FormControl fullWidth size="small">
@@ -228,7 +304,7 @@ const ProfilePage = () => {
               >
                 {cities.map((city) => (
                   <MenuItem key={city.value} value={city.value}>
-                    {city.flag} {city.label}
+                    {city.label}
                   </MenuItem>
                 ))}
               </Select>
@@ -249,14 +325,14 @@ const ProfilePage = () => {
                 variant={i18n.language === "en" ? "contained" : "outlined"}
                 onClick={() => i18n.changeLanguage("en")}
               >
-                EN
+                🇺🇸 {t("English")}
               </Button>
               <Button
                 size="small"
                 variant={i18n.language === "ar" ? "contained" : "outlined"}
                 onClick={() => i18n.changeLanguage("ar")}
               >
-                AR
+                🇸🇦 {t("Arabic")}
               </Button>
               <Button
                 size="small"
@@ -277,7 +353,7 @@ const ProfilePage = () => {
                       borderRadius: 2,
                     }}
                   />
-                  KU
+                  {t("Kurdish")}
                 </Box>
               </Button>
             </Box>

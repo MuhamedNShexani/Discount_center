@@ -137,6 +137,13 @@ export const adAPI = {
   delete: (id) => api.delete(`/ads/${id}`),
 };
 
+// Theme API calls
+export const themeAPI = {
+  get: () => api.get("/theme"),
+  update: ({ activeTheme, activeFontKey, navConfig } = {}) =>
+    api.put("/theme", { activeTheme, activeFontKey, navConfig }),
+};
+
 // Video/Reels API calls
 export const videoAPI = {
   getAll: () => api.get("/videos"),
@@ -156,6 +163,19 @@ export const videoAPI = {
     api.post("/videos/upload", formData, {
       headers: { "Content-Type": "multipart/form-data" },
       timeout: 300000,
+    }),
+};
+
+// Jobs API calls
+export const jobAPI = {
+  getAll: (params = {}) => api.get("/jobs", { params }),
+  create: (data) => api.post("/jobs", data),
+  update: (id, data) => api.put(`/jobs/${id}`, data),
+  delete: (id) => api.delete(`/jobs/${id}`),
+  uploadImage: (formData) =>
+    api.post("/jobs/upload-image", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+      timeout: 120000,
     }),
 };
 

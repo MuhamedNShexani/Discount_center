@@ -229,8 +229,9 @@ const FavouritesPage = () => {
           "&:hover": {
             borderColor: theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
             backgroundColor:
-              theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
-            color: theme.palette.mode === "dark" ? "#FFA94D" : "white",
+              theme.palette.mode === "dark"
+                ? "rgba(255, 122, 26, 0.1)"
+                : "rgba(30, 111, 217, 0.1)",
           },
         }}
       >
@@ -241,7 +242,10 @@ const FavouritesPage = () => {
         sx={{
           mb: 3,
           fontWeight: 700,
-          color: theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
+          color:
+            theme.palette.mode === "dark"
+              ? "var(--color-primary)"
+              : "var(--color-secondary)",
         }}
       >
         {t("Favourites")}
@@ -348,7 +352,7 @@ const FavouritesPage = () => {
                       image={getImageUrl(product.image)}
                       alt={product.name}
                       sx={{
-                        height: 160,
+                        height: 100,
                         objectFit: "contain",
                         backgroundColor: theme.palette.grey[100],
                       }}
@@ -356,7 +360,7 @@ const FavouritesPage = () => {
                   ) : (
                     <Box
                       sx={{
-                        height: 160,
+                        height: 100,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -448,7 +452,7 @@ const FavouritesPage = () => {
                       <Typography
                         variant="h6"
                         sx={{
-                          color: "var(--brand-light-orange)",
+                          color: "black",
                           fontWeight: 700,
                           fontSize: { xs: "1.1rem", sm: "1.3rem" },
                         }}

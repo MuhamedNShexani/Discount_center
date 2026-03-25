@@ -10,16 +10,16 @@ import {
   Home as HomeIcon,
   Category as CategoryIcon,
   Store as StoreIcon,
-  Business as BusinessIcon,
   CardGiftcard as CardGiftcardIcon,
   Favorite as FavoriteIcon,
-  AdminPanelSettings as AdminPanelSettingsIcon,
   VideoLibrary as VideoLibraryIcon,
+  Person as PersonIcon,
 } from "@mui/icons-material";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 import useIsMobileLayout from "../hooks/useIsMobileLayout";
+import { useActiveTheme } from "../context/ActiveThemeContext";
 
 const BottomNavigationBar = () => {
   const theme = useTheme();
@@ -27,6 +27,7 @@ const BottomNavigationBar = () => {
   const { user } = useAuth();
   const location = useLocation();
   const isMobile = useIsMobileLayout();
+  const { navConfig } = useActiveTheme();
   // No popup on mobile for stores
 
   // Function to determine the active navigation item
@@ -53,16 +54,50 @@ const BottomNavigationBar = () => {
   // Memoize the active value to prevent unnecessary re-renders
   const activeValue = useMemo(() => getActiveValue(), [location.pathname]);
 
-  const navItems = [
-    { name: t("Home"), path: "/", icon: <HomeIcon /> },
-    { name: t("Categories"), path: "/categories", icon: <CategoryIcon /> },
+  const template = navConfig?.template || "template1";
 
-    { name: t("Reels"), path: "/reels", icon: <VideoLibraryIcon /> },
-    // { name: t("Favourites"), path: "/favourites", icon: <FavoriteIcon /> },
-    { name: t("Stores"), path: "/stores", icon: <StoreIcon /> },
-    // { name: t("Brands"), path: "/brands", icon: <BusinessIcon /> },
-    { name: t("Gifts"), path: "/gifts", icon: <CardGiftcardIcon /> },
-  ];
+  const actionMap = {
+    home: { name: t("Home"), path: "/", icon: <HomeIcon /> },
+    categories: {
+      name: t("Categories"),
+      path: "/categories",
+      icon: <CategoryIcon />,
+    },
+    reels: { name: t("Reels"), path: "/reels", icon: <VideoLibraryIcon /> },
+    favourites: {
+      name: t("Favourites"),
+      path: "/favourites",
+      icon: <FavoriteIcon />,
+    },
+    stores: { name: t("Stores"), path: "/stores", icon: <StoreIcon /> },
+    gifts: { name: t("Gifts"), path: "/gifts", icon: <CardGiftcardIcon /> },
+    profile: { name: t("Account"), path: "/profile", icon: <PersonIcon /> },
+  };
+
+  const navItems =
+    template === "template2"
+      ? [
+          actionMap.home,
+          actionMap.categories,
+          actionMap.reels,
+          actionMap.favourites,
+          actionMap.profile,
+        ]
+      : template === "custom"
+        ? [
+            actionMap[navConfig?.bottomSlots?.bottomleft1] || null,
+            actionMap[navConfig?.bottomSlots?.bottomleft2] || null,
+            actionMap[navConfig?.bottomSlots?.center] || null,
+            actionMap[navConfig?.bottomSlots?.bottomright1] || null,
+            actionMap[navConfig?.bottomSlots?.bottomright2] || null,
+          ]
+        : [
+            actionMap.home,
+            actionMap.categories,
+            actionMap.reels,
+            actionMap.stores,
+            actionMap.gifts,
+          ];
 
   if (!isMobile) {
     return null; // Only show on mobile
@@ -84,7 +119,7 @@ const BottomNavigationBar = () => {
         sx={{
           borderRadius: "16px 16px 0 0",
           background:
-            "linear-gradient(120deg, #1E6FD9 0%, #4A90E2 60%, #FF7A1A 100%)",
+            "linear-gradient(120deg, var(--brand-primary-blue) 0%, var(--brand-secondary-blue) 60%, var(--brand-accent-orange) 100%)",
           backdropFilter: "blur(20px)",
           border: `1px solid ${
             theme.palette.mode === "dark"
@@ -108,14 +143,30 @@ const BottomNavigationBar = () => {
               color: "rgba(255,255,255,0.8) !important",
               "&.Mui-selected": {
                 color: "white !important",
-                backgroundColor: "rgba(255,122,26,0.25) !important",
+                backgroundColor: "rgba(255,255,255,0.16) !important",
               },
             },
           }}
         >
-          {navItems.map((item) => {
+          {navItems.map((item, idx) => {
+            if (!item) {
+              return (
+                <BottomNavigationAction
+                  key={`empty-${idx}`}
+                  label=""
+                  value={`empty-${idx}`}
+                  disabled
+                  sx={{
+                    opacity: 0,
+                    pointerEvents: "none",
+                    minWidth: "auto",
+                    padding: "6px 8px",
+                  }}
+                />
+              );
+            }
+
             const isActive = activeValue === item.path;
-            const isStoresItem = false;
 
             return (
               <BottomNavigationAction
@@ -131,7 +182,7 @@ const BottomNavigationBar = () => {
                     ? "white !important"
                     : "rgba(255,255,255,0.8) !important",
                   backgroundColor: isActive
-                    ? "rgba(255,122,26,0.25) !important"
+                    ? "rgba(255,255,255,0.16) !important"
                     : "transparent !important",
                   borderRadius: isActive ? 1 : 0,
                   minWidth: "auto",
@@ -139,14 +190,14 @@ const BottomNavigationBar = () => {
                   transition: "all 0.3s ease",
                   "&.Mui-selected": {
                     color: "white !important",
-                    backgroundColor: "rgba(255,122,26,0.25) !important",
+                    backgroundColor: "rgba(255,255,255,0.16) !important",
                   },
                   "&.MuiBottomNavigationAction-root": {
                     color: isActive
                       ? "white !important"
                       : "rgba(255,255,255,0.8) !important",
                     backgroundColor: isActive
-                      ? "rgba(255,122,26,0.25) !important"
+                      ? "rgba(255,255,255,0.16) !important"
                       : "transparent !important",
                   },
                   "& .MuiBottomNavigationAction-label": {
