@@ -44,12 +44,17 @@ export const NotificationProvider = ({ children }) => {
   const [pushEnabled, setPushEnabledState] = useState(getStoredPushEnabled);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [authRequired, setAuthRequired] = useState(false);
   const [pushSupported, setPushSupported] = useState(false);
   const [pushPermission, setPushPermission] = useState("default");
   const [pushSubscribing, setPushSubscribing] = useState(false);
   const [pushEnableError, setPushEnableError] = useState(null);
 
   const fetchNotifications = useCallback(async () => {
+    if (authRequired && !isAuthenticated) {
+      // Avoid spamming backend with 401 for guests without a server-side user.
+      return;
+    }
     setLoading(true);
     try {
       const deviceId = isAuthenticated ? null : getDeviceId();
@@ -59,11 +64,19 @@ export const NotificationProvider = ({ children }) => {
         setUnreadCount(res.data.unreadCount || 0);
       }
     } catch (err) {
+      const status = err?.response?.status;
+      if (status === 401) {
+        // Guest deviceId may not exist in DB yet; treat as no notifications.
+        setNotifications([]);
+        setUnreadCount(0);
+        if (!isAuthenticated) setAuthRequired(true);
+        return;
+      }
       console.error("Fetch notifications error:", err);
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [authRequired, isAuthenticated]);
 
   useEffect(() => {
     fetchNotifications();

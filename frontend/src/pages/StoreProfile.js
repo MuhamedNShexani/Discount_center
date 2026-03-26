@@ -62,7 +62,13 @@ import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import PersonAddDisabledIcon from "@mui/icons-material/PersonAddDisabled";
 import StarIcon from "@mui/icons-material/Star";
-import { storeAPI, productAPI, giftAPI, videoAPI, jobAPI } from "../services/api";
+import {
+  storeAPI,
+  productAPI,
+  giftAPI,
+  videoAPI,
+  jobAPI,
+} from "../services/api";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import StorefrontIcon from "@mui/icons-material/Storefront";
@@ -102,12 +108,13 @@ const StoreProfile = () => {
   const [selectedJob, setSelectedJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState(() => {
+  const [activeTabKey, setActiveTabKey] = useState(() => {
     const tabParam = searchParams.get("tab");
-    if (tabParam === "gifts") return 1;
-    if (tabParam === "reels") return 2;
-    if (tabParam === "jobs") return 3;
-    return 0;
+    if (tabParam === "all") return "all";
+    if (tabParam === "gifts") return "gifts";
+    if (tabParam === "reels") return "reels";
+    if (tabParam === "jobs") return "jobs";
+    return "all";
   });
   const [expandedTypes, setExpandedTypes] = useState({});
   const [displayCounts, setDisplayCounts] = useState({});
@@ -362,10 +369,7 @@ const StoreProfile = () => {
     setFiltersOpen(!filtersOpen);
   };
 
-  // Handle tab change
-  const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue);
-  };
+  // (tabs are computed later, after discountedProducts is initialized)
 
   // Toggle expanded state for product types
   const toggleExpanded = (type) => {
@@ -1091,12 +1095,67 @@ const StoreProfile = () => {
     </Paper>
   );
 
+  const discountedProducts = getDiscountedProducts();
+  const nonDiscountedProducts = getNonDiscountedProducts();
+
+  // Tabs (hide empty tabs)
+  const tabDefs = [
+    {
+      key: "discounts",
+      count: discountedProducts.length,
+      label: `${t("Discounts")} (${discountedProducts.length})`,
+      icon: <LocalOfferIcon />,
+    },
+    {
+      key: "all",
+      count: nonDiscountedProducts.length,
+      label: `${t("All Products")} (${nonDiscountedProducts.length})`,
+      icon: <StorefrontIcon />,
+    },
+    {
+      key: "gifts",
+      count: gifts.length,
+      label: `${t("Gifts")} (${gifts.length})`,
+      icon: <CardGiftcardIcon />,
+    },
+    {
+      key: "reels",
+      count: reels.length,
+      label: `${t("Reels")} (${reels.length})`,
+      icon: <VideoLibrary />,
+    },
+    {
+      key: "jobs",
+      count: jobs.length,
+      label: `${t("Jobs")} (${jobs.length})`,
+      icon: <WorkOutline />,
+    },
+  ];
+  const visibleTabs = tabDefs.filter((d) => Number(d.count) > 0);
+
+  useEffect(() => {
+    if (visibleTabs.length === 0) {
+      setActiveTabKey("");
+      return;
+    }
+    if (!visibleTabs.some((d) => d.key === activeTabKey)) {
+      setActiveTabKey(visibleTabs[0].key);
+    }
+  }, [activeTabKey, visibleTabs]);
+
+  const activeTabIndex = Math.max(
+    0,
+    visibleTabs.findIndex((d) => d.key === activeTabKey),
+  );
+
+  const handleTabChange = (event, newValue) => {
+    const next = visibleTabs[newValue]?.key || "";
+    setActiveTabKey(next);
+  };
+
   if (loading) return <Loader message={t("Loading...")} />;
   if (error) return <Loader message={error} />;
   if (!store) return <Alert severity="error">Store not found</Alert>;
-
-  const discountedProducts = getDiscountedProducts();
-  const nonDiscountedProducts = getNonDiscountedProducts();
   const storeContactInfo = store.contactInfo || {};
   const storeLocationInfo = store.locationInfo || {};
   const displayPhone = storeContactInfo.phone || store.phone || null;
@@ -1921,324 +1980,174 @@ const StoreProfile = () => {
         {/* Filter Section */}
         {/* {renderFilters()} */}
 
-        {/* Tabs */}
-        <Paper
-          elevation={0}
-          sx={{
-            mb: 4,
-            borderRadius: 2,
-            backgroundColor:
-              theme.palette.mode === "dark"
-                ? "rgba(255,255,255,0.05)"
-                : "rgba(255, 122, 26, 0.05)",
-            border: `1px solid ${
-              theme.palette.mode === "dark"
-                ? "rgba(255,255,255,0.1)"
-                : "rgba(255, 122, 26, 0.1)"
-            }`,
-          }}
-        >
-          <Tabs
-            value={activeTab}
-            onChange={handleTabChange}
-            variant="scrollable"
-            scrollButtons="auto"
+        {/* Tabs (hide empty tabs) */}
+        {visibleTabs.length > 0 && (
+          <Paper
+            elevation={0}
             sx={{
-              p: 1,
-              "& .MuiTab-root": {
-                borderRadius: 2,
-                mx: 0.5,
-                transition: "all 0.3s ease",
-                fontWeight: 600,
-                width: { xs: "125px", sm: "100px", md: "100%" },
-                fontSize: { xs: "0.875rem", sm: "1rem" },
-                "&.Mui-selected": {
-                  backgroundColor:
-                    theme.palette.mode === "dark"
-                      ? "#4A90E2"
-                      : "var(--brand-secondary-blue)",
-                  color: "white",
-                  boxShadow: "0 4px 12px rgba(255, 122, 26, 0.3)",
-                },
-              },
-              "& .MuiTabs-indicator": {
-                display: "none",
-              },
+              mb: 4,
+              borderRadius: 2,
+              backgroundColor:
+                theme.palette.mode === "dark"
+                  ? "rgba(255,255,255,0.05)"
+                  : "rgba(255, 122, 26, 0.05)",
+              border: `1px solid ${
+                theme.palette.mode === "dark"
+                  ? "rgba(255,255,255,0.1)"
+                  : "rgba(255, 122, 26, 0.1)"
+              }`,
             }}
           >
-            <Tab
-              label={`${t("Discounts")} (${discountedProducts.length})`}
-              icon={<LocalOfferIcon />}
-              iconPosition="start"
+            <Tabs
+              value={activeTabIndex}
+              onChange={handleTabChange}
+              variant="scrollable"
+              scrollButtons="auto"
               sx={{
-                textTransform: "none",
-                width: { xs: "100px", sm: "100px", md: "100%" },
+                p: 1,
+                "& .MuiTab-root": {
+                  borderRadius: 2,
+                  mx: 0.5,
+                  transition: "all 0.3s ease",
+                  fontWeight: 600,
+                  width: { xs: "100px", sm: "100px", md: "100%" },
+                  fontSize: { xs: "0.75rem", sm: "1rem" },
+                  "&.Mui-selected": {
+                    backgroundColor:
+                      theme.palette.mode === "dark"
+                        ? "#4A90E2"
+                        : "var(--brand-secondary-blue)",
+                    color: "white",
+                    boxShadow: "0 4px 12px rgba(255, 122, 26, 0.3)",
+                  },
+                },
+                "& .MuiTabs-indicator": {
+                  display: "none",
+                },
               }}
-            />
-            <Tab
-              label={`${t("Gifts")} (${gifts.length})`}
-              icon={<CardGiftcardIcon />}
-              iconPosition="start"
-              sx={{
-                textTransform: "none",
-                width: { xs: "100px", sm: "100px", md: "100%" },
-              }}
-            />
-            <Tab
-              label={`${t("Reels")} (${reels.length})`}
-              icon={<VideoLibrary />}
-              iconPosition="start"
-              sx={{
-                textTransform: "none",
-                width: { xs: "100px", sm: "100px", md: "100%" },
-              }}
-            />
-            <Tab
-              label={`${t("Jobs")} (${jobs.length})`}
-              icon={<WorkOutline />}
-              iconPosition="start"
-              sx={{
-                textTransform: "none",
-                width: { xs: "100px", sm: "100px", md: "100%" },
-              }}
-            />
-          </Tabs>
-        </Paper>
+            >
+              {visibleTabs.map((tab) => (
+                <Tab
+                  key={tab.key}
+                  label={tab.label}
+                  icon={tab.icon}
+                  iconPosition="start"
+                  sx={{
+                    textTransform: "none",
+                    width: { xs: "100px", sm: "100px", md: "100%" },
+                  }}
+                />
+              ))}
+            </Tabs>
+          </Paper>
+        )}
 
         {/* Tab Content */}
-        {activeTab === 0 && (
+
+        {activeTabKey === "discounts" && (
+          <Box>{renderProductsByType(discountedProducts)}</Box>
+        )}
+        {activeTabKey === "all" && (
+          <Box>{renderProductsByType(nonDiscountedProducts, false)}</Box>
+        )}
+        {activeTabKey === "gifts" && (
           <Box>
-            {discountedProducts.length === 0 ? (
-              <Box
-                sx={{
-                  textAlign: "center",
-                  py: 8,
-                  px: 4,
-                }}
-              >
-                <StorefrontIcon
-                  sx={{
-                    fontSize: 80,
-                    color:
-                      theme.palette.mode === "dark" ? "#4a5568" : "#cbd5e0",
-                    mb: 3,
-                  }}
-                />
-                <Typography
-                  variant="h4"
-                  gutterBottom
-                  sx={{
-                    color: theme.palette.text.secondary,
-                    fontWeight: 150,
-                    mb: 2,
-                  }}
-                >
-                  {t("No discount products available")}
-                </Typography>
-                <Typography
-                  variant="body1"
-                  sx={{
-                    color: theme.palette.mode === "dark" ? "white" : "black",
-                    maxWidth: 500,
-                    mx: "auto",
-                    lineHeight: 1.6,
-                  }}
-                >
-                  {t("This store hasn't added any discount products yet.")}
-                </Typography>
-              </Box>
-            ) : (
-              renderProductsByType(discountedProducts)
-            )}
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", md: "1fr" },
+                gap: 3,
+                width: "100%",
+              }}
+            >
+              {gifts.map((gift) => (
+                <Box key={gift._id} sx={{ display: "flex" }}>
+                  {renderGiftCard(gift)}
+                </Box>
+              ))}
+            </Box>
           </Box>
         )}
 
-        {activeTab === 1 && (
+        {activeTabKey === "reels" && (
           <Box>
-            {gifts.length === 0 ? (
-              <Box
-                sx={{
-                  textAlign: "center",
-                  py: 8,
-                  px: 4,
-                }}
-              >
-                <CardGiftcardIcon
-                  sx={{
-                    fontSize: 80,
-                    color:
-                      theme.palette.mode === "dark" ? "#4a5568" : "#cbd5e0",
-                    mb: 3,
-                  }}
-                />
-                <Typography
-                  variant="h4"
-                  gutterBottom
-                  sx={{
-                    color: theme.palette.text.secondary,
-                    fontWeight: 150,
-                    mb: 2,
-                  }}
-                >
-                  {t("No gifts available")}
-                </Typography>
-                <Typography
-                  variant="body1"
-                  sx={{
-                    color: theme.palette.mode === "dark" ? "white" : "black",
-                    maxWidth: 500,
-                    mx: "auto",
-                    lineHeight: 1.6,
-                  }}
-                >
-                  {t("This store hasn't added any gifts yet.")}
-                </Typography>
-              </Box>
-            ) : (
-              <Box
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: { xs: "1fr", md: "1fr" },
-                  gap: 3,
-                  width: "100%",
-                }}
-              >
-                {gifts.map((gift) => (
-                  <Box key={gift._id} sx={{ display: "flex" }}>
-                    {renderGiftCard(gift)}
-                  </Box>
-                ))}
-              </Box>
-            )}
-          </Box>
-        )}
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                gap: 2,
+                width: "100%",
+              }}
+            >
+              {reels.map((reel) => {
+                const src = reel?.videoUrl?.startsWith("http")
+                  ? reel.videoUrl
+                  : `${process.env.REACT_APP_BACKEND_URL || "http://localhost:5000"}${reel.videoUrl || ""}`;
 
-        {activeTab === 2 && (
-          <Box>
-            {reels.length === 0 ? (
-              <Box
-                sx={{
-                  textAlign: "center",
-                  py: 8,
-                  px: 4,
-                }}
-              >
-                <VideoLibrary
-                  sx={{
-                    fontSize: 80,
-                    color:
-                      theme.palette.mode === "dark" ? "#4a5568" : "#cbd5e0",
-                    mb: 3,
-                  }}
-                />
-                <Typography
-                  variant="h4"
-                  gutterBottom
-                  sx={{
-                    color: theme.palette.text.secondary,
-                    fontWeight: 150,
-                    mb: 2,
-                  }}
-                >
-                  {t("No reels available")}
-                </Typography>
-                <Typography
-                  variant="body1"
-                  sx={{
-                    color: theme.palette.mode === "dark" ? "white" : "black",
-                    maxWidth: 500,
-                    mx: "auto",
-                    lineHeight: 1.6,
-                  }}
-                >
-                  {t("This store hasn't added any reels yet.")}
-                </Typography>
-              </Box>
-            ) : (
-              <Box
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
-                  gap: 2,
-                  width: "100%",
-                }}
-              >
-                {reels.map((reel) => {
-                  const src = reel?.videoUrl?.startsWith("http")
-                    ? reel.videoUrl
-                    : `${process.env.REACT_APP_BACKEND_URL || "http://localhost:5000"}${reel.videoUrl || ""}`;
-
-                  return (
-                    <Card
-                      key={reel._id}
-                      sx={{
-                        borderRadius: 3,
-                        overflow: "hidden",
-                        cursor: "pointer",
-                        border: `1px solid ${theme.palette.divider}`,
-                        "&:hover": { boxShadow: 6 },
-                      }}
-                      onClick={() => navigate(`/reels/${reel._id}`)}
+                return (
+                  <Card
+                    key={reel._id}
+                    sx={{
+                      borderRadius: 3,
+                      overflow: "hidden",
+                      cursor: "pointer",
+                      border: `1px solid ${theme.palette.divider}`,
+                      "&:hover": { boxShadow: 6 },
+                    }}
+                    onClick={() => navigate(`/reels/${reel._id}`)}
+                  >
+                    <Box
+                      sx={{ position: "relative", backgroundColor: "black" }}
                     >
-                      <Box sx={{ position: "relative", backgroundColor: "black" }}>
-                        <video
-                          src={src}
-                          muted
-                          playsInline
-                          preload="metadata"
-                          style={{
-                            width: "100%",
-                            height: 220,
-                            objectFit: "cover",
-                            display: "block",
-                          }}
-                        />
-                        <Box
-                          sx={{
-                            position: "absolute",
-                            bottom: 0,
-                            left: 0,
-                            right: 0,
-                            p: 1,
-                            background:
-                              "linear-gradient(to top, rgba(0,0,0,0.65), rgba(0,0,0,0))",
-                          }}
+                      <video
+                        src={src}
+                        muted
+                        playsInline
+                        preload="metadata"
+                        style={{
+                          width: "100%",
+                          height: 220,
+                          objectFit: "cover",
+                          display: "block",
+                        }}
+                      />
+                      <Box
+                        sx={{
+                          position: "absolute",
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          p: 1,
+                          background:
+                            "linear-gradient(to top, rgba(0,0,0,0.65), rgba(0,0,0,0))",
+                        }}
+                      >
+                        <Typography
+                          sx={{ color: "white", fontWeight: 700 }}
+                          noWrap
                         >
-                          <Typography sx={{ color: "white", fontWeight: 700 }} noWrap>
-                            {reel?.title || t("Reel")}
-                          </Typography>
-                        </Box>
+                          {reel?.title || t("Reel")}
+                        </Typography>
                       </Box>
-                    </Card>
-                  );
-                })}
-              </Box>
-            )}
+                    </Box>
+                  </Card>
+                );
+              })}
+            </Box>
           </Box>
         )}
 
-        {activeTab === 3 && (
+        {activeTabKey === "jobs" && (
           <Box>
-            {jobs.length === 0 ? (
-              <Box sx={{ textAlign: "center", py: 6 }}>
-                <WorkOutline
-                  sx={{
-                    fontSize: 80,
-                    color: theme.palette.mode === "dark" ? "#4a5568" : "#cbd5e0",
-                    mb: 2,
-                  }}
+            <Box sx={{ display: "grid", gridTemplateColumns: "1fr", gap: 1.5 }}>
+              {jobs.map((job) => (
+                <JobCardRow
+                  key={job._id}
+                  job={job}
+                  onClick={() => setSelectedJob(job)}
                 />
-                <Typography variant="h5" sx={{ color: theme.palette.text.secondary, fontWeight: 700 }}>
-                  {t("No jobs available")}
-                </Typography>
-              </Box>
-            ) : (
-              <Box sx={{ display: "grid", gridTemplateColumns: "1fr", gap: 1.5 }}>
-                {jobs.map((job) => (
-                  <JobCardRow key={job._id} job={job} onClick={() => setSelectedJob(job)} />
-                ))}
-              </Box>
-            )}
+              ))}
+            </Box>
           </Box>
         )}
       </Box>
@@ -2285,12 +2194,16 @@ const StoreProfile = () => {
                     : t("Any")}
               </Typography>
               <Typography sx={{ fontWeight: 800 }}>
-                {selectedJob?.storeId?.name || selectedJob?.brandId?.name || "-"}
+                {selectedJob?.storeId?.name ||
+                  selectedJob?.brandId?.name ||
+                  "-"}
               </Typography>
             </Box>
           </Box>
           <Divider sx={{ mb: 2 }} />
-          <Typography sx={{ fontWeight: 900, mb: 0.75 }}>{t("Description")}</Typography>
+          <Typography sx={{ fontWeight: 900, mb: 0.75 }}>
+            {t("Description")}
+          </Typography>
           <Typography sx={{ whiteSpace: "pre-wrap" }} color="text.secondary">
             {selectedJob?.description || "-"}
           </Typography>

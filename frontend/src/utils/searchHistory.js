@@ -1,5 +1,5 @@
 const STORAGE_KEY_PREFIX = "searchHistory";
-const MAX_ITEMS = 20;
+const MAX_ITEMS = 10;
 
 const getStorageKey = (userId, deviceId) => {
   if (userId) return `${STORAGE_KEY_PREFIX}_user_${userId}`;

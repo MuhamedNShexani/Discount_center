@@ -84,8 +84,46 @@ router.post("/bulk-upload", upload.single("excelFile"), async (req, res) => {
     const worksheet = workbook.Sheets[sheetName];
     const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
+    // Validate header (show user exact expected format)
+    const header = Array.isArray(data[0]) ? data[0].map((c) => String(c || "").trim()) : [];
+    const expected = [
+      "Barcode",
+      "Name",
+      "Category ID",
+      "Category Type ID",
+      "Previous Price",
+      "New Price",
+      "Is Discount",
+      "Brand ID",
+      "Store ID",
+      "Description",
+      "Expire Date",
+      "Weight",
+      "Store Type (optional name)",
+    ];
+    const normalize = (s) => String(s || "").trim().toLowerCase().replace(/\s+/g, " ");
+    const expectedNorm = expected.map(normalize);
+    const headerNorm = header.map(normalize);
+    const looksLikeTemplate =
+      headerNorm.length >= 12 &&
+      expectedNorm.slice(0, 12).every((v, idx) => headerNorm[idx] === v);
+
+    if (!looksLikeTemplate) {
+      // Still allow "no header" files (if first row is data); otherwise explain mismatch
+      const maybeDataRow = Array.isArray(data[0]) ? data[0] : [];
+      const seemsNoHeader = maybeDataRow.length >= 9 && (typeof maybeDataRow[1] === "string" || typeof maybeDataRow[1] === "number");
+      if (!seemsNoHeader) {
+        return res.status(400).json({
+          message:
+            "Excel header format is not correct. Please download the template and do not rename/reorder columns.",
+          expectedHeader: expected,
+          receivedHeader: header,
+        });
+      }
+    }
+
     // Remove header row if it exists
-    const rows = data.slice(1);
+    const rows = looksLikeTemplate ? data.slice(1) : data;
 
     let createdCount = 0;
     const errors = [];
@@ -94,8 +132,11 @@ router.post("/bulk-upload", upload.single("excelFile"), async (req, res) => {
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
 
-      // Skip empty rows
-      if (!row || row.length === 0 || !row[0]) continue;
+      // Skip only fully-empty rows (do NOT require barcode in col A)
+      const hasAnyValue =
+        Array.isArray(row) &&
+        row.some((cell) => String(cell ?? "").trim().length > 0);
+      if (!hasAnyValue) continue;
 
       try {
         const productData = {
@@ -111,6 +152,7 @@ router.post("/bulk-upload", upload.single("excelFile"), async (req, res) => {
           description: row[9] || "",
           expireDate: row[10] ? new Date(row[10]).toISOString() : null,
           weight: row[11] || "",
+          status: "pending",
         };
 
         // Validate required fields
@@ -137,6 +179,24 @@ router.post("/bulk-upload", upload.single("excelFile"), async (req, res) => {
         if (!productData.storeTypeId && row[12]) {
           const st = await StoreType.findOne({ name: row[12] });
           if (st) productData.storeTypeId = st._id;
+        }
+
+        // If not provided in file, infer storeTypeId from selected store
+        if (!productData.storeTypeId && productData.storeId) {
+          const storeDoc = await Store.findById(productData.storeId).select(
+            "storeTypeId"
+          );
+          if (!storeDoc) {
+            errors.push(`Row ${i + 2}: Store not found for storeId ${productData.storeId}`);
+            continue;
+          }
+          if (!storeDoc.storeTypeId) {
+            errors.push(
+              `Row ${i + 2}: storeTypeId is missing on selected store (${productData.storeId})`
+            );
+            continue;
+          }
+          productData.storeTypeId = storeDoc.storeTypeId;
         }
 
         const newProduct = new Product(productData);

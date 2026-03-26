@@ -16,7 +16,7 @@ const getGifts = async (req, res) => {
         select: "name logo",
         match: { statusAll: { $ne: "off" } },
       })
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1, _id: -1 });
 
     const visibleGifts = gifts.filter((gift) => {
       const hasVisibleStore =
@@ -104,7 +104,7 @@ const getGiftsByStore = async (req, res) => {
         select: "name logo",
         match: { statusAll: { $ne: "off" } },
       })
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1, _id: -1 });
 
     const visibleGifts = gifts.filter(
       (gift) => Array.isArray(gift.storeId) && gift.storeId.length > 0
@@ -145,7 +145,7 @@ const getGiftsByBrand = async (req, res) => {
         select: "name logo",
         match: { statusAll: { $ne: "off" } },
       })
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1, _id: -1 });
 
     const visibleGifts = gifts.filter((gift) => !!gift.brandId);
 

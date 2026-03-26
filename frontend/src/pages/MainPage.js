@@ -55,6 +55,7 @@ import ClearAllIcon from "@mui/icons-material/ClearAll";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import PersonAddDisabledIcon from "@mui/icons-material/PersonAddDisabled";
+import MyLocationIcon from "@mui/icons-material/MyLocation";
 import Loader from "../components/Loader";
 import BrandShowcase from "../components/BrandShowcase";
 import StoreShowcase from "../components/StoreShowcase";
@@ -109,7 +110,7 @@ const MainPage = () => {
   const [storesPage, setStoresPage] = useState(1);
   const [storesPerPage] = useState(8);
   const [hasMoreStores, setHasMoreStores] = useState(true);
-  const [sortByNewestDiscount, setSortByNewestDiscount] = useState(true);
+  const [sortByNewestDiscount, setSortByNewestDiscount] = useState(false);
   const [sortByNearMe, setSortByNearMe] = useState(false);
   const [userCoords, setUserCoords] = useState(null);
   const [geoLoading, setGeoLoading] = useState(false);
@@ -430,7 +431,9 @@ const MainPage = () => {
         : Array.isArray(giftsResponse.data)
           ? giftsResponse.data
           : [];
-      const jobsData = Array.isArray(jobsResponse.data) ? jobsResponse.data : [];
+      const jobsData = Array.isArray(jobsResponse.data)
+        ? jobsResponse.data
+        : [];
 
       // Shuffle stores logic
       const vipStores = storesData
@@ -768,7 +771,7 @@ const MainPage = () => {
 
   const sortedFilteredStores = useMemo(() => {
     const baseStores = [...finalFilteredStores];
-    if (!sortByNewestDiscount && !(sortByNearMe && userCoords)) {
+    if (!sortByNewestDiscount && !sortByNearMe) {
       return baseStores;
     }
 
@@ -791,8 +794,8 @@ const MainPage = () => {
         byNewest = timeB - timeA;
       }
 
-      // If both are enabled, Near Me has higher priority.
-      if (byDistance !== 0) return byDistance;
+      // Mutually exclusive toggles, but keep stable ordering if data missing.
+      if (sortByNearMe) return byDistance;
       return byNewest;
     });
   }, [finalFilteredStores, sortByNewestDiscount, sortByNearMe, userCoords]);
@@ -1471,7 +1474,7 @@ const MainPage = () => {
                     fontSize: { xs: "0.75rem", md: "0.875rem" },
                     textTransform: "none",
                     minHeight: "32px",
-                    maxWidth: "min(105px, 100%)",
+                    maxWidth: "min(110px, 100%)",
                     whiteSpace: "normal",
                     textAlign: "center",
                     lineHeight: 1.4,
@@ -1754,11 +1757,20 @@ const MainPage = () => {
         sx={{
           display: "flex",
           flexDirection: "column",
-          gap: { xs: 2, sm: 2, md: 3 },
+          gap: { xs: 1, sm: 2, md: 3 },
         }}
       >
         {mainPageTab === 0 ? (
           <>
+            <Typography
+              variant="subtitle2"
+              color="black"
+              fontSize="0.9rem"
+              fontWeight={500}
+            >
+              {t("Sort by")} :
+            </Typography>
+
             <Box
               sx={{
                 display: "flex",
@@ -1770,7 +1782,16 @@ const MainPage = () => {
             >
               <Button
                 variant={sortByNewestDiscount ? "contained" : "outlined"}
-                onClick={() => setSortByNewestDiscount((prev) => !prev)}
+                startIcon={<AccessTimeIcon />}
+                onClick={() => {
+                  setSortByNewestDiscount((prev) => {
+                    const next = !prev;
+                    if (next) {
+                      setSortByNearMe(false);
+                    }
+                    return next;
+                  });
+                }}
                 sx={{
                   textTransform: "none",
                   borderRadius: 2,
@@ -1781,10 +1802,15 @@ const MainPage = () => {
               </Button>
               <Button
                 variant={sortByNearMe ? "contained" : "outlined"}
+                startIcon={<MyLocationIcon />}
                 onClick={() => {
                   setSortByNearMe((prev) => {
                     const next = !prev;
-                    if (next && !userCoords) requestUserLocation();
+                    if (next) {
+                      setSortByNewestDiscount(false);
+                      // Always request location when enabling so the browser can prompt if needed.
+                      requestUserLocation();
+                    }
                     return next;
                   });
                 }}
@@ -2016,7 +2042,7 @@ const MainPage = () => {
                           <Typography
                             variant="body1"
                             sx={{
-                              color: "black",
+                              color: "var(--color-secondary)",
                               // backgroundColor: "var(--brand-accent-orange)",
                               borderRadius: "8px",
                               borderBottom:
@@ -2707,7 +2733,7 @@ const MainPage = () => {
                                         <Typography
                                           variant="h6"
                                           sx={{
-                                            color: "black",
+                                            color: "var(--color-secondary)",
                                             // backgroundColor:
                                             //   "var(--brand-accent-orange)",
                                             borderBottom:
@@ -3339,7 +3365,7 @@ const MainPage = () => {
                                     <Typography
                                       variant="h6"
                                       sx={{
-                                        color: "black",
+                                        color: "var(--color-secondary)",
                                         // backgroundColor:
                                         //   "var(--brand-accent-orange)",
                                         borderBottom:
@@ -3705,7 +3731,7 @@ const MainPage = () => {
                           {t("Price")}:{" "}
                           <span
                             style={{
-                              color: "black",
+                              color: "var(--color-secondary)",
                               fontWeight: 900,
                             }}
                           >

@@ -1,0 +1,1665 @@
+/* Auto-generated. Do not edit manually. */
+
+@font-face {
+  font-family: "00_Sarchia";
+  src: url("/fonts/00_Sarchia.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "01_Sarchia_Abdulkareem";
+  src: url("/fonts/01_Sarchia_Abdulkareem.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "02_Sarchia_Abdullah";
+  src: url("/fonts/02_Sarchia_Abdullah.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "06_Sarchia_Ahmad";
+  src: url("/fonts/06_Sarchia_Ahmad.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "07_Sarchia_Akre";
+  src: url("/fonts/07_Sarchia_Akre.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "08_Sarchia_Al Arabiya TV";
+  src: url("/fonts/08_Sarchia_Al%20Arabiya%20TV.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "10_Sarchia_Ali";
+  src: url("/fonts/10_Sarchia_Ali.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "11_Sarchia_Amad";
+  src: url("/fonts/11_Sarchia_Amad.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "13_Sarchia_Anas";
+  src: url("/fonts/13_Sarchia_Anas.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "14_Sarchia_Asiacell";
+  src: url("/fonts/14_Sarchia_Asiacell.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "15_Sarchia_Astera";
+  src: url("/fonts/15_Sarchia_Astera.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "16_Sarchia_Bahasht";
+  src: url("/fonts/16_Sarchia_Bahasht.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "17_Sarchia_Bahasht";
+  src: url("/fonts/17_Sarchia_Bahasht.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "18_Sarchia_Bakwr";
+  src: url("/fonts/18_Sarchia_Bakwr.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "19_Sarchia_Bananok";
+  src: url("/fonts/19_Sarchia_Bananok.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "20_Sarchia_Banoka";
+  src: url("/fonts/20_Sarchia_Banoka.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "21_Sarchia_Banoka";
+  src: url("/fonts/21_Sarchia_Banoka.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "22_Sarchia_Baran";
+  src: url("/fonts/22_Sarchia_Baran.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "23_Sarchia_Barham";
+  src: url("/fonts/23_Sarchia_Barham.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "24_Sarchia_Bayan";
+  src: url("/fonts/24_Sarchia_Bayan.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "25_Sarchia_Bilal";
+  src: url("/fonts/25_Sarchia_Bilal.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "26_Sarchia_Blawkrawa";
+  src: url("/fonts/26_Sarchia_Blawkrawa.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "27_Sarchia_Blawkrawa";
+  src: url("/fonts/27_Sarchia_Blawkrawa.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "28_Sarchia_Bokan";
+  src: url("/fonts/28_Sarchia_Bokan.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "29_Sarchia_Chiaiy";
+  src: url("/fonts/29_Sarchia_Chiaiy.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "30_Sarchia_Dashti";
+  src: url("/fonts/30_Sarchia_Dashti.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "31_Sarchia_Dastnus";
+  src: url("/fonts/31_Sarchia_Dastnus.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "32_Sarchia_Dastnus";
+  src: url("/fonts/32_Sarchia_Dastnus.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "33_Sarchia_Dihok";
+  src: url("/fonts/33_Sarchia_Dihok.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "34_Sarchia_Erbil";
+  src: url("/fonts/34_Sarchia_Erbil.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "35_Sarchia_Farsi";
+  src: url("/fonts/35_Sarchia_Farsi.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "36_Sarchia_Fwad";
+  src: url("/fonts/36_Sarchia_Fwad.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "37_Sarchia_Gul";
+  src: url("/fonts/37_Sarchia_Gul.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "38_Sarchia_Halab";
+  src: url("/fonts/38_Sarchia_Halab.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "39_Sarchia_Halabja";
+  src: url("/fonts/39_Sarchia_Halabja.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "40_Sarchia_Hang";
+  src: url("/fonts/40_Sarchia_Hang.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "41_Sarchia_Harir";
+  src: url("/fonts/41_Sarchia_Harir.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "42_Sarchia_Hawin";
+  src: url("/fonts/42_Sarchia_Hawin.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "43_Sarchia_Hawre";
+  src: url("/fonts/43_Sarchia_Hawre.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "44_Sarchia_Honrawa";
+  src: url("/fonts/44_Sarchia_Honrawa.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "45_Sarchia_Iraq";
+  src: url("/fonts/45_Sarchia_Iraq.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "46_Sarchia_Islam";
+  src: url("/fonts/46_Sarchia_Islam.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "47_Sarchia_Jihad";
+  src: url("/fonts/47_Sarchia_Jihad.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "48_Sarchia_Jihan";
+  src: url("/fonts/48_Sarchia_Jihan.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "49_Sarchia_Kani";
+  src: url("/fonts/49_Sarchia_Kani.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "50_Sarchia_Kalakin";
+  src: url("/fonts/50_Sarchia_Kalakin.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "51_Sarchia_Khalifan";
+  src: url("/fonts/51_Sarchia_Khalifan.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "52_Sarchia_Khursheed";
+  src: url("/fonts/52_Sarchia_Khursheed.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "53_Sarchia_Khwendnga";
+  src: url("/fonts/53_Sarchia_Khwendnga.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "54_Sarchia_Kirkuk";
+  src: url("/fonts/54_Sarchia_Kirkuk.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "55_Sarchia_Kurdish";
+  src: url("/fonts/55_Sarchia_Kurdish.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "56_Sarchia_Kurdish_Bold";
+  src: url("/fonts/56_Sarchia_Kurdish_Bold.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "57_Sarchia_Kurdistan";
+  src: url("/fonts/57_Sarchia_Kurdistan.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "58_Sarchia_Lina";
+  src: url("/fonts/58_Sarchia_Lina.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "59_Sarchia_Lumia";
+  src: url("/fonts/59_Sarchia_Lumia.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "60_Sarchia_Makka";
+  src: url("/fonts/60_Sarchia_Makka.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "61_Sarchia_Mariwan";
+  src: url("/fonts/61_Sarchia_Mariwan.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "62_Sarchia_Mohsin";
+  src: url("/fonts/62_Sarchia_Mohsin.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "63_Sarchia_Muhammad";
+  src: url("/fonts/63_Sarchia_Muhammad.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "64_Sarchia_Muslim";
+  src: url("/fonts/64_Sarchia_Muslim.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "65_Sarchia_Nayab";
+  src: url("/fonts/65_Sarchia_Nayab.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "66_Sarchia_Niga";
+  src: url("/fonts/66_Sarchia_Niga.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "67_Sarchia_Nokia";
+  src: url("/fonts/67_Sarchia_Nokia.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "68_Sarchia_Nursi";
+  src: url("/fonts/68_Sarchia_Nursi.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "69_Sarchia_Omar";
+  src: url("/fonts/69_Sarchia_Omar.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "70_Sarchia_Partwk";
+  src: url("/fonts/70_Sarchia_Partwk.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "71_Sarchia_Pirmam";
+  src: url("/fonts/71_Sarchia_Pirmam.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "72_Sarchia_Qaisy";
+  src: url("/fonts/72_Sarchia_Qaisy.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "73_Sarchia_Qamishlo";
+  src: url("/fonts/73_Sarchia_Qamishlo.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "74_Sarchia_Qatar";
+  src: url("/fonts/74_Sarchia_Qatar.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "75_Sarchia_Qutabkhana";
+  src: url("/fonts/75_Sarchia_Qutabkhana.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "76_Sarchia_Rojhalat";
+  src: url("/fonts/76_Sarchia_Rojhalat.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "77_Sarchia_Rojnama";
+  src: url("/fonts/77_Sarchia_Rojnama.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "78_Sarchia_Rojnama";
+  src: url("/fonts/78_Sarchia_Rojnama.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "79_Sarchia_Rwandiz";
+  src: url("/fonts/79_Sarchia_Rwandiz.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "80_Sarchia_Salahaddin";
+  src: url("/fonts/80_Sarchia_Salahaddin.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "81_Sarchia_Shano";
+  src: url("/fonts/81_Sarchia_Shano.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "82_Sarchia_Smart";
+  src: url("/fonts/82_Sarchia_Smart.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "83_Sarchia_Smart";
+  src: url("/fonts/83_Sarchia_Smart.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "84_Sarchia_Smora";
+  src: url("/fonts/84_Sarchia_Smora.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "85_Sarchia_Soran";
+  src: url("/fonts/85_Sarchia_Soran.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "86_Sarchia_Speelk";
+  src: url("/fonts/86_Sarchia_Speelk.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "87_Sarchia_Speelk";
+  src: url("/fonts/87_Sarchia_Speelk.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "88_Sarchia_Sulaimani";
+  src: url("/fonts/88_Sarchia_Sulaimani.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "89_Sarchia_Surchi";
+  src: url("/fonts/89_Sarchia_Surchi.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "90_Sarchia_Tablo";
+  src: url("/fonts/90_Sarchia_Tablo.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "91_Sarchia_Taran";
+  src: url("/fonts/91_Sarchia_Taran.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "92_Sarchia_Taran";
+  src: url("/fonts/92_Sarchia_Taran.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "93_Sarchia_TV";
+  src: url("/fonts/93_Sarchia_TV.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "94_Sarchia_Yaran";
+  src: url("/fonts/94_Sarchia_Yaran.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "95_Sarchia_Zain";
+  src: url("/fonts/95_Sarchia_Zain.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "96_Sarchia_Zain";
+  src: url("/fonts/96_Sarchia_Zain.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "97_Sarchia_Zer";
+  src: url("/fonts/97_Sarchia_Zer.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "98_Sarchia_ZherNus";
+  src: url("/fonts/98_Sarchia_ZherNus.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "99_Sarchia_Zhinga";
+  src: url("/fonts/99_Sarchia_Zhinga.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "ANTSPN_";
+  src: url("/fonts/ANTSPN_.TTF") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arabic 11 BT Bold";
+  src: url("/fonts/Arabic%2011%20BT%20Bold.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arabic 11 BT";
+  src: url("/fonts/Arabic%2011%20BT.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "arabtype";
+  src: url("/fonts/arabtype.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "ARAMIS";
+  src: url("/fonts/ARAMIS.TTF") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "ARBURN_";
+  src: url("/fonts/ARBURN_.TTF") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "ARENAOTL";
+  src: url("/fonts/ARENAOTL.TTF") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "ARENCLI";
+  src: url("/fonts/ARENCLI.TTF") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "ARENSKI";
+  src: url("/fonts/ARENSKI.TTF") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_ Press 01";
+  src: url("/fonts/Arez_A_%20Press%2001.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_ Press 02";
+  src: url("/fonts/Arez_A_%20Press%2002.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_ Press 03";
+  src: url("/fonts/Arez_A_%20Press%2003.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_ Press 04";
+  src: url("/fonts/Arez_A_%20Press%2004.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_ Press 05";
+  src: url("/fonts/Arez_A_%20Press%2005.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_ Press 06";
+  src: url("/fonts/Arez_A_%20Press%2006.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_ Press 07";
+  src: url("/fonts/Arez_A_%20Press%2007.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_ Press 08";
+  src: url("/fonts/Arez_A_%20Press%2008.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_ Press 09";
+  src: url("/fonts/Arez_A_%20Press%2009.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_ Press 10";
+  src: url("/fonts/Arez_A_%20Press%2010.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_ Press 11";
+  src: url("/fonts/Arez_A_%20Press%2011.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_ Press 12";
+  src: url("/fonts/Arez_A_%20Press%2012.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_ Press 13";
+  src: url("/fonts/Arez_A_%20Press%2013.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_ Press 14";
+  src: url("/fonts/Arez_A_%20Press%2014.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_ Press 15";
+  src: url("/fonts/Arez_A_%20Press%2015.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_ Press 16";
+  src: url("/fonts/Arez_A_%20Press%2016.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_ Press 17";
+  src: url("/fonts/Arez_A_%20Press%2017.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_ Press 18";
+  src: url("/fonts/Arez_A_%20Press%2018.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Agiri";
+  src: url("/fonts/Arez_A_Agiri.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Amed";
+  src: url("/fonts/Arez_A_Amed.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Babegorgor";
+  src: url("/fonts/Arez_A_Babegorgor.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Bedlis";
+  src: url("/fonts/Arez_A_Bedlis.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Besam";
+  src: url("/fonts/Arez_A_Besam.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Carstun";
+  src: url("/fonts/Arez_A_Carstun.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Cudi";
+  src: url("/fonts/Arez_A_Cudi.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Daristan";
+  src: url("/fonts/Arez_A_Daristan.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Dersim";
+  src: url("/fonts/Arez_A_Dersim.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Dicle";
+  src: url("/fonts/Arez_A_Dicle.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Dilshad";
+  src: url("/fonts/Arez_A_Dilshad.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Diyar";
+  src: url("/fonts/Arez_A_Diyar.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Duhok";
+  src: url("/fonts/Arez_A_Duhok.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Eli";
+  src: url("/fonts/Arez_A_Eli.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Gare";
+  src: url("/fonts/Arez_A_Gare.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Hekar";
+  src: url("/fonts/Arez_A_Hekar.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Helebce";
+  src: url("/fonts/Arez_A_Helebce.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Hemrin";
+  src: url("/fonts/Arez_A_Hemrin.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Herem";
+  src: url("/fonts/Arez_A_Herem.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Hewler";
+  src: url("/fonts/Arez_A_Hewler.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Isam";
+  src: url("/fonts/Arez_A_Isam.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Japon";
+  src: url("/fonts/Arez_A_Japon.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Kaxez";
+  src: url("/fonts/Arez_A_Kaxez.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Kehi";
+  src: url("/fonts/Arez_A_Kehi.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Kerkuk";
+  src: url("/fonts/Arez_A_Kerkuk.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Kivi";
+  src: url("/fonts/Arez_A_Kivi.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Kurdistan";
+  src: url("/fonts/Arez_A_Kurdistan.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Mendeli";
+  src: url("/fonts/Arez_A_Mendeli.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Merdin";
+  src: url("/fonts/Arez_A_Merdin.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Meriwan";
+  src: url("/fonts/Arez_A_Meriwan.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Metin";
+  src: url("/fonts/Arez_A_Metin.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Mihabad";
+  src: url("/fonts/Arez_A_Mihabad.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Nubar";
+  src: url("/fonts/Arez_A_Nubar.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Perleman";
+  src: url("/fonts/Arez_A_Perleman.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Pesar";
+  src: url("/fonts/Arez_A_Pesar.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Qamishlo";
+  src: url("/fonts/Arez_A_Qamishlo.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Qarqarava";
+  src: url("/fonts/Arez_A_Qarqarava.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Rende";
+  src: url("/fonts/Arez_A_Rende.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Rewanduz";
+  src: url("/fonts/Arez_A_Rewanduz.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Rim";
+  src: url("/fonts/Arez_A_Rim.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Sablax";
+  src: url("/fonts/Arez_A_Sablax.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Salar";
+  src: url("/fonts/Arez_A_Salar.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Sefin";
+  src: url("/fonts/Arez_A_Sefin.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Shaneder";
+  src: url("/fonts/Arez_A_Shaneder.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Shirnex";
+  src: url("/fonts/Arez_A_Shirnex.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Sipan";
+  src: url("/fonts/Arez_A_Sipan.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Spirez";
+  src: url("/fonts/Arez_A_Spirez.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Traditional";
+  src: url("/fonts/Arez_A_Traditional.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Tv";
+  src: url("/fonts/Arez_A_Tv.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Urmiye";
+  src: url("/fonts/Arez_A_Urmiye.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Xaneqin";
+  src: url("/fonts/Arez_A_Xaneqin.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_A_Zanko";
+  src: url("/fonts/Arez_A_Zanko.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_K_ Press 01";
+  src: url("/fonts/Arez_K_%20Press%2001.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_K_ Press 02";
+  src: url("/fonts/Arez_K_%20Press%2002.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_K_ Press 03";
+  src: url("/fonts/Arez_K_%20Press%2003.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_K_ Press 04";
+  src: url("/fonts/Arez_K_%20Press%2004.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_K_ Press 05";
+  src: url("/fonts/Arez_K_%20Press%2005.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_K_ Press 06";
+  src: url("/fonts/Arez_K_%20Press%2006.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_K_ Press 07";
+  src: url("/fonts/Arez_K_%20Press%2007.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_K_ Press 08";
+  src: url("/fonts/Arez_K_%20Press%2008.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_K_ Press 09";
+  src: url("/fonts/Arez_K_%20Press%2009.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_K_ Press 10";
+  src: url("/fonts/Arez_K_%20Press%2010.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_K_ Press 11";
+  src: url("/fonts/Arez_K_%20Press%2011.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_K_ Press 12";
+  src: url("/fonts/Arez_K_%20Press%2012.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_K_ Press 13";
+  src: url("/fonts/Arez_K_%20Press%2013.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_K_ Press 14";
+  src: url("/fonts/Arez_K_%20Press%2014.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_K_ Press 15";
+  src: url("/fonts/Arez_K_%20Press%2015.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_K_ Press 16";
+  src: url("/fonts/Arez_K_%20Press%2016.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_K_ Press 17";
+  src: url("/fonts/Arez_K_%20Press%2017.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_K_ Press 18";
+  src: url("/fonts/Arez_K_%20Press%2018.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_K_Agiri";
+  src: url("/fonts/Arez_K_Agiri.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_K_Amed";
+  src: url("/fonts/Arez_K_Amed.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_K_Babegorgor";
+  src: url("/fonts/Arez_K_Babegorgor.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_K_Bedlis";
+  src: url("/fonts/Arez_K_Bedlis.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_K_Besam";
+  src: url("/fonts/Arez_K_Besam.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_K_Carstun";
+  src: url("/fonts/Arez_K_Carstun.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arez_K_Cudi";
+  src: url("/fonts/Arez_K_Cudi.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "NotoNaskhArabic-Medium";
+  src: url("/fonts/NotoNaskhArabic-Medium.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "NotoNaskhArabic-SemiBold";
+  src: url("/fonts/NotoNaskhArabic-SemiBold.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "NotoNaskhArabic-VariableFont_wght";
+  src: url("/fonts/NotoNaskhArabic-VariableFont_wght.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "NRT-Bd";
+  src: url("/fonts/NRT-Bd.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "NRT-Reg";
+  src: url("/fonts/NRT-Reg.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Rabar_0";
+  src: url("/fonts/Rabar_0.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Rabar_021";
+  src: url("/fonts/Rabar_021.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Rabar_022";
+  src: url("/fonts/Rabar_022.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Rabar";
+  src: url("/fonts/Rabar.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}

@@ -416,10 +416,14 @@ const FavouritesPage = () => {
                     variant="body2"
                     fontWeight={600}
                     sx={{
+                      fontSize: { xs: "0.92rem", sm: "0.95rem" },
+                      lineHeight: 1.25,
                       display: "-webkit-box",
+                      textAlign: "center",
                       WebkitLineClamp: 2,
                       WebkitBoxOrient: "vertical",
                       overflow: "hidden",
+                      minHeight: "2.5em", // reserve space for 2 lines
                     }}
                   >
                     {product.name}
@@ -428,38 +432,55 @@ const FavouritesPage = () => {
                     sx={{
                       display: "flex",
                       flexDirection: "column",
-                      alignItems: "center",
                       gap: 0.5,
                       mt: 0.5,
                     }}
                   >
-                    {product.previousPrice &&
-                      product.newPrice &&
-                      product.previousPrice > product.newPrice && (
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            textDecoration: "line-through",
-                            color: "red",
-                            fontSize: { xs: "0.8rem", sm: "0.9rem" },
-                            fontWeight: 500,
-                          }}
-                        >
-                          {formatPrice(product.previousPrice)}
-                        </Typography>
-                      )}
-                    {product.newPrice && (
-                      <Typography
-                        variant="h6"
-                        sx={{
-                          color: "black",
-                          fontWeight: 700,
-                          fontSize: { xs: "1.1rem", sm: "1.3rem" },
-                        }}
-                      >
-                        {formatPrice(product.newPrice)}
-                      </Typography>
-                    )}
+                    {(() => {
+                      const hasPreviousPrice =
+                        product.previousPrice &&
+                        product.newPrice &&
+                        product.previousPrice > product.newPrice;
+
+                      return (
+                        <>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              textDecoration: hasPreviousPrice
+                                ? "line-through"
+                                : "none",
+                              color: "red",
+                              fontSize: { xs: "0.8rem", sm: "0.9rem" },
+                              fontWeight: 500,
+                              minHeight: "1.2em",
+                              visibility: hasPreviousPrice
+                                ? "visible"
+                                : "hidden",
+                            }}
+                          >
+                            {hasPreviousPrice
+                              ? formatPrice(product.previousPrice)
+                              : "\u00A0"}
+                          </Typography>
+
+                          <Typography
+                            variant="h6"
+                            sx={{
+                              color: "black",
+                              textAlign: "center",
+                              fontWeight: 700,
+                              fontSize: { xs: "1.1rem", sm: "1.3rem" },
+                              minHeight: "1.4em",
+                            }}
+                          >
+                            {product.newPrice
+                              ? formatPrice(product.newPrice)
+                              : "\u00A0"}
+                          </Typography>
+                        </>
+                      );
+                    })()}
                   </Box>
                 </CardContent>
               </Card>

@@ -384,7 +384,7 @@ const SearchPage = () => {
             </IconButton>
           </Box>
           <List disablePadding>
-            {recentSearches.map((term) => (
+            {recentSearches.slice(0, 5).map((term) => (
               <ListItemButton
                 key={term}
                 onClick={() => handleRecentClick(term)}

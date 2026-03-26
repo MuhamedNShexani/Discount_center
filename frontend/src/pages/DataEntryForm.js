@@ -114,6 +114,7 @@ const DataEntryForm = () => {
   const [categories, setCategories] = useState([]);
   const [categoryTypes, setCategoryTypes] = useState([]);
   const [products, setProducts] = useState([]);
+  const [selectedProductIds, setSelectedProductIds] = useState([]);
   const [gifts, setGifts] = useState([]);
   const [ads, setAds] = useState([]);
   const [reels, setReels] = useState([]);
@@ -214,6 +215,7 @@ const DataEntryForm = () => {
     categoryTypeId: "",
     storeId: "",
     storeTypeId: "",
+    status: "published",
     expireDate: "",
   });
 
@@ -390,10 +392,13 @@ const DataEntryForm = () => {
   const fetchProducts = async (storeId) => {
     try {
       if (storeId) {
-        const response = await productAPI.getByStore(storeId);
+        const response = await productAPI.getAll({
+          store: storeId,
+          includeAll: true,
+        });
         setProducts(response.data);
       } else {
-        const response = await productAPI.getAll();
+        const response = await productAPI.getAll({ includeAll: true });
         setProducts(response.data);
       }
     } catch (err) {
@@ -556,6 +561,97 @@ const DataEntryForm = () => {
 
   const handleProductsPageChange = (event, newPage) => {
     setProductsPage(newPage);
+  };
+
+  const handleToggleProductSelection = (productId) => {
+    setSelectedProductIds((prev) =>
+      prev.includes(productId)
+        ? prev.filter((id) => id !== productId)
+        : [...prev, productId],
+    );
+  };
+
+  const handleSelectAllProductsOnPage = (checked, pageItems) => {
+    const pageIds = pageItems.map((p) => p._id);
+    if (checked) {
+      setSelectedProductIds((prev) => [...new Set([...prev, ...pageIds])]);
+      return;
+    }
+    setSelectedProductIds((prev) => prev.filter((id) => !pageIds.includes(id)));
+  };
+
+  const handleBulkPublishSelectedProducts = async () => {
+    if (!selectedProductIds.length) {
+      setMessage({
+        type: "warning",
+        text: t("Please select at least one product."),
+      });
+      return;
+    }
+    try {
+      setLoading(true);
+      setMessage({ type: "", text: "" });
+      await Promise.all(
+        selectedProductIds.map((id) =>
+          productAPI.update(id, { status: "published" }),
+        ),
+      );
+      setMessage({
+        type: "success",
+        text: t("Updated {{count}} products to published.", {
+          count: selectedProductIds.length,
+        }),
+      });
+      setSelectedProductIds([]);
+      await fetchProducts(selectedStoreFilter);
+    } catch (err) {
+      setMessage({
+        type: "error",
+        text:
+          err?.response?.data?.message ||
+          err?.message ||
+          t("Failed to update product status."),
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBulkPendingSelectedProducts = async () => {
+    if (!selectedProductIds.length) {
+      setMessage({
+        type: "warning",
+        text: t("Please select at least one product."),
+      });
+      return;
+    }
+    try {
+      setLoading(true);
+      setMessage({ type: "", text: "" });
+      await Promise.all(
+        selectedProductIds.map((id) =>
+          productAPI.update(id, { status: "pending" }),
+        ),
+      );
+      setMessage({
+        type: "success",
+        text: t("Updated {{count}} products to pending.", {
+          count: selectedProductIds.length,
+        }),
+      });
+      setSelectedProductIds([]);
+      await fetchProducts(selectedStoreFilter);
+    } catch (err) {
+      setMessage({
+        type: "error",
+        text:
+          err?.response?.data?.message ||
+          err?.message ||
+          t("Failed to update product status."),
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGiftsPageChange = (event, newPage) => {
@@ -846,7 +942,25 @@ const DataEntryForm = () => {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || "Bulk upload failed");
+        const details = [];
+        if (Array.isArray(errorData?.errors) && errorData.errors.length > 0) {
+          details.push(errorData.errors.slice(0, 5).join("\n"));
+        }
+        if (
+          Array.isArray(errorData?.receivedHeader) &&
+          errorData.receivedHeader.length > 0
+        ) {
+          details.push(
+            `Received header: ${errorData.receivedHeader.join(" | ")}`,
+          );
+        }
+        const fullMessage = [
+          errorData.message || "Bulk upload failed",
+          ...details,
+        ]
+          .filter(Boolean)
+          .join("\n");
+        throw new Error(fullMessage);
       }
 
       const data = await response.json();
@@ -860,9 +974,9 @@ const DataEntryForm = () => {
       if (data.errors && data.errors.length > 0) {
         setMessage({
           type: "warning",
-          text: t("Upload complete with {{count}} errors", {
+          text: `${t("Upload complete with {{count}} errors", {
             count: data.errors.length,
-          }),
+          })}\n${data.errors.slice(0, 5).join("\n")}`,
         });
       }
 
@@ -871,7 +985,9 @@ const DataEntryForm = () => {
     } catch (err) {
       setMessage({
         type: "error",
-        text: "Failed to upload products. Please check your Excel file format.",
+        text:
+          err?.message ||
+          "Failed to upload products. Please check your Excel file format.",
       });
       console.error("Error uploading products:", err);
     } finally {
@@ -1001,7 +1117,9 @@ const DataEntryForm = () => {
 
       setMessage({
         type: "success",
-        text: editingJobId ? t("Job updated successfully!") : t("Job created successfully!"),
+        text: editingJobId
+          ? t("Job updated successfully!")
+          : t("Job created successfully!"),
       });
       setJobForm(defaultJobForm);
       setEditingJobId("");
@@ -1011,7 +1129,9 @@ const DataEntryForm = () => {
     } catch (err) {
       setMessage({
         type: "error",
-        text: err?.response?.data?.message || t("Failed to save job. Please try again."),
+        text:
+          err?.response?.data?.message ||
+          t("Failed to save job. Please try again."),
       });
       console.error("Error saving job:", err);
     } finally {
@@ -1161,7 +1281,9 @@ const DataEntryForm = () => {
     } catch (err) {
       setMessage({
         type: "error",
-        text: "Failed to upload brands. Please check your Excel file format.",
+        text:
+          err?.message ||
+          "Failed to upload brands. Please check your Excel file format.",
       });
       console.error("Error uploading brands:", err);
     } finally {
@@ -1219,13 +1341,22 @@ const DataEntryForm = () => {
     } catch (err) {
       setMessage({
         type: "error",
-        text: "Failed to upload stores. Please check your Excel file format.",
+        text:
+          err?.message ||
+          "Failed to upload stores. Please check your Excel file format.",
       });
       console.error("Error uploading stores:", err);
     } finally {
       setStoreBulkUploadLoading(false);
     }
   };
+
+  useEffect(() => {
+    // Keep selection valid after refresh/filtering
+    setSelectedProductIds((prev) =>
+      prev.filter((id) => products.some((p) => p._id === id)),
+    );
+  }, [products]);
 
   // Export brands to Excel
   const exportBrandsToExcel = () => {
@@ -1463,6 +1594,7 @@ const DataEntryForm = () => {
         categoryTypeId: productForm.categoryTypeId,
         storeId: productForm.storeId,
         storeTypeId: productForm.storeTypeId,
+        status: productForm.status || "published",
       };
 
       await productAPI.create(productData);
@@ -1481,6 +1613,7 @@ const DataEntryForm = () => {
         categoryId: "",
         categoryTypeId: "",
         storeTypeId: "",
+        status: "published",
         expireDate: "",
       });
       setSelectedProductImage(null);
@@ -1703,6 +1836,7 @@ const DataEntryForm = () => {
           : [""],
       });
     } else if (type === "product") {
+      const productCategoryId = data.categoryId?._id || data.categoryId || "";
       setEditForm({
         name: data.name,
         image: data.image,
@@ -1714,12 +1848,15 @@ const DataEntryForm = () => {
         weight: data.weight || "",
         storeId: data.storeId?._id || data.storeId,
         brandId: data.brandId?._id || data.brandId,
-        categoryId: data.categoryId?._id || data.categoryId,
+        categoryId: productCategoryId,
         categoryTypeId: data.categoryTypeId,
+        storeTypeId: data.storeTypeId?._id || data.storeTypeId || "",
+        status: data.status || "published",
         expireDate: data.expireDate
           ? new Date(data.expireDate).toISOString().split("T")[0]
           : "",
       });
+      fetchCategoryTypes(productCategoryId);
     } else if (type === "gift") {
       setEditForm({
         image: data.image,
@@ -2259,11 +2396,22 @@ const DataEntryForm = () => {
     }
   };
 
+  const currentPageProducts = products.slice(
+    productsPage * rowsPerPage,
+    productsPage * rowsPerPage + rowsPerPage,
+  );
+  const allPageSelected =
+    currentPageProducts.length > 0 &&
+    currentPageProducts.every((p) => selectedProductIds.includes(p._id));
+  const somePageSelected =
+    currentPageProducts.some((p) => selectedProductIds.includes(p._id)) &&
+    !allPageSelected;
+
   return (
     <Box sx={{ py: 10, px: { xs: 0.5, sm: 1.5, md: 3 } }}>
       <Snackbar
         open={!!message.text}
-        autoHideDuration={4000}
+        autoHideDuration={9000}
         onClose={() => setMessage({ type: "", text: "" })}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
@@ -2271,7 +2419,7 @@ const DataEntryForm = () => {
           onClose={() => setMessage({ type: "", text: "" })}
           severity={message.type || "info"}
           variant="filled"
-          sx={{ width: "100%" }}
+          sx={{ width: "100%", whiteSpace: "pre-line" }}
         >
           {message.text}
         </Alert>
@@ -3576,13 +3724,7 @@ const DataEntryForm = () => {
                   >
                     {t("New Product")}
                   </Button>
-                  <Button
-                    variant="outlined"
-                    startIcon={<VideoLibraryIcon />}
-                    onClick={openCreateVideoDialog}
-                  >
-                    {t("New Reel")}
-                  </Button>
+
                   <Button
                     variant="outlined"
                     sx={{
@@ -3615,6 +3757,24 @@ const DataEntryForm = () => {
                       ? t("Deleting...")
                       : t("Delete Expired Discount Products")}
                   </Button>
+                  <Button
+                    variant="outlined"
+                    color="success"
+                    disabled={!selectedProductIds.length || loading}
+                    onClick={handleBulkPublishSelectedProducts}
+                  >
+                    {t("Change Status to Published")} (
+                    {selectedProductIds.length})
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    color="warning"
+                    disabled={!selectedProductIds.length || loading}
+                    onClick={handleBulkPendingSelectedProducts}
+                  >
+                    {t("Change Status to Pending")} ({selectedProductIds.length}
+                    )
+                  </Button>
                 </Box>
                 <FormControl sx={{ minWidth: 240, justifyContent: "flex-end" }}>
                   <InputLabel>{t("Search by Store")}</InputLabel>
@@ -3639,6 +3799,28 @@ const DataEntryForm = () => {
                 <Table>
                   <TableHead>
                     <TableRow>
+                      <TableCell
+                        padding="checkbox"
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        <Checkbox
+                          checked={allPageSelected}
+                          indeterminate={somePageSelected}
+                          onChange={(e) =>
+                            handleSelectAllProductsOnPage(
+                              e.target.checked,
+                              currentPageProducts,
+                            )
+                          }
+                          inputProps={{
+                            "aria-label": "select all products on page",
+                          }}
+                        />
+                      </TableCell>
                       <TableCell
                         sx={{
                           fontWeight: "bold",
@@ -3746,6 +3928,15 @@ const DataEntryForm = () => {
                           color: "primary.contrastText",
                         }}
                       >
+                        {t("Status")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
                         {t("Expire Date")}
                       </TableCell>
                       <TableCell
@@ -3760,107 +3951,127 @@ const DataEntryForm = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {products
-                      .slice(
-                        productsPage * rowsPerPage,
-                        productsPage * rowsPerPage + rowsPerPage,
-                      )
-                      .map((product, idx) => (
-                        <TableRow key={product._id}>
-                          <TableCell>
-                            {productsPage * rowsPerPage + idx + 1}
-                          </TableCell>
-                          <TableCell>{product.name}</TableCell>
-                          <TableCell>
-                            {product.image && (
-                              <img
-                                src={
-                                  product.image.startsWith("http")
-                                    ? product.image
-                                    : `${API_URL}${product.image}`
-                                }
-                                alt={product.name}
-                                style={{
-                                  width: 48,
-                                  height: 48,
-                                  objectFit: "cover",
-                                  borderRadius: 4,
-                                }}
-                              />
-                            )}
-                          </TableCell>
-
-                          <TableCell>
-                            {product.categoryId &&
-                            typeof product.categoryId === "object"
-                              ? product.categoryId.name
-                              : "N/A"}
-                          </TableCell>
-                          <TableCell>
-                            {getCategoryTypeName(
-                              product.categoryTypeId,
-                              product.categoryId?._id || product.categoryId,
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {product.previousPrice
-                              ? `${t("ID")} ${product.previousPrice.toFixed(2)}`
-                              : ""}
-                          </TableCell>
-                          <TableCell>
-                            {product.newPrice
-                              ? `${t("ID")} ${product.newPrice.toFixed(2)}`
-                              : ""}
-                          </TableCell>
-                          <TableCell>{product.weight || ""}</TableCell>
-                          <TableCell>{product.barcode || ""}</TableCell>
-                          <TableCell>
-                            {product.isDiscount ? (
-                              <Chip
-                                label={t("Yes")}
-                                color="success"
-                                size="small"
-                                variant="outlined"
-                              />
-                            ) : (
-                              <Chip
-                                label={t("No")}
-                                color="default"
-                                size="small"
-                                variant="outlined"
-                              />
-                            )}
-                          </TableCell>
-                          <TableCell>{product.storeId?.name || ""}</TableCell>
-                          <TableCell>
-                            {product.expireDate
-                              ? new Date(
-                                  product.expireDate,
-                                ).toLocaleDateString()
-                              : ""}
-                          </TableCell>
-                          <TableCell>
-                            <IconButton
-                              color="primary"
-                              onClick={() => handleEditOpen("product", product)}
-                            >
-                              <EditIcon />
-                            </IconButton>
-                            <IconButton
-                              color="error"
-                              onClick={() =>
-                                setDeleteDialog({
-                                  open: true,
-                                  type: "product",
-                                  data: product,
-                                })
+                    {currentPageProducts.map((product, idx) => (
+                      <TableRow key={product._id}>
+                        <TableCell padding="checkbox">
+                          <Checkbox
+                            checked={selectedProductIds.includes(product._id)}
+                            onChange={() =>
+                              handleToggleProductSelection(product._id)
+                            }
+                            inputProps={{
+                              "aria-label": `select ${product.name}`,
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          {productsPage * rowsPerPage + idx + 1}
+                        </TableCell>
+                        <TableCell>{product.name}</TableCell>
+                        <TableCell>
+                          {product.image && (
+                            <img
+                              src={
+                                product.image.startsWith("http")
+                                  ? product.image
+                                  : `${API_URL}${product.image}`
                               }
-                            >
-                              <DeleteIcon />
-                            </IconButton>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                              alt={product.name}
+                              style={{
+                                width: 48,
+                                height: 48,
+                                objectFit: "cover",
+                                borderRadius: 4,
+                              }}
+                            />
+                          )}
+                        </TableCell>
+
+                        <TableCell>
+                          {product.categoryId &&
+                          typeof product.categoryId === "object"
+                            ? product.categoryId.name
+                            : "N/A"}
+                        </TableCell>
+                        <TableCell>
+                          {getCategoryTypeName(
+                            product.categoryTypeId,
+                            product.categoryId?._id || product.categoryId,
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {product.previousPrice
+                            ? `${t("ID")} ${product.previousPrice.toFixed(2)}`
+                            : ""}
+                        </TableCell>
+                        <TableCell>
+                          {product.newPrice
+                            ? `${t("ID")} ${product.newPrice.toFixed(2)}`
+                            : ""}
+                        </TableCell>
+                        <TableCell>{product.weight || ""}</TableCell>
+                        <TableCell>{product.barcode || ""}</TableCell>
+                        <TableCell>
+                          {product.isDiscount ? (
+                            <Chip
+                              label={t("Yes")}
+                              color="success"
+                              size="small"
+                              variant="outlined"
+                            />
+                          ) : (
+                            <Chip
+                              label={t("No")}
+                              color="default"
+                              size="small"
+                              variant="outlined"
+                            />
+                          )}
+                        </TableCell>
+                        <TableCell>{product.storeId?.name || ""}</TableCell>
+                        <TableCell>
+                          <Chip
+                            label={
+                              product.status === "pending"
+                                ? t("Pending")
+                                : t("Published")
+                            }
+                            color={
+                              product.status === "pending"
+                                ? "warning"
+                                : "success"
+                            }
+                            size="small"
+                            variant="outlined"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          {product.expireDate
+                            ? new Date(product.expireDate).toLocaleDateString()
+                            : ""}
+                        </TableCell>
+                        <TableCell>
+                          <IconButton
+                            color="primary"
+                            onClick={() => handleEditOpen("product", product)}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                          <IconButton
+                            color="error"
+                            onClick={() =>
+                              setDeleteDialog({
+                                open: true,
+                                type: "product",
+                                data: product,
+                              })
+                            }
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
               </TableContainer>
@@ -4656,14 +4867,19 @@ const DataEntryForm = () => {
                   </TableHead>
                   <TableBody>
                     {(jobs || [])
-                      .slice(jobsPage * rowsPerPage, jobsPage * rowsPerPage + rowsPerPage)
+                      .slice(
+                        jobsPage * rowsPerPage,
+                        jobsPage * rowsPerPage + rowsPerPage,
+                      )
                       .map((job, index) => {
                         const ownerName =
                           job?.storeId?.name || job?.brandId?.name || "";
                         const gender = String(job?.gender || "any");
                         return (
                           <TableRow key={job._id}>
-                            <TableCell>{jobsPage * rowsPerPage + index + 1}</TableCell>
+                            <TableCell>
+                              {jobsPage * rowsPerPage + index + 1}
+                            </TableCell>
                             <TableCell>{job.title}</TableCell>
                             <TableCell>{ownerName || "-"}</TableCell>
                             <TableCell>{gender}</TableCell>
@@ -4681,11 +4897,15 @@ const DataEntryForm = () => {
                                     title: job.title || "",
                                     description: job.description || "",
                                     gender: job.gender || "any",
-                                    storeId: job?.storeId?._id || job?.storeId || "",
-                                    brandId: job?.brandId?._id || job?.brandId || "",
+                                    storeId:
+                                      job?.storeId?._id || job?.storeId || "",
+                                    brandId:
+                                      job?.brandId?._id || job?.brandId || "",
                                     image: job.image || "",
                                     expireDate: job.expireDate
-                                      ? new Date(job.expireDate).toISOString().slice(0, 10)
+                                      ? new Date(job.expireDate)
+                                          .toISOString()
+                                          .slice(0, 10)
                                       : "",
                                     active: job.active !== false,
                                   });
@@ -4890,15 +5110,15 @@ const DataEntryForm = () => {
                       ? editingJobId
                         ? t("Edit Job")
                         : t("Add Job")
-                    : addDialog.type === "video"
-                      ? editingVideoId
-                        ? t("Edit Reel")
-                        : t("Add Reel")
-                      : addDialog.type === "storeType"
-                        ? t("Add Store Type")
-                        : addDialog.type === "brandType"
-                          ? t("Add Brand Type")
-                          : t("Add Product")}
+                      : addDialog.type === "video"
+                        ? editingVideoId
+                          ? t("Edit Reel")
+                          : t("Add Reel")
+                        : addDialog.type === "storeType"
+                          ? t("Add Store Type")
+                          : addDialog.type === "brandType"
+                            ? t("Add Brand Type")
+                            : t("Add Product")}
         </DialogTitle>
         <DialogContent dividers>
           {message.text && (
@@ -5738,6 +5958,21 @@ const DataEntryForm = () => {
                   </FormControl>
                 </Grid>
                 <Grid xs={12} sm={6}>
+                  <FormControl fullWidth required>
+                    <InputLabel shrink>{t("Status")}</InputLabel>
+                    <Select
+                      name="status"
+                      value={productForm.status || "published"}
+                      onChange={handleProductFormChange}
+                      label={t("Status")}
+                      displayEmpty
+                    >
+                      <MenuItem value="published">{t("Published")}</MenuItem>
+                      <MenuItem value="pending">{t("Pending")}</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid xs={12} sm={6}>
                   <FormControl fullWidth>
                     <InputLabel shrink>{t("Brand")}</InputLabel>
                     <Select
@@ -6320,11 +6555,20 @@ const DataEntryForm = () => {
                     style={{ display: "none" }}
                     id="dialog-job-image-file"
                     type="file"
-                    onChange={(e) => setSelectedJobImage(e.target.files?.[0] || null)}
+                    onChange={(e) =>
+                      setSelectedJobImage(e.target.files?.[0] || null)
+                    }
                   />
                   <label htmlFor="dialog-job-image-file">
-                    <Button variant="outlined" component="span" fullWidth startIcon={<AddIcon />}>
-                      {selectedJobImage ? selectedJobImage.name : t("Upload Image")}
+                    <Button
+                      variant="outlined"
+                      component="span"
+                      fullWidth
+                      startIcon={<AddIcon />}
+                    >
+                      {selectedJobImage
+                        ? selectedJobImage.name
+                        : t("Upload Image")}
                     </Button>
                   </label>
                 </Grid>
@@ -6334,7 +6578,9 @@ const DataEntryForm = () => {
                     fullWidth
                     label={t("Title")}
                     value={jobForm.title}
-                    onChange={(e) => setJobForm((p) => ({ ...p, title: e.target.value }))}
+                    onChange={(e) =>
+                      setJobForm((p) => ({ ...p, title: e.target.value }))
+                    }
                     required
                   />
                 </Grid>
@@ -6344,7 +6590,9 @@ const DataEntryForm = () => {
                     <Select
                       value={jobForm.gender || "any"}
                       label={t("Gender")}
-                      onChange={(e) => setJobForm((p) => ({ ...p, gender: e.target.value }))}
+                      onChange={(e) =>
+                        setJobForm((p) => ({ ...p, gender: e.target.value }))
+                      }
                     >
                       <MenuItem value="any">{t("Any")}</MenuItem>
                       <MenuItem value="male">{t("Male")}</MenuItem>
@@ -6362,7 +6610,11 @@ const DataEntryForm = () => {
                       displayEmpty
                       disabled={Boolean(jobForm.brandId)}
                       onChange={(e) =>
-                        setJobForm((p) => ({ ...p, storeId: e.target.value, brandId: "" }))
+                        setJobForm((p) => ({
+                          ...p,
+                          storeId: e.target.value,
+                          brandId: "",
+                        }))
                       }
                     >
                       <MenuItem value="">
@@ -6386,7 +6638,11 @@ const DataEntryForm = () => {
                       displayEmpty
                       disabled={Boolean(jobForm.storeId)}
                       onChange={(e) =>
-                        setJobForm((p) => ({ ...p, brandId: e.target.value, storeId: "" }))
+                        setJobForm((p) => ({
+                          ...p,
+                          brandId: e.target.value,
+                          storeId: "",
+                        }))
                       }
                     >
                       <MenuItem value="">
@@ -6408,7 +6664,9 @@ const DataEntryForm = () => {
                     label={t("Expire Date")}
                     InputLabelProps={{ shrink: true }}
                     value={jobForm.expireDate || ""}
-                    onChange={(e) => setJobForm((p) => ({ ...p, expireDate: e.target.value }))}
+                    onChange={(e) =>
+                      setJobForm((p) => ({ ...p, expireDate: e.target.value }))
+                    }
                   />
                 </Grid>
 
@@ -6417,7 +6675,9 @@ const DataEntryForm = () => {
                     fullWidth
                     label={t("Description")}
                     value={jobForm.description}
-                    onChange={(e) => setJobForm((p) => ({ ...p, description: e.target.value }))}
+                    onChange={(e) =>
+                      setJobForm((p) => ({ ...p, description: e.target.value }))
+                    }
                     required
                     multiline
                     minRows={3}
@@ -6429,10 +6689,16 @@ const DataEntryForm = () => {
                     type="submit"
                     variant="contained"
                     disabled={loading || uploadLoading}
-                    startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
+                    startIcon={
+                      loading ? <CircularProgress size={20} /> : <SaveIcon />
+                    }
                     fullWidth
                   >
-                    {loading ? t("Saving...") : editingJobId ? t("Save Changes") : t("Create Job")}
+                    {loading
+                      ? t("Saving...")
+                      : editingJobId
+                        ? t("Save Changes")
+                        : t("Create Job")}
                   </Button>
                 </Grid>
               </Grid>
@@ -6862,11 +7128,13 @@ const DataEntryForm = () => {
                   <Button
                     variant="outlined"
                     onClick={() => {
-                      const sampleData = [
+                      // Must match backend parsing order in `routes/product.js` bulk-upload (row[0..])
+                      const sheetData = [
                         [
                           "Barcode",
                           "Name",
-                          "Type",
+                          "Category ID",
+                          "Category Type ID",
                           "Previous Price",
                           "New Price",
                           "Is Discount",
@@ -6875,33 +7143,36 @@ const DataEntryForm = () => {
                           "Description",
                           "Expire Date",
                           "Weight",
+                          "Store Type (optional name)",
                         ],
                         [
                           "123456789",
                           "Sample Product",
-                          "Electronics",
+                          "category_id_here",
+                          "categoryType_id_here",
                           "100",
                           "80",
                           "true",
                           "brand_id_here",
                           "store_id_here",
                           "Sample description",
-                          "2024-12-31",
+                          "2026-12-31",
                           "500g",
+                          "Electronics",
                         ],
                       ];
-                      const csvContent = sampleData
-                        .map((row) => row.join(","))
-                        .join("\n");
-                      const blob = new Blob([csvContent], { type: "text/csv" });
-                      const url = window.URL.createObjectURL(blob);
-                      const a = document.createElement("a");
-                      a.href = url;
-                      a.download = "product_template.csv";
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
-                      window.URL.revokeObjectURL(url);
+
+                      const workbook = XLSX.utils.book_new();
+                      const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
+                      worksheet["!cols"] = sheetData[0].map((h) => ({
+                        wch: Math.max(14, String(h || "").length + 2),
+                      }));
+                      XLSX.utils.book_append_sheet(
+                        workbook,
+                        worksheet,
+                        "Products",
+                      );
+                      XLSX.writeFile(workbook, "product_template.xlsx");
                     }}
                     fullWidth
                     startIcon={<CloudUploadIcon />}
@@ -6951,8 +7222,7 @@ const DataEntryForm = () => {
                     <br />•{" "}
                     {t("Column K: Expire Date (optional, YYYY-MM-DD format)")}
                     <br />• {t("Column L: Weight (optional)")}
-                    <br />• {t("Column M: Barcode (optional)")}
-                    <br />• {t("Column N: Discount (optional)")}
+                    <br />• {t("Column M: Store Type (optional, name)")}
                   </Typography>
                 </Grid>
               </Grid>
@@ -7640,7 +7910,9 @@ const DataEntryForm = () => {
                 <Select
                   multiple
                   name="storeId"
-                  value={Array.isArray(editForm.storeId) ? editForm.storeId : []}
+                  value={
+                    Array.isArray(editForm.storeId) ? editForm.storeId : []
+                  }
                   onChange={handleEditFormChange}
                   label={t("Stores")}
                   renderValue={(selected) => (
@@ -8176,11 +8448,29 @@ const DataEntryForm = () => {
                   label={t("Category Type")}
                   disabled={!editForm.categoryId}
                 >
-                  {categoryTypes.map((type) => (
-                    <MenuItem key={type._id} value={type._id}>
-                      {type.name}
-                    </MenuItem>
-                  ))}
+                  {categoryTypes.map((type, index) => {
+                    const typeValue =
+                      typeof type === "string" ? type : String(type?._id || "");
+                    const typeLabel =
+                      typeof type === "string" ? type : type?.name || "";
+                    return (
+                      <MenuItem key={typeValue || index} value={typeValue}>
+                        {typeLabel}
+                      </MenuItem>
+                    );
+                  })}
+                </Select>
+              </FormControl>
+              <FormControl fullWidth margin="normal">
+                <InputLabel>{t("Status")}</InputLabel>
+                <Select
+                  name="status"
+                  value={editForm.status || "published"}
+                  onChange={handleEditFormChange}
+                  label={t("Status")}
+                >
+                  <MenuItem value="published">{t("Published")}</MenuItem>
+                  <MenuItem value="pending">{t("Pending")}</MenuItem>
                 </Select>
               </FormControl>
               <TextField
@@ -8241,54 +8531,29 @@ const DataEntryForm = () => {
                   ? handleDeleteBrandConfirm()
                   : deleteDialog.type === "job"
                     ? handleDeleteBrandConfirm()
-                  : deleteDialog.type === "video"
-                    ? handleDeleteStoreConfirm()
-                    : deleteDialog.type === "category"
-                      ? handleDeleteCategoryConfirm()
-                      : deleteDialog.type === "storeType"
-                        ? handleDeleteStoreTypeConfirm()
-                        : deleteDialog.type === "brandType"
-                          ? (async () => {
-                              setDeleteLoading(true);
-                              try {
-                                await brandTypeAPI.delete(
-                                  deleteDialog.data._id,
-                                );
-                                const res = await brandTypeAPI.getAll();
-                                setBrandTypes(res.data || []);
-                                setMessage({
-                                  type: "success",
-                                  text: t("Brand Type deleted successfully!"),
-                                });
-                              } catch (e) {
-                                setMessage({
-                                  type: "error",
-                                  text: t("Failed to delete brand type."),
-                                });
-                              } finally {
-                                setDeleteLoading(false);
-                                setDeleteDialog({
-                                  open: false,
-                                  type: "",
-                                  data: null,
-                                });
-                              }
-                            })()
-                          : (async () => {
+                    : deleteDialog.type === "video"
+                      ? handleDeleteStoreConfirm()
+                      : deleteDialog.type === "category"
+                        ? handleDeleteCategoryConfirm()
+                        : deleteDialog.type === "storeType"
+                          ? handleDeleteStoreTypeConfirm()
+                          : deleteDialog.type === "brandType"
+                            ? (async () => {
                                 setDeleteLoading(true);
                                 try {
-                                  await categoryAPI.delete(
+                                  await brandTypeAPI.delete(
                                     deleteDialog.data._id,
                                   );
+                                  const res = await brandTypeAPI.getAll();
+                                  setBrandTypes(res.data || []);
                                   setMessage({
                                     type: "success",
-                                    text: t("Category deleted successfully!"),
+                                    text: t("Brand Type deleted successfully!"),
                                   });
-                                  fetchCategories();
                                 } catch (e) {
                                   setMessage({
                                     type: "error",
-                                    text: t("Failed to delete category."),
+                                    text: t("Failed to delete brand type."),
                                   });
                                 } finally {
                                   setDeleteLoading(false);
@@ -8299,8 +8564,33 @@ const DataEntryForm = () => {
                                   });
                                 }
                               })()
-                            ? handleDeleteStoreConfirm()
-                            : null
+                            : (async () => {
+                                  setDeleteLoading(true);
+                                  try {
+                                    await categoryAPI.delete(
+                                      deleteDialog.data._id,
+                                    );
+                                    setMessage({
+                                      type: "success",
+                                      text: t("Category deleted successfully!"),
+                                    });
+                                    fetchCategories();
+                                  } catch (e) {
+                                    setMessage({
+                                      type: "error",
+                                      text: t("Failed to delete category."),
+                                    });
+                                  } finally {
+                                    setDeleteLoading(false);
+                                    setDeleteDialog({
+                                      open: false,
+                                      type: "",
+                                      data: null,
+                                    });
+                                  }
+                                })()
+                              ? handleDeleteStoreConfirm()
+                              : null
             }
             disabled={deleteLoading}
           >

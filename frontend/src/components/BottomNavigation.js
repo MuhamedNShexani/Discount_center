@@ -37,9 +37,10 @@ const BottomNavigationBar = () => {
     // Check for exact matches first
     if (pathname === "/") return "/";
     if (pathname === "/reels") return "/reels";
-    // if (pathname === "/favourites") return "/favourites";
+    if (pathname === "/favourites") return "/favourites";
     if (pathname === "/categories") return "/categories";
     if (pathname === "/gifts") return "/gifts";
+    if (pathname === "/profile") return "/profile";
 
     // Check for stores (including nested routes)
     if (pathname.startsWith("/stores")) return "/stores";
@@ -47,8 +48,8 @@ const BottomNavigationBar = () => {
     // Check for brands (including nested routes)
     // if (pathname.startsWith("/brands")) return "/brands";
 
-    // Default to home if no match
-    return "/";
+    // Don't highlight Home for unrelated pages
+    return false;
   };
 
   // Memoize the active value to prevent unnecessary re-renders

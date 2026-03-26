@@ -584,15 +584,44 @@ const ReelsPage = () => {
         getRandomOrderKey(String(a?._id)) - getRandomOrderKey(String(b?._id)),
     );
 
-    if (!sharedVideoId) return randomized;
+    // Interleave: after every 10 store reels, show 1 brand reel (if available)
+    const storeReels = [];
+    const brandReels = [];
+    randomized.forEach((reel) => {
+      const hasBrandOwner = Boolean(reel?.brandId?._id || reel?.brandId);
+      if (hasBrandOwner) brandReels.push(reel);
+      else storeReels.push(reel);
+    });
 
-    const sharedIndex = randomized.findIndex(
+    const interleaved = [];
+    let s = 0;
+    let b = 0;
+    while (s < storeReels.length || b < brandReels.length) {
+      for (let i = 0; i < 10 && s < storeReels.length; i += 1) {
+        interleaved.push(storeReels[s++]);
+      }
+      if (b < brandReels.length) {
+        interleaved.push(brandReels[b++]);
+      }
+      // If there are no store reels left, drain remaining brand reels.
+      if (s >= storeReels.length && b < brandReels.length) {
+        while (b < brandReels.length) interleaved.push(brandReels[b++]);
+      }
+      // If there are no brand reels left, drain remaining store reels.
+      if (b >= brandReels.length && s < storeReels.length) {
+        while (s < storeReels.length) interleaved.push(storeReels[s++]);
+      }
+    }
+
+    if (!sharedVideoId) return interleaved;
+
+    const sharedIndex = interleaved.findIndex(
       (reel) => String(reel?._id) === String(sharedVideoId),
     );
-    if (sharedIndex <= 0) return randomized;
+    if (sharedIndex <= 0) return interleaved;
 
-    const sharedReel = randomized[sharedIndex];
-    const rest = randomized.filter((_, idx) => idx !== sharedIndex);
+    const sharedReel = interleaved[sharedIndex];
+    const rest = interleaved.filter((_, idx) => idx !== sharedIndex);
     return [sharedReel, ...rest];
   }, [
     mainPageTab,

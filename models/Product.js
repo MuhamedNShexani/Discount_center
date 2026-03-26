@@ -35,6 +35,12 @@ const productSchema = new mongoose.Schema(
       required: false,
     },
     expireDate: { type: Date },
+    status: {
+      type: String,
+      enum: ["published", "pending"],
+      default: "published",
+      index: true,
+    },
     // User tracking fields
     viewCount: { type: Number, default: 0 },
     likeCount: { type: Number, default: 0 },

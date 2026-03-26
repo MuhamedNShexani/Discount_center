@@ -1931,6 +1931,7 @@ const resources = {
       Male: "نێر",
       Female: "مێ",
       Any: "هەردوو ڕەگەز",
+      "Sort by": "ڕیزبەندی بەپێی",
       Jobs: "هەلى کار",
       Link: "لینکی",
       "No jobs available": "هیچ کارێک نەدۆزرایەوە",

@@ -161,6 +161,15 @@ const Gifts = () => {
 
     let filtered = [...gifts];
 
+    // Hide expired gifts
+    const now = new Date();
+    filtered = filtered.filter((gift) => {
+      if (!gift?.expireDate) return true;
+      const expireDate = new Date(gift.expireDate);
+      if (Number.isNaN(expireDate.getTime())) return true;
+      return expireDate >= now;
+    });
+
     // Search filter
     if (filters.search) {
       filtered = filtered.filter((gift) =>
@@ -194,6 +203,13 @@ const Gifts = () => {
         return gift.storeId.some((store) => store.storecity === selectedCity);
       });
     }
+
+    // Sort by newest created first
+    filtered.sort((a, b) => {
+      const aTs = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bTs = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return (Number.isFinite(bTs) ? bTs : 0) - (Number.isFinite(aTs) ? aTs : 0);
+    });
 
     setFilteredGifts(filtered);
   };

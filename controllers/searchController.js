@@ -58,7 +58,10 @@ const search = async (req, res) => {
         .lean(),
       city
         ? null
-        : Product.find({ name: regex })
+        : Product.find({
+            name: regex,
+            $or: [{ status: "published" }, { status: { $exists: false } }],
+          })
             .populate("brandId", "name logo statusAll")
             .populate("storeId", "name logo")
             .limit(limit)
@@ -79,6 +82,7 @@ const search = async (req, res) => {
       const productDocs = await Product.find({
         name: regex,
         storeId: { $in: storeIdsInCity },
+        $or: [{ status: "published" }, { status: { $exists: false } }],
       })
         .populate("brandId", "name logo statusAll")
         .populate("storeId", "name logo")

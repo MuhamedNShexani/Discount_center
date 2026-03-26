@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   AppBar,
   Toolbar,
@@ -67,6 +67,7 @@ import { useNotifications } from "./context/NotificationContext";
 import { useContentRefresh } from "./context/ContentRefreshContext";
 import useIsMobileLayout from "./hooks/useIsMobileLayout";
 import { useActiveTheme } from "./context/ActiveThemeContext";
+import { giftAPI } from "./services/api";
 
 // Set to true to show notification center (bell, profile toggle, enable banner)
 const NOTIFICATIONS_CENTER_ENABLED = false;
@@ -128,6 +129,86 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
     severity: "info",
   });
   const [confirmPushOpen, setConfirmPushOpen] = useState(false);
+
+  // Gifts "new" badge (per account / guest device)
+  const GIFTS_LAST_SEEN_KEY_PREFIX = "giftsLastSeenAt.v1";
+  const [newGiftsCount, setNewGiftsCount] = useState(0);
+  const latestGiftTsRef = useRef(0);
+
+  const getGiftSeenStorageKey = useCallback(() => {
+    const userKey = user?._id || user?.id || user?.email;
+    if (userKey) return `${GIFTS_LAST_SEEN_KEY_PREFIX}:user:${userKey}`;
+    const guestKey = guestUser?.deviceId || guestUser?._id || guestUser?.id;
+    if (guestKey) return `${GIFTS_LAST_SEEN_KEY_PREFIX}:guest:${guestKey}`;
+    return `${GIFTS_LAST_SEEN_KEY_PREFIX}:anonymous`;
+  }, [guestUser?._id, guestUser?.deviceId, guestUser?.id, user?._id, user?.email, user?.id]);
+
+  const getLastSeenGiftTs = () => {
+    try {
+      const raw = localStorage.getItem(getGiftSeenStorageKey());
+      const ts = raw ? Number(raw) : 0;
+      return Number.isFinite(ts) ? ts : 0;
+    } catch {
+      return 0;
+    }
+  };
+
+  const setLastSeenGiftTs = (ts) => {
+    try {
+      localStorage.setItem(getGiftSeenStorageKey(), String(Number(ts) || 0));
+    } catch {
+      // ignore
+    }
+  };
+
+  const markGiftsSeen = useCallback(() => {
+    const ts = latestGiftTsRef.current || Date.now();
+    setLastSeenGiftTs(ts);
+    setNewGiftsCount(0);
+  }, [setLastSeenGiftTs]);
+
+  const fetchNewGiftsCount = useCallback(async () => {
+    try {
+      const res = await giftAPI.getAll();
+      const list = Array.isArray(res?.data?.data) ? res.data.data : Array.isArray(res?.data) ? res.data : [];
+      const now = Date.now();
+      const visible = list.filter((g) => {
+        if (!g?.expireDate) return true;
+        const exp = new Date(g.expireDate).getTime();
+        return Number.isFinite(exp) ? exp > now : true;
+      });
+
+      const lastSeen = getLastSeenGiftTs();
+      let newest = 0;
+      let count = 0;
+      visible.forEach((g) => {
+        const createdTs = g?.createdAt ? new Date(g.createdAt).getTime() : 0;
+        if (Number.isFinite(createdTs)) {
+          if (createdTs > newest) newest = createdTs;
+          if (createdTs > lastSeen) count += 1;
+        }
+      });
+      latestGiftTsRef.current = newest || latestGiftTsRef.current || 0;
+      setNewGiftsCount(count);
+    } catch {
+      // ignore
+    }
+  }, [getLastSeenGiftTs]);
+
+  useEffect(() => {
+    fetchNewGiftsCount();
+    const id = window.setInterval(fetchNewGiftsCount, 60000);
+    return () => window.clearInterval(id);
+  }, [fetchNewGiftsCount]);
+
+  useEffect(() => {
+    const onVis = () => {
+      if (document.hidden) return;
+      fetchNewGiftsCount();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, [fetchNewGiftsCount]);
 
   const handleLangChange = (event) => {
     i18n.changeLanguage(event.target.value);
@@ -193,13 +274,24 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
     });
   };
 
+  const giftsIconWithBadge = (
+    <Badge
+      badgeContent={newGiftsCount}
+      color="error"
+      overlap="circular"
+      invisible={!newGiftsCount}
+    >
+      <CardGiftcardIcon />
+    </Badge>
+  );
+
   const navItems = [
     { name: t("Main Page"), path: "/", icon: <HomeIcon /> },
     { name: t("Search"), path: "/search", icon: <SearchIcon /> },
     { name: t("Products"), path: "/categories", icon: <CategoryIcon /> },
     { name: t("Favourites"), path: "/favourites", icon: <FavoriteIcon /> },
     { name: t("Brands"), path: "/brands", icon: <BusinessIcon /> },
-    { name: t("Gifts"), path: "/gifts", icon: <CardGiftcardIcon /> },
+    { name: t("Gifts"), path: "/gifts", icon: giftsIconWithBadge },
     // Data Entry is now admin-only via Admin dropdown; no extra nav item for non-admins
     // Only show Admin link for specific admin email
     // ...(user && user.email === "mshexani45@gmail.com"
@@ -530,7 +622,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   reels: { to: "/reels", icon: <VideoLibraryIcon /> },
                   favourites: { to: "/favourites", icon: <FavoriteIcon /> },
                   stores: { to: "/stores", icon: <StoreIcon /> },
-                  gifts: { to: "/gifts", icon: <CardGiftcardIcon /> },
+                  gifts: { to: "/gifts", icon: giftsIconWithBadge },
                   profile: { to: "/profile", icon: <PersonIcon /> },
                 };
 
@@ -549,7 +641,13 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   const cfg = map[action];
                   if (!cfg) return <Box key={key} sx={{ width: 40, height: 40 }} />;
                   return (
-                    <IconButton key={key} component={Link} to={cfg.to} sx={sxBtn}>
+                    <IconButton
+                      key={key}
+                      component={Link}
+                      to={cfg.to}
+                      sx={sxBtn}
+                      onClick={cfg.to === "/gifts" ? markGiftsSeen : undefined}
+                    >
                       {cfg.icon}
                     </IconButton>
                   );
@@ -754,6 +852,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                     component={Link}
                     to={item.path}
                     startIcon={item.icon}
+                    onClick={item.path === "/gifts" ? markGiftsSeen : undefined}
                     sx={{
                       color: "white",
                       textTransform: "none",
