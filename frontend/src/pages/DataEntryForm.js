@@ -198,6 +198,7 @@ const DataEntryForm = () => {
     show: true,
     expireDate: "",
     statusAll: "on",
+    isHasDelivery: false,
   });
 
   // Product form state
@@ -510,9 +511,10 @@ const DataEntryForm = () => {
   };
 
   const handleStoreFormChange = (e) => {
+    const { name, value, type, checked } = e.target;
     setStoreForm({
       ...storeForm,
-      [e.target.name]: e.target.value,
+      [name]: type === "checkbox" ? checked : value,
     });
   };
 
@@ -1825,6 +1827,7 @@ const DataEntryForm = () => {
           ? new Date(data.lastReleaseDiscountDate).toISOString().split("T")[0]
           : "",
         statusAll: data.statusAll === "off" ? "off" : "on",
+        isHasDelivery: !!data.isHasDelivery,
       });
     } else if (type === "category") {
       setEditForm({
@@ -5347,6 +5350,18 @@ const DataEntryForm = () => {
                     label={t("Show in Store List")}
                   />
                 </Grid>
+                <Grid xs={12}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        name="isHasDelivery"
+                        checked={!!storeForm.isHasDelivery}
+                        onChange={handleStoreFormChange}
+                      />
+                    }
+                    label={t("Has Delivery")}
+                  />
+                </Grid>
                 <Grid xs={12} sm={6}>
                   <TextField
                     fullWidth
@@ -7703,6 +7718,23 @@ const DataEntryForm = () => {
                     />
                   }
                   label={t("Show in Store List")}
+                />
+              </Box>
+              <Box sx={{ mt: 2 }}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      name="isHasDelivery"
+                      checked={!!editForm.isHasDelivery}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          isHasDelivery: e.target.checked,
+                        })
+                      }
+                    />
+                  }
+                  label={t("Has Delivery")}
                 />
               </Box>
               <Box sx={{ mt: 2 }}>

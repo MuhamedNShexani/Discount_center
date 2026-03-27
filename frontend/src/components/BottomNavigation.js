@@ -13,6 +13,7 @@ import {
   CardGiftcard as CardGiftcardIcon,
   Favorite as FavoriteIcon,
   VideoLibrary as VideoLibraryIcon,
+  LocalShipping as LocalShippingIcon,
   Person as PersonIcon,
 } from "@mui/icons-material";
 import { Link, useLocation } from "react-router-dom";
@@ -40,6 +41,7 @@ const BottomNavigationBar = () => {
     if (pathname === "/favourites") return "/favourites";
     if (pathname === "/categories") return "/categories";
     if (pathname === "/gifts") return "/gifts";
+    if (pathname === "/shopping") return "/shopping";
     if (pathname === "/profile") return "/profile";
 
     // Check for stores (including nested routes)
@@ -72,6 +74,11 @@ const BottomNavigationBar = () => {
     },
     stores: { name: t("Stores"), path: "/stores", icon: <StoreIcon /> },
     gifts: { name: t("Gifts"), path: "/gifts", icon: <CardGiftcardIcon /> },
+    shopping: {
+      name: t("Shopping"),
+      path: "/shopping",
+      icon: <LocalShippingIcon />,
+    },
     profile: { name: t("Account"), path: "/profile", icon: <PersonIcon /> },
   };
 

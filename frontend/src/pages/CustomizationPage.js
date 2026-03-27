@@ -63,6 +63,7 @@ const NAV_ACTIONS = [
   { id: "favourites", label: "Favourites" },
   { id: "stores", label: "Stores" },
   { id: "gifts", label: "Gifts" },
+  { id: "shopping", label: "Shopping" },
   { id: "profile", label: "Account/Profile" },
 ];
 

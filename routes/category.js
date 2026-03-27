@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const upload = require("../middleware/upload");
+const { uploadImage } = require("../utils/imageUpload");
 const {
   getCategories,
   getCategoryById,
@@ -42,7 +43,8 @@ router.post("/:id/image", upload.single("image"), async (req, res) => {
       });
     }
 
-    category.image = `/uploads/${req.file.filename}`;
+    const { url: imageUrl } = await uploadImage(req.file, "categories");
+    category.image = imageUrl;
     await category.save();
 
     const updated = await Category.findById(req.params.id);

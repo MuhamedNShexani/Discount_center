@@ -8,6 +8,7 @@ const {
   deleteAd,
 } = require("../controllers/adController");
 const upload = require("../middleware/upload");
+const { uploadImage } = require("../utils/imageUpload");
 
 // @route   GET /api/ads
 // @desc    Get all ads
@@ -31,13 +32,12 @@ router.delete("/:id", deleteAd);
 
 // @route   POST /api/ads/upload-image
 // @desc    Upload ad image
-router.post("/upload-image", upload.single("image"), (req, res) => {
+router.post("/upload-image", upload.single("image"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
     }
-
-    const fileUrl = `/uploads/${req.file.filename}`;
+    const { url: fileUrl } = await uploadImage(req.file, "ads");
     res.json({
       message: "File uploaded successfully",
       url: fileUrl,

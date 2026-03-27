@@ -52,12 +52,12 @@ const ProductDetail = () => {
   const theme = useTheme();
 
   // User tracking hook (user = device user for guests)
-  const { toggleLike, recordView, isProductLiked, isAuthenticated, user } =
-    useUserTracking();
+  const { toggleLike, recordView, isProductLiked } = useUserTracking();
 
   // State for tracking like count locally
   const [localLikeCount, setLocalLikeCount] = useState(0);
   const [localLikeState, setLocalLikeState] = useState(false);
+  const [optimisticLiked, setOptimisticLiked] = useState(null);
   const [likeLoading, setLikeLoading] = useState(false);
   const viewRecordedRef = useRef(false); // Use ref to track if view has been recorded for this product
 
@@ -74,8 +74,10 @@ const ProductDetail = () => {
     }
 
     // Get current state
-    const currentLikeCount = localLikeCount || product?.likeCount || 0;
-    const isCurrentlyLiked = localLikeState || isProductLiked(product._id);
+    const currentLikeCount = (localLikeCount ?? product?.likeCount ?? 0) || 0;
+    const likedNow =
+      optimisticLiked ?? (product?._id ? isProductLiked(product._id) : false);
+    const isCurrentlyLiked = Boolean(likedNow);
 
     // Set loading state
     setLikeLoading(true);
@@ -86,10 +88,12 @@ const ProductDetail = () => {
         // Currently liked, so unlike
         setLocalLikeCount(Math.max(0, currentLikeCount - 1));
         setLocalLikeState(false);
+        setOptimisticLiked(false);
       } else {
         // Currently not liked, so like
         setLocalLikeCount(currentLikeCount + 1);
         setLocalLikeState(true);
+        setOptimisticLiked(true);
       }
 
       // Make the API call
@@ -99,16 +103,21 @@ const ProductDetail = () => {
         // Revert the optimistic update if the API call failed
         setLocalLikeCount(currentLikeCount);
         setLocalLikeState(isCurrentlyLiked);
+        setOptimisticLiked(null);
         alert(result.message || "Failed to update like");
       }
     } catch (error) {
       // Revert on error
       setLocalLikeCount(currentLikeCount);
       setLocalLikeState(isCurrentlyLiked);
+      setOptimisticLiked(null);
       alert("Failed to update like");
     } finally {
       // Clear loading state
       setLikeLoading(false);
+      // Clear optimistic override after request finishes;
+      // actual source of truth is `isProductLiked()` (user/device state).
+      setOptimisticLiked(null);
     }
   };
 
@@ -127,7 +136,10 @@ const ProductDetail = () => {
       setProduct(productData);
 
       // Initialize local like count
-      setLocalLikeCount(productData.likeCount || 0);
+      setLocalLikeCount(productData.likeCount ?? 0);
+      // Sync local liked state immediately on load
+      setLocalLikeState(isProductLiked(productData._id));
+      setOptimisticLiked(null);
 
       // Record view only once when product is loaded
       if (!viewRecordedRef.current) {
@@ -145,12 +157,12 @@ const ProductDetail = () => {
     }
   };
 
-  // Update like state when user data changes (works for both logged-in and guest users)
+  // Keep local like state in sync with global liked products
   useEffect(() => {
-    if (product && (isAuthenticated || user)) {
-      setLocalLikeState(isProductLiked(product._id));
-    }
-  }, [product, isAuthenticated, user, isProductLiked]);
+    if (!product?._id) return;
+    setLocalLikeState(isProductLiked(product._id));
+    setOptimisticLiked(null);
+  }, [product?._id, isProductLiked]);
 
   const fetchCategories = async () => {
     try {
@@ -697,16 +709,21 @@ const ProductDetail = () => {
                     }}
                   >
                     {/* Like Button */}
+                    {(() => {
+                      const likedUi =
+                        optimisticLiked ??
+                        (product?._id ? isProductLiked(product._id) : false);
+                      return (
                     <IconButton
                       onClick={handleLikeClick}
                       disabled={likeLoading}
                       sx={{
-                        backgroundColor: localLikeState
+                        backgroundColor: likedUi
                           ? "rgba(229, 62, 62, 0.1)"
                           : "rgba(0, 0, 0, 0.04)",
-                        color: localLikeState ? "#e53e3e" : "#666",
+                        color: likedUi ? "#e53e3e" : "#666",
                         "&:hover": {
-                          backgroundColor: localLikeState
+                          backgroundColor: likedUi
                             ? "rgba(229, 62, 62, 0.2)"
                             : "rgba(0, 0, 0, 0.08)",
                           transform: "scale(1.05)",
@@ -717,7 +734,7 @@ const ProductDetail = () => {
                       }}
                       size="large"
                     >
-                      {localLikeState ? (
+                      {likedUi ? (
                         <FavoriteIcon
                           sx={{ fontSize: { xs: "1.25rem", sm: "1.5rem" } }}
                         />
@@ -727,6 +744,8 @@ const ProductDetail = () => {
                         />
                       )}
                     </IconButton>
+                      );
+                    })()}
 
                     {/* Stats Container */}
                     <Box
@@ -795,7 +814,7 @@ const ProductDetail = () => {
                             fontWeight: 500,
                           }}
                         >
-                          {localLikeCount || product.likeCount || 0}
+                          {localLikeCount ?? product.likeCount ?? 0}
                         </Typography>
                       </Box>
 

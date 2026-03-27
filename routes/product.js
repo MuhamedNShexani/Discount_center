@@ -3,6 +3,7 @@ const router = express.Router();
 const upload = require("../middleware/upload");
 const XLSX = require("xlsx");
 const Store = require("../models/Store");
+const { uploadImage } = require("../utils/imageUpload");
 const {
   getProducts,
   getProductById,
@@ -54,14 +55,15 @@ router.delete("/:id", deleteProduct);
 
 // @route   POST /api/products/upload-image
 // @desc    Upload product image
-router.post("/upload-image", upload.single("image"), (req, res) => {
+router.post("/upload-image", upload.single("image"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
     }
+    const { url: imageUrl } = await uploadImage(req.file, "products");
     res.json({
-      imageUrl: `/uploads/${req.file.filename}`,
-      filename: req.file.filename,
+      imageUrl,
+      filename: req.file.filename || "",
     });
   } catch (error) {
     res

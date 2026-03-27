@@ -10,6 +10,7 @@ const {
   deleteStore,
 } = require("../controllers/storeController");
 const upload = require("../middleware/upload");
+const { uploadImage } = require("../utils/imageUpload");
 
 // @route   GET /api/stores
 // @desc    Get all stores (including hidden ones)
@@ -40,13 +41,12 @@ router.post("/", createStore);
 
 // @route   POST /api/stores/upload-logo
 // @desc    Upload store logo
-router.post("/upload-logo", upload.single("logo"), (req, res) => {
+router.post("/upload-logo", upload.single("logo"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
     }
-
-    const fileUrl = `/uploads/${req.file.filename}`;
+    const { url: fileUrl } = await uploadImage(req.file, "stores");
     res.json({
       message: "File uploaded successfully",
       url: fileUrl,

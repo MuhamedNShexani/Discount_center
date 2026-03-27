@@ -7,7 +7,13 @@ const publicStoreFilter = { statusAll: { $ne: "off" } };
 // @route   GET /api/stores
 const getStores = async (req, res) => {
   try {
-    const stores = await Store.find(publicStoreFilter)
+    const hasDelivery =
+      String(req.query.hasDelivery || "").toLowerCase() === "true";
+    const query = {
+      ...publicStoreFilter,
+      ...(hasDelivery ? { isHasDelivery: true } : {}),
+    };
+    const stores = await Store.find(query)
       .populate("storeTypeId", "name icon")
       .sort({ isVip: -1, name: 1 });
     res.json(stores);
@@ -21,9 +27,12 @@ const getStores = async (req, res) => {
 // @route   GET /api/stores/visible
 const getVisibleStores = async (req, res) => {
   try {
+    const hasDelivery =
+      String(req.query.hasDelivery || "").toLowerCase() === "true";
     const stores = await Store.find({
       show: true,
       ...publicStoreFilter,
+      ...(hasDelivery ? { isHasDelivery: true } : {}),
     })
       .populate("storeTypeId", "name icon")
       .sort({ isVip: -1, name: 1 });

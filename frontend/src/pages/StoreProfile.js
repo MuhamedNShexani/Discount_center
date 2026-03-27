@@ -38,6 +38,7 @@ import {
   Tooltip,
   Rating,
   CircularProgress,
+  Snackbar,
 } from "@mui/material";
 import {
   ArrowBack,
@@ -70,6 +71,8 @@ import {
   jobAPI,
 } from "../services/api";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
+import AddIcon from "@mui/icons-material/Add";
+import RemoveIcon from "@mui/icons-material/Remove";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -121,6 +124,11 @@ const StoreProfile = () => {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedGift, setSelectedGift] = useState(null);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [cartItems, setCartItems] = useState({});
+  const [cartToast, setCartToast] = useState({ open: false, text: "" });
+  const [cartSyncing, setCartSyncing] = useState(false);
+  const [cartHydrated, setCartHydrated] = useState(false);
 
   // Notification dialog state
   const [loginNotificationOpen, setLoginNotificationOpen] = useState(false);
@@ -151,6 +159,33 @@ const StoreProfile = () => {
     }
   }, [id]);
 
+  // Load/save cart per store (only for delivery stores)
+  useEffect(() => {
+    const storeId = store?._id || id;
+    if (!storeId || !store?.isHasDelivery) return;
+    const key = `cart.store.${storeId}.v1`;
+    setCartHydrated(false);
+    try {
+      const raw = localStorage.getItem(key);
+      const parsed = raw ? JSON.parse(raw) : null;
+      setCartItems(parsed && typeof parsed === "object" ? parsed : {});
+    } catch {
+      setCartItems({});
+    }
+    setCartHydrated(true);
+  }, [store?._id, store?.isHasDelivery, id]);
+
+  useEffect(() => {
+    const storeId = store?._id || id;
+    if (!storeId || !store?.isHasDelivery || !cartHydrated) return;
+    const key = `cart.store.${storeId}.v1`;
+    try {
+      localStorage.setItem(key, JSON.stringify(cartItems || {}));
+    } catch {
+      // ignore
+    }
+  }, [cartItems, store?._id, store?.isHasDelivery, id, cartHydrated]);
+
   // Pull-to-refresh for store profile
   usePullToRefresh(fetchStoreData);
 
@@ -167,6 +202,14 @@ const StoreProfile = () => {
     setLikeCounts(initialLikeCounts);
     setLikeStates(initialLikeStates);
   }, [products, isProductLiked]);
+
+  // Keep cart count correct while browsing the store:
+  // if a product becomes pending/expired/deleted, remove it from cart immediately.
+  useEffect(() => {
+    if (!store?.isHasDelivery || !cartHydrated) return;
+    if (!Array.isArray(products)) return;
+    pruneCartUsingProducts(products);
+  }, [products, store?.isHasDelivery, cartHydrated, cartItems]);
 
   async function fetchStoreData() {
     try {
@@ -253,6 +296,211 @@ const StoreProfile = () => {
     const timeDiff = expire.getTime() - today.getTime();
     const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
     return daysDiff > 0 ? daysDiff : 0;
+  };
+
+  const cartCount = Object.values(cartItems || {}).reduce(
+    (sum, item) => sum + (Number(item?.qty) || 0),
+    0,
+  );
+
+  const addToCart = (product, e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (!store?.isHasDelivery) return;
+    if (!product?._id) return;
+    setCartItems((prev) => {
+      const next = { ...(prev || {}) };
+      const existing = next[product._id];
+      next[product._id] = {
+        product: {
+          _id: product._id,
+          name: product.name,
+          newPrice: product.newPrice,
+          previousPrice: product.previousPrice,
+          isDiscount: product.isDiscount,
+        },
+        qty: Math.min(99, (Number(existing?.qty) || 0) + 1),
+      };
+      return next;
+    });
+    setCartToast({ open: true, text: t("Added to cart") });
+  };
+
+  const updateCartQty = (productId, qty) => {
+    setCartItems((prev) => {
+      const next = { ...(prev || {}) };
+      const q = Math.max(0, Math.min(99, Number(qty) || 0));
+      if (q <= 0) {
+        delete next[productId];
+        return next;
+      }
+      next[productId] = { ...(next[productId] || {}), qty: q };
+      return next;
+    });
+  };
+
+  const clearCart = () => setCartItems({});
+
+  const getStoreWhatsAppUrl = () => {
+    const raw = store?.contactInfo?.whatsapp || "";
+    if (!raw || typeof raw !== "string") return null;
+    const trimmed = raw.trim();
+    if (/^(https?:\/\/)?(wa\.me|api\.whatsapp\.com)\//i.test(trimmed)) {
+      return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+    }
+    const digits = trimmed.replace(/[^\d]/g, "");
+    return digits ? `https://wa.me/${digits}` : null;
+  };
+
+  const buildWhatsAppOrderText = () => {
+    const lines = [];
+    lines.push(`Order from: ${store?.name || ""}`.trim());
+    lines.push("");
+    const items = Object.values(cartItems || {})
+      .filter((i) => (Number(i?.qty) || 0) > 0 && i?.product?._id)
+      .sort((a, b) => String(a.product.name || "").localeCompare(String(b.product.name || "")));
+    items.forEach((item, idx) => {
+      const name = item.product?.name || "-";
+      const qty = Number(item.qty) || 0;
+      const price = item.product?.newPrice;
+      const priceText =
+        typeof price === "number" ? ` (${formatPrice(price).trim()})` : "";
+      lines.push(`${idx + 1}) ${name} x${qty}${priceText}`);
+    });
+    lines.push("");
+    lines.push("Thank you.");
+    return lines.join("\n");
+  };
+
+  const handleOrderWhatsApp = () => {
+    const wa = getStoreWhatsAppUrl();
+    if (!wa) {
+      setCartToast({ open: true, text: t("WhatsApp number not found") });
+      return;
+    }
+    const text = encodeURIComponent(buildWhatsAppOrderText());
+    const url = wa.includes("?") ? `${wa}&text=${text}` : `${wa}?text=${text}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const isProductAvailableForCart = (p) => {
+    if (!p?._id) return false;
+    // Pending products should never be orderable (tolerate casing/legacy values)
+    const statusNorm = String(p?.status || "published").toLowerCase().trim();
+    if (statusNorm !== "published") return false;
+    // Expired products should be removed
+    const exp = p?.expireDate ? new Date(p.expireDate).getTime() : NaN;
+    if (Number.isFinite(exp) && exp <= Date.now()) return false;
+    return true;
+  };
+
+  const syncCartWithLatestProducts = async () => {
+    if (!store?.isHasDelivery) return;
+    try {
+      setCartSyncing(true);
+      // Re-fetch to ensure we don't show stale cart items.
+      const productsResponse = await productAPI.getByStore(id);
+      const latestProducts = Array.isArray(productsResponse?.data)
+        ? productsResponse.data
+        : [];
+      setProducts(latestProducts);
+
+      const availableById = new Map(
+        latestProducts
+          .filter(isProductAvailableForCart)
+          .map((p) => [String(p._id), p]),
+      );
+
+      setCartItems((prev) => {
+        const next = {};
+        Object.entries(prev || {}).forEach(([pid, item]) => {
+          const p = availableById.get(String(pid));
+          if (!p) return;
+          const qty = Math.max(0, Math.min(99, Number(item?.qty) || 0));
+          if (qty <= 0) return;
+          next[String(pid)] = {
+            product: {
+              _id: p._id,
+              name: p.name,
+              newPrice: p.newPrice,
+              previousPrice: p.previousPrice,
+              isDiscount: p.isDiscount,
+              status: p.status,
+              expireDate: p.expireDate,
+            },
+            qty,
+          };
+        });
+        return next;
+      });
+    } catch {
+      // If refresh fails, keep current cart but still filter obvious expiries
+      setCartItems((prev) => {
+        const next = { ...(prev || {}) };
+        Object.keys(next).forEach((pid) => {
+          const exp = next[pid]?.product?.expireDate
+            ? new Date(next[pid].product.expireDate).getTime()
+            : NaN;
+          if (Number.isFinite(exp) && exp <= Date.now()) delete next[pid];
+          if (
+            String(next[pid]?.product?.status || "published")
+              .toLowerCase()
+              .trim() !== "published"
+          )
+            delete next[pid];
+        });
+        return next;
+      });
+    } finally {
+      setCartSyncing(false);
+    }
+  };
+
+  const pruneCartUsingProducts = (latestProducts = []) => {
+    const availableById = new Map(
+      (Array.isArray(latestProducts) ? latestProducts : [])
+        .filter(isProductAvailableForCart)
+        .map((p) => [String(p._id), p]),
+    );
+
+    setCartItems((prev) => {
+      const prevObj = prev && typeof prev === "object" ? prev : {};
+      const next = {};
+      Object.entries(prevObj).forEach(([pid, item]) => {
+        const p = availableById.get(String(pid));
+        if (!p) return;
+        const qty = Math.max(0, Math.min(99, Number(item?.qty) || 0));
+        if (qty <= 0) return;
+        next[String(pid)] = {
+          product: {
+            _id: p._id,
+            name: p.name,
+            newPrice: p.newPrice,
+            previousPrice: p.previousPrice,
+            isDiscount: p.isDiscount,
+            status: p.status,
+            expireDate: p.expireDate,
+          },
+          qty,
+        };
+      });
+
+      // Avoid unnecessary state updates (prevents extra renders)
+      const prevKeys = Object.keys(prevObj);
+      const nextKeys = Object.keys(next);
+      if (prevKeys.length !== nextKeys.length) return next;
+      for (const k of prevKeys) {
+        const a = prevObj[k];
+        const b = next[k];
+        if (!b) return next;
+        if (String(a?.product?._id || "") !== String(b?.product?._id || ""))
+          return next;
+        if ((Number(a?.qty) || 0) !== (Number(b?.qty) || 0)) return next;
+      }
+      return prevObj;
+    });
   };
 
   // Helper function to check if a discounted product has expired
@@ -662,8 +910,8 @@ const StoreProfile = () => {
               </Box>
             )}
 
-            {/* View Count Badge - Top Right */}
-            {product.viewCount > 0 && (
+            {/* Top-right overlay actions */}
+            {(store?.isHasDelivery || product.viewCount > 0) && (
               <Box
                 sx={{
                   position: "absolute",
@@ -671,17 +919,47 @@ const StoreProfile = () => {
                   right: 8,
                   display: "flex",
                   alignItems: "center",
-                  gap: 0.5,
-                  backgroundColor: "rgba(0, 0, 0, 0.7)",
-                  color: "white",
-                  px: 1,
-                  py: 0.5,
-                  borderRadius: 1,
-                  fontSize: "0.7rem",
+                  justifyContent: "space-between",
+                  gap: 1,
+                  minWidth: store?.isHasDelivery && product.viewCount > 0 ? 92 : "auto",
                 }}
               >
-                <VisibilityIcon sx={{ fontSize: "0.8rem" }} />
-                {product.viewCount}
+                {store?.isHasDelivery && (
+                  <IconButton
+                    size="small"
+                    onClick={(e) => addToCart(product, e)}
+                    sx={{
+                      marginRight: 8,
+                      p: 0.5,
+                      color: "white",
+                      backgroundColor: "rgba(0, 0, 0, 0.7)",
+                      "&:hover": { backgroundColor: "rgba(0, 0, 0, 0.82)" },
+                    }}
+                    aria-label={t("Add to cart")}
+                  >
+                    <AddIcon sx={{ fontSize: "1rem" }} />
+                  </IconButton>
+                )}
+
+                {product.viewCount > 0 && (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 0.5,
+                      backgroundColor: "rgba(0, 0, 0, 0.7)",
+                      color: "white",
+                      px: 1,
+                      py: 0.5,
+                      borderRadius: 1,
+                      fontSize: "0.7rem",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    <VisibilityIcon sx={{ fontSize: "0.8rem" }} />
+                    {product.viewCount}
+                  </Box>
+                )}
               </Box>
             )}
           </Box>
@@ -1293,6 +1571,40 @@ const StoreProfile = () => {
 
   return (
     <Box sx={{ py: 8, px: { xs: 0.5, sm: 1.5, md: 3 } }}>
+      {store?.isHasDelivery && (
+        <Box
+          sx={{
+            position: "fixed",
+            bottom: { xs: 76, md: 24 },
+            left: 12,
+            right: 12,
+            zIndex: 1200,
+            pointerEvents: "none",
+          }}
+        >
+          <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+            <Button
+              variant="contained"
+              startIcon={<ShoppingCartIcon />}
+              disabled={cartCount <= 0}
+              onClick={async () => {
+                await syncCartWithLatestProducts();
+                setCartOpen(true);
+              }}
+              sx={{
+                pointerEvents: "auto",
+                borderRadius: 999,
+                px: 2.25,
+                py: 1,
+                fontWeight: 900,
+              }}
+            >
+              {t("Cart")} ({cartCount})
+            </Button>
+          </Box>
+        </Box>
+      )}
+
       {/* Enhanced Back Button */}
       <Button
         variant="outlined"
@@ -2334,6 +2646,126 @@ const StoreProfile = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Cart Dialog (delivery stores only) */}
+      <Dialog
+        open={cartOpen}
+        onClose={() => setCartOpen(false)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle sx={{ fontWeight: 900 }}>
+          {t("Cart")} ({cartCount})
+        </DialogTitle>
+        <DialogContent>
+          {cartSyncing ? (
+            <Typography color="text.secondary" sx={{ py: 2 }}>
+              {t("Loading...")}
+            </Typography>
+          ) : cartCount <= 0 ? (
+            <Typography color="text.secondary" sx={{ py: 2 }}>
+              {t("Cart is empty")}
+            </Typography>
+          ) : (
+            <Box sx={{ display: "grid", gap: 1.25, py: 1 }}>
+              {Object.values(cartItems || {})
+                .filter((i) => (Number(i?.qty) || 0) > 0 && i?.product?._id)
+                .map((item) => (
+                  <Paper
+                    key={item.product._id}
+                    variant="outlined"
+                    sx={{ p: 1.25, borderRadius: 2 }}
+                  >
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 1,
+                      }}
+                    >
+                      <Box sx={{ minWidth: 0 }}>
+                        <Typography sx={{ fontWeight: 900 }} noWrap>
+                          {item.product.name}
+                        </Typography>
+                        {typeof item.product.newPrice === "number" && (
+                          <Typography variant="caption" color="text.secondary">
+                            {formatPrice(item.product.newPrice)}
+                          </Typography>
+                        )}
+                      </Box>
+
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <IconButton
+                          onClick={() =>
+                            updateCartQty(
+                              item.product._id,
+                              (Number(item.qty) || 0) - 1,
+                            )
+                          }
+                          size="small"
+                        >
+                          <RemoveIcon />
+                        </IconButton>
+                        <Typography
+                          sx={{
+                            fontWeight: 900,
+                            minWidth: 22,
+                            textAlign: "center",
+                          }}
+                        >
+                          {Number(item.qty) || 0}
+                        </Typography>
+                        <IconButton
+                          onClick={() =>
+                            updateCartQty(
+                              item.product._id,
+                              (Number(item.qty) || 0) + 1,
+                            )
+                          }
+                          size="small"
+                        >
+                          <AddIcon />
+                        </IconButton>
+                      </Box>
+                    </Box>
+                  </Paper>
+                ))}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={clearCart} disabled={cartCount <= 0}>
+            {t("Clear")}
+          </Button>
+          <Button onClick={() => setCartOpen(false)} variant="outlined">
+            {t("Close")}
+          </Button>
+          <Button
+            onClick={handleOrderWhatsApp}
+            variant="contained"
+            startIcon={<WhatsApp />}
+            disabled={cartCount <= 0}
+          >
+            {t("Order")}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar
+        open={cartToast.open}
+        autoHideDuration={2500}
+        onClose={() => setCartToast({ open: false, text: "" })}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          severity="info"
+          onClose={() => setCartToast({ open: false, text: "" })}
+          sx={{ width: "100%" }}
+        >
+          {cartToast.text}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

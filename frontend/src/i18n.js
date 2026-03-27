@@ -5,7 +5,7 @@ import LanguageDetector from "i18next-browser-languagedetector";
 const resources = {
   en: {
     translation: {
-      "Discount Center": "Discount Center",
+      "Discount Center": "iDashkan",
       Stores: "Stores",
       Categories: "Categories",
       Home: "Home",
@@ -355,7 +355,7 @@ const resources = {
       "Please enter at least one category type.":
         "Please enter at least one category type.",
       "Enter category type name": "Enter category type name",
-      Favourites: "Favourites",
+      Favourites: "Likes",
       Follow: "Follow",
       Unfollow: "Unfollow",
       Following: "Following",
@@ -365,9 +365,9 @@ const resources = {
       "No followed stores yet": "No followed stores yet",
       "Follow stores from the main page to see them here":
         "Follow stores from the main page to see them here",
-      "No favourites yet": "No favourites yet",
-      "Like products to add them to your favourites":
-        "Like products to add them to your favourites",
+      "No likes yet": "No likes yet",
+      "Like products to add them to your likes":
+        "Like products to add them to your likes",
       Language: "Language",
       "days left": "days left",
       "Expires today": "Expires today",
@@ -457,7 +457,7 @@ const resources = {
       "Privacy Use 2":
         "To manage your Account: to manage your registration as a user of the Service. The Personal Data you provide can give you access to different functionalities that are available to you as a registered user.",
       "Privacy Use 3":
-        "To personalize your experience: to remember your preferences such as favourite products, selected city, and language settings.",
+        "To personalize your experience: to remember your preferences such as liked products, selected city, and language settings.",
       "Privacy Use 4":
         "To contact you: to contact you by email or other equivalent forms of electronic communication regarding updates or informative communications related to the Service.",
       "Privacy Use 5":
@@ -539,7 +539,7 @@ const resources = {
   },
   ar: {
     translation: {
-      "Discount Center": "منتجات المتجر",
+      "Discount Center": "iDashkan",
       "Data Lists": "قوائم البيانات",
       "Please select a logo file.": "الرجاء اختيار ملف الشعار.",
       "Data Entry": "إدخال البيانات",
@@ -1060,7 +1060,7 @@ const resources = {
       "Please enter at least one category type.":
         "يرجى إدخال نوع فئة واحد على الأقل.",
       "Enter category type name": "أدخل اسم نوع الفئة",
-      Favourites: "المفضلة",
+      Favourites: "المعجبة",
       Follow: "متابعة",
       Unfollow: "إلغاء المتابعة",
       Following: "المتابَعون",
@@ -1070,7 +1070,7 @@ const resources = {
       "No followed stores yet": "لا متاجر متابع عليها بعد",
       "Follow stores from the main page to see them here":
         "تابِع المتاجر من الصفحة الرئيسية لعرضها هنا",
-      "No favourites yet": "لا مفضلات بعد",
+      "No favourites yet": "لا معجبات بعد",
       "Like products to add them to your favourites":
         "أعجب بالمنتجات لإضافتها إلى المفضلة",
       Language: "اللغة",
@@ -1262,7 +1262,7 @@ const resources = {
   },
   ku: {
     translation: {
-      "Discount Center": "ناوەندی داشکاندەکان",
+      "Discount Center": "iDashkan",
       "Data Lists": "لیستى داتاکان",
       "Featured Brands": "بڕاندەکان",
       "Please select a logo file.": "تۆمارکردنى لۆگۆ پێویستە",
@@ -1562,6 +1562,7 @@ const resources = {
       "Product ID": "ناسنامەی کاڵا",
       "Contact Seller": "پەیوەندی بە فرۆشیار بکە",
       "View Brand": "بینینی بڕاند",
+      Shopping: "بازاڕیکردن",
       Search: "گەڕان",
       "All Types": "هەموو جۆرەکان",
       "Min Price": "کەمترین نرخ",
@@ -1573,6 +1574,7 @@ const resources = {
       "Brand created successfully!": "بڕاند بە سەرکەوتوویی دروستکرا!",
       "Failed to create brand. Please try again.":
         "دروستکردنی بڕاند سەرکەوتوو نەبوو. تکایە دووبارە هەوڵبدەرەوە.",
+
       "Product created successfully!": "کاڵاکە بە سەرکەوتوویی دروستکرا!",
       "Failed to create product. Please try again.":
         "دروستکردنی کاڵاکە سەرکەوتوو نەبوو. تکایە دووبارە هەوڵبدەرەوە.",
@@ -1768,7 +1770,7 @@ const resources = {
       "Please enter a category name.": "تکایە ناوی پۆڵێن بنووسە.",
       "Please enter at least one category type.": "تکایە جۆرى پۆڵێن  بنووسە.",
       "Enter category type name": "ناوی جۆرى پۆڵێن بنووسە",
-      Favourites: "دڵخوازەکانم",
+      Favourites: "بەدڵبووەکان",
       Account: "هەژمار",
       "All data is just test, nothing is real yet":
         "لە ئێستادا ئەم داتایانە وەکو تێست تۆمارکراون ، هیچ داتایەکى ڕاستەقینە لەخۆناگرێت",
@@ -1781,9 +1783,9 @@ const resources = {
       "No followed stores yet": "هێشتا هیچ فرۆشگایەک شوێنکەوت نەکراوە",
       "Follow stores from the main page to see them here":
         "فرۆشگاکان لە پەڕەی سەرەوە شوێنکەوتن بکە بۆ بینین لێرە",
-      "No favourites yet": "هیچ کاڵایەکى دڵخواز نەدۆزرایەوە",
+      "No favourites yet": "هیچ کاڵایەکى بەدڵبوو نەدۆزرایەوە",
       "Like products to add them to your favourites":
-        "لایکی کاڵا دڵخوازەکانت بکە بۆ ئەوەى  بێتە نێو لیستى داشکاندنە دڵخوازەکانت",
+        "لایکی کاڵا بەدڵبووەکانت بکە بۆ ئەوەى  بێتە نێو لیستى داشکاندنە بەدڵبووەکانت",
       "days left": "ڕۆژ ماوە",
       "Expires today": "ئەمڕۆ تەواو دەبێت",
       "No data to display": "هیچ داتایەک نییە بۆ پیشاندان",

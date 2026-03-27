@@ -81,17 +81,20 @@ export const useUserTracking = () => {
             // Update localStorage for authenticated users
             const authUser = JSON.parse(localStorage.getItem("user"));
             if (authUser) {
-              const isCurrentlyLiked = authUser.likedProducts?.some(
-                (id) => id === productId,
+              const current = Array.isArray(authUser.likedProducts)
+                ? authUser.likedProducts
+                : [];
+              const isCurrentlyLiked = current.some(
+                (item) => String(item?._id ?? item) === String(productId),
               );
               if (isCurrentlyLiked) {
-                authUser.likedProducts = authUser.likedProducts.filter(
-                  (id) => id !== productId,
+                authUser.likedProducts = current.filter(
+                  (item) => String(item?._id ?? item) !== String(productId),
                 );
               } else {
                 authUser.likedProducts = [
-                  ...(authUser.likedProducts || []),
-                  productId,
+                  ...current,
+                  String(productId),
                 ];
               }
               localStorage.setItem("user", JSON.stringify(authUser));
@@ -233,7 +236,9 @@ export const useUserTracking = () => {
       if (isAuthenticated) {
         const authUser = JSON.parse(localStorage.getItem("user"));
         if (!authUser || !authUser.likedProducts) return false;
-        return authUser.likedProducts.some((id) => id === productId);
+        return authUser.likedProducts.some(
+          (item) => String(item?._id ?? item) === String(productId),
+        );
       }
       // Device user - check local user state (likedProducts can be IDs or populated objects)
       if (!user?.likedProducts) return false;

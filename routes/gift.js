@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const upload = require("../middleware/upload");
+const { uploadImage } = require("../utils/imageUpload");
 const {
   getGifts,
   getGiftById,
@@ -24,14 +25,15 @@ router.get("/brand/:brandId", getGiftsByBrand);
 router.post("/", createGift);
 
 // Upload gift image
-router.post("/upload-image", upload.single("image"), (req, res) => {
+router.post("/upload-image", upload.single("image"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
     }
+    const { url: imageUrl } = await uploadImage(req.file, "gifts");
     res.json({
-      imageUrl: `/uploads/${req.file.filename}`,
-      filename: req.file.filename,
+      imageUrl,
+      filename: req.file.filename || "",
     });
   } catch (error) {
     res

@@ -3,6 +3,7 @@ const router = express.Router();
 const upload = require("../middleware/upload");
 const { protect } = require("../middleware/auth");
 const { getJobs, createJob, updateJob, deleteJob } = require("../controllers/jobController");
+const { uploadImage } = require("../utils/imageUpload");
 
 // Public list
 router.get("/", getJobs);
@@ -13,10 +14,10 @@ router.put("/:id", protect, updateJob);
 router.delete("/:id", protect, deleteJob);
 
 // Image upload (admin)
-router.post("/upload-image", protect, upload.single("image"), (req, res) => {
+router.post("/upload-image", protect, upload.single("image"), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: "No file uploaded" });
-    const fileUrl = `/uploads/${req.file.filename}`;
+    const { url: fileUrl } = await uploadImage(req.file, "jobs");
     res.json({ message: "File uploaded successfully", url: fileUrl });
   } catch (error) {
     console.error("Upload error:", error);

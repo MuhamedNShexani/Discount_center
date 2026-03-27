@@ -57,6 +57,7 @@ const ALLOWED_NAV_ACTIONS = [
   "favourites",
   "stores",
   "gifts",
+  "shopping",
   "profile",
 ];
 

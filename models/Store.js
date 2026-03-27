@@ -46,6 +46,7 @@ const storeSchema = new mongoose.Schema({
   show: { type: Boolean, default: true },
   followerCount: { type: Number, default: 0 },
   lastReleaseDiscountDate: { type: Date, default: null },
+  isHasDelivery: { type: Boolean, default: false },
 });
 
 module.exports = mongoose.model("Store", storeSchema);

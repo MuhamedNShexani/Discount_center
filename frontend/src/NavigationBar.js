@@ -55,6 +55,7 @@ import {
   Block as BlockIcon,
   Refresh as RefreshIcon,
   VideoLibrary as VideoLibraryIcon,
+  LocalShipping as LocalShippingIcon,
 } from "@mui/icons-material";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -141,7 +142,14 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
     const guestKey = guestUser?.deviceId || guestUser?._id || guestUser?.id;
     if (guestKey) return `${GIFTS_LAST_SEEN_KEY_PREFIX}:guest:${guestKey}`;
     return `${GIFTS_LAST_SEEN_KEY_PREFIX}:anonymous`;
-  }, [guestUser?._id, guestUser?.deviceId, guestUser?.id, user?._id, user?.email, user?.id]);
+  }, [
+    guestUser?._id,
+    guestUser?.deviceId,
+    guestUser?.id,
+    user?._id,
+    user?.email,
+    user?.id,
+  ]);
 
   const getLastSeenGiftTs = () => {
     try {
@@ -170,7 +178,11 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
   const fetchNewGiftsCount = useCallback(async () => {
     try {
       const res = await giftAPI.getAll();
-      const list = Array.isArray(res?.data?.data) ? res.data.data : Array.isArray(res?.data) ? res.data : [];
+      const list = Array.isArray(res?.data?.data)
+        ? res.data.data
+        : Array.isArray(res?.data)
+          ? res.data
+          : [];
       const now = Date.now();
       const visible = list.filter((g) => {
         if (!g?.expireDate) return true;
@@ -459,8 +471,8 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   textAlign: "center",
                   textDecoration: "none",
                   color: "white",
-                  fontWeight: 700,
-                  fontSize: "1.25rem",
+                  fontWeight: 900,
+                  fontSize: "1.75rem",
                   textShadow: "0 2px 4px rgba(0,0,0,0.3)",
                   background: "linear-gradient(45deg, #ffffff, #FFF5EC)",
                   WebkitBackgroundClip: "text",
@@ -553,8 +565,8 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   flex: 1,
                   textAlign: "center",
                   color: "white",
-                  fontWeight: 700,
-                  fontSize: "1.15rem",
+                  fontWeight: 900,
+                  fontSize: "1.75rem",
                   textShadow: "0 2px 4px rgba(0,0,0,0.3)",
                   background: "linear-gradient(45deg, #ffffff, #FFF5EC)",
                   WebkitBackgroundClip: "text",
@@ -623,6 +635,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   favourites: { to: "/favourites", icon: <FavoriteIcon /> },
                   stores: { to: "/stores", icon: <StoreIcon /> },
                   gifts: { to: "/gifts", icon: giftsIconWithBadge },
+                  shopping: { to: "/shopping", icon: <LocalShippingIcon /> },
                   profile: { to: "/profile", icon: <PersonIcon /> },
                 };
 
@@ -630,16 +643,22 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   if (!action || action === "none") {
                     return <Box key={key} sx={{ width: 40, height: 40 }} />;
                   }
-                  if (action === "label") return <Box key={key} sx={{ width: 40, height: 40 }} />;
+                  if (action === "label")
+                    return <Box key={key} sx={{ width: 40, height: 40 }} />;
                   if (action === "refresh") {
                     return (
-                      <IconButton key={key} onClick={() => triggerRefresh?.()} sx={sxBtn}>
+                      <IconButton
+                        key={key}
+                        onClick={() => triggerRefresh?.()}
+                        sx={sxBtn}
+                      >
                         <RefreshIcon />
                       </IconButton>
                     );
                   }
                   const cfg = map[action];
-                  if (!cfg) return <Box key={key} sx={{ width: 40, height: 40 }} />;
+                  if (!cfg)
+                    return <Box key={key} sx={{ width: 40, height: 40 }} />;
                   return (
                     <IconButton
                       key={key}
@@ -656,7 +675,9 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                 const centerIsLabel = (top.center || "label") === "label";
                 return (
                   <>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.9 }}>
+                    <Box
+                      sx={{ display: "flex", alignItems: "center", gap: 0.9 }}
+                    >
                       {renderAction(top.topleft1, "topleft1")}
                       {renderAction(top.topleft2, "topleft2")}
                     </Box>
@@ -669,8 +690,8 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                         textAlign: "center",
                         textDecoration: "none",
                         color: "white",
-                        fontWeight: 700,
-                        fontSize: "1.15rem",
+                        fontWeight: 900,
+                        fontSize: "1.75rem",
                         textShadow: "0 2px 4px rgba(0,0,0,0.3)",
                         background: "linear-gradient(45deg, #ffffff, #FFF5EC)",
                         WebkitBackgroundClip: "text",
@@ -683,7 +704,9 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                       {t("Discount Center")}
                     </Typography>
 
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.9 }}>
+                    <Box
+                      sx={{ display: "flex", alignItems: "center", gap: 0.9 }}
+                    >
                       {renderAction(top.topright1, "topright1")}
                       {renderAction(top.topright2, "topright2")}
                     </Box>
@@ -715,8 +738,8 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                 sx={{
                   textDecoration: "none",
                   color: "white",
-                  fontWeight: 700,
-                  fontSize: { xs: "1rem", sm: "1.25rem", md: "1.5rem" },
+                  fontWeight: 900,
+                  fontSize: { xs: "1.75rem", sm: "1.75rem", md: "1.75rem" },
                   textShadow: "0 2px 4px rgba(0,0,0,0.3)",
                   background: "linear-gradient(45deg, #ffffff, #f0f0f0)",
                   WebkitBackgroundClip: "text",

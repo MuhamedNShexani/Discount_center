@@ -43,6 +43,7 @@ import LoginPage from "./pages/LoginPage";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import ProfilePage from "./pages/ProfilePage";
 import FindJob from "./pages/FindJob";
+import ShoppingPage from "./pages/ShoppingPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ScrollToTop from "./components/ScrollToTop";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -267,6 +268,7 @@ function AppContent() {
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/findjob" element={<FindJob />} />
+                <Route path="/shopping" element={<ShoppingPage />} />
                 <Route path="/products/:id" element={<ProductDetail />} />
               </Routes>
             </Container>

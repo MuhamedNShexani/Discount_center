@@ -850,7 +850,7 @@ const ProductCategory = () => {
                             {product.storeId?.name && (
                               <Typography
                                 variant="caption"
-                                color="secondarytext."
+                                color="var(--color-primary)"
                                 sx={{ display: "block", textAlign: "center" }}
                               >
                                 {product.storeId.name}
@@ -867,7 +867,7 @@ const ProductCategory = () => {
                                   gap: 1,
                                 }}
                               >
-                                {isDiscountValid(product) &&
+                                {/* {isDiscountValid(product) &&
                                   product.previousPrice &&
                                   product.previousPrice > product.newPrice && (
                                     <Typography
@@ -884,12 +884,12 @@ const ProductCategory = () => {
                                     >
                                       {formatPrice(product.previousPrice)}
                                     </Typography>
-                                  )}
+                                  )} */}
                                 {product.newPrice && (
                                   <Typography
                                     variant="h6"
                                     sx={{
-                                      color: "black",
+                                      color: "var(--color-secondary)",
                                       fontWeight: 700,
                                       fontSize: { xs: "1.1rem", sm: "1.3rem" },
                                     }}
@@ -897,7 +897,7 @@ const ProductCategory = () => {
                                     {formatPrice(product.newPrice)}
                                   </Typography>
                                 )}
-                                {isDiscountValid(product) && (
+                                {/* {isDiscountValid(product) && (
                                   <Chip
                                     label={(() => {
                                       const off = calculateDiscount(
@@ -916,7 +916,7 @@ const ProductCategory = () => {
                                       fontSize: "0.65rem",
                                     }}
                                   />
-                                )}
+                                )} */}
                               </Box>
 
                               {/* View details button
@@ -1351,7 +1351,7 @@ const ProductCategory = () => {
                                 gap: 1,
                               }}
                             >
-                              {isDiscountValid(product) &&
+                              {/* {isDiscountValid(product) &&
                                 product.previousPrice &&
                                 product.previousPrice > product.newPrice && (
                                   <Typography
@@ -1365,12 +1365,12 @@ const ProductCategory = () => {
                                   >
                                     {formatPrice(product.previousPrice)}
                                   </Typography>
-                                )}
+                                )} */}
                               {product.newPrice && (
                                 <Typography
                                   variant="h6"
                                   sx={{
-                                    color: "black",
+                                    color: "var(--color-secondary)",
                                     fontWeight: 700,
                                     fontSize: { xs: "1.1rem", sm: "1.3rem" },
                                   }}
@@ -1378,7 +1378,7 @@ const ProductCategory = () => {
                                   {formatPrice(product.newPrice)}
                                 </Typography>
                               )}
-                              {isDiscountValid(product) && (
+                              {/* {isDiscountValid(product) && (
                                 <Chip
                                   label={(() => {
                                     const off = calculateDiscount(
@@ -1397,7 +1397,7 @@ const ProductCategory = () => {
                                     fontSize: "0.7rem",
                                   }}
                                 />
-                              )}
+                              )} */}
                             </Box>
                           </Box>
                         </CardContent>
@@ -1544,7 +1544,7 @@ const ProductCategory = () => {
         fullWidth
       >
         <DialogTitle>
-          {selectedProduct?.name}
+          {t("Product Details")}
           <IconButton
             onClick={() => setDialogOpen(false)}
             sx={{ position: "absolute", right: 8, top: 8 }}
@@ -1567,7 +1567,7 @@ const ProductCategory = () => {
                 ) : (
                   <Box
                     sx={{
-                      height: 400,
+                      height: 150,
                       display: "flex",
                       justifyContent: "center",
                       alignItems: "center",
@@ -1623,7 +1623,7 @@ const ProductCategory = () => {
 
                 {isDiscountValid(selectedProduct) && (
                   <Box sx={{ mt: 2 }}>
-                    {selectedProduct.previousPrice &&
+                    {/* {selectedProduct.previousPrice &&
                     selectedProduct.previousPrice > selectedProduct.newPrice ? (
                       <Typography
                         variant="body1"
@@ -1636,7 +1636,7 @@ const ProductCategory = () => {
                       >
                         {formatPrice(selectedProduct.previousPrice)}
                       </Typography>
-                    ) : null}
+                    ) : null} */}
                     <Typography
                       variant="h6"
                       sx={{
@@ -1645,24 +1645,19 @@ const ProductCategory = () => {
                         fontSize: { xs: "1.1rem", sm: "1.3rem" },
                       }}
                     >
+                      {t("Price")} :
+                    </Typography>
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        color: "var(--color-secondary)",
+                        textAlign: "center",
+                        fontWeight: 900,
+                        fontSize: { xs: "1.75rem", sm: "1.75rem" },
+                      }}
+                    >
                       {formatPrice(selectedProduct.newPrice)}
                     </Typography>
-                    <Chip
-                      label={(() => {
-                        const off = calculateDiscount(
-                          selectedProduct.previousPrice,
-                          selectedProduct.newPrice,
-                        );
-                        return off === null ? t("Discount") : `${off}%`;
-                      })()}
-                      size="large"
-                      sx={{
-                        backgroundColor: "var(--brand-accent-orange)",
-                        color: "white",
-                        fontSize: "1rem",
-                        mt: 1,
-                      }}
-                    />
                   </Box>
                 )}
 
@@ -1677,18 +1672,18 @@ const ProductCategory = () => {
                         mt: 2,
                       }}
                     >
-                      {formatPrice(selectedProduct.newPrice)}
+                      {t("Price")}: {formatPrice(selectedProduct.newPrice)}
                     </Typography>
                   )}
 
-                <Box sx={{ mt: 3, display: "flex", gap: 2 }}>
+                {/* <Box sx={{ mt: 3, display: "flex", gap: 2 }}>
                   <IconButton
                     onClick={(e) => handleLikeClick(selectedProduct._id, e)}
                     disabled={likeLoading[selectedProduct._id]}
                     sx={{
-                      border: "2px solid var(--brand-accent-orange)",
+                      border: "2px solid red",
                       color: likeStates[selectedProduct._id]
-                        ? "var(--brand-accent-orange)"
+                        ? "red"
                         : "inherit",
                     }}
                   >
@@ -1698,7 +1693,7 @@ const ProductCategory = () => {
                       <FavoriteBorderIcon />
                     )}
                   </IconButton>
-                </Box>
+                </Box> */}
               </Grid>
             </Grid>
           )}

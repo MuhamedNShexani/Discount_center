@@ -10,6 +10,7 @@ const {
   deleteBrand,
 } = require("../controllers/brandController");
 const upload = require("../middleware/upload");
+const { uploadImage } = require("../utils/imageUpload");
 
 // @route   GET /api/brands
 // @desc    Get all brands
@@ -37,13 +38,12 @@ router.delete("/:id", deleteBrand);
 
 // @route   POST /api/brands/upload-logo
 // @desc    Upload brand logo
-router.post("/upload-logo", upload.single("logo"), (req, res) => {
+router.post("/upload-logo", upload.single("logo"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
     }
-
-    const fileUrl = `/uploads/${req.file.filename}`;
+    const { url: fileUrl } = await uploadImage(req.file, "brands");
     res.json({
       message: "File uploaded successfully",
       url: fileUrl,

@@ -46,7 +46,7 @@ api.interceptors.response.use(
 // Store API calls
 export const storeAPI = {
   getAll: () => api.get("/stores"),
-  getVisible: () => api.get("/stores/visible"),
+  getVisible: (params = {}) => api.get("/stores/visible", { params }),
   getAllIncludingHidden: () => api.get("/stores/all"),
   getById: (id) => api.get(`/stores/${id}`),
   create: (data) => api.post("/stores", data),

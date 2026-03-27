@@ -645,7 +645,7 @@ const BrandProfile = () => {
             sx={{
               position: "relative",
               overflow: "hidden",
-              height: { xs: "100px", sm: "180px", md: "150px" },
+              height: { xs: "180px", sm: "250px", md: "250px" },
               flexShrink: 0,
               backgroundColor: "#f8f9fa",
             }}
@@ -653,7 +653,7 @@ const BrandProfile = () => {
             {product.image ? (
               <CardMedia
                 component="img"
-                height="180"
+                height="250"
                 image={`${process.env.REACT_APP_BACKEND_URL}${product.image}`}
                 alt={product.name}
                 sx={{
