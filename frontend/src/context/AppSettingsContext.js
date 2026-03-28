@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { settingsAPI } from "../services/api";
+import { openWhatsAppLink } from "../utils/openWhatsAppLink";
 
 const AppSettingsContext = createContext(null);
 
@@ -54,7 +55,8 @@ export const AppSettingsProvider = ({ children }) => {
     const num = (contactWhatsAppNumber || DEFAULT_WHATSAPP)
       .replace(/\s/g, "")
       .replace(/^\+/, "");
-    window.open(`https://wa.me/${num}`, "_blank", "noopener,noreferrer");
+    if (!num) return;
+    openWhatsAppLink(`https://api.whatsapp.com/send?phone=${num}`);
   };
 
   return (

@@ -473,7 +473,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   fontWeight: 900,
                   fontSize: "1.75rem",
                   textShadow: "0 2px 4px rgba(0,0,0,0.3)",
-                  background: "linear-gradient(45deg, #ffffff, #FFF5EC)",
+                  backgroundColor: "white",
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
                   backgroundClip: "text",
@@ -567,7 +567,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   fontWeight: 900,
                   fontSize: "1.75rem",
                   textShadow: "0 2px 4px rgba(0,0,0,0.3)",
-                  background: "linear-gradient(45deg, #ffffff, #FFF5EC)",
+                  backgroundColor: "white",
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
                   backgroundClip: "text",
@@ -692,11 +692,11 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                         fontWeight: 900,
                         fontSize: "1.75rem",
                         textShadow: "0 2px 4px rgba(0,0,0,0.3)",
-                        background: "linear-gradient(45deg, #ffffff, #FFF5EC)",
-                        WebkitBackgroundClip: "text",
-                        WebkitTextFillColor: "transparent",
-                        backgroundClip: "text",
-                        opacity: centerIsLabel ? 1 : 0,
+                        // backgroundColor: "white",
+                        // WebkitBackgroundClip: "text",
+                        // WebkitTextFillColor: "transparent",
+                        // backgroundClip: "text",
+                        // opacity: centerIsLabel ? 1 : 0,
                         pointerEvents: centerIsLabel ? "auto" : "none",
                       }}
                     >
@@ -740,7 +740,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   fontWeight: 900,
                   fontSize: { xs: "1.75rem", sm: "1.75rem", md: "1.75rem" },
                   textShadow: "0 2px 4px rgba(0,0,0,0.3)",
-                  background: "linear-gradient(45deg, #ffffff, #f0f0f0)",
+                  backgroundColor: "white",
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
                   backgroundClip: "text",
@@ -987,6 +987,17 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                         <PeopleIcon fontSize="small" />
                       </ListItemIcon>
                       <ListItemText primary={t("Users")} />
+                    </MenuItem>
+                    <MenuItem
+                      component={Link}
+                      to="/admin/translations"
+                      onClick={handleAdminMenuClose}
+                      selected={location.pathname === "/admin/translations"}
+                    >
+                      <ListItemIcon>
+                        <LanguageIcon fontSize="small" />
+                      </ListItemIcon>
+                      <ListItemText primary={t("translationPage.title")} />
                     </MenuItem>
                     <MenuItem
                       component={Link}

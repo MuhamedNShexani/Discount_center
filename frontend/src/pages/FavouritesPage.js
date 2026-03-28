@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  useCallback,
+} from "react";
 import {
   Box,
   Card,
@@ -16,6 +22,7 @@ import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import StorefrontIcon from "@mui/icons-material/Storefront";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import ArrowBack from "@mui/icons-material/ArrowBack";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@mui/material/styles";
@@ -28,14 +35,16 @@ import {
   shouldShowExpiryChip,
   expiryChipBg,
 } from "../utils/expiryDate";
+import ProductViewTracker from "../components/ProductViewTracker";
 
 const FavouritesPage = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { getLikedProducts, toggleLike, isProductLiked, user } =
+  const { getLikedProducts, toggleLike, isProductLiked, user, recordView } =
     useUserTracking();
   const [products, setProducts] = useState([]);
+  const productViewRecordedRef = useRef(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [likeStates, setLikeStates] = useState({});
@@ -47,6 +56,35 @@ const FavouritesPage = () => {
   const nonExpiredProducts = useMemo(
     () => products.filter((p) => !isProductExpired(p)),
     [products],
+  );
+
+  const favouriteProductIdsKey = useMemo(
+    () =>
+      (products || [])
+        .map((p) => String(p._id))
+        .sort()
+        .join(","),
+    [products],
+  );
+
+  useEffect(() => {
+    productViewRecordedRef.current = new Set();
+  }, [favouriteProductIdsKey]);
+
+  const handleProductBecameVisible = useCallback(
+    async (productId) => {
+      const result = await recordView(productId);
+      if (result?.success && result?.data?.viewCount != null) {
+        setProducts((prev) =>
+          prev.map((p) =>
+            String(p._id) === String(productId)
+              ? { ...p, viewCount: result.data.viewCount }
+              : p,
+          ),
+        );
+      }
+    },
+    [recordView],
   );
 
   useEffect(() => {
@@ -274,200 +312,233 @@ const FavouritesPage = () => {
             const market = getMarketInfo(product);
 
             return (
-              <Card
+              <ProductViewTracker
                 key={product._id}
-                component={Link}
-                to={`/products/${product._id}`}
-                sx={{
-                  textDecoration: "none",
-                  color: "inherit",
-                  display: "flex",
-                  flexDirection: "column",
-                  height: "100%",
-                  width: "100%",
-                  minWidth: 0,
-                  transition: "transform 0.2s",
-                  "&:hover": { transform: "scale(1.02)" },
-                }}
+                productId={product._id}
+                onVisible={handleProductBecameVisible}
+                recordedIdsRef={productViewRecordedRef}
               >
-                {/* Logo and market name at top */}
-                {market && (
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1,
-                      p: 1,
-                      borderBottom: 1,
-                      borderColor: "divider",
-                    }}
-                  >
-                    {market.logo ? (
-                      <Box
-                        component="img"
-                        src={
-                          market.logo ? resolveMediaUrl(market.logo) : undefined
-                        }
-                        alt={market.name}
+                <Card
+                  component={Link}
+                  to={`/products/${product._id}`}
+                  sx={{
+                    textDecoration: "none",
+                    color: "inherit",
+                    display: "flex",
+                    flexDirection: "column",
+                    height: "100%",
+                    width: "100%",
+                    minWidth: 0,
+                    transition: "transform 0.2s",
+                    "&:hover": { transform: "scale(1.02)" },
+                  }}
+                >
+                  {/* Logo and market name at top */}
+                  {market && (
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        p: 1,
+                        borderBottom: 1,
+                        borderColor: "divider",
+                      }}
+                    >
+                      {market.logo ? (
+                        <Box
+                          component="img"
+                          src={
+                            market.logo
+                              ? resolveMediaUrl(market.logo)
+                              : undefined
+                          }
+                          alt={market.name}
+                          sx={{
+                            width: 24,
+                            height: 24,
+                            objectFit: "contain",
+                            borderRadius: 0.5,
+                          }}
+                        />
+                      ) : (
+                        <StorefrontIcon
+                          sx={{ fontSize: 20, color: "text.secondary" }}
+                        />
+                      )}
+                      <Typography
+                        variant="caption"
                         sx={{
-                          width: 24,
-                          height: 24,
+                          fontWeight: 600,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {market.name}
+                      </Typography>
+                    </Box>
+                  )}
+                  <Box sx={{ position: "relative" }}>
+                    {product.image ? (
+                      <CardMedia
+                        component="img"
+                        image={resolveMediaUrl(product.image)}
+                        alt={product.name}
+                        sx={{
+                          height: 100,
                           objectFit: "contain",
-                          borderRadius: 0.5,
+                          backgroundColor: theme.palette.grey[100],
                         }}
                       />
                     ) : (
-                      <StorefrontIcon
-                        sx={{ fontSize: 20, color: "text.secondary" }}
-                      />
+                      <Box
+                        sx={{
+                          height: 100,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          backgroundColor: theme.palette.grey[100],
+                        }}
+                      >
+                        <ShoppingCartIcon
+                          sx={{ fontSize: 48, color: "grey.400" }}
+                        />
+                      </Box>
                     )}
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        fontWeight: 600,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {market.name}
-                    </Typography>
-                  </Box>
-                )}
-                <Box sx={{ position: "relative" }}>
-                  {product.image ? (
-                    <CardMedia
-                      component="img"
-                      image={resolveMediaUrl(product.image)}
-                      alt={product.name}
-                      sx={{
-                        height: 100,
-                        objectFit: "contain",
-                        backgroundColor: theme.palette.grey[100],
-                      }}
-                    />
-                  ) : (
+                    {/* {product.viewCount > 0 && (
                     <Box
                       sx={{
-                        height: 100,
+                        position: "absolute",
+                        top: 8,
+                        left: 8,
                         display: "flex",
                         alignItems: "center",
-                        justifyContent: "center",
-                        backgroundColor: theme.palette.grey[100],
+                        gap: 0.25,
+                        backgroundColor: "rgba(0, 0, 0, 0.65)",
+                        color: "white",
+                        px: 0.75,
+                        py: 0.25,
+                        borderRadius: 1,
+                        fontSize: "0.65rem",
+                        fontWeight: 600,
+                        pointerEvents: "none",
+                        zIndex: 1,
                       }}
                     >
-                      <ShoppingCartIcon
-                        sx={{ fontSize: 48, color: "grey.400" }}
-                      />
+                      <VisibilityIcon sx={{ fontSize: "0.75rem" }} />
+                      {product.viewCount}
                     </Box>
-                  )}
-                  <IconButton
-                    onClick={(e) => handleLikeClick(product._id, e)}
-                    disabled={likeLoading[product._id]}
-                    sx={{
-                      position: "absolute",
-                      top: 8,
-                      right: 8,
-                      backgroundColor: "rgba(255,255,255,0.9)",
-                      "&:hover": { backgroundColor: "white" },
-                    }}
-                  >
-                    {isLiked ? (
-                      <FavoriteIcon
-                        sx={{ color: "#e53e3e", fontSize: "1.2rem" }}
-                      />
-                    ) : (
-                      <FavoriteBorderIcon sx={{ fontSize: "1.2rem" }} />
-                    )}
-                  </IconButton>
-                  {showExpiryChip && (
-                    <Chip
-                      label={formatExpiryChipLabel(expInfo, t)}
-                      size="small"
+                  )} */}
+                    <IconButton
+                      onClick={(e) => handleLikeClick(product._id, e)}
+                      disabled={likeLoading[product._id]}
                       sx={{
                         position: "absolute",
-                        bottom: 8,
-                        left: 8,
-                        backgroundColor: expiryChipBg(expInfo),
-                        color: "white",
-                        fontWeight: 600,
+                        top: 8,
+                        right: 8,
+                        backgroundColor: "rgba(255,255,255,0.9)",
+                        "&:hover": { backgroundColor: "white" },
+                        zIndex: 2,
                       }}
-                    />
-                  )}
-                </Box>
-                <CardContent sx={{ flexGrow: 1, p: 1.5 }}>
-                  <Typography
-                    variant="body2"
-                    fontWeight={600}
-                    sx={{
-                      fontSize: { xs: "0.92rem", sm: "0.95rem" },
-                      lineHeight: 1.25,
-                      display: "-webkit-box",
-                      textAlign: "center",
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: "vertical",
-                      overflow: "hidden",
-                      minHeight: "2.5em", // reserve space for 2 lines
-                    }}
-                  >
-                    {product.name}
-                  </Typography>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 0.5,
-                      mt: 0.5,
-                    }}
-                  >
-                    {(() => {
-                      const hasPreviousPrice =
-                        product.previousPrice &&
-                        product.newPrice &&
-                        product.previousPrice > product.newPrice;
-
-                      return (
-                        <>
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              textDecoration: hasPreviousPrice
-                                ? "line-through"
-                                : "none",
-                              color: "red",
-                              fontSize: { xs: "0.8rem", sm: "0.9rem" },
-                              fontWeight: 500,
-                              minHeight: "1.2em",
-                              visibility: hasPreviousPrice
-                                ? "visible"
-                                : "hidden",
-                            }}
-                          >
-                            {hasPreviousPrice
-                              ? formatPrice(product.previousPrice)
-                              : "\u00A0"}
-                          </Typography>
-
-                          <Typography
-                            variant="h6"
-                            sx={{
-                              color: "var(--color-secondary)",
-                              textAlign: "center",
-                              fontWeight: 700,
-                              fontSize: { xs: "1.1rem", sm: "1.3rem" },
-                              minHeight: "1.4em",
-                            }}
-                          >
-                            {product.newPrice
-                              ? formatPrice(product.newPrice)
-                              : "\u00A0"}
-                          </Typography>
-                        </>
-                      );
-                    })()}
+                    >
+                      {isLiked ? (
+                        <FavoriteIcon
+                          sx={{ color: "#e53e3e", fontSize: "1.2rem" }}
+                        />
+                      ) : (
+                        <FavoriteBorderIcon sx={{ fontSize: "1.2rem" }} />
+                      )}
+                    </IconButton>
+                    {showExpiryChip && (
+                      <Chip
+                        label={formatExpiryChipLabel(expInfo, t)}
+                        size="small"
+                        sx={{
+                          position: "absolute",
+                          bottom: 8,
+                          left: 8,
+                          backgroundColor: expiryChipBg(expInfo),
+                          color: "white",
+                          fontWeight: 600,
+                        }}
+                      />
+                    )}
                   </Box>
-                </CardContent>
-              </Card>
+                  <CardContent sx={{ flexGrow: 1, p: 1.5 }}>
+                    <Typography
+                      variant="body2"
+                      fontWeight={600}
+                      sx={{
+                        fontSize: { xs: "0.92rem", sm: "0.95rem" },
+                        lineHeight: 1.25,
+                        display: "-webkit-box",
+                        textAlign: "center",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                        minHeight: "2.5em", // reserve space for 2 lines
+                      }}
+                    >
+                      {product.name}
+                    </Typography>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 0.5,
+                        mt: 0.5,
+                      }}
+                    >
+                      {(() => {
+                        const hasPreviousPrice =
+                          product.previousPrice &&
+                          product.newPrice &&
+                          product.previousPrice > product.newPrice;
+
+                        return (
+                          <>
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                textDecoration: hasPreviousPrice
+                                  ? "line-through"
+                                  : "none",
+                                color: "red",
+                                fontSize: { xs: "0.8rem", sm: "0.9rem" },
+                                fontWeight: 500,
+                                minHeight: "1.2em",
+                                visibility: hasPreviousPrice
+                                  ? "visible"
+                                  : "hidden",
+                              }}
+                            >
+                              {hasPreviousPrice
+                                ? formatPrice(product.previousPrice)
+                                : "\u00A0"}
+                            </Typography>
+
+                            <Typography
+                              variant="h6"
+                              sx={{
+                                color: "var(--color-secondary)",
+                                textAlign: "center",
+                                fontWeight: 700,
+                                fontSize: { xs: "1.3rem", sm: "1.5rem" },
+                                minHeight: "1.4em",
+                              }}
+                            >
+                              {product.newPrice
+                                ? formatPrice(product.newPrice)
+                                : "\u00A0"}
+                            </Typography>
+                          </>
+                        );
+                      })()}
+                    </Box>
+                  </CardContent>
+                </Card>
+              </ProductViewTracker>
             );
           })}
         </Box>

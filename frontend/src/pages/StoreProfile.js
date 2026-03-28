@@ -88,6 +88,10 @@ import ProductViewTracker from "../components/ProductViewTracker";
 import { motion } from "framer-motion";
 import { resolveMediaUrl } from "../utils/mediaUrl";
 import {
+  normalizeWhatsAppUrl,
+  openWhatsAppLink,
+} from "../utils/openWhatsAppLink";
+import {
   isExpiryStillValid,
   getExpiryRemainingInfo,
   formatExpiryChipLabel,
@@ -373,10 +377,13 @@ const StoreProfile = () => {
     if (!raw || typeof raw !== "string") return null;
     const trimmed = raw.trim();
     if (/^(https?:\/\/)?(wa\.me|api\.whatsapp\.com)\//i.test(trimmed)) {
-      return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+      const withProto = /^https?:\/\//i.test(trimmed)
+        ? trimmed
+        : `https://${trimmed}`;
+      return normalizeWhatsAppUrl(withProto);
     }
     const digits = trimmed.replace(/[^\d]/g, "");
-    return digits ? `https://wa.me/${digits}` : null;
+    return digits ? `https://api.whatsapp.com/send?phone=${digits}` : null;
   };
 
   const buildWhatsAppOrderText = () => {
@@ -423,7 +430,7 @@ const StoreProfile = () => {
     }
     const text = encodeURIComponent(buildWhatsAppOrderText());
     const url = wa.includes("?") ? `${wa}&text=${text}` : `${wa}?text=${text}`;
-    window.open(url, "_blank", "noopener,noreferrer");
+    openWhatsAppLink(url);
   };
 
   const isProductAvailableForCart = (p) => {
@@ -1133,7 +1140,7 @@ const StoreProfile = () => {
               </Typography>
 
               {/* Brand name if available */}
-              {product.brandId && product.brandId.name && (
+              {/* {product.brandId && product.brandId.name && (
                 <Typography
                   variant="body2"
                   sx={{
@@ -1146,7 +1153,7 @@ const StoreProfile = () => {
                 >
                   {product.brandId.name}
                 </Typography>
-              )}
+              )} */}
 
               {/* Pricing Section */}
               {showPrice && (
@@ -1591,10 +1598,13 @@ const StoreProfile = () => {
     const trimmed = url.trim();
     if (type === "whatsapp") {
       if (/^(https?:\/\/)?(wa\.me|api\.whatsapp\.com)\//i.test(trimmed)) {
-        return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+        const withProto = /^https?:\/\//i.test(trimmed)
+          ? trimmed
+          : `https://${trimmed}`;
+        return normalizeWhatsAppUrl(withProto);
       }
       const digits = trimmed.replace(/[^\d]/g, "");
-      return digits ? `https://wa.me/${digits}` : null;
+      return digits ? `https://api.whatsapp.com/send?phone=${digits}` : null;
     }
     return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
   };

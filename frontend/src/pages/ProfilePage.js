@@ -43,6 +43,7 @@ import {
   MusicNote as TikTokIcon,
   Call as ViberIcon,
   Telegram as TelegramIcon,
+  Language as LanguageIcon,
 } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
@@ -51,6 +52,7 @@ import { useCityFilter } from "../context/CityFilterContext";
 import { useAppSettings } from "../context/AppSettingsContext";
 import { useActiveTheme } from "../context/ActiveThemeContext";
 import kurdishFlag from "../styles/kurdish_flag.jpg";
+import { normalizeWhatsAppUrl } from "../utils/openWhatsAppLink";
 
 const THEME_OPTIONS = [
   { id: "default", label: "Default Theme" },
@@ -112,10 +114,18 @@ const ProfilePage = () => {
           trimmed,
         )
       ) {
-        return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+        const withProto = /^https?:\/\//i.test(trimmed)
+          ? trimmed
+          : `https://${trimmed}`;
+        if (type === "whatsapp") {
+          return normalizeWhatsAppUrl(withProto);
+        }
+        return withProto;
       }
       const digits = trimmed.replace(/[^\d]/g, "");
-      if (type === "whatsapp") return digits ? `https://wa.me/${digits}` : null;
+      if (type === "whatsapp") {
+        return digits ? `https://api.whatsapp.com/send?phone=${digits}` : null;
+      }
       if (type === "viber")
         return digits ? `viber://chat?number=${digits}` : null;
       if (type === "telegram") return digits ? `https://t.me/+${digits}` : null;
@@ -231,6 +241,12 @@ const ProfilePage = () => {
                   <PeopleIcon fontSize="small" />
                 </ListItemIcon>
                 <ListItemText primary={t("Users")} />
+              </ListItemButton>
+              <ListItemButton component={Link} to="/admin/translations">
+                <ListItemIcon>
+                  <LanguageIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary={t("translationPage.title")} />
               </ListItemButton>
               <ListItemButton component={Link} to="/admin/dashboard">
                 <ListItemIcon>

@@ -13,6 +13,7 @@ const {
   deleteExpiredProducts,
 } = require("../controllers/adminController");
 const { sendNotification } = require("../controllers/adminNotificationController");
+const { upsertTranslation, deleteTranslation } = require("../controllers/translationController");
 const { protect } = require("../middleware/auth");
 
 // GET /api/admin/stats
@@ -41,5 +42,9 @@ router.delete("/users/:id", protect, deleteUser);
 
 // Delete expired products - admin-only, requires auth
 router.delete("/products/expired", protect, deleteExpiredProducts);
+
+// UI translations (database overrides; list via GET /api/translations)
+router.put("/translations", protect, upsertTranslation);
+router.delete("/translations/:id", protect, deleteTranslation);
 
 module.exports = router;

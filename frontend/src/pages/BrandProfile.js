@@ -78,6 +78,7 @@ import { useAuth } from "../context/AuthContext";
 import JobCardRow from "../components/JobCardRow";
 import ProductViewTracker from "../components/ProductViewTracker";
 import { resolveMediaUrl } from "../utils/mediaUrl";
+import { normalizeWhatsAppUrl } from "../utils/openWhatsAppLink";
 import {
   isExpiryStillValid,
   getExpiryRemainingInfo,
@@ -1199,10 +1200,13 @@ const BrandProfile = () => {
     const trimmed = url.trim();
     if (type === "whatsapp") {
       if (/^(https?:\/\/)?(wa\.me|api\.whatsapp\.com)\//i.test(trimmed)) {
-        return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+        const withProto = /^https?:\/\//i.test(trimmed)
+          ? trimmed
+          : `https://${trimmed}`;
+        return normalizeWhatsAppUrl(withProto);
       }
       const digits = trimmed.replace(/[^\d]/g, "");
-      return digits ? `https://wa.me/${digits}` : null;
+      return digits ? `https://api.whatsapp.com/send?phone=${digits}` : null;
     }
     return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
   };

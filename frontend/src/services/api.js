@@ -264,6 +264,11 @@ export const notificationAPI = {
   getVapidPublic: () => api.get("/notifications/vapid-public"),
 };
 
+// Public translation overrides (merged into i18n at runtime)
+export const translationAPI = {
+  getAll: () => api.get("/translations"),
+};
+
 // Search API calls
 export const searchAPI = {
   search: (q, city = null) =>
@@ -283,6 +288,8 @@ export const adminAPI = {
   updateUser: (id, data) => api.put(`/admin/users/${id}`, data),
   deleteUser: (id) => api.delete(`/admin/users/${id}`),
   deleteExpiredProducts: () => api.delete("/admin/products/expired"),
+  upsertTranslation: (data) => api.put("/admin/translations", data),
+  deleteTranslation: (id) => api.delete(`/admin/translations/${id}`),
 };
 
 export default api;

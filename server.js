@@ -59,6 +59,7 @@ app.use("/api/theme", require("./routes/theme"));
 app.use("/api/search", require("./routes/search"));
 app.use("/api/videos", require("./routes/video"));
 app.use("/api/jobs", require("./routes/job"));
+app.use("/api/translations", require("./routes/translation"));
 
 const PORT = process.env.PORT || 5000;
 // app.listen(PORT, () => console.log(`Server started on port ${PORT}`));

@@ -126,8 +126,11 @@ const BottomNavigationBar = () => {
         elevation={8}
         sx={{
           borderRadius: "70px 70px",
+          // background:
+          //   "linear-gradient(120deg, var(--brand-primary-blue) 0%, var(--brand-secondary-blue) 60%, var(--brand-accent-orange) 100%)",
           background:
-            "linear-gradient(120deg, var(--brand-primary-blue) 0%, var(--brand-secondary-blue) 60%, var(--brand-accent-orange) 100%)",
+            "linear-gradient(120deg, var(--color-primary) 0%, var(--color-secondary) 56%, var(--color-secondary) 100%)",
+
           backdropFilter: "blur(20px)",
           border: `1px solid ${
             theme.palette.mode === "dark"

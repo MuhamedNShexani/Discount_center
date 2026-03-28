@@ -37,6 +37,17 @@ export function isExpiryStillValid(expireDate) {
 /**
  * @returns {{ kind: 'none' } | { kind: 'expired' } | { kind: 'days', days: number, totalMs: number } | { kind: 'hours', hours: number, minutes: number, seconds: number, totalMs: number }}
  */
+/** Calendar date in local timezone: DD/MM/YYYY */
+export function formatExpiryDateDdMmYyyy(expireDate) {
+  if (expireDate == null || expireDate === "") return "";
+  const d = new Date(expireDate);
+  if (Number.isNaN(d.getTime())) return "";
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+}
+
 export function getExpiryRemainingInfo(expireDate, now = new Date()) {
   if (!expireDate) return { kind: "none" };
   const exp = new Date(expireDate);

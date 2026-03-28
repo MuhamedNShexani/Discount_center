@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  useCallback,
+} from "react";
 import {
   Card,
   CardContent,
@@ -515,9 +521,7 @@ const MainPage = () => {
   // }, [selectedCategory]);
 
   const handleStoreTypeChange = (storeTypeId) => {
-    setSelectedStoreTypeId(
-      storeTypeId === "all" ? "all" : String(storeTypeId),
-    );
+    setSelectedStoreTypeId(storeTypeId === "all" ? "all" : String(storeTypeId));
     setSelectedCategory(null);
     setSelectedCategoryType(null);
   };
@@ -730,13 +734,7 @@ const MainPage = () => {
 
       return true;
     });
-  }, [
-    allProducts,
-    storeIdsInCity,
-    search,
-    priceRange,
-    showOnlyDiscount,
-  ]);
+  }, [allProducts, storeIdsInCity, search, priceRange, showOnlyDiscount]);
 
   const finalFilteredStoresForStoreTypeChips = useMemo(() => {
     const storeIdsWithProducts = [
@@ -752,7 +750,12 @@ const MainPage = () => {
       const cityMatch = doesCityMatch(store.storecity || store.city);
       return (hasMatchingProducts || storeNameMatch) && cityMatch;
     });
-  }, [filteredProductsForStoreTypeChips, stores, search, selectedCityCanonical]);
+  }, [
+    filteredProductsForStoreTypeChips,
+    stores,
+    search,
+    selectedCityCanonical,
+  ]);
 
   const visibleStoreTypes = useMemo(() => {
     const ids = new Set(
@@ -845,9 +848,7 @@ const MainPage = () => {
   useEffect(() => {
     if (!selectedCategory) return;
     const sel = String(getID(selectedCategory._id));
-    const ok = visibleCategories.some(
-      (c) => String(getID(c._id)) === sel,
-    );
+    const ok = visibleCategories.some((c) => String(getID(c._id)) === sel);
     if (!ok) {
       setSelectedCategory(null);
       setSelectedCategoryType(null);
@@ -1680,9 +1681,9 @@ const MainPage = () => {
             </Typography>
             <Box
               sx={{
+                flexWrap: "wrap",
                 display: "flex",
                 gap: { xs: 0.5, sm: 1 },
-                flexWrap: "wrap",
                 alignItems: "center",
                 pb: 0,
                 minHeight: "20px",
@@ -1692,64 +1693,65 @@ const MainPage = () => {
             >
               {[{ _id: "all", name: t("All") }, ...visibleStoreTypes].map(
                 (type) => (
-                <Button
-                  key={type._id}
-                  variant={
-                    String(selectedStoreTypeId) === String(type._id)
-                      ? "contained"
-                      : "outlined"
-                  }
-                  onClick={() => handleStoreTypeChange(type._id)}
-                  sx={{
-                    backgroundColor:
+                  <Button
+                    key={type._id}
+                    variant={
                       String(selectedStoreTypeId) === String(type._id)
-                        ? "var(--brand-primary-blue)"
-                        : "transparent",
-                    color:
-                      String(selectedStoreTypeId) === String(type._id)
-                        ? "white"
-                        : "black",
-                    // borderBottom: "1px solid var(--brand-accent-orange)",
-                    borderRadius: "8px",
-                    px: { xs: 1.5, md: 2 },
-                    py: 0.5,
-                    fontSize: { xs: "0.75rem", md: "0.875rem" },
-                    textTransform: "none",
-                    minHeight: "32px",
-                    maxWidth: "min(110px, 100%)",
-                    whiteSpace: "normal",
-                    textAlign: "center",
-                    lineHeight: 1.4,
-                    display: "inline-flex",
-                    flexWrap: "wrap",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    "&:hover": {
+                        ? "contained"
+                        : "outlined"
+                    }
+                    onClick={() => handleStoreTypeChange(type._id)}
+                    sx={{
                       backgroundColor:
                         String(selectedStoreTypeId) === String(type._id)
-                          ? theme.palette.mode === "dark"
-                            ? "#1E6FD9"
-                            : "#4A90E2"
-                          : "rgba(255,255,255,0.1)",
-                      borderColor: "rgba(255,255,255,0.5)",
-                    },
-                  }}
-                >
-                  <span style={{ marginRight: "4px", flexShrink: 0 }}>
-                    {type.icon || "🏪"}
-                  </span>
-                  <span
-                    style={{
-                      flex: "1 1 0",
-                      minWidth: 0,
-                      overflowWrap: "break-word",
-                      wordBreak: "break-word",
+                          ? "var(--brand-primary-blue)"
+                          : "transparent",
+                      color:
+                        String(selectedStoreTypeId) === String(type._id)
+                          ? "white"
+                          : "black",
+                      // borderBottom: "1px solid var(--brand-accent-orange)",
+                      borderRadius: "8px",
+                      px: { xs: 1.5, md: 2 },
+                      py: 0.5,
+                      fontSize: { xs: "0.75rem", md: "0.875rem" },
+                      textTransform: "none",
+                      minHeight: "32px",
+                      maxWidth: "100%",
+                      whiteSpace: "normal",
+                      textAlign: "center",
+                      lineHeight: 1.4,
+                      // display: "inline-flex",
+                      // flexWrap: "wrap",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      "&:hover": {
+                        backgroundColor:
+                          String(selectedStoreTypeId) === String(type._id)
+                            ? theme.palette.mode === "dark"
+                              ? "#1E6FD9"
+                              : "#4A90E2"
+                            : "rgba(255,255,255,0.1)",
+                        borderColor: "rgba(255,255,255,0.5)",
+                      },
                     }}
                   >
-                    {t(type.name)}
-                  </span>
-                </Button>
-              ))}
+                    <span style={{ marginRight: "4px", flexShrink: 0 }}>
+                      {type.icon || "🏪"}
+                    </span>
+                    <span
+                      style={{
+                        flex: "1 1 0",
+                        minWidth: 0,
+                        // overflowWrap: "break-word",
+                        // wordBreak: "break-word",
+                      }}
+                    >
+                      {t(type.name)}
+                    </span>
+                  </Button>
+                ),
+              )}
             </Box>
           </Box>
 
@@ -2922,8 +2924,7 @@ const MainPage = () => {
                                               position: "absolute",
                                               bottom: 8,
                                               left: 8,
-                                              maxWidth:
-                                                "calc(100% - 16px)",
+                                              maxWidth: "calc(100% - 16px)",
                                               backgroundColor:
                                                 expiryChipBg(info),
                                               color: "white",

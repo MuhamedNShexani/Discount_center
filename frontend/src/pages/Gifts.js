@@ -43,6 +43,8 @@ import { resolveMediaUrl } from "../utils/mediaUrl";
 import {
   isExpiryStillValid,
   getExpiryRemainingInfo,
+  formatExpiryDateDdMmYyyy,
+  formatExpiryChipLabel,
   formatExpiryExpiresPrefixedLabel,
   expiryGiftCardBg,
 } from "../utils/expiryDate";
@@ -361,14 +363,33 @@ const Gifts = () => {
         : null;
     const brand = gift.brandId || null;
 
+    const expiryChipSx = {
+      position: "absolute",
+      top: 6,
+      left: 6,
+      zIndex: 2,
+      pointerEvents: "none",
+      maxWidth: "calc(100% - 12px)",
+      fontSize: { xs: "0.5rem", sm: "0.65rem", md: "0.7rem" },
+      height: "auto",
+      "& .MuiChip-label": {
+        whiteSpace: "normal",
+        textAlign: "left",
+        display: "block",
+        lineHeight: 1.2,
+        px: 0.75,
+        py: 0.25,
+      },
+    };
+
     return (
       <Card
-        key={gift._id}
         onClick={() => {
           setSelectedGift(gift);
           setDialogOpen(true);
         }}
         sx={{
+          position: "relative",
           display: "flex",
           flexDirection: { xs: "column", sm: "row" },
           height: { xs: "200px", sm: "250px", md: "280px" },
@@ -397,6 +418,17 @@ const Gifts = () => {
           },
         }}
       >
+        {gift.expireDate ? (
+          <Chip
+            label={formatExpiryExpiresPrefixedLabel(giftExp, t)}
+            size="small"
+            sx={{
+              ...expiryChipSx,
+              bgcolor: expiryGiftCardBg(giftExp),
+              color: "white",
+            }}
+          />
+        ) : null}
         {/* Gift Image */}
         <Box
           sx={{
@@ -649,23 +681,6 @@ const Gifts = () => {
                   {t("Brand")}: {gift.brandId.name}
                 </Typography>
               </Box>
-            )}
-          </Box>
-
-          {/* Expire Date */}
-          <Box sx={{ flexShrink: 0 }}>
-            {gift.expireDate ? (
-              <Chip
-                label={formatExpiryExpiresPrefixedLabel(giftExp, t)}
-                size="small"
-                sx={{
-                  bgcolor: expiryGiftCardBg(giftExp),
-                  color: "white",
-                  fontSize: { xs: "0.5rem", sm: "0.75rem", md: "0.75rem" },
-                }}
-              />
-            ) : (
-              <Box sx={{ height: 24 }} /> // Placeholder to maintain consistent height
             )}
           </Box>
         </CardContent>
@@ -1093,12 +1108,29 @@ const Gifts = () => {
                   )}
 
                 {selectedGift.expireDate && (
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <LocalOfferIcon fontSize="small" color="action" />
-                    <Typography variant="body2" color="text.secondary">
-                      {t("Expires")}:{" "}
-                      {new Date(selectedGift.expireDate).toLocaleDateString()}
-                    </Typography>
+                  <Box display="flex" flexDirection="column" gap={0.5}>
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <LocalOfferIcon fontSize="small" color="action" />
+                      <Typography variant="body2" color="text.secondary">
+                        {t("Expires")}:{" "}
+                        {formatExpiryDateDdMmYyyy(selectedGift.expireDate)}
+                      </Typography>
+                    </Box>
+                    {(() => {
+                      const expInfo = getExpiryRemainingInfo(
+                        selectedGift.expireDate,
+                      );
+                      const remain = formatExpiryChipLabel(expInfo, t);
+                      return remain ? (
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ pl: 3.5 }}
+                        >
+                          {remain}
+                        </Typography>
+                      ) : null;
+                    })()}
                   </Box>
                 )}
               </Box>

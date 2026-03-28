@@ -8,7 +8,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "migrate:storeTypes": "node migrations/migrate-store-types.js",
     "migrate:notifications": "node migrations/migrate-notifications-to-broadcast.js",
-    "generate-vapid": "node scripts/generate-vapid.js"
+    "generate-vapid": "node scripts/generate-vapid.js",
+    "seed:translations": "node scripts/seed-i18n-to-mongo.js"
   },
   "engines": {
     "node": "18.20.8",

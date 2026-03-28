@@ -33,6 +33,7 @@ import FavouritesPage from "./pages/FavouritesPage";
 import AdminPage from "./pages/AdminPage";
 import AdminUsersPage from "./pages/AdminUsersPage";
 import CustomizationPage from "./pages/CustomizationPage";
+import TranslationPage from "./pages/TranslationPage";
 import NavigationBar from "./NavigationBar";
 import BottomNavigationBar from "./components/BottomNavigation";
 import { AuthProvider } from "./context/AuthContext";
@@ -260,6 +261,19 @@ function AppContent() {
                       ]}
                     >
                       <CustomizationPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/translations"
+                  element={
+                    <ProtectedRoute
+                      allowedEmails={[
+                        "mshexani45@gmail.com",
+                        "admin@gmail.com",
+                      ]}
+                    >
+                      <TranslationPage />
                     </ProtectedRoute>
                   }
                 />
