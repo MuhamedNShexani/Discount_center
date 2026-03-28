@@ -1,4 +1,5 @@
 const Brand = require("../models/Brand");
+const { normalizeExpiryDate } = require("../utils/normalizeExpiryDate");
 const Product = require("../models/Product");
 const BrandType = require("../models/BrandType");
 
@@ -104,7 +105,7 @@ const createBrand = async (req, res) => {
     const brand = new Brand({
       ...body,
       statusAll: body.statusAll === "off" ? "off" : "on",
-      expireDate: body.expireDate || null,
+      expireDate: body.expireDate ? normalizeExpiryDate(body.expireDate) : null,
     });
     await brand.save();
     const populated = await Brand.findById(brand._id).populate("brandTypeId");
@@ -132,7 +133,9 @@ const updateBrand = async (req, res) => {
       normalizedBody.statusAll = body.statusAll === "off" ? "off" : "on";
     }
     if (body.expireDate !== undefined) {
-      normalizedBody.expireDate = body.expireDate || null;
+      normalizedBody.expireDate = body.expireDate
+        ? normalizeExpiryDate(body.expireDate)
+        : null;
     }
     const brand = await Brand.findByIdAndUpdate(req.params.id, normalizedBody, {
       new: true,

@@ -4,13 +4,7 @@ import { useTheme } from "@mui/material/styles";
 import BusinessIcon from "@mui/icons-material/Business";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import { useTranslation } from "react-i18next";
-
-const API_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
-
-const normalizeImage = (url) => {
-  if (!url) return "";
-  return String(url).startsWith("http") ? url : `${API_URL}${url}`;
-};
+import { normalizeImage } from "../utils/mediaUrl";
 
 const genderLabel = (t, g) => {
   const v = String(g || "any").toLowerCase();

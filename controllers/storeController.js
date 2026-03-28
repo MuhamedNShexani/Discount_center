@@ -1,4 +1,5 @@
 const Store = require("../models/Store");
+const { normalizeExpiryDate } = require("../utils/normalizeExpiryDate");
 const Product = require("../models/Product");
 
 const publicStoreFilter = { statusAll: { $ne: "off" } };
@@ -122,7 +123,9 @@ const updateStore = async (req, res) => {
       updateDoc.statusAll = rest.statusAll === "off" ? "off" : "on";
     }
     if (rest.expireDate !== undefined) {
-      updateDoc.expireDate = rest.expireDate || null;
+      updateDoc.expireDate = rest.expireDate
+        ? normalizeExpiryDate(rest.expireDate)
+        : null;
     }
     if (rest.lastReleaseDiscountDate !== undefined) {
       updateDoc.lastReleaseDiscountDate = rest.lastReleaseDiscountDate || null;

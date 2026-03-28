@@ -3,6 +3,9 @@ const multer = require("multer");
 const { PutObjectCommand, DeleteObjectCommand } = require("@aws-sdk/client-s3");
 const Video = require("../models/Video");
 const { r2Client, r2BucketName, r2PublicUrl } = require("../config/r2");
+const { normalizeExpiryDate } = require("../utils/normalizeExpiryDate");
+const { getUploadDateFolder } = require("../utils/uploadDateFolder");
+const { appendExpiryToFilename } = require("../utils/appendExpiryToFilename");
 
 const router = express.Router();
 
@@ -52,8 +55,23 @@ router.post("/upload", upload.single("video"), async (req, res) => {
       return res.status(400).json({ message: "No video file uploaded" });
     }
 
-    const fileName = buildSafeFilename(req.file.originalname);
-    const key = `videos/${Date.now()}-${fileName}`;
+    const safeBase = buildSafeFilename(req.file.originalname);
+    const storeId =
+      req.body?.storeId != null && String(req.body.storeId).trim() !== ""
+        ? String(req.body.storeId).trim()
+        : null;
+    const expireRaw = req.body?.expireDate;
+
+    let key;
+    if (storeId) {
+      const folderTs = Date.now();
+      const folder = `videos/stores`;
+      const fileName = appendExpiryToFilename(safeBase, expireRaw);
+      key = `${folder}/${folderTs}-${fileName}`;
+    } else {
+      const dateFolder = getUploadDateFolder();
+      key = `videos/${dateFolder}/${Date.now()}-${safeBase}`;
+    }
 
     await r2Client.send(
       new PutObjectCommand({
@@ -88,8 +106,7 @@ router.post("/", async (req, res) => {
       like,
       views,
       shares,
-    } =
-      req.body;
+    } = req.body;
 
     if (!title || !videoUrl) {
       return res
@@ -111,7 +128,7 @@ router.post("/", async (req, res) => {
       key,
       storeId: storeId || null,
       brandId: brandId || null,
-      expireDate: expireDate ? new Date(expireDate) : null,
+      expireDate: expireDate ? normalizeExpiryDate(expireDate) : null,
       like: Number.isFinite(Number(like)) ? Number(like) : 0,
       views: Number.isFinite(Number(views)) ? Number(views) : 0,
       shares: Number.isFinite(Number(shares)) ? Number(shares) : 0,
@@ -149,10 +166,8 @@ router.put("/:id", async (req, res) => {
       return res.status(400).json({ message: "title is required" });
     }
 
-    const nextStoreId =
-      storeId === undefined ? video.storeId : storeId || null;
-    const nextBrandId =
-      brandId === undefined ? video.brandId : brandId || null;
+    const nextStoreId = storeId === undefined ? video.storeId : storeId || null;
+    const nextBrandId = brandId === undefined ? video.brandId : brandId || null;
 
     const hasStore = Boolean(nextStoreId);
     const hasBrand = Boolean(nextBrandId);
@@ -167,7 +182,7 @@ router.put("/:id", async (req, res) => {
     if (key !== undefined) video.key = key || video.key;
     video.storeId = nextStoreId;
     video.brandId = nextBrandId;
-    video.expireDate = expireDate ? new Date(expireDate) : null;
+    video.expireDate = expireDate ? normalizeExpiryDate(expireDate) : null;
     video.like = Number.isFinite(Number(like)) ? Number(like) : video.like || 0;
     video.views = Number.isFinite(Number(views))
       ? Number(views)

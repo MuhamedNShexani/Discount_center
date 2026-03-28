@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   useParams,
   useNavigate,
@@ -47,8 +47,6 @@ import {
   Store,
   Search,
   FilterList,
-  ExpandMore,
-  ExpandLess,
   WhatsApp,
   Facebook,
   Instagram,
@@ -78,6 +76,52 @@ import { useUserTracking } from "../hooks/useUserTracking";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { useAuth } from "../context/AuthContext";
 import JobCardRow from "../components/JobCardRow";
+import ProductViewTracker from "../components/ProductViewTracker";
+import { resolveMediaUrl } from "../utils/mediaUrl";
+import {
+  isExpiryStillValid,
+  getExpiryRemainingInfo,
+  formatExpiryExpiresPrefixedLabel,
+  expiryGiftCardBg,
+} from "../utils/expiryDate";
+
+/** When scrolled near this row, load the next chunk for that product-type section (same idea as MainPage store sentinel). */
+const ProductTypeLoadSentinel = ({ typeKey, hasMore, onLoadMore }) => {
+  const ref = useRef(null);
+  const onLoadMoreRef = useRef(onLoadMore);
+  onLoadMoreRef.current = onLoadMore;
+
+  useEffect(() => {
+    if (!hasMore) return undefined;
+    const el = ref.current;
+    if (!el) return undefined;
+
+    let ticking = false;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const hit = entries.some((e) => e.isIntersecting);
+        if (!hit || ticking) return;
+        ticking = true;
+        onLoadMoreRef.current();
+        window.setTimeout(() => {
+          ticking = false;
+        }, 400);
+      },
+      { root: null, rootMargin: "320px 0px", threshold: 0 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasMore, typeKey]);
+
+  if (!hasMore) return null;
+  return (
+    <Box
+      ref={ref}
+      sx={{ width: "100%", height: 12, mt: 1 }}
+      aria-hidden
+    />
+  );
+};
 
 const BrandProfile = () => {
   const { id } = useParams();
@@ -112,7 +156,6 @@ const BrandProfile = () => {
     return "all";
   });
   const [selectedGift, setSelectedGift] = useState(null);
-  const [expandedTypes, setExpandedTypes] = useState({});
   const [displayCounts, setDisplayCounts] = useState({});
   const [filtersOpen, setFiltersOpen] = useState(false);
 
@@ -129,9 +172,42 @@ const BrandProfile = () => {
     type: "",
   });
 
+  const productViewRecordedRef = useRef(new Set());
+
+  useEffect(() => {
+    setDisplayCounts({});
+  }, [
+    id,
+    activeTabKey,
+    filters.name,
+    filters.store,
+    filters.barcode,
+    filters.type,
+  ]);
+
+  const handleProductBecameVisible = useCallback(
+    async (productId) => {
+      const result = await recordView(productId);
+      if (result?.success && result?.data?.viewCount != null) {
+        setProducts((prev) =>
+          prev.map((p) =>
+            String(p._id) === String(productId)
+              ? { ...p, viewCount: result.data.viewCount }
+              : p,
+          ),
+        );
+      }
+    },
+    [recordView],
+  );
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  useEffect(() => {
+    productViewRecordedRef.current = new Set();
+  }, [id]);
 
   useEffect(() => {
     if (id) {
@@ -176,13 +252,11 @@ const BrandProfile = () => {
       try {
         const videosRes = await videoAPI.getAll();
         const list = Array.isArray(videosRes?.data) ? videosRes.data : [];
-        const now = Date.now();
         const filtered = list.filter((v) => {
           const brandId = v?.brandId?._id || v?.brandId || "";
           if (String(brandId) !== String(id)) return false;
           if (!v?.expireDate) return true;
-          const exp = new Date(v.expireDate).getTime();
-          return Number.isFinite(exp) ? exp > now : true;
+          return isExpiryStillValid(v.expireDate);
         });
         setReels(filtered);
       } catch {
@@ -193,14 +267,12 @@ const BrandProfile = () => {
       try {
         const jobsRes = await jobAPI.getAll();
         const list = Array.isArray(jobsRes?.data) ? jobsRes.data : [];
-        const now = Date.now();
         const filtered = list.filter((j) => {
           const brandId = j?.brandId?._id || j?.brandId || "";
           if (String(brandId) !== String(id)) return false;
           if (j?.active === false) return false;
           if (!j?.expireDate) return true;
-          const exp = new Date(j.expireDate).getTime();
-          return Number.isFinite(exp) ? exp > now : true;
+          return isExpiryStillValid(j.expireDate);
         });
         setJobs(filtered);
       } catch {
@@ -232,27 +304,12 @@ const BrandProfile = () => {
     })} ${t("ID")}`;
   };
 
-  const getRemainingDays = (expireDate) => {
-    if (!expireDate) return null;
-    const today = new Date();
-    const expire = new Date(expireDate);
-    const timeDiff = expire.getTime() - today.getTime();
-    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-    return daysDiff > 0 ? daysDiff : 0;
-  };
-
-  // Helper function to check if a discounted product has expired
   const isDiscountValid = (product) => {
     if (!product.isDiscount) return false;
 
-    // If no expiry date, discount is always valid
     if (!product.expireDate) return true;
 
-    // Check if current date is before expiry date
-    const currentDate = new Date();
-    const expiryDate = new Date(product.expireDate);
-
-    return currentDate < expiryDate;
+    return isExpiryStillValid(product.expireDate);
   };
 
   // Get product category type name from categoryId (populated) and categoryTypeId
@@ -361,23 +418,7 @@ const BrandProfile = () => {
     setActiveTabKey(next);
   };
 
-  // Toggle expanded state for product types
-  const toggleExpanded = (type) => {
-    setExpandedTypes((prev) => ({
-      ...prev,
-      [type]: !prev[type],
-    }));
-
-    // Reset display count when collapsing
-    if (expandedTypes[type]) {
-      setDisplayCounts((prev) => ({
-        ...prev,
-        [type]: 10,
-      }));
-    }
-  };
-
-  // Load more products for a specific type
+  // Load more products for a specific type (scroll sentinel)
   const loadMoreProducts = (type) => {
     setDisplayCounts((prev) => ({
       ...prev,
@@ -425,7 +466,7 @@ const BrandProfile = () => {
 
   // Render gift card
   const renderGiftCard = (gift) => {
-    const remainingDays = getRemainingDays(gift.expireDate);
+    const giftExp = getExpiryRemainingInfo(gift.expireDate);
 
     return (
       <Card
@@ -472,7 +513,7 @@ const BrandProfile = () => {
         >
           <CardMedia
             component="img"
-            image={`${process.env.REACT_APP_BACKEND_URL}${gift.image}`}
+            image={resolveMediaUrl(gift.image)}
             alt={gift.description}
             sx={{
               width: "100%",
@@ -580,15 +621,12 @@ const BrandProfile = () => {
 
           {/* Expire Date */}
           <Box sx={{ flexShrink: 0 }}>
-            {remainingDays !== null ? (
+            {gift.expireDate ? (
               <Chip
-                label={`${t("Expires")}: ${remainingDays} ${t("days")}`}
+                label={formatExpiryExpiresPrefixedLabel(giftExp, t)}
                 size="small"
                 sx={{
-                  bgcolor:
-                    remainingDays <= 7
-                      ? "#ff6b6b"
-                      : "var(--brand-accent-orange)",
+                  bgcolor: expiryGiftCardBg(giftExp),
                   color: "white",
                   fontSize: { xs: "0.5rem", sm: "0.75rem", md: "0.75rem" },
                 }}
@@ -613,11 +651,16 @@ const BrandProfile = () => {
   // Render product card
   const renderProductCard = (product, index, showPrice = true) => {
     const discount = calculateDiscount(product.previousPrice, product.newPrice);
-    const remainingDays = getRemainingDays(product.expireDate);
 
     return (
-      <Fade in={true} timeout={300 + index * 50} key={product._id}>
-        <Card
+      <ProductViewTracker
+        key={product._id}
+        productId={product._id}
+        onVisible={handleProductBecameVisible}
+        recordedIdsRef={productViewRecordedRef}
+      >
+        <Fade in={true} timeout={300 + index * 50}>
+          <Card
           component={Link}
           to={`/products/${product._id}`}
           sx={{
@@ -654,7 +697,7 @@ const BrandProfile = () => {
               <CardMedia
                 component="img"
                 height="250"
-                image={`${process.env.REACT_APP_BACKEND_URL}${product.image}`}
+                image={resolveMediaUrl(product.image)}
                 alt={product.name}
                 sx={{
                   objectFit: "contain",
@@ -880,7 +923,8 @@ const BrandProfile = () => {
             )}
           </CardContent>
         </Card>
-      </Fade>
+        </Fade>
+      </ProductViewTracker>
     );
   };
 
@@ -889,13 +933,9 @@ const BrandProfile = () => {
     const groupedProducts = groupProductsByType(productList);
 
     return Object.entries(groupedProducts).map(([type, typeProducts]) => {
-      const isExpanded = expandedTypes[type];
       const currentDisplayCount = displayCounts[type] || 10;
-      const displayProducts = isExpanded
-        ? typeProducts.slice(0, currentDisplayCount)
-        : typeProducts.slice(0, 10);
-      const hasMore =
-        typeProducts.length > (isExpanded ? currentDisplayCount : 10);
+      const displayProducts = typeProducts.slice(0, currentDisplayCount);
+      const hasMore = typeProducts.length > currentDisplayCount;
 
       return (
         <Box key={type} sx={{ mb: 4 }}>
@@ -941,43 +981,11 @@ const BrandProfile = () => {
             )}
           </Box>
 
-          {hasMore && (
-            <Box sx={{ textAlign: "center", mt: 2 }}>
-              <Button
-                variant="outlined"
-                onClick={() =>
-                  isExpanded ? loadMoreProducts(type) : toggleExpanded(type)
-                }
-                sx={{
-                  borderColor: "var(--brand-accent-orange)",
-                  color: "var(--brand-accent-orange)",
-                  "&:hover": {
-                    borderColor: "var(--brand-light-orange)",
-                    backgroundColor: "rgba(255, 122, 26, 0.1)",
-                  },
-                }}
-              >
-                {isExpanded ? t("Show More") : t("Show More")}
-              </Button>
-            </Box>
-          )}
-
-          {isExpanded && displayProducts.length > 10 && (
-            <Box sx={{ textAlign: "center", mt: 1 }}>
-              <Button
-                variant="text"
-                onClick={() => toggleExpanded(type)}
-                sx={{
-                  color: "#666",
-                  "&:hover": {
-                    backgroundColor: "rgba(102, 102, 102, 0.1)",
-                  },
-                }}
-              >
-                {t("Show Less")}
-              </Button>
-            </Box>
-          )}
+          <ProductTypeLoadSentinel
+            typeKey={type}
+            hasMore={hasMore}
+            onLoadMore={() => loadMoreProducts(type)}
+          />
         </Box>
       );
     });
@@ -1391,7 +1399,7 @@ const BrandProfile = () => {
           >
             {brand.logo ? (
               <Avatar
-                src={`${process.env.REACT_APP_BACKEND_URL}${brand.logo}`}
+                src={resolveMediaUrl(brand.logo)}
                 alt={brand.name}
                 sx={{
                   width: 60,
@@ -1552,7 +1560,7 @@ const BrandProfile = () => {
               <Grid item xs={12} md={3}>
                 {brand.logo ? (
                   <Avatar
-                    src={`${process.env.REACT_APP_BACKEND_URL}${brand.logo}`}
+                    src={resolveMediaUrl(brand.logo)}
                     alt={brand.name}
                     sx={{
                       width: { xs: 80, sm: 100, md: 150 },
@@ -1816,9 +1824,7 @@ const BrandProfile = () => {
               }}
             >
               {reels.map((reel) => {
-                const src = reel?.videoUrl?.startsWith("http")
-                  ? reel.videoUrl
-                  : `${process.env.REACT_APP_BACKEND_URL || "http://localhost:5000"}${reel.videoUrl || ""}`;
+                const src = resolveMediaUrl(reel?.videoUrl || "");
 
                 return (
                   <Card
@@ -1903,9 +1909,7 @@ const BrandProfile = () => {
               component="img"
               src={
                 selectedJob?.image
-                  ? String(selectedJob.image).startsWith("http")
-                    ? selectedJob.image
-                    : `${process.env.REACT_APP_BACKEND_URL || "http://localhost:5000"}${selectedJob.image}`
+                  ? resolveMediaUrl(selectedJob.image) || "/logo192.png"
                   : "/logo192.png"
               }
               alt="job"
@@ -1969,7 +1973,7 @@ const BrandProfile = () => {
               {selectedGift.image && (
                 <Box display="flex" justifyContent="center" mb={2}>
                   <img
-                    src={`${process.env.REACT_APP_BACKEND_URL}${selectedGift.image}`}
+                    src={resolveMediaUrl(selectedGift.image)}
                     alt={selectedGift.name || "Gift image"}
                     style={{
                       maxWidth: 220,

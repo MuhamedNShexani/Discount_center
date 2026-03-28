@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Grid,
   Card,
@@ -57,9 +57,11 @@ import CloseIcon from "@mui/icons-material/Close";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@mui/material/styles";
 import { useUserTracking } from "../hooks/useUserTracking";
-import { useAuth } from "../context/AuthContext";
+import ProductViewTracker from "../components/ProductViewTracker";
 import { useCityFilter } from "../context/CityFilterContext";
 import useIsMobileLayout from "../hooks/useIsMobileLayout";
+import { resolveMediaUrl } from "../utils/mediaUrl";
+import { isExpiryStillValid } from "../utils/expiryDate";
 
 const ProductCategory = () => {
   const theme = useTheme();
@@ -67,7 +69,6 @@ const ProductCategory = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { isAuthenticated } = useAuth();
   const { toggleLike, isProductLiked, recordView } = useUserTracking();
   const { selectedCity } = useCityFilter();
 
@@ -116,6 +117,27 @@ const ProductCategory = () => {
 
   // Track if we've applied nav state (category/categoryType from MainPage or ProductDetail link)
   const stateAppliedRef = useRef(false);
+  const productViewRecordedRef = useRef(new Set());
+
+  useEffect(() => {
+    productViewRecordedRef.current = new Set();
+  }, [selectedCategory?._id]);
+
+  const handleProductBecameVisible = useCallback(
+    async (productId) => {
+      const result = await recordView(productId);
+      if (result?.success && result?.data?.viewCount != null) {
+        setProducts((prev) =>
+          prev.map((p) =>
+            String(p._id) === String(productId)
+              ? { ...p, viewCount: result.data.viewCount }
+              : p,
+          ),
+        );
+      }
+    },
+    [recordView],
+  );
 
   // Store types for filtering
   useEffect(() => {
@@ -311,9 +333,6 @@ const ProductCategory = () => {
   const handleProductClick = (product) => {
     setSelectedProduct(product);
     setDialogOpen(true);
-    if (isAuthenticated) {
-      recordView(product._id);
-    }
   };
 
   const handleLikeClick = async (productId, e) => {
@@ -386,6 +405,11 @@ const ProductCategory = () => {
         product.barcode?.includes(filters.barcode),
       );
     }
+
+    filtered = filtered.filter((product) => {
+      if (!product.expireDate) return true;
+      return isExpiryStillValid(product.expireDate);
+    });
 
     if (filters.discount) {
       filtered = filtered.filter((product) => isDiscountValid(product));
@@ -599,7 +623,7 @@ const ProductCategory = () => {
                     <Avatar
                       src={
                         category.image
-                          ? `${process.env.REACT_APP_BACKEND_URL}${category.image}`
+                          ? resolveMediaUrl(category.image)
                           : undefined
                       }
                       sx={{
@@ -753,52 +777,89 @@ const ProductCategory = () => {
                     }}
                   >
                     {filteredProducts.map((product) => (
-                      <Box key={product._id} sx={{ display: "flex" }}>
-                        <Card
-                          onClick={() => handleProductClick(product)}
-                          sx={{
-                            cursor: "pointer",
-                            transition: "transform 0.2s",
-                            "&:hover": { transform: "scale(1.01)" },
-                            display: "flex",
-                            flexDirection: "column",
-                            width: "100%",
-                            height: "100%",
-                          }}
-                        >
-                          {/* Image */}
-                          {product.image ? (
-                            <CardMedia
-                              component="img"
-                              image={`${process.env.REACT_APP_BACKEND_URL}${product.image}`}
-                              alt={product.name || "Product image"}
-                              sx={{
-                                height: 130,
-                                objectFit: "contain",
-                                backgroundColor: theme.palette.grey[200],
-                              }}
-                            />
-                          ) : (
+                      <ProductViewTracker
+                        key={product._id}
+                        productId={product._id}
+                        onVisible={handleProductBecameVisible}
+                        recordedIdsRef={productViewRecordedRef}
+                      >
+                        <Box sx={{ display: "flex" }}>
+                          <Card
+                            onClick={() => handleProductClick(product)}
+                            sx={{
+                              cursor: "pointer",
+                              transition: "transform 0.2s",
+                              "&:hover": { transform: "scale(1.01)" },
+                              display: "flex",
+                              flexDirection: "column",
+                              width: "100%",
+                              height: "100%",
+                            }}
+                          >
+                            {/* Image */}
                             <Box
                               sx={{
-                                height: 130,
-                                display: "flex",
-                                justifyContent: "center",
-                                alignItems: "center",
-                                backgroundColor: theme.palette.grey[200],
+                                position: "relative",
+                                flexShrink: 0,
                               }}
                             >
-                              <ShoppingCartIcon
-                                sx={{
-                                  fontSize: 36,
-                                  color:
-                                    theme.palette.mode === "dark"
-                                      ? "#4A90E2"
-                                      : "#1E6FD9",
-                                }}
-                              />
+                              {product.image ? (
+                                <CardMedia
+                                  component="img"
+                                  image={resolveMediaUrl(product.image)}
+                                  alt={product.name || "Product image"}
+                                  sx={{
+                                    height: 130,
+                                    objectFit: "contain",
+                                    backgroundColor: theme.palette.grey[200],
+                                  }}
+                                />
+                              ) : (
+                                <Box
+                                  sx={{
+                                    height: 130,
+                                    display: "flex",
+                                    justifyContent: "center",
+                                    alignItems: "center",
+                                    backgroundColor: theme.palette.grey[200],
+                                  }}
+                                >
+                                  <ShoppingCartIcon
+                                    sx={{
+                                      fontSize: 36,
+                                      color:
+                                        theme.palette.mode === "dark"
+                                          ? "#4A90E2"
+                                          : "#1E6FD9",
+                                    }}
+                                  />
+                                </Box>
+                              )}
+                              {product.viewCount > 0 && (
+                                <Box
+                                  sx={{
+                                    position: "absolute",
+                                    top: 6,
+                                    right: 6,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 0.25,
+                                    backgroundColor: "rgba(0, 0, 0, 0.7)",
+                                    color: "white",
+                                    px: 0.75,
+                                    py: 0.25,
+                                    borderRadius: 1,
+                                    fontSize: "0.65rem",
+                                    fontWeight: 600,
+                                    pointerEvents: "none",
+                                    zIndex: 1,
+                                  }}
+                                >
+                                  <VisibilityIcon sx={{ fontSize: "0.75rem" }} />
+                                  {product.viewCount}
+                                </Box>
+                              )}
                             </Box>
-                          )}
 
                           {/* Content */}
                           <CardContent
@@ -940,7 +1001,8 @@ const ProductCategory = () => {
                             </Box>
                           </CardContent>
                         </Card>
-                      </Box>
+                        </Box>
+                      </ProductViewTracker>
                     ))}
                   </Box>
                 )}
@@ -1070,7 +1132,7 @@ const ProductCategory = () => {
                     <Avatar
                       src={
                         category.image
-                          ? `${process.env.REACT_APP_BACKEND_URL}${category.image}`
+                          ? resolveMediaUrl(category.image)
                           : undefined
                       }
                       sx={{
@@ -1244,48 +1306,85 @@ const ProductCategory = () => {
                   }}
                 >
                   {filteredProducts.map((product) => (
-                    <Box key={product._id} sx={{ display: "flex" }}>
-                      <Card
-                        onClick={() => handleProductClick(product)}
-                        sx={{
-                          cursor: "pointer",
-                          transition: "transform 0.2s",
-                          "&:hover": { transform: "scale(1.01)" },
-                          display: "flex",
-                          flexDirection: "column",
-                          width: "100%",
-                          height: "100%",
-                        }}
-                      >
-                        {product.image ? (
-                          <CardMedia
-                            component="img"
-                            image={`${process.env.REACT_APP_BACKEND_URL}${product.image}`}
-                            alt={product.name || "Product image"}
-                            sx={{
-                              height: 180,
-                              objectFit: "contain",
-                              backgroundColor: theme.palette.grey[100],
-                            }}
-                          />
-                        ) : (
+                    <ProductViewTracker
+                      key={product._id}
+                      productId={product._id}
+                      onVisible={handleProductBecameVisible}
+                      recordedIdsRef={productViewRecordedRef}
+                    >
+                      <Box sx={{ display: "flex" }}>
+                        <Card
+                          onClick={() => handleProductClick(product)}
+                          sx={{
+                            cursor: "pointer",
+                            transition: "transform 0.2s",
+                            "&:hover": { transform: "scale(1.01)" },
+                            display: "flex",
+                            flexDirection: "column",
+                            width: "100%",
+                            height: "100%",
+                          }}
+                        >
                           <Box
                             sx={{
-                              height: 180,
-                              display: "flex",
-                              justifyContent: "center",
-                              alignItems: "center",
-                              backgroundColor: theme.palette.grey[100],
+                              position: "relative",
+                              flexShrink: 0,
                             }}
                           >
-                            <ShoppingCartIcon
-                              sx={{
-                                fontSize: 56,
-                                color: theme.palette.grey[400],
-                              }}
-                            />
+                            {product.image ? (
+                              <CardMedia
+                                component="img"
+                                image={resolveMediaUrl(product.image)}
+                                alt={product.name || "Product image"}
+                                sx={{
+                                  height: 180,
+                                  objectFit: "contain",
+                                  backgroundColor: theme.palette.grey[100],
+                                }}
+                              />
+                            ) : (
+                              <Box
+                                sx={{
+                                  height: 180,
+                                  display: "flex",
+                                  justifyContent: "center",
+                                  alignItems: "center",
+                                  backgroundColor: theme.palette.grey[100],
+                                }}
+                              >
+                                <ShoppingCartIcon
+                                  sx={{
+                                    fontSize: 56,
+                                    color: theme.palette.grey[400],
+                                  }}
+                                />
+                              </Box>
+                            )}
+                            {product.viewCount > 0 && (
+                              <Box
+                                sx={{
+                                  position: "absolute",
+                                  top: 8,
+                                  right: 8,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 0.25,
+                                  backgroundColor: "rgba(0, 0, 0, 0.7)",
+                                  color: "white",
+                                  px: 1,
+                                  py: 0.5,
+                                  borderRadius: 1,
+                                  fontSize: "0.7rem",
+                                  fontWeight: 600,
+                                  pointerEvents: "none",
+                                  zIndex: 1,
+                                }}
+                              >
+                                <VisibilityIcon sx={{ fontSize: "0.8rem" }} />
+                                {product.viewCount}
+                              </Box>
+                            )}
                           </Box>
-                        )}
                         <CardContent
                           sx={{
                             p: 2,
@@ -1402,7 +1501,8 @@ const ProductCategory = () => {
                           </Box>
                         </CardContent>
                       </Card>
-                    </Box>
+                      </Box>
+                    </ProductViewTracker>
                   ))}
                 </Box>
               </>
@@ -1560,7 +1660,7 @@ const ProductCategory = () => {
                   <CardMedia
                     component="img"
                     height="200"
-                    image={`${process.env.REACT_APP_BACKEND_URL}${selectedProduct.image}`}
+                    image={resolveMediaUrl(selectedProduct.image)}
                     alt={selectedProduct.name}
                     sx={{ objectFit: "contain", borderRadius: 1 }}
                   />

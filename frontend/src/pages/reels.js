@@ -25,10 +25,11 @@ import useIntersectionVideo from "../hooks/useIntersectionVideo";
 import { useUserTracking } from "../hooks/useUserTracking";
 import useIsMobileLayout from "../hooks/useIsMobileLayout";
 import { useCityFilter } from "../context/CityFilterContext";
+import { resolveMediaUrl } from "../utils/mediaUrl";
+import { isExpiryStillValid } from "../utils/expiryDate";
 
 const MotionBox = motion(Box);
 const MotionIconButton = motion(IconButton);
-const API_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
 
 const ReelCard = memo(function ReelCard({
   reel,
@@ -52,9 +53,7 @@ const ReelCard = memo(function ReelCard({
   ownerFollowLoading,
   onToggleOwnerFollow,
 }) {
-  const src = reel.videoUrl?.startsWith("http")
-    ? reel.videoUrl
-    : `${API_URL}${reel.videoUrl}`;
+  const src = resolveMediaUrl(reel.videoUrl || "");
   const owner = reel.brandId?._id
     ? { ...reel.brandId, type: "brand" }
     : reel.storeId?._id
@@ -66,11 +65,7 @@ const ReelCard = memo(function ReelCard({
       ? `/brands/${owner._id}`
       : `/stores/${owner._id}`
     : "";
-  const ownerLogo = owner?.logo
-    ? owner.logo.startsWith("http")
-      ? owner.logo
-      : `${API_URL}${owner.logo}`
-    : "";
+  const ownerLogo = owner?.logo ? resolveMediaUrl(owner.logo) : "";
 
   const actionBottom = isMobile
     ? "calc(96px + env(safe-area-inset-bottom))"
@@ -551,10 +546,7 @@ const ReelsPage = () => {
     const selectedCityCanonical = toCanonicalCity(selectedCity);
 
     const unexpiredAndCityMatched = reels.filter((reel) => {
-      if (reel?.expireDate) {
-        const expireTs = new Date(reel.expireDate).getTime();
-        if (!Number.isNaN(expireTs) && expireTs <= now) return false;
-      }
+      if (reel?.expireDate && !isExpiryStillValid(reel.expireDate)) return false;
 
       if (!selectedCityCanonical) return true;
 

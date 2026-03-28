@@ -55,7 +55,7 @@ import {
   Block as BlockIcon,
   Refresh as RefreshIcon,
   VideoLibrary as VideoLibraryIcon,
-  LocalShipping as LocalShippingIcon,
+  ShoppingBag as ShoppingBagIcon,
 } from "@mui/icons-material";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -69,6 +69,7 @@ import { useContentRefresh } from "./context/ContentRefreshContext";
 import useIsMobileLayout from "./hooks/useIsMobileLayout";
 import { useActiveTheme } from "./context/ActiveThemeContext";
 import { giftAPI } from "./services/api";
+import { isExpiryStillValid } from "./utils/expiryDate";
 
 // Set to true to show notification center (bell, profile toggle, enable banner)
 const NOTIFICATIONS_CENTER_ENABLED = false;
@@ -183,11 +184,9 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
         : Array.isArray(res?.data)
           ? res.data
           : [];
-      const now = Date.now();
       const visible = list.filter((g) => {
         if (!g?.expireDate) return true;
-        const exp = new Date(g.expireDate).getTime();
-        return Number.isFinite(exp) ? exp > now : true;
+        return isExpiryStillValid(g.expireDate);
       });
 
       const lastSeen = getLastSeenGiftTs();
@@ -635,7 +634,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   favourites: { to: "/favourites", icon: <FavoriteIcon /> },
                   stores: { to: "/stores", icon: <StoreIcon /> },
                   gifts: { to: "/gifts", icon: giftsIconWithBadge },
-                  shopping: { to: "/shopping", icon: <LocalShippingIcon /> },
+                  shopping: { to: "/shopping", icon: <ShoppingBagIcon /> },
                   profile: { to: "/profile", icon: <PersonIcon /> },
                 };
 

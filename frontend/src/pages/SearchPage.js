@@ -39,6 +39,8 @@ import {
   removeFromSearchHistory,
   clearSearchHistory,
 } from "../utils/searchHistory";
+import { resolveMediaUrl } from "../utils/mediaUrl";
+import { isExpiryStillValid } from "../utils/expiryDate";
 
 const SearchPage = () => {
   const theme = useTheme();
@@ -104,12 +106,9 @@ const SearchPage = () => {
       try {
         const res = await searchAPI.search(trimmed, selectedCity || null);
         const data = res?.data?.data || res?.data || {};
-        const now = new Date();
         const visibleProducts = (data.products || []).filter((product) => {
           if (!product?.expireDate) return true;
-          const expireDate = new Date(product.expireDate);
-          if (Number.isNaN(expireDate.getTime())) return true;
-          return expireDate >= now;
+          return isExpiryStillValid(product.expireDate);
         });
         setResults({
           products: visibleProducts,
@@ -179,7 +178,6 @@ const SearchPage = () => {
     navigate(`/brands/${id}`);
   };
 
-  const backendUrl = process.env.REACT_APP_BACKEND_URL || "";
   // const bannerAdsWithImages = useMemo(
   //   () =>
   //     (bannerAds || [])
@@ -480,7 +478,7 @@ const SearchPage = () => {
                       >
                         {p.image && (
                           <img
-                            src={`${backendUrl}${p.image}`}
+                            src={resolveMediaUrl(p.image)}
                             alt={p.name}
                             style={{
                               width: "100%",
@@ -550,7 +548,7 @@ const SearchPage = () => {
                     <ListItemAvatar>
                       <Avatar
                         variant="rounded"
-                        src={s.logo ? `${backendUrl}${s.logo}` : undefined}
+                        src={s.logo ? resolveMediaUrl(s.logo) : undefined}
                         sx={{
                           width: 48,
                           height: 48,
@@ -608,7 +606,7 @@ const SearchPage = () => {
                     <ListItemAvatar>
                       <Avatar
                         variant="rounded"
-                        src={b.logo ? `${backendUrl}${b.logo}` : undefined}
+                        src={b.logo ? resolveMediaUrl(b.logo) : undefined}
                         sx={{
                           width: 48,
                           height: 48,

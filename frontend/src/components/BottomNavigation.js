@@ -13,7 +13,7 @@ import {
   CardGiftcard as CardGiftcardIcon,
   Favorite as FavoriteIcon,
   VideoLibrary as VideoLibraryIcon,
-  LocalShipping as LocalShippingIcon,
+  ShoppingBag as ShoppingBagIcon,
   Person as PersonIcon,
 } from "@mui/icons-material";
 import { Link, useLocation } from "react-router-dom";
@@ -77,7 +77,7 @@ const BottomNavigationBar = () => {
     shopping: {
       name: t("Shopping"),
       path: "/shopping",
-      icon: <LocalShippingIcon />,
+      icon: <ShoppingBagIcon />,
     },
     profile: { name: t("Account"), path: "/profile", icon: <PersonIcon /> },
   };
@@ -125,7 +125,7 @@ const BottomNavigationBar = () => {
       <Paper
         elevation={8}
         sx={{
-          borderRadius: "16px 16px 0 0",
+          borderRadius: "70px 70px",
           background:
             "linear-gradient(120deg, var(--brand-primary-blue) 0%, var(--brand-secondary-blue) 60%, var(--brand-accent-orange) 100%)",
           backdropFilter: "blur(20px)",

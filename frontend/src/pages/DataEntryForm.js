@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -55,6 +55,11 @@ import {
   jobAPI,
 } from "../services/api";
 import * as XLSX from "xlsx";
+import {
+  isExpiryStillValid,
+  normalizeExpiryInputForApi,
+  toDatetimeLocalValue,
+} from "../utils/expiryDate";
 
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import BusinessIcon from "@mui/icons-material/Business";
@@ -82,13 +87,41 @@ import { useAppSettings } from "../context/AppSettingsContext";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
 
+/** Indices for admin Data Lists tabs (grouped UI: managing → service → main system → settings) */
+const LIST_TAB = {
+  STORES: 0,
+  BRANDS: 1,
+  PRODUCTS: 2,
+  GIFTS: 3,
+  REELS: 4,
+  ADS: 5,
+  JOBS: 6,
+  CATEGORIES: 7,
+  STORE_TYPES: 8,
+  BRAND_TYPES: 9,
+  SETTINGS: 10,
+  NOTIFICATIONS: 11,
+};
+
+/** Horizontal scroll for action + filter rows inside each data-list tab */
+const DATA_LIST_TAB_TOOLBAR_SCROLL_SX = {
+  width: "100%",
+  maxWidth: "100%",
+  overflowX: "auto",
+  overflowY: "hidden",
+  WebkitOverflowScrolling: "touch",
+  flexWrap: "nowrap",
+  scrollbarWidth: "thin",
+  pb: 0.5,
+  "& > *": { flexShrink: 0 },
+};
+
 const DataEntryForm = () => {
   const theme = useTheme();
   const { t } = useTranslation();
   const { getAuthHeaders, user } = useAuth();
   const isAdmin =
     user?.email === "mshexani45@gmail.com" || user?.email === "admin@gmail.com";
-  const reelsTabIndex = isAdmin ? 11 : 10;
   const {
     contactWhatsAppNumber,
     setContactWhatsAppNumber,
@@ -278,7 +311,7 @@ const DataEntryForm = () => {
   // Category form state
   const [categoryForm, setCategoryForm] = useState({
     name: "",
-    storeType: "market",
+    storeTypeId: "",
     types: [""], // Array of category types
   });
 
@@ -361,7 +394,7 @@ const DataEntryForm = () => {
   }, [brandNameSearch]);
 
   useEffect(() => {
-    if (activeListTab === 9) {
+    if (activeListTab === LIST_TAB.SETTINGS) {
       setSettingsContactNumber(contactWhatsAppNumber || "");
       setSettingsContactInfo({
         whatsapp: contactInfo?.whatsapp || contactWhatsAppNumber || "",
@@ -374,7 +407,7 @@ const DataEntryForm = () => {
         telegram: contactInfo?.telegram || "",
       });
     }
-    if (activeListTab === 10 && isAdmin) {
+    if (activeListTab === LIST_TAB.NOTIFICATIONS && isAdmin) {
       setNotificationTitle("");
       setNotificationBody("");
       setNotificationType("general");
@@ -522,6 +555,43 @@ const DataEntryForm = () => {
   const handleListTabChange = (event, newValue) => {
     setActiveListTab(newValue);
   };
+
+  const adminDataListGroupActive = useMemo(() => {
+    const managing =
+      activeListTab >= LIST_TAB.STORES && activeListTab <= LIST_TAB.REELS;
+    const service =
+      activeListTab >= LIST_TAB.ADS && activeListTab <= LIST_TAB.JOBS;
+    const mainSystem =
+      activeListTab >= LIST_TAB.CATEGORIES &&
+      activeListTab <= LIST_TAB.BRAND_TYPES;
+    const settings =
+      activeListTab === LIST_TAB.SETTINGS ||
+      (isAdmin && activeListTab === LIST_TAB.NOTIFICATIONS);
+    return { managing, service, mainSystem, settings };
+  }, [activeListTab, isAdmin]);
+
+  /** Which tab group row strip to show (only those tabs are mounted). */
+  const dataListVisibleGroup = useMemo(() => {
+    if (activeListTab >= LIST_TAB.STORES && activeListTab <= LIST_TAB.REELS) {
+      return "managing";
+    }
+    if (activeListTab >= LIST_TAB.ADS && activeListTab <= LIST_TAB.JOBS) {
+      return "service";
+    }
+    if (
+      activeListTab >= LIST_TAB.CATEGORIES &&
+      activeListTab <= LIST_TAB.BRAND_TYPES
+    ) {
+      return "mainSystem";
+    }
+    if (
+      activeListTab === LIST_TAB.SETTINGS ||
+      (isAdmin && activeListTab === LIST_TAB.NOTIFICATIONS)
+    ) {
+      return "settings";
+    }
+    return "managing";
+  }, [activeListTab, isAdmin]);
 
   const formatDisplayDate = (dateInput) => {
     if (!dateInput) return "-";
@@ -779,9 +849,7 @@ const DataEntryForm = () => {
       brandId: reel?.brandId?._id || reel?.brandId || "",
       videoUrl: reel?.videoUrl || "",
       key: reel?.key || "",
-      expireDate: reel?.expireDate
-        ? new Date(reel.expireDate).toISOString().slice(0, 10)
-        : "",
+      expireDate: reel?.expireDate ? toDatetimeLocalValue(reel.expireDate) : "",
       like: Number(reel?.like) || 0,
       views: Number(reel?.views) || 0,
       shares: Number(reel?.shares) || 0,
@@ -841,9 +909,13 @@ const DataEntryForm = () => {
     }
   };
   // Upload product image
-  const uploadProductImage = async (file) => {
+  const uploadProductImage = async (file, expireDateInput) => {
     const formData = new FormData();
     formData.append("image", file);
+    const exp = normalizeExpiryInputForApi(expireDateInput);
+    if (exp) {
+      formData.append("expireDate", exp);
+    }
 
     try {
       const response = await fetch(`${API_URL}/api/products/upload-image`, {
@@ -891,6 +963,13 @@ const DataEntryForm = () => {
   const uploadVideoFile = async (file) => {
     const formData = new FormData();
     formData.append("video", file);
+    if (videoForm.storeId) {
+      formData.append("storeId", String(videoForm.storeId));
+      const exp = normalizeExpiryInputForApi(videoForm.expireDate);
+      if (exp) {
+        formData.append("expireDate", exp);
+      }
+    }
     const response = await videoAPI.upload(formData);
     return response.data;
   };
@@ -1098,16 +1177,22 @@ const DataEntryForm = () => {
         setUploadLoading(false);
       }
 
+      const sid =
+        jobForm.storeId && String(jobForm.storeId).trim()
+          ? jobForm.storeId
+          : null;
+      const bid =
+        jobForm.brandId && String(jobForm.brandId).trim()
+          ? jobForm.brandId
+          : null;
       const payload = {
         title: jobForm.title.trim(),
         description: jobForm.description.trim(),
         gender: jobForm.gender || "any",
         image: imageUrl || "",
-        storeId: jobForm.storeId || undefined,
-        brandId: jobForm.brandId || undefined,
-        expireDate: jobForm.expireDate
-          ? new Date(jobForm.expireDate).toISOString()
-          : undefined,
+        storeId: sid,
+        brandId: bid,
+        expireDate: normalizeExpiryInputForApi(jobForm.expireDate) || undefined,
         active: jobForm.active !== false,
       };
 
@@ -1181,9 +1266,8 @@ const DataEntryForm = () => {
         key: uploaded?.key || videoForm.key || undefined,
         storeId: videoForm.storeId || undefined,
         brandId: videoForm.brandId || undefined,
-        expireDate: videoForm.expireDate
-          ? new Date(videoForm.expireDate).toISOString()
-          : undefined,
+        expireDate:
+          normalizeExpiryInputForApi(videoForm.expireDate) || undefined,
         like: Number(videoForm.like) || 0,
         views: Number(videoForm.views) || 0,
         shares: Number(videoForm.shares) || 0,
@@ -1442,6 +1526,7 @@ const DataEntryForm = () => {
       const brandData = {
         ...brandForm,
         logo: logoUrl,
+        expireDate: normalizeExpiryInputForApi(brandForm.expireDate),
         contactInfo: {
           phone: brandForm.phone || "",
           whatsapp: brandForm.whatsapp || "",
@@ -1515,6 +1600,7 @@ const DataEntryForm = () => {
       const storeData = {
         ...storeForm,
         logo: logoUrl,
+        expireDate: normalizeExpiryInputForApi(storeForm.expireDate),
         contactInfo: {
           phone: storeForm.phone || "",
           whatsapp: storeForm.whatsapp || "",
@@ -1576,7 +1662,10 @@ const DataEntryForm = () => {
       let imageUrl = "";
       if (selectedProductImage) {
         setUploadLoading(true);
-        imageUrl = await uploadProductImage(selectedProductImage);
+        imageUrl = await uploadProductImage(
+          selectedProductImage,
+          productForm.expireDate,
+        );
         setUploadLoading(false);
       }
 
@@ -1588,9 +1677,7 @@ const DataEntryForm = () => {
         isDiscount: productForm.isDiscount,
         barcode: productForm.barcode || null,
         weight: productForm.weight || null,
-        expireDate: productForm.expireDate
-          ? new Date(productForm.expireDate).toISOString()
-          : null,
+        expireDate: normalizeExpiryInputForApi(productForm.expireDate),
         brandId: productForm.brandId || null,
         categoryId: productForm.categoryId,
         categoryTypeId: productForm.categoryTypeId,
@@ -1678,9 +1765,7 @@ const DataEntryForm = () => {
         storeId: giftForm.storeId,
         brandId: giftForm.brandId || null,
         productId: giftForm.productId || null,
-        expireDate: giftForm.expireDate
-          ? new Date(giftForm.expireDate).toISOString()
-          : null,
+        expireDate: normalizeExpiryInputForApi(giftForm.expireDate),
       };
 
       const response = await giftAPI.create(giftData);
@@ -1795,7 +1880,7 @@ const DataEntryForm = () => {
           (data.brandTypeId && data.brandTypeId._id) || data.brandTypeId || "",
         description: data.description || "",
         expireDate: data.expireDate
-          ? new Date(data.expireDate).toISOString().split("T")[0]
+          ? toDatetimeLocalValue(data.expireDate)
           : "",
         statusAll: data.statusAll === "off" ? "off" : "on",
       });
@@ -1821,7 +1906,7 @@ const DataEntryForm = () => {
         branches: data.branches || [],
         show: data.show !== undefined ? data.show : true,
         expireDate: data.expireDate
-          ? new Date(data.expireDate).toISOString().split("T")[0]
+          ? toDatetimeLocalValue(data.expireDate)
           : "",
         lastReleaseDiscountDate: data.lastReleaseDiscountDate
           ? new Date(data.lastReleaseDiscountDate).toISOString().split("T")[0]
@@ -1830,10 +1915,11 @@ const DataEntryForm = () => {
         isHasDelivery: !!data.isHasDelivery,
       });
     } else if (type === "category") {
+      const rawStoreTypeId =
+        (data.storeTypeId && data.storeTypeId._id) || data.storeTypeId || "";
       setEditForm({
         name: data.name || "",
-        storeTypeId:
-          (data.storeTypeId && data.storeTypeId._id) || data.storeTypeId || "",
+        storeTypeId: rawStoreTypeId != null ? String(rawStoreTypeId) : "",
         types: Array.isArray(data.types)
           ? data.types.map((t) => (typeof t === "string" ? t : t.name || ""))
           : [""],
@@ -1856,7 +1942,7 @@ const DataEntryForm = () => {
         storeTypeId: data.storeTypeId?._id || data.storeTypeId || "",
         status: data.status || "published",
         expireDate: data.expireDate
-          ? new Date(data.expireDate).toISOString().split("T")[0]
+          ? toDatetimeLocalValue(data.expireDate)
           : "",
       });
       fetchCategoryTypes(productCategoryId);
@@ -1868,7 +1954,7 @@ const DataEntryForm = () => {
         brandId: data.brandId?._id || data.brandId || "",
         productId: data.productId || "",
         expireDate: data.expireDate
-          ? new Date(data.expireDate).toISOString().split("T")[0]
+          ? toDatetimeLocalValue(data.expireDate)
           : "",
       });
     } else if (type === "ad") {
@@ -1922,17 +2008,14 @@ const DataEntryForm = () => {
     const { name, value } = e.target;
     const nextValue =
       name === "pages" && typeof value === "string" ? value.split(",") : value;
-    setEditForm({ ...editForm, [name]: nextValue });
-
-    // If category is selected, fetch its types
-    if (name === "categoryId") {
-      fetchCategoryTypes(value);
-      // Reset category type when category changes
-      setEditForm((prev) => ({
-        ...prev,
-        categoryTypeId: "",
-      }));
-    }
+    setEditForm((prev) => {
+      const next = { ...prev, [name]: nextValue };
+      if (name === "categoryId") {
+        fetchCategoryTypes(value);
+        next.categoryTypeId = "";
+      }
+      return next;
+    });
   };
 
   const handleEditSave = async () => {
@@ -1948,6 +2031,7 @@ const DataEntryForm = () => {
         const brandUpdateData = {
           ...editForm,
           logo: logoUrl,
+          expireDate: normalizeExpiryInputForApi(editForm.expireDate),
           contactInfo: {
             phone: editForm.phone || "",
             whatsapp: editForm.whatsapp || "",
@@ -1978,6 +2062,7 @@ const DataEntryForm = () => {
         const storeUpdateData = {
           ...editForm,
           logo: logoUrl,
+          expireDate: normalizeExpiryInputForApi(editForm.expireDate),
           contactInfo: {
             phone: editForm.phone || "",
             whatsapp: editForm.whatsapp || "",
@@ -2044,7 +2129,10 @@ const DataEntryForm = () => {
       } else if (editDialog.type === "product") {
         let imageUrl = editForm.image;
         if (selectedEditImage) {
-          imageUrl = await uploadProductImage(selectedEditImage);
+          imageUrl = await uploadProductImage(
+            selectedEditImage,
+            editForm.expireDate,
+          );
         }
 
         const productUpdateData = {
@@ -2056,9 +2144,7 @@ const DataEntryForm = () => {
           description: editForm.description,
           barcode: editForm.barcode,
           weight: editForm.weight,
-          expireDate: editForm.expireDate
-            ? new Date(editForm.expireDate).toISOString()
-            : null,
+          expireDate: normalizeExpiryInputForApi(editForm.expireDate),
           brandId: editForm.brandId,
           categoryId: editForm.categoryId,
           categoryTypeId: editForm.categoryTypeId,
@@ -2084,9 +2170,7 @@ const DataEntryForm = () => {
           storeId: editForm.storeId,
           brandId: editForm.brandId || null,
           productId: editForm.productId || null,
-          expireDate: editForm.expireDate
-            ? new Date(editForm.expireDate).toISOString()
-            : null,
+          expireDate: normalizeExpiryInputForApi(editForm.expireDate),
         };
 
         await giftAPI.update(editDialog.data._id, giftUpdateData);
@@ -2340,10 +2424,7 @@ const DataEntryForm = () => {
       // Find expired discount products first
       const expiredDiscountProducts = products.filter((product) => {
         if (!product.isDiscount || !product.expireDate) return false;
-
-        const currentDate = new Date();
-        const expireDate = new Date(product.expireDate);
-        return currentDate > expireDate;
+        return !isExpiryStillValid(product.expireDate);
       });
 
       if (expiredDiscountProducts.length === 0) {
@@ -2538,12 +2619,100 @@ const DataEntryForm = () => {
           >
             {t("Data Lists")}
           </Typography>
+          <Box
+            component="div"
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "center",
+              gap: { xs: 0.75, sm: 1 },
+              mb: 2,
+              py: 1.25,
+              px: { xs: 1, sm: 1.5 },
+              borderRadius: 2,
+              border: "1px solid",
+              borderColor: "divider",
+              bgcolor:
+                theme.palette.mode === "dark"
+                  ? "rgba(255,255,255,0.05)"
+                  : "action.hover",
+            }}
+          >
+            <Chip
+              clickable
+              size="small"
+              label={t("adminTabGroupManaging")}
+              color="primary"
+              variant={
+                adminDataListGroupActive.managing ? "filled" : "outlined"
+              }
+              onClick={() => setActiveListTab(LIST_TAB.STORES)}
+              sx={{ fontWeight: 700, cursor: "pointer" }}
+            />
+            <Typography
+              component="span"
+              variant="body2"
+              color="text.disabled"
+              sx={{ lineHeight: 1, userSelect: "none" }}
+            >
+              ·
+            </Typography>
+            <Chip
+              clickable
+              size="small"
+              label={t("adminTabGroupService")}
+              color="primary"
+              variant={adminDataListGroupActive.service ? "filled" : "outlined"}
+              onClick={() => setActiveListTab(LIST_TAB.ADS)}
+              sx={{ fontWeight: 700, cursor: "pointer" }}
+            />
+            <Typography
+              component="span"
+              variant="body2"
+              color="text.disabled"
+              sx={{ lineHeight: 1, userSelect: "none" }}
+            >
+              ·
+            </Typography>
+            <Chip
+              clickable
+              size="small"
+              label={t("adminTabGroupMainSystem")}
+              color="primary"
+              variant={
+                adminDataListGroupActive.mainSystem ? "filled" : "outlined"
+              }
+              onClick={() => setActiveListTab(LIST_TAB.CATEGORIES)}
+              sx={{ fontWeight: 700, cursor: "pointer" }}
+            />
+            <Typography
+              component="span"
+              variant="body2"
+              color="text.disabled"
+              sx={{ lineHeight: 1, userSelect: "none" }}
+            >
+              ·
+            </Typography>
+            <Chip
+              clickable
+              size="small"
+              label={t("adminTabGroupSettings")}
+              color="primary"
+              variant={
+                adminDataListGroupActive.settings ? "filled" : "outlined"
+              }
+              onClick={() => setActiveListTab(LIST_TAB.SETTINGS)}
+              sx={{ fontWeight: 700, cursor: "pointer" }}
+            />
+          </Box>
           <Tabs
             value={activeListTab}
             onChange={handleListTabChange}
             indicatorColor="primary"
             textColor="primary"
-            variant="scrollable"
+            variant={
+              dataListVisibleGroup === "managing" ? "scrollable" : "fullWidth"
+            }
             scrollButtons="auto"
             allowScrollButtonsMobile
             sx={{
@@ -2556,82 +2725,118 @@ const DataEntryForm = () => {
               },
             }}
           >
-            <Tab
-              label={t("Stores")}
-              icon={<StoreIcon />}
-              iconPosition="start"
-            />
-            <Tab
-              label={t("Brands")}
-              icon={<BusinessIcon />}
-              iconPosition="start"
-            />
-            <Tab
-              label={t("Products")}
-              icon={<ShoppingCartIcon />}
-              iconPosition="start"
-            />
-            <Tab
-              label={t("Categories")}
-              icon={<CategoryIcon />}
-              iconPosition="start"
-            />
-            <Tab
-              label={t("Gifts")}
-              icon={<CardGiftcardIcon />}
-              iconPosition="start"
-            />
-            <Tab
-              label={t("Ads")}
-              icon={<DashboardIcon />}
-              iconPosition="start"
-            />
-            <Tab
-              label={t("Jobs")}
-              icon={<WorkOutlineIcon />}
-              iconPosition="start"
-            />
-            <Tab
-              label={t("Store Types")}
-              icon={<CategoryIcon />}
-              iconPosition="start"
-            />
-            <Tab
-              label={t("Brand Types")}
-              icon={<CategoryIcon />}
-              iconPosition="start"
-            />
-            <Tab
-              label={t("Settings")}
-              icon={<SettingsIcon />}
-              iconPosition="start"
-            />
-            {isAdmin && (
+            {dataListVisibleGroup === "managing" && [
               <Tab
-                label={t("Notifications")}
-                icon={<NotificationsActiveIcon />}
+                key="stores"
+                value={LIST_TAB.STORES}
+                label={t("Stores")}
+                icon={<StoreIcon />}
                 iconPosition="start"
-              />
-            )}
-            <Tab
-              label={t("Reels")}
-              icon={<VideoLibraryIcon />}
-              iconPosition="start"
-            />
+              />,
+              <Tab
+                key="brands"
+                value={LIST_TAB.BRANDS}
+                label={t("Brands")}
+                icon={<BusinessIcon />}
+                iconPosition="start"
+              />,
+              <Tab
+                key="products"
+                value={LIST_TAB.PRODUCTS}
+                label={t("Products")}
+                icon={<ShoppingCartIcon />}
+                iconPosition="start"
+              />,
+              <Tab
+                key="gifts"
+                value={LIST_TAB.GIFTS}
+                label={t("Gifts")}
+                icon={<CardGiftcardIcon />}
+                iconPosition="start"
+              />,
+              <Tab
+                key="reels"
+                value={LIST_TAB.REELS}
+                label={t("Reels")}
+                icon={<VideoLibraryIcon />}
+                iconPosition="start"
+              />,
+            ]}
+            {dataListVisibleGroup === "service" && [
+              <Tab
+                key="ads"
+                value={LIST_TAB.ADS}
+                label={t("Ads")}
+                icon={<DashboardIcon />}
+                iconPosition="start"
+              />,
+              <Tab
+                key="jobs"
+                value={LIST_TAB.JOBS}
+                label={t("Jobs")}
+                icon={<WorkOutlineIcon />}
+                iconPosition="start"
+              />,
+            ]}
+            {dataListVisibleGroup === "mainSystem" && [
+              <Tab
+                key="categories"
+                value={LIST_TAB.CATEGORIES}
+                label={t("Categories")}
+                icon={<CategoryIcon />}
+                iconPosition="start"
+              />,
+              <Tab
+                key="storeTypes"
+                value={LIST_TAB.STORE_TYPES}
+                label={t("Store Types")}
+                icon={<CategoryIcon />}
+                iconPosition="start"
+              />,
+              <Tab
+                key="brandTypes"
+                value={LIST_TAB.BRAND_TYPES}
+                label={t("Brand Types")}
+                icon={<CategoryIcon />}
+                iconPosition="start"
+              />,
+            ]}
+            {dataListVisibleGroup === "settings" && [
+              <Tab
+                key="settings"
+                value={LIST_TAB.SETTINGS}
+                label={t("Settings")}
+                icon={<SettingsIcon />}
+                iconPosition="start"
+              />,
+              ...(isAdmin
+                ? [
+                    <Tab
+                      key="notifications"
+                      value={LIST_TAB.NOTIFICATIONS}
+                      label={t("Notifications")}
+                      icon={<NotificationsActiveIcon />}
+                      iconPosition="start"
+                    />,
+                  ]
+                : []),
+            ]}
           </Tabs>
 
           {/* Store List Panel */}
-          {activeListTab === 0 && (
+          {activeListTab === LIST_TAB.STORES && (
             <Box>
               <Box
                 sx={{
                   display: "flex",
-                  justifyContent: "space-between",
+                  justifyContent: { xs: "flex-start", sm: "space-between" },
                   alignItems: "center",
+                  gap: 1,
                   mb: 2,
+                  ...DATA_LIST_TAB_TOOLBAR_SCROLL_SX,
                 }}
               >
-                <Box sx={{ display: "flex", gap: 1 }}>
+                <Box sx={{ display: "flex", gap: 1, flexShrink: 0 }}>
                   <Button
                     variant="contained"
                     startIcon={<AddIcon />}
@@ -2652,7 +2857,7 @@ const DataEntryForm = () => {
                   label={t("Search by Store Name")}
                   value={storeNameSearch}
                   onChange={(e) => setStoreNameSearch(e.target.value)}
-                  sx={{ minWidth: { xs: 180, sm: 260 } }}
+                  sx={{ minWidth: { xs: 180, sm: 260 }, flexShrink: 0 }}
                 />
               </Box>
               <TableContainer component={Paper}>
@@ -2932,28 +3137,33 @@ const DataEntryForm = () => {
           )}
 
           {/* Store Types List Panel */}
-          {activeListTab === 7 && (
+          {activeListTab === LIST_TAB.STORE_TYPES && (
             <Box>
-              <Grid container spacing={2} alignItems="center">
-                <Grid xs={12} sm={6}>
-                  <Typography variant="h6">{t("Store Types")}</Typography>
-                </Grid>
-                <Grid
-                  xs={12}
-                  sm={6}
-                  sx={{ textAlign: { xs: "left", sm: "right" } }}
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 2,
+                  mb: 2,
+                  flexWrap: "nowrap",
+                  ...DATA_LIST_TAB_TOOLBAR_SCROLL_SX,
+                }}
+              >
+                <Typography variant="h6" sx={{ flexShrink: 0 }}>
+                  {t("Store Types")}
+                </Typography>
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() =>
+                    setAddDialog({ open: true, type: "storeType" })
+                  }
+                  sx={{ flexShrink: 0 }}
                 >
-                  <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    onClick={() =>
-                      setAddDialog({ open: true, type: "storeType" })
-                    }
-                  >
-                    {t("Add Store Type")}
-                  </Button>
-                </Grid>
-              </Grid>
+                  {t("Add Store Type")}
+                </Button>
+              </Box>
 
               <TableContainer component={Paper} sx={{ mt: 2 }}>
                 <Table>
@@ -3017,28 +3227,33 @@ const DataEntryForm = () => {
           )}
 
           {/* Brand Types List Panel */}
-          {activeListTab === 8 && (
+          {activeListTab === LIST_TAB.BRAND_TYPES && (
             <Box>
-              <Grid container spacing={2} alignItems="center">
-                <Grid xs={12} sm={6}>
-                  <Typography variant="h6">{t("Brand Types")}</Typography>
-                </Grid>
-                <Grid
-                  xs={12}
-                  sm={6}
-                  sx={{ textAlign: { xs: "left", sm: "right" } }}
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 2,
+                  mb: 2,
+                  flexWrap: "nowrap",
+                  ...DATA_LIST_TAB_TOOLBAR_SCROLL_SX,
+                }}
+              >
+                <Typography variant="h6" sx={{ flexShrink: 0 }}>
+                  {t("Brand Types")}
+                </Typography>
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() =>
+                    setAddDialog({ open: true, type: "brandType" })
+                  }
+                  sx={{ flexShrink: 0 }}
                 >
-                  <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    onClick={() =>
-                      setAddDialog({ open: true, type: "brandType" })
-                    }
-                  >
-                    {t("Add Brand Type")}
-                  </Button>
-                </Grid>
-              </Grid>
+                  {t("Add Brand Type")}
+                </Button>
+              </Box>
 
               <TableContainer component={Paper} sx={{ mt: 2 }}>
                 <Table>
@@ -3102,7 +3317,7 @@ const DataEntryForm = () => {
           )}
 
           {/* Settings Panel */}
-          {activeListTab === 9 && (
+          {activeListTab === LIST_TAB.SETTINGS && (
             <Box>
               <Typography variant="h6" gutterBottom>
                 {t("Contact Us Info")}
@@ -3264,7 +3479,7 @@ const DataEntryForm = () => {
           )}
 
           {/* Notifications Panel - Send to all users */}
-          {activeListTab === 10 && (
+          {activeListTab === LIST_TAB.NOTIFICATIONS && isAdmin && (
             <Box>
               <Typography variant="h6" gutterBottom>
                 {t("Send Notification to All Users")}
@@ -3433,17 +3648,19 @@ const DataEntryForm = () => {
           )}
 
           {/* Brand List Panel */}
-          {activeListTab === 1 && (
+          {activeListTab === LIST_TAB.BRANDS && (
             <Box>
               <Box
                 sx={{
                   display: "flex",
-                  justifyContent: "space-between",
+                  justifyContent: { xs: "flex-start", sm: "space-between" },
                   alignItems: "center",
+                  gap: 1,
                   mb: 2,
+                  ...DATA_LIST_TAB_TOOLBAR_SCROLL_SX,
                 }}
               >
-                <Box sx={{ display: "flex", gap: 1 }}>
+                <Box sx={{ display: "flex", gap: 1, flexShrink: 0 }}>
                   <Button
                     variant="contained"
                     startIcon={<AddIcon />}
@@ -3477,7 +3694,7 @@ const DataEntryForm = () => {
                   label={t("Search by Brand Name")}
                   value={brandNameSearch}
                   onChange={(e) => setBrandNameSearch(e.target.value)}
-                  sx={{ minWidth: { xs: 180, sm: 260 } }}
+                  sx={{ minWidth: { xs: 180, sm: 260 }, flexShrink: 0 }}
                 />
               </Box>
               <TableContainer component={Paper}>
@@ -3701,14 +3918,16 @@ const DataEntryForm = () => {
           )}
 
           {/* Product List Panel */}
-          {activeListTab === 2 && (
+          {activeListTab === LIST_TAB.PRODUCTS && (
             <Box>
               <Box
                 sx={{
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "space-between",
+                  justifyContent: { xs: "flex-start", md: "space-between" },
+                  gap: 1,
                   mb: 2,
+                  ...DATA_LIST_TAB_TOOLBAR_SCROLL_SX,
                 }}
               >
                 <Box
@@ -3716,6 +3935,7 @@ const DataEntryForm = () => {
                     display: "flex",
                     gap: 1,
                     justifyContent: "flex-start",
+                    flexShrink: 0,
                   }}
                 >
                   <Button
@@ -3779,7 +3999,13 @@ const DataEntryForm = () => {
                     )
                   </Button>
                 </Box>
-                <FormControl sx={{ minWidth: 240, justifyContent: "flex-end" }}>
+                <FormControl
+                  sx={{
+                    minWidth: 240,
+                    justifyContent: "flex-end",
+                    flexShrink: 0,
+                  }}
+                >
                   <InputLabel>{t("Search by Store")}</InputLabel>
                   <Select
                     value={selectedStoreFilter}
@@ -4093,25 +4319,27 @@ const DataEntryForm = () => {
           )}
 
           {/* Categories List Panel (with image upload) */}
-          {activeListTab === 3 && (
+          {activeListTab === LIST_TAB.CATEGORIES && (
             <Box>
               <Box
                 sx={{
                   display: "flex",
-                  justifyContent: "space-between",
+                  justifyContent: { xs: "flex-start", sm: "space-between" },
                   alignItems: "center",
                   gap: 2,
                   mb: 2,
+                  ...DATA_LIST_TAB_TOOLBAR_SCROLL_SX,
                 }}
               >
                 <Button
                   variant="contained"
                   startIcon={<AddIcon />}
                   onClick={() => setAddDialog({ open: true, type: "category" })}
+                  sx={{ flexShrink: 0 }}
                 >
                   {t("New Category")}
                 </Button>
-                <FormControl size="small" sx={{ minWidth: 220 }}>
+                <FormControl size="small" sx={{ minWidth: 220, flexShrink: 0 }}>
                   <InputLabel>{t("Store Type Filter")}</InputLabel>
                   <Select
                     value={categoryStoreTypeFilter}
@@ -4293,10 +4521,17 @@ const DataEntryForm = () => {
           )}
 
           {/* Gift List Panel */}
-          {activeListTab === 4 && (
+          {activeListTab === LIST_TAB.GIFTS && (
             <Box>
               <Box
-                sx={{ display: "flex", justifyContent: "flex-start", mb: 2 }}
+                sx={{
+                  display: "flex",
+                  justifyContent: "flex-start",
+                  alignItems: "center",
+                  gap: 1,
+                  mb: 2,
+                  ...DATA_LIST_TAB_TOOLBAR_SCROLL_SX,
+                }}
               >
                 <Button
                   variant="contained"
@@ -4524,14 +4759,16 @@ const DataEntryForm = () => {
           )}
 
           {/* Ads List Panel */}
-          {activeListTab === 5 && (
+          {activeListTab === LIST_TAB.ADS && (
             <Box>
               <Box
                 sx={{
                   display: "flex",
                   justifyContent: "flex-start",
+                  alignItems: "center",
                   mb: 2,
                   gap: 1,
+                  ...DATA_LIST_TAB_TOOLBAR_SCROLL_SX,
                 }}
               >
                 <Button
@@ -4780,15 +5017,16 @@ const DataEntryForm = () => {
           )}
 
           {/* Jobs List Panel */}
-          {activeListTab === 6 && (
+          {activeListTab === LIST_TAB.JOBS && (
             <Box>
               <Box
                 sx={{
                   display: "flex",
                   justifyContent: "flex-start",
+                  alignItems: "center",
                   mb: 2,
                   gap: 1,
-                  flexWrap: "wrap",
+                  ...DATA_LIST_TAB_TOOLBAR_SCROLL_SX,
                 }}
               >
                 <Button
@@ -4906,9 +5144,7 @@ const DataEntryForm = () => {
                                       job?.brandId?._id || job?.brandId || "",
                                     image: job.image || "",
                                     expireDate: job.expireDate
-                                      ? new Date(job.expireDate)
-                                          .toISOString()
-                                          .slice(0, 10)
+                                      ? toDatetimeLocalValue(job.expireDate)
                                       : "",
                                     active: job.active !== false,
                                   });
@@ -4952,14 +5188,16 @@ const DataEntryForm = () => {
           )}
 
           {/* Reels List Panel */}
-          {activeListTab === reelsTabIndex && (
+          {activeListTab === LIST_TAB.REELS && (
             <Box>
               <Box
                 sx={{
                   display: "flex",
                   justifyContent: "flex-start",
+                  alignItems: "center",
                   mb: 2,
                   gap: 1,
+                  ...DATA_LIST_TAB_TOOLBAR_SCROLL_SX,
                 }}
               >
                 <Button
@@ -5365,9 +5603,9 @@ const DataEntryForm = () => {
                 <Grid xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    label={t("Expire Contact")}
+                    label={t("Expire date & time")}
                     name="expireDate"
-                    type="date"
+                    type="datetime-local"
                     value={storeForm.expireDate}
                     onChange={handleStoreFormChange}
                     InputLabelProps={{ shrink: true }}
@@ -5775,9 +6013,9 @@ const DataEntryForm = () => {
                 <Grid xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    label={t("Expire Contact")}
+                    label={t("Expire date & time")}
                     name="expireDate"
-                    type="date"
+                    type="datetime-local"
                     value={brandForm.expireDate}
                     onChange={handleBrandFormChange}
                     InputLabelProps={{ shrink: true }}
@@ -6054,9 +6292,9 @@ const DataEntryForm = () => {
                 <Grid xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    label={t("Expire Date")}
+                    label={t("Expire date & time")}
                     name="expireDate"
-                    type="date"
+                    type="datetime-local"
                     value={productForm.expireDate}
                     onChange={handleProductFormChange}
                     InputLabelProps={{ shrink: true }}
@@ -6213,9 +6451,9 @@ const DataEntryForm = () => {
                 <Grid xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    label={t("Expire Date")}
+                    label={t("Expire date & time")}
                     name="expireDate"
-                    type="date"
+                    type="datetime-local"
                     value={giftForm.expireDate}
                     onChange={handleGiftFormChange}
                     InputLabelProps={{ shrink: true }}
@@ -6675,8 +6913,8 @@ const DataEntryForm = () => {
                 <Grid xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    type="date"
-                    label={t("Expire Date")}
+                    type="datetime-local"
+                    label={t("Expire date & time")}
                     InputLabelProps={{ shrink: true }}
                     value={jobForm.expireDate || ""}
                     onChange={(e) =>
@@ -6815,8 +7053,8 @@ const DataEntryForm = () => {
                 <Grid xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    type="date"
-                    label={t("Expire Date")}
+                    type="datetime-local"
+                    label={t("Expire date & time")}
                     InputLabelProps={{ shrink: true }}
                     value={videoForm.expireDate}
                     onChange={(e) =>
@@ -7435,9 +7673,9 @@ const DataEntryForm = () => {
               <TextField
                 margin="normal"
                 fullWidth
-                label={t("Expire Date")}
+                label={t("Expire date & time")}
                 name="expireDate"
-                type="date"
+                type="datetime-local"
                 value={editForm.expireDate || ""}
                 onChange={handleEditFormChange}
                 InputLabelProps={{ shrink: true }}
@@ -7655,9 +7893,9 @@ const DataEntryForm = () => {
               <TextField
                 margin="normal"
                 fullWidth
-                label={t("Expire Date")}
+                label={t("Expire date & time")}
                 name="expireDate"
-                type="date"
+                type="datetime-local"
                 value={editForm.expireDate || ""}
                 onChange={handleEditFormChange}
                 InputLabelProps={{ shrink: true }}
@@ -7836,14 +8074,18 @@ const DataEntryForm = () => {
                     <InputLabel>{t("Store Type")}</InputLabel>
                     <Select
                       name="storeTypeId"
-                      value={editForm.storeType || "market"}
+                      value={editForm.storeTypeId || ""}
                       onChange={handleEditFormChange}
                       label={t("Store Type")}
                     >
-                      <MenuItem value="market">{t("Market")}</MenuItem>
-                      <MenuItem value="clothes">{t("Clothes")}</MenuItem>
-                      <MenuItem value="electronic">{t("Electronics")}</MenuItem>
-                      <MenuItem value="cosmetic">{t("Cosmetics")}</MenuItem>
+                      <MenuItem value="">
+                        <em>{t("Select Store Type")}</em>
+                      </MenuItem>
+                      {(storeTypes || []).map((st) => (
+                        <MenuItem key={st._id} value={String(st._id)}>
+                          {st.icon || "🏪"} {t(st.name)}
+                        </MenuItem>
+                      ))}
                     </Select>
                   </FormControl>
                 </Grid>
@@ -8001,9 +8243,9 @@ const DataEntryForm = () => {
               <TextField
                 margin="normal"
                 fullWidth
-                label={t("Expire Date")}
+                label={t("Expire date & time")}
                 name="expireDate"
-                type="date"
+                type="datetime-local"
                 value={editForm.expireDate}
                 onChange={handleEditFormChange}
                 InputLabelProps={{ shrink: true }}
@@ -8508,9 +8750,9 @@ const DataEntryForm = () => {
               <TextField
                 margin="normal"
                 fullWidth
-                label={t("Expire Date")}
+                label={t("Expire date & time")}
                 name="expireDate"
-                type="date"
+                type="datetime-local"
                 value={editForm.expireDate}
                 onChange={handleEditFormChange}
                 InputLabelProps={{ shrink: true }}

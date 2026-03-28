@@ -20,6 +20,14 @@ import ArrowBack from "@mui/icons-material/ArrowBack";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@mui/material/styles";
 import { useUserTracking } from "../hooks/useUserTracking";
+import { resolveMediaUrl } from "../utils/mediaUrl";
+import {
+  isExpiryStillValid,
+  getExpiryRemainingInfo,
+  formatExpiryChipLabel,
+  shouldShowExpiryChip,
+  expiryChipBg,
+} from "../utils/expiryDate";
 
 const FavouritesPage = () => {
   const theme = useTheme();
@@ -33,12 +41,8 @@ const FavouritesPage = () => {
   const [likeStates, setLikeStates] = useState({});
   const [likeLoading, setLikeLoading] = useState({});
 
-  // Filter out expired products (discounts with past expireDate)
-  const isProductExpired = (product) => {
-    if (!product.expireDate) return false;
-    const expiryDate = new Date(product.expireDate);
-    return new Date() >= expiryDate;
-  };
+  const isProductExpired = (product) =>
+    Boolean(product.expireDate) && !isExpiryStillValid(product.expireDate);
 
   const nonExpiredProducts = useMemo(
     () => products.filter((p) => !isProductExpired(p)),
@@ -109,24 +113,6 @@ const FavouritesPage = () => {
     } finally {
       setLikeLoading((prev) => ({ ...prev, [productId]: false }));
     }
-  };
-
-  const getImageUrl = (image) => {
-    if (!image) return null;
-    return image.startsWith("http")
-      ? image
-      : `${process.env.REACT_APP_BACKEND_URL || ""}${image}`;
-  };
-
-  const getRemainingDays = (expireDate) => {
-    if (!expireDate) return null;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const expire = new Date(expireDate);
-    expire.setHours(0, 0, 0, 0);
-    const diffTime = expire.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays > 0 ? diffDays : 0;
   };
 
   const formatExpireDate = (expireDate) => {
@@ -283,7 +269,8 @@ const FavouritesPage = () => {
           {nonExpiredProducts.map((product) => {
             const isLiked =
               likeStates[product._id] ?? isProductLiked(product._id);
-            const remainingDays = getRemainingDays(product.expireDate);
+            const expInfo = getExpiryRemainingInfo(product.expireDate);
+            const showExpiryChip = shouldShowExpiryChip(expInfo);
             const market = getMarketInfo(product);
 
             return (
@@ -318,7 +305,9 @@ const FavouritesPage = () => {
                     {market.logo ? (
                       <Box
                         component="img"
-                        src={getImageUrl(market.logo)}
+                        src={
+                          market.logo ? resolveMediaUrl(market.logo) : undefined
+                        }
                         alt={market.name}
                         sx={{
                           width: 24,
@@ -349,7 +338,7 @@ const FavouritesPage = () => {
                   {product.image ? (
                     <CardMedia
                       component="img"
-                      image={getImageUrl(product.image)}
+                      image={resolveMediaUrl(product.image)}
                       alt={product.name}
                       sx={{
                         height: 100,
@@ -391,20 +380,15 @@ const FavouritesPage = () => {
                       <FavoriteBorderIcon sx={{ fontSize: "1.2rem" }} />
                     )}
                   </IconButton>
-                  {remainingDays !== null && remainingDays <= 30 && (
+                  {showExpiryChip && (
                     <Chip
-                      label={
-                        remainingDays === 0
-                          ? t("Expires today")
-                          : `${remainingDays} ${t("days left")}`
-                      }
+                      label={formatExpiryChipLabel(expInfo, t)}
                       size="small"
                       sx={{
                         position: "absolute",
                         bottom: 8,
                         left: 8,
-                        backgroundColor:
-                          remainingDays <= 3 ? "#e53e3e" : "#f59e0b",
+                        backgroundColor: expiryChipBg(expInfo),
                         color: "white",
                         fontWeight: 600,
                       }}
@@ -467,7 +451,7 @@ const FavouritesPage = () => {
                           <Typography
                             variant="h6"
                             sx={{
-                              color: "black",
+                              color: "var(--color-secondary)",
                               textAlign: "center",
                               fontWeight: 700,
                               fontSize: { xs: "1.1rem", sm: "1.3rem" },

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -53,6 +53,7 @@ import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import ClearAllIcon from "@mui/icons-material/ClearAll";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
+import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import PersonAddDisabledIcon from "@mui/icons-material/PersonAddDisabled";
 import MyLocationIcon from "@mui/icons-material/MyLocation";
@@ -67,6 +68,14 @@ import { useUserTracking } from "../hooks/useUserTracking";
 import { useCityFilter } from "../context/CityFilterContext";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import useIsMobileLayout from "../hooks/useIsMobileLayout";
+import { resolveMediaUrl } from "../utils/mediaUrl";
+import {
+  isExpiryStillValid,
+  getExpiryRemainingInfo,
+  formatExpiryChipLabel,
+  shouldShowExpiryChip,
+  expiryChipBg,
+} from "../utils/expiryDate";
 
 const MainPage = () => {
   const theme = useTheme();
@@ -117,6 +126,8 @@ const MainPage = () => {
 
   // Cache random store selections for rotating showcases (stable during renders).
   const randomShowcaseStoresRef = useRef({});
+  const loadMoreSentinelRef = useRef(null);
+  const loadMoreStoresRef = useRef(() => {});
 
   // User tracking hook (user = device user for guests)
   const {
@@ -244,9 +255,7 @@ const MainPage = () => {
         .filter((a) => !!a.image)
         .map((a) => ({
           _id: a._id,
-          src: a.image.startsWith("http")
-            ? a.image
-            : `${process.env.REACT_APP_BACKEND_URL}${a.image}`,
+          src: resolveMediaUrl(a.image),
           brandId: a.brandId,
           storeId: a.storeId,
           giftId: a.giftId,
@@ -492,7 +501,8 @@ const MainPage = () => {
       return allCategories;
     }
     return allCategories.filter(
-      (category) => getID(category.storeTypeId) === selectedStoreTypeId,
+      (category) =>
+        String(getID(category.storeTypeId)) === String(selectedStoreTypeId),
     );
   }, [allCategories, selectedStoreTypeId]);
 
@@ -505,7 +515,9 @@ const MainPage = () => {
   // }, [selectedCategory]);
 
   const handleStoreTypeChange = (storeTypeId) => {
-    setSelectedStoreTypeId(storeTypeId);
+    setSelectedStoreTypeId(
+      storeTypeId === "all" ? "all" : String(storeTypeId),
+    );
     setSelectedCategory(null);
     setSelectedCategoryType(null);
   };
@@ -563,17 +575,6 @@ const MainPage = () => {
   const selectedCityCanonical = toCanonicalCity(selectedCity);
   const doesCityMatch = (candidateCity) =>
     toCanonicalCity(candidateCity) === selectedCityCanonical;
-
-  const getRemainingDays = (expireDate) => {
-    if (!expireDate) return null;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const expire = new Date(expireDate);
-    expire.setHours(0, 0, 0, 0);
-    const diffTime = expire.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
 
   const extractLatLngFromText = (text) => {
     if (!text || typeof text !== "string") return null;
@@ -636,11 +637,7 @@ const MainPage = () => {
     // If no expiry date, discount is always valid
     if (!product.expireDate) return true;
 
-    // Check if current date is before expiry date
-    const currentDate = new Date();
-    const expiryDate = new Date(product.expireDate);
-
-    return currentDate < expiryDate;
+    return isExpiryStillValid(product.expireDate);
   };
 
   const getCategoryTypeName = (categoryTypeId, categoryId) => {
@@ -661,13 +658,222 @@ const MainPage = () => {
     return type?.name || "N/A";
   };
 
+  const storeIdsInCity = useMemo(
+    () =>
+      new Set(
+        stores
+          .filter((s) => doesCityMatch(s.storecity || s.city))
+          .map((s) => getID(s._id)),
+      ),
+    [stores, selectedCityCanonical],
+  );
+
+  const storeById = useMemo(() => {
+    const m = {};
+    stores.forEach((s) => {
+      m[String(getID(s._id))] = s;
+    });
+    return m;
+  }, [stores]);
+
+  /**
+   * Use parent store's store type first so it matches store-type chips (built from stores)
+   * and the store list filter. Product.storeTypeId can be stale vs store.storeTypeId.
+   */
+  const effectiveProductStoreTypeId = (product) => {
+    const store = storeById[String(getID(product?.storeId))];
+    return getID(store?.storeTypeId ?? product?.storeTypeId);
+  };
+
+  /** categoryId or populated category reference */
+  const effectiveProductCategoryId = (product) =>
+    getID(product?.categoryId ?? product?.category);
+
+  /**
+   * Products used only to decide which store-type chips to show.
+   * Ignores store type, category, and category-type so the full store-type row stays
+   * visible after the user picks a category (changing category must not hide other types).
+   */
+  const filteredProductsForStoreTypeChips = useMemo(() => {
+    return allProducts.filter((product) => {
+      if (!storeIdsInCity.has(getID(product.storeId))) return false;
+
+      if (
+        product.newPrice < priceRange[0] ||
+        product.newPrice > priceRange[1]
+      ) {
+        return false;
+      }
+
+      const hasPriceDiscount =
+        product.previousPrice &&
+        product.newPrice &&
+        product.previousPrice > product.newPrice;
+
+      if (showOnlyDiscount) {
+        const isDiscounted = product.isDiscount || hasPriceDiscount;
+        if (!isDiscounted || !isDiscountValid(product)) {
+          return false;
+        }
+      }
+
+      if (product.expireDate && !isExpiryStillValid(product.expireDate)) {
+        return false;
+      }
+
+      if (
+        search &&
+        !product.name?.toLowerCase().includes(search.toLowerCase())
+      ) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [
+    allProducts,
+    storeIdsInCity,
+    search,
+    priceRange,
+    showOnlyDiscount,
+  ]);
+
+  const finalFilteredStoresForStoreTypeChips = useMemo(() => {
+    const storeIdsWithProducts = [
+      ...new Set(
+        filteredProductsForStoreTypeChips.map((p) => getID(p.storeId)),
+      ),
+    ];
+    return stores.filter((store) => {
+      const storeID = getID(store._id);
+      const hasMatchingProducts = storeIdsWithProducts.includes(storeID);
+      const storeNameMatch =
+        search && store.name?.toLowerCase().includes(search.toLowerCase());
+      const cityMatch = doesCityMatch(store.storecity || store.city);
+      return (hasMatchingProducts || storeNameMatch) && cityMatch;
+    });
+  }, [filteredProductsForStoreTypeChips, stores, search, selectedCityCanonical]);
+
+  const visibleStoreTypes = useMemo(() => {
+    const ids = new Set(
+      finalFilteredStoresForStoreTypeChips
+        .map((s) => getID(s.storeTypeId))
+        .filter(Boolean)
+        .map((id) => String(id)),
+    );
+    return storeTypes.filter((st) => ids.has(String(getID(st._id))));
+  }, [storeTypes, finalFilteredStoresForStoreTypeChips]);
+
+  /** Products for category chips when a store type is selected (ignore category; respect city + store type). */
+  const filteredProductsForCategoryChips = useMemo(() => {
+    if (selectedStoreTypeId === "all") return [];
+    return allProducts.filter((product) => {
+      if (!storeIdsInCity.has(getID(product.storeId))) return false;
+
+      if (
+        String(effectiveProductStoreTypeId(product)) !==
+        String(selectedStoreTypeId)
+      ) {
+        return false;
+      }
+
+      if (
+        selectedCategoryType &&
+        getID(product.categoryTypeId) !== getID(selectedCategoryType._id)
+      ) {
+        return false;
+      }
+
+      if (
+        product.newPrice < priceRange[0] ||
+        product.newPrice > priceRange[1]
+      ) {
+        return false;
+      }
+
+      const hasPriceDiscount =
+        product.previousPrice &&
+        product.newPrice &&
+        product.previousPrice > product.newPrice;
+
+      if (showOnlyDiscount) {
+        const isDiscounted = product.isDiscount || hasPriceDiscount;
+        if (!isDiscounted || !isDiscountValid(product)) {
+          return false;
+        }
+      }
+
+      if (product.expireDate && !isExpiryStillValid(product.expireDate)) {
+        return false;
+      }
+
+      if (
+        search &&
+        !product.name?.toLowerCase().includes(search.toLowerCase())
+      ) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [
+    allProducts,
+    storeIdsInCity,
+    storeById,
+    selectedStoreTypeId,
+    selectedCategoryType,
+    search,
+    priceRange,
+    showOnlyDiscount,
+  ]);
+
+  const visibleCategories = useMemo(() => {
+    if (selectedStoreTypeId === "all") return filteredCategories;
+    const ids = new Set(
+      filteredProductsForCategoryChips
+        .map((p) => effectiveProductCategoryId(p))
+        .filter(Boolean)
+        .map((id) => String(id)),
+    );
+    return filteredCategories.filter((c) => ids.has(String(getID(c._id))));
+  }, [
+    filteredCategories,
+    filteredProductsForCategoryChips,
+    selectedStoreTypeId,
+  ]);
+
+  useEffect(() => {
+    if (!selectedCategory) return;
+    const sel = String(getID(selectedCategory._id));
+    const ok = visibleCategories.some(
+      (c) => String(getID(c._id)) === sel,
+    );
+    if (!ok) {
+      setSelectedCategory(null);
+      setSelectedCategoryType(null);
+    }
+  }, [visibleCategories, selectedCategory]);
+
+  useEffect(() => {
+    if (selectedStoreTypeId === "all") return;
+    const ok = visibleStoreTypes.some(
+      (st) => String(getID(st._id)) === String(selectedStoreTypeId),
+    );
+    if (!ok) {
+      setSelectedStoreTypeId("all");
+      setSelectedCategory(null);
+      setSelectedCategoryType(null);
+    }
+  }, [visibleStoreTypes, selectedStoreTypeId]);
+
   // 1. Memoize the filtered products list
   const filteredProducts = useMemo(() => {
     return allProducts.filter((product) => {
-      // Filter by Store Type
+      // Filter by Store Type (product or parent store)
       if (
         selectedStoreTypeId !== "all" &&
-        getID(product.storeTypeId) !== selectedStoreTypeId
+        String(effectiveProductStoreTypeId(product)) !==
+          String(selectedStoreTypeId)
       ) {
         return false;
       }
@@ -675,7 +881,8 @@ const MainPage = () => {
       // Filter by Category
       if (
         selectedCategory &&
-        getID(product.categoryId) !== getID(selectedCategory._id)
+        String(effectiveProductCategoryId(product)) !==
+          String(getID(selectedCategory._id))
       ) {
         return false;
       }
@@ -710,6 +917,10 @@ const MainPage = () => {
         }
       }
 
+      if (product.expireDate && !isExpiryStillValid(product.expireDate)) {
+        return false;
+      }
+
       // Filter by Search (product name)
       if (
         search &&
@@ -722,6 +933,7 @@ const MainPage = () => {
     });
   }, [
     allProducts,
+    storeById,
     selectedStoreTypeId,
     selectedCategory,
     selectedCategoryType,
@@ -752,7 +964,7 @@ const MainPage = () => {
       // And the store must match the type filter
       const storeTypeMatch =
         selectedStoreTypeId === "all" ||
-        getID(store.storeTypeId) === selectedStoreTypeId;
+        String(getID(store.storeTypeId)) === String(selectedStoreTypeId);
 
       // And the store must match the city filter
       const cityMatch = doesCityMatch(store.storecity || store.city);
@@ -801,19 +1013,17 @@ const MainPage = () => {
   }, [finalFilteredStores, sortByNewestDiscount, sortByNearMe, userCoords]);
 
   const showcaseEligibleGifts = useMemo(() => {
-    const now = new Date();
     return (gifts || []).filter((g) => {
       if (!g?.expireDate) return true;
-      return new Date(g.expireDate) >= now;
+      return isExpiryStillValid(g.expireDate);
     });
   }, [gifts]);
 
   const showcaseEligibleJobs = useMemo(() => {
-    const now = new Date();
     return (jobs || []).filter((j) => {
       if (j?.active === false) return false;
       if (!j?.expireDate) return true;
-      return new Date(j.expireDate) >= now;
+      return isExpiryStillValid(j.expireDate);
     });
   }, [jobs]);
 
@@ -858,7 +1068,7 @@ const MainPage = () => {
         // Store type filter
         if (
           selectedStoreTypeId !== "all" &&
-          getID(store.storeTypeId) !== selectedStoreTypeId
+          String(getID(store.storeTypeId)) !== String(selectedStoreTypeId)
         ) {
           return false;
         }
@@ -875,8 +1085,8 @@ const MainPage = () => {
         const filteredProds = rawProducts.filter((product) => {
           if (
             selectedStoreTypeId !== "all" &&
-            getID(product.storeTypeId ?? store.storeTypeId) !==
-              selectedStoreTypeId
+            String(getID(store.storeTypeId ?? product.storeTypeId)) !==
+              String(selectedStoreTypeId)
           ) {
             return false;
           }
@@ -913,8 +1123,7 @@ const MainPage = () => {
           ) {
             return false;
           }
-          // Exclude expired
-          if (product.expireDate && new Date(product.expireDate) < new Date()) {
+          if (product.expireDate && !isExpiryStillValid(product.expireDate)) {
             return false;
           }
           return true;
@@ -927,8 +1136,8 @@ const MainPage = () => {
         const filteredProds = rawProducts.filter((product) => {
           if (
             selectedStoreTypeId !== "all" &&
-            getID(product.storeTypeId ?? store.storeTypeId) !==
-              selectedStoreTypeId
+            String(getID(store.storeTypeId ?? product.storeTypeId)) !==
+              String(selectedStoreTypeId)
           ) {
             return false;
           }
@@ -967,7 +1176,7 @@ const MainPage = () => {
           ) {
             return false;
           }
-          if (product.expireDate && new Date(product.expireDate) < new Date()) {
+          if (product.expireDate && !isExpiryStillValid(product.expireDate)) {
             return false;
           }
           return true;
@@ -1010,13 +1219,40 @@ const MainPage = () => {
     setHasMoreStores(sortedFilteredStores.length > storesPerPage);
   }, [sortedFilteredStores, storesPerPage]);
 
-  const loadMoreStores = () => {
-    const nextPage = storesPage + 1;
-    const newStores = sortedFilteredStores.slice(0, nextPage * storesPerPage);
-    setDisplayedStores(newStores);
-    setStoresPage(nextPage);
-    setHasMoreStores(newStores.length < sortedFilteredStores.length);
-  };
+  const loadMoreStores = useCallback(() => {
+    setStoresPage((prevPage) => {
+      const nextPage = prevPage + 1;
+      const newStores = sortedFilteredStores.slice(0, nextPage * storesPerPage);
+      setDisplayedStores(newStores);
+      setHasMoreStores(newStores.length < sortedFilteredStores.length);
+      return nextPage;
+    });
+  }, [sortedFilteredStores, storesPerPage]);
+
+  loadMoreStoresRef.current = loadMoreStores;
+
+  // Mobile: load next store page when user scrolls near the sentinel (no button tap).
+  useEffect(() => {
+    if (!isMobile || mainPageTab !== 0 || !hasMoreStores) return undefined;
+    const el = loadMoreSentinelRef.current;
+    if (!el) return undefined;
+
+    let ticking = false;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const hit = entries.some((e) => e.isIntersecting);
+        if (!hit || ticking) return;
+        ticking = true;
+        loadMoreStoresRef.current();
+        window.setTimeout(() => {
+          ticking = false;
+        }, 400);
+      },
+      { root: null, rootMargin: "320px 0px", threshold: 0 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [isMobile, mainPageTab, hasMoreStores]);
 
   const requestUserLocation = () => {
     if (!navigator?.geolocation) return;
@@ -1454,19 +1690,25 @@ const MainPage = () => {
                 overflow: "hidden",
               }}
             >
-              {[{ _id: "all", name: t("All") }, ...storeTypes].map((type) => (
+              {[{ _id: "all", name: t("All") }, ...visibleStoreTypes].map(
+                (type) => (
                 <Button
                   key={type._id}
                   variant={
-                    selectedStoreTypeId === type._id ? "contained" : "outlined"
+                    String(selectedStoreTypeId) === String(type._id)
+                      ? "contained"
+                      : "outlined"
                   }
                   onClick={() => handleStoreTypeChange(type._id)}
                   sx={{
                     backgroundColor:
-                      selectedStoreTypeId === type._id
+                      String(selectedStoreTypeId) === String(type._id)
                         ? "var(--brand-primary-blue)"
                         : "transparent",
-                    color: selectedStoreTypeId === type._id ? "white" : "black",
+                    color:
+                      String(selectedStoreTypeId) === String(type._id)
+                        ? "white"
+                        : "black",
                     // borderBottom: "1px solid var(--brand-accent-orange)",
                     borderRadius: "8px",
                     px: { xs: 1.5, md: 2 },
@@ -1484,7 +1726,7 @@ const MainPage = () => {
                     alignItems: "center",
                     "&:hover": {
                       backgroundColor:
-                        selectedStoreTypeId === type._id
+                        String(selectedStoreTypeId) === String(type._id)
                           ? theme.palette.mode === "dark"
                             ? "#1E6FD9"
                             : "#4A90E2"
@@ -1575,7 +1817,7 @@ const MainPage = () => {
                 </Button>
 
                 {/* Category Filter Buttons */}
-                {filteredCategories.map((category) => (
+                {visibleCategories.map((category) => (
                   <Button
                     key={category._id}
                     variant={
@@ -1959,7 +2201,7 @@ const MainPage = () => {
                           {product.image ? (
                             <CardMedia
                               component="img"
-                              image={`${process.env.REACT_APP_BACKEND_URL}${product.image}`}
+                              image={resolveMediaUrl(product.image)}
                               alt={product.name}
                               sx={{
                                 width: "100%",
@@ -1987,9 +2229,15 @@ const MainPage = () => {
                           <Typography
                             variant="body2"
                             sx={{
+                              pt: 1,
                               fontWeight: 700,
                               minHeight: "2.6em",
                               lineHeight: 1.3,
+                              fontSize: {
+                                xs: "0.8rem",
+                                sm: "0.9rem",
+                                md: "1rem",
+                              },
                               display: "-webkit-box",
                               textAlign: "center",
                               WebkitLineClamp: 2,
@@ -2065,9 +2313,9 @@ const MainPage = () => {
 
             {displayedStores.map((store, index) => {
               // 3. Get the products for this card from the master filtered list
-              const productsForCard = filteredProducts
-                .filter((p) => getID(p.storeId) === getID(store._id))
-                .slice(0, 12);
+              const productsForCard = filteredProducts.filter(
+                (p) => getID(p.storeId) === getID(store._id),
+              );
 
               // Split into 2 rows when more than 2 products
               const productRows =
@@ -2196,57 +2444,64 @@ const MainPage = () => {
                           to={`/stores/${store._id}`}
                           style={{ textDecoration: "none", flexShrink: 0 }}
                         >
-                          {store.logo ? (
-                            <Box
-                              sx={{
-                                width: { xs: 50, sm: 80, md: 150 },
-                                height: { xs: 50, sm: 80, md: 150 },
-                                borderRadius: 2,
-                                overflow: "hidden",
-                                border: "3px solid rgba(255,255,255,0.2)",
-                                background: "rgba(255,255,255,0.1)",
-                                backdropFilter: "blur(10px)",
-                                cursor: "pointer",
-                                transition: "opacity 0.2s",
-                                "&:hover": { opacity: 0.9 },
-                              }}
-                            >
-                              <CardMedia
-                                component="img"
+                          <Box
+                            sx={{
+                              position: "relative",
+                              display: "inline-block",
+                            }}
+                          >
+                            {store.logo ? (
+                              <Box
                                 sx={{
-                                  width: "100%",
-                                  height: "100%",
-                                  objectFit: "cover",
+                                  width: { xs: 50, sm: 80, md: 150 },
+                                  height: { xs: 50, sm: 80, md: 150 },
+                                  borderRadius: 2,
+                                  overflow: "hidden",
+                                  border: "3px solid rgba(255,255,255,0.2)",
+                                  background: "rgba(255,255,255,0.1)",
+                                  backdropFilter: "blur(10px)",
+                                  cursor: "pointer",
+                                  transition: "opacity 0.2s",
+                                  "&:hover": { opacity: 0.9 },
                                 }}
-                                image={`${process.env.REACT_APP_BACKEND_URL}${store.logo}`}
-                                alt={store.name}
-                              />
-                            </Box>
-                          ) : (
-                            <Box
-                              sx={{
-                                width: { xs: 60, sm: 80 },
-                                height: { xs: 60, sm: 80 },
-                                borderRadius: 2,
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                background: "rgba(255,255,255,0.1)",
-                                backdropFilter: "blur(10px)",
-                                border: "3px solid rgba(255,255,255,0.2)",
-                                cursor: "pointer",
-                                transition: "opacity 0.2s",
-                                "&:hover": { opacity: 0.9 },
-                              }}
-                            >
-                              <BusinessIcon
+                              >
+                                <CardMedia
+                                  component="img"
+                                  sx={{
+                                    width: "100%",
+                                    height: "100%",
+                                    objectFit: "cover",
+                                  }}
+                                  image={resolveMediaUrl(store.logo)}
+                                  alt={store.name}
+                                />
+                              </Box>
+                            ) : (
+                              <Box
                                 sx={{
-                                  fontSize: { xs: 30, sm: 40 },
-                                  color: "rgba(255,255,255,0.8)",
+                                  width: { xs: 60, sm: 80 },
+                                  height: { xs: 60, sm: 80 },
+                                  borderRadius: 2,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  background: "rgba(255,255,255,0.1)",
+                                  backdropFilter: "blur(10px)",
+                                  border: "3px solid rgba(255,255,255,0.2)",
+                                  cursor: "pointer",
+                                  transition: "opacity 0.2s",
+                                  "&:hover": { opacity: 0.9 },
                                 }}
-                              />
-                            </Box>
-                          )}
+                              >
+                                <BusinessIcon
+                                  sx={{
+                                    fontSize: { xs: 30, sm: 40 },
+                                    color: "rgba(255,255,255,0.8)",
+                                  }}
+                                />
+                              </Box>
+                            )}
+                          </Box>
                         </Link>
 
                         <Box flexGrow={1} sx={{ textAlign: "left" }}>
@@ -2368,6 +2623,28 @@ const MainPage = () => {
                               height: { xs: "22px", sm: "28px" },
                             }}
                           />
+
+                          {store.isHasDelivery && (
+                            <Link
+                              to={`/stores/${store._id}`}
+                              style={{ textDecoration: "none", flexShrink: 0 }}
+                            >
+                              {" "}
+                              <Chip
+                                icon={<LocalShippingIcon />}
+                                label={t("Delivery")}
+                                size="small"
+                                sx={{
+                                  mt: 1,
+                                  ml: 1,
+                                  bgcolor: "rgba(255, 7, 7, 0.65)",
+                                  color: "white",
+                                  zIndex: 1,
+                                  "& .MuiChip-icon": { color: "white" },
+                                }}
+                              />
+                            </Link>
+                          )}
                         </Box>
                       </Box>
                     </Box>
@@ -2529,7 +2806,7 @@ const MainPage = () => {
                                         <CardMedia
                                           component="img"
                                           height="150"
-                                          image={`${process.env.REACT_APP_BACKEND_URL}${product.image}`}
+                                          image={resolveMediaUrl(product.image)}
                                           alt={product.name}
                                           sx={{
                                             objectFit: "contain",
@@ -2629,35 +2906,35 @@ const MainPage = () => {
                                         </IconButton>
                                       </Box>
                                       {(() => {
-                                        const remainingDays = getRemainingDays(
+                                        const info = getExpiryRemainingInfo(
                                           product.expireDate,
                                         );
-                                        if (
-                                          remainingDays === null ||
-                                          remainingDays > 30
-                                        )
+                                        if (!shouldShowExpiryChip(info))
                                           return null;
                                         return (
                                           <Chip
-                                            label={
-                                              remainingDays < 0
-                                                ? t("Expired")
-                                                : remainingDays === 0
-                                                  ? t("Expires today")
-                                                  : `${remainingDays} ${t("days left")}`
-                                            }
+                                            label={formatExpiryChipLabel(
+                                              info,
+                                              t,
+                                            )}
                                             size="small"
                                             sx={{
                                               position: "absolute",
                                               bottom: 8,
                                               left: 8,
+                                              maxWidth:
+                                                "calc(100% - 16px)",
                                               backgroundColor:
-                                                remainingDays <= 3 ||
-                                                remainingDays < 0
-                                                  ? "#e53e3e"
-                                                  : "#f59e0b",
+                                                expiryChipBg(info),
                                               color: "white",
                                               fontWeight: 600,
+                                              fontSize: "0.7rem",
+                                              height: 24,
+                                              "& .MuiChip-label": {
+                                                px: 0.75,
+                                                overflow: "hidden",
+                                                textOverflow: "ellipsis",
+                                              },
                                             }}
                                           />
                                         );
@@ -2703,13 +2980,14 @@ const MainPage = () => {
                                           color: "black",
                                           fontWeight: 600,
                                           fontSize: {
-                                            xs: "0.9rem",
+                                            xs: "0.8rem",
                                             sm: "1rem",
                                           },
                                           textAlign: "center",
                                           mt: 0.5,
                                           mb: 0.5,
                                           lineHeight: 1.3,
+                                          pt: 1,
                                           minHeight: "2.6em",
                                           display: "-webkit-box",
                                           WebkitLineClamp: 2,
@@ -2809,7 +3087,7 @@ const MainPage = () => {
                     p.newPrice &&
                     p.previousPrice > p.newPrice),
               ).length;
-              const productsForCard = storeProducts.slice(0, 12);
+              const productsForCard = storeProducts;
               const productRows =
                 productsForCard.length > 2
                   ? [
@@ -2886,57 +3164,61 @@ const MainPage = () => {
                         to={`/stores/${store._id}`}
                         style={{ textDecoration: "none", flexShrink: 0 }}
                       >
-                        {store.logo ? (
-                          <Box
-                            sx={{
-                              width: { xs: 50, sm: 80, md: 150 },
-                              height: { xs: 50, sm: 80, md: 150 },
-                              borderRadius: 2,
-                              overflow: "hidden",
-                              border: "3px solid rgba(255,255,255,0.2)",
-                              background: "rgba(255,255,255,0.1)",
-                              backdropFilter: "blur(10px)",
-                              cursor: "pointer",
-                              transition: "opacity 0.2s",
-                              "&:hover": { opacity: 0.9 },
-                            }}
-                          >
-                            <CardMedia
-                              component="img"
+                        <Box
+                          sx={{ position: "relative", display: "inline-block" }}
+                        >
+                          {store.logo ? (
+                            <Box
                               sx={{
-                                width: "100%",
-                                height: "100%",
-                                objectFit: "cover",
+                                width: { xs: 50, sm: 80, md: 150 },
+                                height: { xs: 50, sm: 80, md: 150 },
+                                borderRadius: 2,
+                                overflow: "hidden",
+                                border: "3px solid rgba(255,255,255,0.2)",
+                                background: "rgba(255,255,255,0.1)",
+                                backdropFilter: "blur(10px)",
+                                cursor: "pointer",
+                                transition: "opacity 0.2s",
+                                "&:hover": { opacity: 0.9 },
                               }}
-                              image={`${process.env.REACT_APP_BACKEND_URL}${store.logo}`}
-                              alt={store.name}
-                            />
-                          </Box>
-                        ) : (
-                          <Box
-                            sx={{
-                              width: { xs: 60, sm: 80 },
-                              height: { xs: 60, sm: 80 },
-                              borderRadius: 2,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              background: "rgba(255,255,255,0.1)",
-                              border: "3px solid rgba(255,255,255,0.2)",
-                              backdropFilter: "blur(10px)",
-                              cursor: "pointer",
-                              transition: "opacity 0.2s",
-                              "&:hover": { opacity: 0.9 },
-                            }}
-                          >
-                            <BusinessIcon
+                            >
+                              <CardMedia
+                                component="img"
+                                sx={{
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit: "cover",
+                                }}
+                                image={resolveMediaUrl(store.logo)}
+                                alt={store.name}
+                              />
+                            </Box>
+                          ) : (
+                            <Box
                               sx={{
-                                fontSize: { xs: 30, sm: 40 },
-                                color: "rgba(255,255,255,0.8)",
+                                width: { xs: 60, sm: 80 },
+                                height: { xs: 60, sm: 80 },
+                                borderRadius: 2,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                background: "rgba(255,255,255,0.1)",
+                                border: "3px solid rgba(255,255,255,0.2)",
+                                backdropFilter: "blur(10px)",
+                                cursor: "pointer",
+                                transition: "opacity 0.2s",
+                                "&:hover": { opacity: 0.9 },
                               }}
-                            />
-                          </Box>
-                        )}
+                            >
+                              <BusinessIcon
+                                sx={{
+                                  fontSize: { xs: 30, sm: 40 },
+                                  color: "rgba(255,255,255,0.8)",
+                                }}
+                              />
+                            </Box>
+                          )}
+                        </Box>
                       </Link>
                       {store.isVip && (
                         <Box
@@ -3054,9 +3336,29 @@ const MainPage = () => {
                             fontWeight: 600,
                             backdropFilter: "blur(10px)",
                             fontSize: { xs: "0.65rem", sm: "0.8rem" },
-                            height: { xs: "22px", sm: "28px" },
                           }}
                         />
+                        {store.isHasDelivery && (
+                          <Link
+                            to={`/stores/${store._id}`}
+                            style={{ textDecoration: "none", flexShrink: 0 }}
+                          >
+                            {" "}
+                            <Chip
+                              icon={<LocalShippingIcon />}
+                              label={t("Delivery")}
+                              size="small"
+                              sx={{
+                                mt: 1,
+                                ml: 1,
+                                bgcolor: "rgba(255, 7, 7, 0.65)",
+                                color: "white",
+                                zIndex: 1,
+                                "& .MuiChip-icon": { color: "white" },
+                              }}
+                            />
+                          </Link>
+                        )}
                       </Box>
                     </Box>
                   </Box>
@@ -3189,7 +3491,7 @@ const MainPage = () => {
                                   {product.image ? (
                                     <CardMedia
                                       component="img"
-                                      image={`${process.env.REACT_APP_BACKEND_URL}${product.image}`}
+                                      image={resolveMediaUrl(product.image)}
                                       alt={product.name}
                                       height="150"
                                       sx={{
@@ -3286,41 +3588,35 @@ const MainPage = () => {
                                       )}
                                     </IconButton>
                                   </Box>
-                                  {product.expireDate &&
-                                    (() => {
-                                      const remainingDays = getRemainingDays(
-                                        product.expireDate,
-                                      );
-                                      if (
-                                        remainingDays === null ||
-                                        remainingDays > 30
-                                      )
-                                        return null;
-                                      return (
-                                        <Chip
-                                          label={
-                                            remainingDays < 0
-                                              ? t("Expired")
-                                              : remainingDays === 0
-                                                ? t("Expires today")
-                                                : `${remainingDays} ${t("days left")}`
-                                          }
-                                          size="small"
-                                          sx={{
-                                            position: "absolute",
-                                            bottom: 8,
-                                            left: 8,
-                                            backgroundColor:
-                                              remainingDays <= 3 ||
-                                              remainingDays < 0
-                                                ? "#e53e3e"
-                                                : "#f59e0b",
-                                            color: "white",
-                                            fontWeight: 600,
-                                          }}
-                                        />
-                                      );
-                                    })()}
+                                  {(() => {
+                                    const info = getExpiryRemainingInfo(
+                                      product.expireDate,
+                                    );
+                                    if (!shouldShowExpiryChip(info))
+                                      return null;
+                                    return (
+                                      <Chip
+                                        label={formatExpiryChipLabel(info, t)}
+                                        size="small"
+                                        sx={{
+                                          position: "absolute",
+                                          bottom: 8,
+                                          left: 8,
+                                          maxWidth: "calc(100% - 16px)",
+                                          backgroundColor: expiryChipBg(info),
+                                          color: "white",
+                                          fontWeight: 600,
+                                          fontSize: "0.7rem",
+                                          height: 24,
+                                          "& .MuiChip-label": {
+                                            px: 0.75,
+                                            overflow: "hidden",
+                                            textOverflow: "ellipsis",
+                                          },
+                                        }}
+                                      />
+                                    );
+                                  })()}
                                 </Box>
                                 <CardContent
                                   sx={{
@@ -3334,14 +3630,15 @@ const MainPage = () => {
                                   <Typography
                                     variant="h6"
                                     sx={{
+                                      mt: 0.5,
                                       color: "#000000",
                                       fontWeight: 600,
                                       fontSize: {
-                                        xs: "0.9rem",
+                                        xs: "0.8rem",
                                         sm: "1rem",
                                       },
                                       textAlign: "center",
-                                      mt: 0.5,
+                                      pt: 1,
                                       mb: 0.5,
                                       lineHeight: 1.3,
                                       minHeight: "2.6em",
@@ -3399,7 +3696,7 @@ const MainPage = () => {
         )}
       </Box>
 
-      {/* Load More Stores Button - For You tab only */}
+      {/* Load more: desktop = button; mobile = scroll sentinel auto-loads */}
       {mainPageTab === 0 && hasMoreStores && (
         <Box
           sx={{
@@ -3407,29 +3704,38 @@ const MainPage = () => {
             justifyContent: "center",
             mt: 4,
             mb: 2,
+            minHeight: isMobile ? 12 : "auto",
           }}
         >
-          <Button
-            onClick={loadMoreStores}
-            variant="outlined"
-            size="large"
-            sx={{
-              borderRadius: 3,
-              px: 4,
-              py: 1.5,
-              fontSize: "1.1rem",
-              fontWeight: 600,
-              textTransform: "none",
-              borderWidth: 2,
-              "&:hover": {
+          {isMobile ? (
+            <Box
+              ref={loadMoreSentinelRef}
+              sx={{ width: "100%", height: 12 }}
+              aria-hidden
+            />
+          ) : (
+            <Button
+              onClick={loadMoreStores}
+              variant="outlined"
+              size="large"
+              sx={{
+                borderRadius: 3,
+                px: 4,
+                py: 1.5,
+                fontSize: "1.1rem",
+                fontWeight: 600,
+                textTransform: "none",
                 borderWidth: 2,
-                boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
-              },
-              transition: "all 0.3s ease",
-            }}
-          >
-            {t("Load More")}
-          </Button>
+                "&:hover": {
+                  borderWidth: 2,
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+                },
+                transition: "all 0.3s ease",
+              }}
+            >
+              {t("Load More")}
+            </Button>
+          )}
         </Box>
       )}
 
@@ -3476,7 +3782,7 @@ const MainPage = () => {
                   {selectedProduct.image ? (
                     <CardMedia
                       component="img"
-                      image={`${process.env.REACT_APP_BACKEND_URL}${selectedProduct.image}`}
+                      image={resolveMediaUrl(selectedProduct.image)}
                       alt={selectedProduct.name}
                       sx={{
                         height: { xs: 200, sm: 280, md: 320 },

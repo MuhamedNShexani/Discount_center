@@ -39,6 +39,13 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useCityFilter } from "../context/CityFilterContext";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
+import { resolveMediaUrl } from "../utils/mediaUrl";
+import {
+  isExpiryStillValid,
+  getExpiryRemainingInfo,
+  formatExpiryExpiresPrefixedLabel,
+  expiryGiftCardBg,
+} from "../utils/expiryDate";
 
 const Gifts = () => {
   const theme = useTheme();
@@ -142,9 +149,7 @@ const Gifts = () => {
         .filter((ad) => !!ad.image)
         .map((ad) => ({
           _id: ad._id,
-          src: ad.image.startsWith("http")
-            ? ad.image
-            : `${process.env.REACT_APP_BACKEND_URL}${ad.image}`,
+          src: resolveMediaUrl(ad.image),
           brandId: ad.brandId,
           storeId: ad.storeId,
           giftId: ad.giftId,
@@ -161,13 +166,9 @@ const Gifts = () => {
 
     let filtered = [...gifts];
 
-    // Hide expired gifts
-    const now = new Date();
     filtered = filtered.filter((gift) => {
       if (!gift?.expireDate) return true;
-      const expireDate = new Date(gift.expireDate);
-      if (Number.isNaN(expireDate.getTime())) return true;
-      return expireDate >= now;
+      return isExpiryStillValid(gift.expireDate);
     });
 
     // Search filter
@@ -227,15 +228,6 @@ const Gifts = () => {
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
-  };
-
-  const getRemainingDays = (expireDate) => {
-    if (!expireDate) return null;
-    const today = new Date();
-    const expire = new Date(expireDate);
-    const timeDiff = expire.getTime() - today.getTime();
-    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-    return daysDiff > 0 ? daysDiff : 0;
   };
 
   const renderFilters = () => (
@@ -362,7 +354,7 @@ const Gifts = () => {
       return null;
     }
 
-    const remainingDays = getRemainingDays(gift.expireDate);
+    const giftExp = getExpiryRemainingInfo(gift.expireDate);
     const primaryStore =
       Array.isArray(gift.storeId) && gift.storeId.length > 0
         ? gift.storeId[0]
@@ -416,7 +408,7 @@ const Gifts = () => {
         >
           <CardMedia
             component="img"
-            image={`${process.env.REACT_APP_BACKEND_URL}${gift.image}`}
+            image={resolveMediaUrl(gift.image)}
             alt={gift.description}
             sx={{
               width: "100%",
@@ -453,7 +445,7 @@ const Gifts = () => {
               {primaryStore.logo && (
                 <Box
                   component="img"
-                  src={`${process.env.REACT_APP_BACKEND_URL}${primaryStore.logo}`}
+                  src={resolveMediaUrl(primaryStore.logo)}
                   alt={primaryStore.name}
                   sx={{
                     width: 32,
@@ -494,7 +486,7 @@ const Gifts = () => {
               {brand.logo && (
                 <Box
                   component="img"
-                  src={`${process.env.REACT_APP_BACKEND_URL}${brand.logo}`}
+                  src={resolveMediaUrl(brand.logo)}
                   alt={brand.name}
                   sx={{
                     width: 32,
@@ -662,15 +654,12 @@ const Gifts = () => {
 
           {/* Expire Date */}
           <Box sx={{ flexShrink: 0 }}>
-            {remainingDays !== null ? (
+            {gift.expireDate ? (
               <Chip
-                label={`${t("Expires")}: ${remainingDays} ${t("days")}`}
+                label={formatExpiryExpiresPrefixedLabel(giftExp, t)}
                 size="small"
                 sx={{
-                  bgcolor:
-                    remainingDays <= 7
-                      ? "#ff6b6b"
-                      : "var(--brand-accent-orange)",
+                  bgcolor: expiryGiftCardBg(giftExp),
                   color: "white",
                   fontSize: { xs: "0.5rem", sm: "0.75rem", md: "0.75rem" },
                 }}
@@ -1027,7 +1016,7 @@ const Gifts = () => {
               {selectedGift.image && (
                 <Box display="flex" justifyContent="center" mb={2}>
                   <img
-                    src={`${process.env.REACT_APP_BACKEND_URL}${selectedGift.image}`}
+                    src={resolveMediaUrl(selectedGift.image)}
                     alt={selectedGift.name || "Gift image"}
                     style={{
                       maxWidth: 220,

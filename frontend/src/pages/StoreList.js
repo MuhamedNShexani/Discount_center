@@ -23,6 +23,7 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import Loader from "../components/Loader";
 import { useTranslation } from "react-i18next";
 import { useCityFilter } from "../context/CityFilterContext";
+import { resolveMediaUrl } from "../utils/mediaUrl";
 
 // ------------------ Reusable StoreCard ------------------
 const StoreCard = ({ store, index, theme, t, onClick }) => {
@@ -69,7 +70,7 @@ const StoreCard = ({ store, index, theme, t, onClick }) => {
           {store.logo ? (
             <CardMedia
               component="img"
-              image={`${process.env.REACT_APP_BACKEND_URL}${store.logo}`}
+              image={resolveMediaUrl(store.logo)}
               alt={store.name}
               className="store-image"
               sx={{
@@ -350,9 +351,7 @@ const StoreList = () => {
         .filter((ad) => !!ad.image)
         .map((ad) => ({
           _id: ad._id,
-          src: ad.image.startsWith("http")
-            ? ad.image
-            : `${process.env.REACT_APP_BACKEND_URL}${ad.image}`,
+          src: resolveMediaUrl(ad.image),
           brandId: ad.brandId,
           storeId: ad.storeId,
           giftId: ad.giftId,

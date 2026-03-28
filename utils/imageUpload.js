@@ -2,6 +2,8 @@ const fs = require("fs");
 const path = require("path");
 const { PutObjectCommand } = require("@aws-sdk/client-s3");
 const { r2Client, r2BucketName, r2PublicUrl } = require("../config/r2");
+const { getUploadDateFolder } = require("./uploadDateFolder");
+const { appendExpiryToFilename } = require("./appendExpiryToFilename");
 
 const hasR2Config = () =>
   Boolean(
@@ -30,7 +32,12 @@ const tryRemoveFile = (filePath) => {
   }
 };
 
-const uploadImage = async (file, folder = "images") => {
+/**
+ * @param {object} file - multer file
+ * @param {string} folder - R2 prefix (e.g. "products")
+ * @param {{ expireDate?: string }} [options] - if expireDate is set, filename gets `-exp-YYYY-MM-DD` before extension (products)
+ */
+const uploadImage = async (file, folder = "images", options = {}) => {
   if (!file) {
     const err = new Error("No file uploaded");
     err.statusCode = 400;
@@ -48,7 +55,13 @@ const uploadImage = async (file, folder = "images") => {
 
   const ext = path.extname(file.originalname || file.filename || "") || ".jpg";
   const base = safeName(path.basename(file.originalname || file.filename || "image", ext));
-  const key = `${folder}/${Date.now()}-${base}${ext}`;
+  const dateFolder = getUploadDateFolder();
+  const expireRaw = options?.expireDate;
+  const nameWithExt =
+    expireRaw != null && String(expireRaw).trim() !== ""
+      ? appendExpiryToFilename(`${base}${ext}`, expireRaw)
+      : `${base}${ext}`;
+  const key = `${folder}/${dateFolder}/${Date.now()}-${nameWithExt}`;
   const body = file.buffer || fs.readFileSync(file.path);
 
   await r2Client.send(

@@ -201,7 +201,7 @@ const ProfilePage = () => {
             <ListItemIcon>
               <PersonIcon fontSize="small" />
             </ListItemIcon>
-            <ListItemText primary={t("Change name")} />
+            <ListItemText primary={t("Change Your Account Name")} />
           </ListItemButton>
 
           {/* <ListItemButton component={Link} to="/favourites">
@@ -457,7 +457,7 @@ const ProfilePage = () => {
         maxWidth="xs"
         fullWidth
       >
-        <DialogTitle>{t("Change account name")}</DialogTitle>
+        <DialogTitle>{t("Change Your Account Name")}</DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
@@ -491,7 +491,7 @@ const ProfilePage = () => {
         maxWidth="xs"
         fullWidth
       >
-        <DialogTitle>{t("Change account name")}</DialogTitle>
+        <DialogTitle>{t("Change Your Account Name")}</DialogTitle>
         <DialogContent>
           <TextField
             autoFocus

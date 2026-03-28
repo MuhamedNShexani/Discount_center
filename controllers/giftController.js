@@ -1,4 +1,5 @@
 const Gift = require("../models/Gift");
+const { normalizeExpiryDate } = require("../utils/normalizeExpiryDate");
 const Store = require("../models/Store");
 const Brand = require("../models/Brand");
 
@@ -210,7 +211,7 @@ const updateGift = async (req, res) => {
         storeId: storeId ? (Array.isArray(storeId) ? storeId : [storeId]) : [],
         brandId,
         productId,
-        expireDate,
+        expireDate: normalizeExpiryDate(expireDate),
       },
       { new: true }
     )

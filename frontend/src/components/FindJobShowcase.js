@@ -19,13 +19,7 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import Slider from "react-slick";
 import { useTranslation } from "react-i18next";
-
-const API = process.env.REACT_APP_BACKEND_URL || "";
-
-const mediaSrc = (path) => {
-  if (!path) return "";
-  return path.startsWith("http") ? path : `${API}${path}`;
-};
+import { resolveMediaUrl } from "../utils/mediaUrl";
 
 const genderLabel = (t, g) => {
   const v = String(g || "any").toLowerCase();
@@ -41,11 +35,13 @@ const FindJobShowcase = ({ jobs }) => {
   const displayJobs = Array.isArray(jobs) ? jobs.slice(-5) : [];
   if (displayJobs.length === 0) return null;
 
+  const slideCount = displayJobs.length;
+  // infinite + a single slide clones slides (~3) and can stack vertically; keep one row only.
   const settings = {
     dots: false,
-    infinite: true,
+    infinite: slideCount > 1,
     speed: 800,
-    autoplay: true,
+    autoplay: slideCount > 1,
     autoplaySpeed: 6500,
     cssEase: "linear",
     slidesToShow: 1,
@@ -159,7 +155,7 @@ const FindJobShowcase = ({ jobs }) => {
                   {job?.image ? (
                     <CardMedia
                       component="img"
-                      image={mediaSrc(job.image)}
+                      image={resolveMediaUrl(job.image)}
                       alt={label}
                       sx={{
                         width: "100%",

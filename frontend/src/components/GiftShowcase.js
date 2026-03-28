@@ -17,22 +17,7 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import Slider from "react-slick";
 import { useTranslation } from "react-i18next";
-
-const API = process.env.REACT_APP_BACKEND_URL || "";
-
-const mediaSrc = (path) => {
-  if (!path) return "";
-  return path.startsWith("http") ? path : `${API}${path}`;
-};
-
-const getRemainingDays = (expireDate) => {
-  if (!expireDate) return null;
-  const today = new Date();
-  const expire = new Date(expireDate);
-  const timeDiff = expire.getTime() - today.getTime();
-  const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-  return daysDiff > 0 ? daysDiff : 0;
-};
+import { resolveMediaUrl } from "../utils/mediaUrl";
 
 const GiftShowcase = ({ gifts }) => {
   const theme = useTheme();
@@ -156,7 +141,7 @@ const GiftShowcase = ({ gifts }) => {
                   {gift?.image ? (
                     <CardMedia
                       component="img"
-                      image={mediaSrc(gift.image)}
+                      image={resolveMediaUrl(gift.image)}
                       alt={label}
                       sx={{
                         width: "100%",

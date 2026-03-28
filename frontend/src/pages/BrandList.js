@@ -23,6 +23,7 @@ import StorefrontIcon from "@mui/icons-material/Storefront";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import Loader from "../components/Loader";
 import { useTranslation } from "react-i18next";
+import { resolveMediaUrl } from "../utils/mediaUrl";
 
 const BrandList = () => {
   const navigate = useNavigate();
@@ -131,9 +132,7 @@ const BrandList = () => {
         .filter((ad) => !!ad.image)
         .map((ad) => ({
           _id: ad._id,
-          src: ad.image.startsWith("http")
-            ? ad.image
-            : `${process.env.REACT_APP_BACKEND_URL}${ad.image}`,
+          src: resolveMediaUrl(ad.image),
           brandId: ad.brandId,
           storeId: ad.storeId,
           giftId: ad.giftId,
@@ -338,7 +337,7 @@ const BrandList = () => {
                 <CardMedia
                   component="img"
                   height="200"
-                  image={`${process.env.REACT_APP_BACKEND_URL}${brand.logo}`}
+                  image={resolveMediaUrl(brand.logo)}
                   alt={brand.name}
                   className="brand-image"
                   sx={{

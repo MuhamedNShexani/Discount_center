@@ -38,6 +38,13 @@ import { useTranslation } from "react-i18next";
 import { Link as RouterLink } from "react-router-dom";
 import { useTheme } from "@mui/material/styles";
 import { useUserTracking } from "../hooks/useUserTracking";
+import { resolveMediaUrl } from "../utils/mediaUrl";
+import {
+  isExpiryStillValid,
+  getExpiryRemainingInfo,
+  formatExpiryChipLabel,
+  formatExpiredAgoText,
+} from "../utils/expiryDate";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -271,38 +278,30 @@ const ProductDetail = () => {
     })} ${t("ID")}`;
   };
 
+  /** DD/MM/YYYY, then 24h time (local). */
+  const formatExpireDateDdMmYyyyTime = (isoOrDate) => {
+    const d = new Date(isoOrDate);
+    if (Number.isNaN(d.getTime())) return "";
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const yyyy = d.getFullYear();
+    const hh = String(d.getHours()).padStart(2, "0");
+    const min = String(d.getMinutes()).padStart(2, "0");
+    const ss = String(d.getSeconds()).padStart(2, "0");
+    return `${dd}/${mm}/${yyyy}, ${hh}:${min}:${ss}`;
+  };
+
   const calculateDiscount = (previousPrice, newPrice) => {
     if (!previousPrice || !newPrice) return 0;
     return Math.round(((previousPrice - newPrice) / previousPrice) * 100);
   };
 
-  const calculateRemainingDays = (expireDate) => {
-    if (!expireDate) return null;
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Set to start of day
-
-    const expire = new Date(expireDate);
-    expire.setHours(0, 0, 0, 0); // Set to start of day
-
-    const diffTime = expire.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    return diffDays;
-  };
-
-  // Helper function to check if a discounted product has expired
   const isDiscountValid = (product) => {
     if (!product.isDiscount) return false;
 
-    // If no expiry date, discount is always valid
     if (!product.expireDate) return true;
 
-    // Check if current date is before expiry date
-    const currentDate = new Date();
-    const expiryDate = new Date(product.expireDate);
-
-    return currentDate < expiryDate;
+    return isExpiryStillValid(product.expireDate);
   };
 
   if (loading) {
@@ -363,7 +362,7 @@ const ProductDetail = () => {
             {product.image ? (
               <CardMedia
                 component="img"
-                image={`${process.env.REACT_APP_BACKEND_URL}${product.image}`}
+                image={resolveMediaUrl(product.image)}
                 alt={product.name}
                 sx={{
                   display: "flex",
@@ -524,98 +523,106 @@ const ProductDetail = () => {
                 </Box>
               )}
 
-              {/* Remaining Days Display */}
+              {/* Remaining time / days until expiry + exact expire date/time */}
               {product.expireDate && (
-                <Box display="flex" alignItems="center" mb={2}>
+                <Box
+                  display="flex"
+                  flexDirection="column"
+                  alignItems="flex-start"
+                  gap={0.5}
+                  mb={2}
+                >
                   {(() => {
-                    const remainingDays = calculateRemainingDays(
-                      product.expireDate,
-                    );
-                    if (remainingDays !== null) {
-                      if (remainingDays > 0) {
-                        return (
-                          <Box display="flex" alignItems="center">
-                            <AccessTimeIcon
-                              sx={{
-                                fontSize: { xs: 16, sm: 18, md: 20 },
-                                mr: { xs: 0.5, md: 1 },
-                                color: "success.main",
-                              }}
-                            />
-                            <Typography
-                              variant="h6"
-                              color="success.main"
-                              sx={{
-                                fontWeight: "bold",
-                                fontSize: {
-                                  xs: "0.875rem",
-                                  sm: "1rem",
-                                  md: "1.25rem",
-                                },
-                              }}
-                            >
-                              {remainingDays} {t("days remaining")}
-                            </Typography>
-                          </Box>
-                        );
-                      } else if (remainingDays === 0) {
-                        return (
-                          <Box display="flex" alignItems="center">
-                            <AccessTimeIcon
-                              sx={{
-                                fontSize: { xs: 16, sm: 18, md: 20 },
-                                mr: { xs: 0.5, md: 1 },
-                                color: "warning.main",
-                              }}
-                            />
-                            <Typography
-                              variant="h6"
-                              color="warning.main"
-                              sx={{
-                                fontWeight: "bold",
-                                fontSize: {
-                                  xs: "0.875rem",
-                                  sm: "1rem",
-                                  md: "1.25rem",
-                                },
-                              }}
-                            >
-                              Expires today!
-                            </Typography>
-                          </Box>
-                        );
-                      } else {
-                        return (
-                          <Box display="flex" alignItems="center">
-                            <AccessTimeIcon
-                              sx={{
-                                fontSize: { xs: 16, sm: 18, md: 20 },
-                                mr: { xs: 0.5, md: 1 },
-                                color: "error.main",
-                              }}
-                            />
-                            <Typography
-                              variant="h6"
-                              color="error.main"
-                              sx={{
-                                fontWeight: "bold",
-                                fontSize: {
-                                  xs: "0.875rem",
-                                  sm: "1rem",
-                                  md: "1.25rem",
-                                },
-                              }}
-                            >
-                              {t("Expired")} {Math.abs(remainingDays)}{" "}
-                              {t("day")}
-                              {Math.abs(remainingDays) !== 1 ? "s" : ""} ago
-                            </Typography>
-                          </Box>
-                        );
-                      }
+                    const expInfo = getExpiryRemainingInfo(product.expireDate);
+                    if (expInfo.kind === "none") return null;
+                    if (expInfo.kind === "expired") {
+                      return (
+                        <Box display="flex" alignItems="center">
+                          <AccessTimeIcon
+                            sx={{
+                              fontSize: { xs: 16, sm: 18, md: 20 },
+                              mr: { xs: 0.5, md: 1 },
+                              color: "error.main",
+                            }}
+                          />
+                          <Typography
+                            variant="h6"
+                            color="error.main"
+                            sx={{
+                              fontWeight: "bold",
+                              fontSize: {
+                                xs: "0.875rem",
+                                sm: "1rem",
+                                md: "1.25rem",
+                              },
+                            }}
+                          >
+                            {formatExpiredAgoText(product.expireDate, t)}
+                          </Typography>
+                        </Box>
+                      );
                     }
-                    return null;
+                    if (expInfo.kind === "hours") {
+                      return (
+                        <Box display="flex" alignItems="center">
+                          <AccessTimeIcon
+                            sx={{
+                              fontSize: { xs: 16, sm: 18, md: 20 },
+                              mr: { xs: 0.5, md: 1 },
+                              color: "warning.main",
+                            }}
+                          />
+                          <Typography
+                            variant="h6"
+                            color="warning.main"
+                            sx={{
+                              fontWeight: "bold",
+                              fontSize: {
+                                xs: "0.875rem",
+                                sm: "1rem",
+                                md: "1.25rem",
+                              },
+                            }}
+                          >
+                            {formatExpiryChipLabel(expInfo, t)}
+                          </Typography>
+                        </Box>
+                      );
+                    }
+                    return (
+                      <Box display="flex" alignItems="center">
+                        <AccessTimeIcon
+                          sx={{
+                            fontSize: { xs: 16, sm: 18, md: 20 },
+                            mr: { xs: 0.5, md: 1 },
+                            color: "success.main",
+                          }}
+                        />
+                        <Typography
+                          variant="h6"
+                          color="success.main"
+                          sx={{
+                            fontWeight: "bold",
+                            fontSize: {
+                              xs: "0.875rem",
+                              sm: "1rem",
+                              md: "1.25rem",
+                            },
+                          }}
+                        >
+                          {expInfo.days} {t("days remaining")}
+                        </Typography>
+                      </Box>
+                    );
                   })()}
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontWeight: 500 }}
+                  >
+                    {t("Expire Date")}:{" "}
+                    {formatExpireDateDdMmYyyyTime(product.expireDate)}
+                  </Typography>
                 </Box>
               )}
 
@@ -990,7 +997,7 @@ const ProductDetail = () => {
                   {/* Product Image */}
                   <CardMedia
                     component="img"
-                    image={`${process.env.REACT_APP_BACKEND_URL}${relatedProduct.image}`}
+                    image={resolveMediaUrl(relatedProduct.image)}
                     alt={relatedProduct.name}
                     sx={{
                       height: { xs: "120px", sm: "140px", md: "160px" },

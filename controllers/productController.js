@@ -2,6 +2,7 @@ const Product = require("../models/Product");
 const Store = require("../models/Store");
 const Brand = require("../models/Brand");
 const Category = require("../models/Category");
+const { normalizeExpiryDate } = require("../utils/normalizeExpiryDate");
 
 const getPublicStoreIds = async () => {
   const stores = await Store.find({ statusAll: { $ne: "off" } }).select("_id").lean();
@@ -339,6 +340,9 @@ const updateProduct = async (req, res) => {
   try {
     const { storeTypeId, storeType: storeTypeName, ...rest } = req.body;
     const updateDoc = { ...rest };
+    if (updateDoc.expireDate !== undefined) {
+      updateDoc.expireDate = normalizeExpiryDate(updateDoc.expireDate);
+    }
     if (!storeTypeId && storeTypeName) {
       const StoreType = require("../models/StoreType");
       const st = await StoreType.findOne({ name: storeTypeName });

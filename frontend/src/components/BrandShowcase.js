@@ -7,6 +7,7 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import Slider from "react-slick";
 import { useTranslation } from "react-i18next";
+import { resolveMediaUrl } from "../utils/mediaUrl";
 
 const BrandShowcase = ({ brands }) => {
   const theme = useTheme();
@@ -116,7 +117,7 @@ const BrandShowcase = ({ brands }) => {
             }}
           >
             <Avatar
-              src={`${process.env.REACT_APP_BACKEND_URL}${brand.logo}`}
+              src={resolveMediaUrl(brand.logo)}
               alt={brand.name}
               className="brand-avatar"
               sx={{

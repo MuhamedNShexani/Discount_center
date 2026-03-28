@@ -8,13 +8,7 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import Slider from "react-slick";
 import { useTranslation } from "react-i18next";
-
-const API = process.env.REACT_APP_BACKEND_URL || "";
-
-const mediaSrc = (path) => {
-  if (!path) return "";
-  return path.startsWith("http") ? path : `${API}${path}`;
-};
+import { resolveMediaUrl } from "../utils/mediaUrl";
 
 const StoreShowcase = ({ stores }) => {
   const theme = useTheme();
@@ -118,7 +112,7 @@ const StoreShowcase = ({ stores }) => {
             }}
           >
             <Avatar
-              src={store.logo ? mediaSrc(store.logo) : undefined}
+              src={store.logo ? resolveMediaUrl(store.logo) : undefined}
               alt={store.name}
               className="store-avatar"
               sx={{

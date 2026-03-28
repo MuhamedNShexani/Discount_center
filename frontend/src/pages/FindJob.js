@@ -27,8 +27,13 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import { useTranslation } from "react-i18next";
 import { adAPI, jobAPI, storeTypeAPI } from "../services/api";
-
-const API_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
+import { resolveMediaUrl } from "../utils/mediaUrl";
+import {
+  getExpiryRemainingInfo,
+  formatExpiryChipLabel,
+  shouldShowExpiryChip,
+  expiryChipBg,
+} from "../utils/expiryDate";
 
 const FindJob = () => {
   const theme = useTheme();
@@ -79,7 +84,7 @@ const FindJob = () => {
         .filter((ad) => !!ad.image)
         .map((ad) => ({
           _id: ad._id,
-          src: ad.image.startsWith("http") ? ad.image : `${API_URL}${ad.image}`,
+          src: resolveMediaUrl(ad.image),
           brandId: ad.brandId,
           storeId: ad.storeId,
           giftId: ad.giftId,
@@ -124,12 +129,6 @@ const FindJob = () => {
   const getOwnerName = (job) => getOwner(job)?.name || "";
   const getOwnerIcon = (job) =>
     getOwner(job)?.type === "brand" ? <BusinessIcon /> : <StorefrontIcon />;
-
-  const normalizeImage = (url) => {
-    if (!url) return "";
-    if (String(url).startsWith("http")) return url;
-    return `${API_URL}${url}`;
-  };
 
   const genderLabel = (g) => {
     const v = String(g || "any").toLowerCase();
@@ -246,7 +245,10 @@ const FindJob = () => {
             </Box>
           ) : (
             filteredJobs.map((job) => {
-              const imageSrc = normalizeImage(job?.image);
+              const imageSrc = resolveMediaUrl(job?.image);
+              const expInfo = getExpiryRemainingInfo(job?.expireDate);
+              const showExpiryChip = shouldShowExpiryChip(expInfo);
+
               return (
                 <Card
                   key={job._id}
@@ -261,19 +263,45 @@ const FindJob = () => {
                     "&:hover": { boxShadow: 6 },
                   }}
                 >
-                  <CardMedia
-                    component="img"
-                    image={imageSrc || "/logo192.png"}
-                    alt={job?.title || "job"}
+                  <Box
                     sx={{
+                      position: "relative",
                       width: 110,
                       height: 92,
-                      objectFit: "cover",
+                      flexShrink: 0,
                       backgroundColor:
                         theme.palette.mode === "dark" ? "#111" : "#f3f4f6",
-                      flexShrink: 0,
                     }}
-                  />
+                  >
+                    <CardMedia
+                      component="img"
+                      image={imageSrc || "/logo192.png"}
+                      alt={job?.title || "job"}
+                      sx={{
+                        width: 110,
+                        height: 92,
+                        objectFit: "cover",
+                      }}
+                    />
+                    {showExpiryChip && (
+                      <Chip
+                        label={formatExpiryChipLabel(expInfo, t)}
+                        size="small"
+                        sx={{
+                          position: "absolute",
+                          bottom: 6,
+                          left: 6,
+                          maxWidth: "calc(100% - 12px)",
+                          backgroundColor: expiryChipBg(expInfo),
+                          color: "white",
+                          fontWeight: 600,
+                          fontSize: "0.65rem",
+                          height: 22,
+                          "& .MuiChip-label": { px: 0.75, lineHeight: 1.2 },
+                        }}
+                      />
+                    )}
+                  </Box>
                   <CardContent sx={{ py: 1.2, px: 1.5, flex: 1, minWidth: 0 }}>
                     <Typography sx={{ fontWeight: 900 }} noWrap>
                       {job?.title || t("Job")}
@@ -317,7 +345,7 @@ const FindJob = () => {
           <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
             <Box
               component="img"
-              src={normalizeImage(selectedJob?.image) || "/logo192.png"}
+              src={resolveMediaUrl(selectedJob?.image) || "/logo192.png"}
               alt="job"
               sx={{
                 width: 110,

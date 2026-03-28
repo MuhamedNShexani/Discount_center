@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   useParams,
   useNavigate,
@@ -71,6 +71,7 @@ import {
   jobAPI,
 } from "../services/api";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
+import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
@@ -83,13 +84,23 @@ import { useUserTracking } from "../hooks/useUserTracking";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { useAuth } from "../context/AuthContext";
 import JobCardRow from "../components/JobCardRow";
-
-const API_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
+import ProductViewTracker from "../components/ProductViewTracker";
+import { motion } from "framer-motion";
+import { resolveMediaUrl } from "../utils/mediaUrl";
+import {
+  isExpiryStillValid,
+  getExpiryRemainingInfo,
+  formatExpiryChipLabel,
+  formatExpiryExpiresPrefixedLabel,
+  shouldShowExpiryChip,
+  expiryChipBg,
+  expiryGiftCardBg,
+} from "../utils/expiryDate";
 
 const StoreProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const theme = useTheme();
   const { t } = useTranslation();
   const { isAuthenticated } = useAuth();
@@ -113,6 +124,7 @@ const StoreProfile = () => {
   const [error, setError] = useState("");
   const [activeTabKey, setActiveTabKey] = useState(() => {
     const tabParam = searchParams.get("tab");
+    if (tabParam === "discounts") return "discounts";
     if (tabParam === "all") return "all";
     if (tabParam === "gifts") return "gifts";
     if (tabParam === "reels") return "reels";
@@ -127,6 +139,8 @@ const StoreProfile = () => {
   const [cartOpen, setCartOpen] = useState(false);
   const [cartItems, setCartItems] = useState({});
   const [cartToast, setCartToast] = useState({ open: false, text: "" });
+  /** Incremented on each add-to-cart to replay floating cart button animation */
+  const [cartPulseKey, setCartPulseKey] = useState(0);
   const [cartSyncing, setCartSyncing] = useState(false);
   const [cartHydrated, setCartHydrated] = useState(false);
 
@@ -149,9 +163,31 @@ const StoreProfile = () => {
   // Branches toggle state
   const [showBranches, setShowBranches] = useState(false);
 
+  const productViewRecordedRef = useRef(new Set());
+
+  const handleProductBecameVisible = useCallback(
+    async (productId) => {
+      const result = await recordView(productId);
+      if (result?.success && result?.data?.viewCount != null) {
+        setProducts((prev) =>
+          prev.map((p) =>
+            String(p._id) === String(productId)
+              ? { ...p, viewCount: result.data.viewCount }
+              : p,
+          ),
+        );
+      }
+    },
+    [recordView],
+  );
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  useEffect(() => {
+    productViewRecordedRef.current = new Set();
+  }, [id]);
 
   useEffect(() => {
     if (id) {
@@ -205,11 +241,13 @@ const StoreProfile = () => {
 
   // Keep cart count correct while browsing the store:
   // if a product becomes pending/expired/deleted, remove it from cart immediately.
+  // IMPORTANT: skip while `loading` — otherwise `products` is still [] and we wipe localStorage cart on refresh.
   useEffect(() => {
     if (!store?.isHasDelivery || !cartHydrated) return;
+    if (loading) return;
     if (!Array.isArray(products)) return;
     pruneCartUsingProducts(products);
-  }, [products, store?.isHasDelivery, cartHydrated, cartItems]);
+  }, [products, store?.isHasDelivery, cartHydrated, loading]);
 
   async function fetchStoreData() {
     try {
@@ -233,13 +271,11 @@ const StoreProfile = () => {
       try {
         const videosRes = await videoAPI.getAll();
         const list = Array.isArray(videosRes?.data) ? videosRes.data : [];
-        const now = Date.now();
         const filtered = list.filter((v) => {
           const storeId = v?.storeId?._id || v?.storeId || "";
           if (String(storeId) !== String(id)) return false;
           if (!v?.expireDate) return true;
-          const exp = new Date(v.expireDate).getTime();
-          return Number.isFinite(exp) ? exp > now : true;
+          return isExpiryStillValid(v.expireDate);
         });
         setReels(filtered);
       } catch {
@@ -250,14 +286,12 @@ const StoreProfile = () => {
       try {
         const jobsRes = await jobAPI.getAll();
         const list = Array.isArray(jobsRes?.data) ? jobsRes.data : [];
-        const now = Date.now();
         const filtered = list.filter((j) => {
           const storeId = j?.storeId?._id || j?.storeId || "";
           if (String(storeId) !== String(id)) return false;
           if (j?.active === false) return false;
           if (!j?.expireDate) return true;
-          const exp = new Date(j.expireDate).getTime();
-          return Number.isFinite(exp) ? exp > now : true;
+          return isExpiryStillValid(j.expireDate);
         });
         setJobs(filtered);
       } catch {
@@ -289,15 +323,6 @@ const StoreProfile = () => {
     })} ${t("ID")}`;
   };
 
-  const getRemainingDays = (expireDate) => {
-    if (!expireDate) return null;
-    const today = new Date();
-    const expire = new Date(expireDate);
-    const timeDiff = expire.getTime() - today.getTime();
-    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-    return daysDiff > 0 ? daysDiff : 0;
-  };
-
   const cartCount = Object.values(cartItems || {}).reduce(
     (sum, item) => sum + (Number(item?.qty) || 0),
     0,
@@ -325,7 +350,7 @@ const StoreProfile = () => {
       };
       return next;
     });
-    setCartToast({ open: true, text: t("Added to cart") });
+    setCartPulseKey((k) => k + 1);
   };
 
   const updateCartQty = (productId, qty) => {
@@ -355,21 +380,37 @@ const StoreProfile = () => {
   };
 
   const buildWhatsAppOrderText = () => {
+    const orderId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
     const lines = [];
-    lines.push(`Order from: ${store?.name || ""}`.trim());
+    lines.push(`Order To: ${store?.name || ""}`.trim());
     lines.push("");
     const items = Object.values(cartItems || {})
       .filter((i) => (Number(i?.qty) || 0) > 0 && i?.product?._id)
-      .sort((a, b) => String(a.product.name || "").localeCompare(String(b.product.name || "")));
+      .sort((a, b) =>
+        String(a.product.name || "").localeCompare(
+          String(b.product.name || ""),
+        ),
+      );
     items.forEach((item, idx) => {
       const name = item.product?.name || "-";
       const qty = Number(item.qty) || 0;
-      const price = item.product?.newPrice;
-      const priceText =
-        typeof price === "number" ? ` (${formatPrice(price).trim()})` : "";
-      lines.push(`${idx + 1}) ${name} x${qty}${priceText}`);
+      lines.push(`${idx + 1}) ${name} x${qty}`);
     });
     lines.push("");
+    const orderNow = new Date();
+    const dd = String(orderNow.getDate()).padStart(2, "0");
+    const mm = String(orderNow.getMonth() + 1).padStart(2, "0");
+    const yyyy = orderNow.getFullYear();
+    lines.push(
+      `Order Date: ${dd}/${mm}/${yyyy} ${orderNow.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      })}`.trim(),
+    );
+    lines.push(`Order ID: ${orderId}`.trim());
+    lines.push(`Ordered Via: iDashkan App`);
     lines.push("Thank you.");
     return lines.join("\n");
   };
@@ -388,7 +429,9 @@ const StoreProfile = () => {
   const isProductAvailableForCart = (p) => {
     if (!p?._id) return false;
     // Pending products should never be orderable (tolerate casing/legacy values)
-    const statusNorm = String(p?.status || "published").toLowerCase().trim();
+    const statusNorm = String(p?.status || "published")
+      .toLowerCase()
+      .trim();
     if (statusNorm !== "published") return false;
     // Expired products should be removed
     const exp = p?.expireDate ? new Date(p.expireDate).getTime() : NaN;
@@ -440,10 +483,8 @@ const StoreProfile = () => {
       setCartItems((prev) => {
         const next = { ...(prev || {}) };
         Object.keys(next).forEach((pid) => {
-          const exp = next[pid]?.product?.expireDate
-            ? new Date(next[pid].product.expireDate).getTime()
-            : NaN;
-          if (Number.isFinite(exp) && exp <= Date.now()) delete next[pid];
+          const ed = next[pid]?.product?.expireDate;
+          if (ed && !isExpiryStillValid(ed)) delete next[pid];
           if (
             String(next[pid]?.product?.status || "published")
               .toLowerCase()
@@ -457,6 +498,48 @@ const StoreProfile = () => {
       setCartSyncing(false);
     }
   };
+
+  const syncCartWithLatestProductsRef = useRef(syncCartWithLatestProducts);
+  syncCartWithLatestProductsRef.current = syncCartWithLatestProducts;
+
+  /** Deep link from Shopping draft cart: `/stores/:id?cart=1` opens cart dialog after hydrate + sync */
+  useEffect(() => {
+    const cartParam = searchParams.get("cart");
+    const openCartFromUrl =
+      cartParam === "1" ||
+      cartParam === "true" ||
+      cartParam === "open" ||
+      cartParam === "yes";
+    if (!openCartFromUrl) return;
+    if (loading) return;
+    if (!store?.isHasDelivery) {
+      const next = new URLSearchParams(searchParams);
+      next.delete("cart");
+      setSearchParams(next, { replace: true });
+      return;
+    }
+    if (!cartHydrated) return;
+
+    let cancelled = false;
+    (async () => {
+      await syncCartWithLatestProductsRef.current();
+      if (cancelled) return;
+      setCartOpen(true);
+      const next = new URLSearchParams(searchParams);
+      next.delete("cart");
+      setSearchParams(next, { replace: true });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    searchParams,
+    cartHydrated,
+    loading,
+    store?.isHasDelivery,
+    setSearchParams,
+  ]);
 
   const pruneCartUsingProducts = (latestProducts = []) => {
     const availableById = new Map(
@@ -507,14 +590,9 @@ const StoreProfile = () => {
   const isDiscountValid = (product) => {
     if (!product.isDiscount) return false;
 
-    // If no expiry date, discount is always valid
     if (!product.expireDate) return true;
 
-    // Check if current date is before expiry date
-    const currentDate = new Date();
-    const expiryDate = new Date(product.expireDate);
-
-    return currentDate < expiryDate;
+    return isExpiryStillValid(product.expireDate);
   };
 
   // Get product category type name from categoryId (populated) and categoryTypeId
@@ -683,7 +761,7 @@ const StoreProfile = () => {
 
   // Render gift card
   const renderGiftCard = (gift) => {
-    const remainingDays = getRemainingDays(gift.expireDate);
+    const giftExp = getExpiryRemainingInfo(gift.expireDate);
 
     return (
       <Card
@@ -726,7 +804,7 @@ const StoreProfile = () => {
         >
           <CardMedia
             component="img"
-            image={`${process.env.REACT_APP_BACKEND_URL}${gift.image}`}
+            image={resolveMediaUrl(gift.image)}
             alt={gift.description}
             sx={{
               width: "100%",
@@ -806,15 +884,12 @@ const StoreProfile = () => {
 
           {/* Expire Date */}
           <Box sx={{ flexShrink: 0 }}>
-            {remainingDays !== null ? (
+            {gift.expireDate ? (
               <Chip
-                label={`${t("Expires")}: ${remainingDays} ${t("days")}`}
+                label={formatExpiryExpiresPrefixedLabel(giftExp, t)}
                 size="small"
                 sx={{
-                  bgcolor:
-                    remainingDays <= 7
-                      ? "#ff6b6b"
-                      : "var(--brand-accent-orange)",
+                  bgcolor: expiryGiftCardBg(giftExp),
                   color: "white",
                   fontSize: { xs: "0.5rem", sm: "0.75rem", md: "0.75rem" },
                 }}
@@ -839,304 +914,366 @@ const StoreProfile = () => {
   // Render product card
   const renderProductCard = (product, index, showPrice = true) => {
     const discount = calculateDiscount(product.previousPrice, product.newPrice);
-    const remainingDays = getRemainingDays(product.expireDate);
 
     return (
-      <Fade in={true} timeout={300 + index * 50} key={product._id}>
-        <Card
-          component={Link}
-          to={`/products/${product._id}`}
-          sx={{
-            height: { xs: "320px", sm: "380px" },
-            width: { xs: "160px", sm: "220px", md: "280px" },
-            maxWidth: { xs: "160px", sm: "220px", md: "280px" },
-            minWidth: { xs: "160px", sm: "220px", md: "280px" },
-            textDecoration: "none",
-            borderRadius: 2,
-            overflow: "hidden",
-            display: "flex",
-            flexDirection: "column",
-            flexShrink: 0,
-            background: "white",
-            border: "1px solid #e2e8f0",
-            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-            "&:hover": {
-              transform: "translateY(-4px)",
-              boxShadow: "0 12px 24px rgba(0,0,0,0.15)",
-            },
-          }}
-        >
-          {/* Product Image */}
-          <Box
+      <ProductViewTracker
+        key={product._id}
+        productId={product._id}
+        onVisible={handleProductBecameVisible}
+        recordedIdsRef={productViewRecordedRef}
+      >
+        <Fade in={true} timeout={300 + index * 50}>
+          <Card
             sx={{
-              position: "relative",
+              height: { xs: "320px", sm: "380px" },
+              width: { xs: "160px", sm: "220px", md: "280px" },
+              maxWidth: { xs: "160px", sm: "220px", md: "280px" },
+              minWidth: { xs: "160px", sm: "220px", md: "280px" },
+              textDecoration: "none",
+              borderRadius: 2,
               overflow: "hidden",
-              height: { xs: "100px", sm: "100px" },
+              display: "flex",
+              flexDirection: "column",
               flexShrink: 0,
-              backgroundColor: "#f8f9fa",
+              background: "white",
+              border: "1px solid #e2e8f0",
+              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+              "&:hover": {
+                transform: "translateY(-4px)",
+                boxShadow: "0 12px 24px rgba(0,0,0,0.15)",
+              },
             }}
           >
-            {product.image ? (
-              <CardMedia
-                component="img"
-                height="180"
-                image={`${process.env.REACT_APP_BACKEND_URL}${product.image}`}
-                alt={product.name}
-                sx={{
-                  objectFit: "contain",
-                  width: "100%",
-                  height: "100%",
-                  transition: "transform 0.3s ease",
-                  "&:hover": { transform: "scale(1.05)" },
-                }}
-              />
-            ) : (
-              <Box
-                sx={{
-                  height: "100%",
-                  width: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  background: "#f8f9fa",
-                }}
-              >
-                <StorefrontIcon
+            {/* Product Image — overlay must live inside this position:relative box so it stays pinned while scrolling */}
+            <Box
+              component={Link}
+              to={`/products/${product._id}`}
+              sx={{
+                position: "relative",
+                overflow: "hidden",
+                height: { xs: "160px", sm: "100px" },
+                flexShrink: 0,
+                backgroundColor: "#f8f9fa",
+              }}
+            >
+              {product.image ? (
+                <CardMedia
+                  component="img"
+                  height="180"
+                  image={resolveMediaUrl(product.image)}
+                  alt={product.name}
                   sx={{
-                    fontSize: 60,
-                    color: "#a0aec0",
+                    objectFit: "contain",
+                    width: "100%",
+                    height: "100%",
+                    transition: "transform 0.3s ease",
+                    "&:hover": { transform: "scale(1.05)" },
                   }}
                 />
-              </Box>
-            )}
+              ) : (
+                <Box
+                  sx={{
+                    height: "100%",
+                    width: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: "#f8f9fa",
+                  }}
+                >
+                  <StorefrontIcon
+                    sx={{
+                      fontSize: 60,
+                      color: "#a0aec0",
+                    }}
+                  />
+                </Box>
+              )}
 
-            {/* Top-right overlay actions */}
-            {(store?.isHasDelivery || product.viewCount > 0) && (
-              <Box
+              {(store?.isHasDelivery || product.viewCount > 0) && (
+                <Box
+                  sx={{
+                    position: "absolute",
+                    top: 8,
+                    left: 8,
+                    right: 8,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 1,
+                    zIndex: 2,
+                    pointerEvents: "none",
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 0.25,
+                      minWidth: 0,
+                    }}
+                  >
+                    {store?.isHasDelivery && (
+                      <>
+                        {/* <Typography
+                          variant="caption"
+                          sx={{
+                            color: "white",
+                            fontSize: "0.7rem",
+                            fontWeight: 600,
+                            textShadow: "0 1px 2px rgba(0,0,0,0.8)",
+                            pointerEvents: "none",
+                          }}
+                        >
+                          {likeCounts[product._id] || product.likeCount || 0}
+                        </Typography> */}
+                        <IconButton
+                          size="small"
+                          onClick={(e) => handleLikeClick(product._id, e)}
+                          disabled={likeLoading[product._id]}
+                          sx={{
+                            p: 0.5,
+                            color: "white",
+                            backgroundColor: "rgba(0, 0, 0, 0.7)",
+                            pointerEvents: "auto",
+                            "&:hover": {
+                              backgroundColor: "rgba(0, 0, 0, 0.82)",
+                            },
+                          }}
+                          aria-label={t("Like")}
+                        >
+                          {likeStates[product._id] ||
+                          isProductLiked(product._id) ? (
+                            <FavoriteIcon
+                              sx={{ fontSize: "1.2rem", color: "red" }}
+                            />
+                          ) : (
+                            <FavoriteBorderIcon sx={{ fontSize: "1.2rem" }} />
+                          )}
+                        </IconButton>
+                      </>
+                    )}
+                  </Box>
+                  <Box
+                    sx={{ display: "flex", alignItems: "center", minWidth: 0 }}
+                  >
+                    {product.viewCount > 0 && (
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 0.5,
+                          backgroundColor: "rgba(0, 0, 0, 0.7)",
+                          color: "white",
+                          px: 1,
+                          py: 0.5,
+                          borderRadius: 1,
+                          fontSize: "0.7rem",
+                          whiteSpace: "nowrap",
+                          pointerEvents: "auto",
+                        }}
+                      >
+                        <VisibilityIcon sx={{ fontSize: "0.8rem" }} />
+                        {product.viewCount}
+                      </Box>
+                    )}
+                  </Box>
+                </Box>
+              )}
+              {(() => {
+                const expInfo = getExpiryRemainingInfo(product.expireDate);
+                if (!shouldShowExpiryChip(expInfo)) return null;
+                return (
+                  <Chip
+                    label={formatExpiryChipLabel(expInfo, t)}
+                    size="small"
+                    sx={{
+                      position: "absolute",
+                      bottom: 8,
+                      left: 8,
+                      zIndex: 2,
+                      pointerEvents: "none",
+                      backgroundColor: expiryChipBg(expInfo),
+                      color: "white",
+                      fontWeight: 600,
+                    }}
+                  />
+                );
+              })()}
+            </Box>
+
+            {/* Product Content */}
+            <CardContent
+              sx={{
+                p: { xs: 1.5, md: 2 },
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                position: "relative",
+              }}
+            >
+              {/* Product Name */}
+              <Typography
+                variant="h6"
                 sx={{
-                  position: "absolute",
-                  top: 8,
-                  right: 8,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 1,
-                  minWidth: store?.isHasDelivery && product.viewCount > 0 ? 92 : "auto",
+                  color: "#000000",
+                  fontWeight: 600,
+                  fontSize: { xs: "0.9rem", sm: "1rem" },
+                  textAlign: "center",
+                  mb: 1,
+                  lineHeight: 1.3,
+                  minHeight: "2.6em",
+                  display: "-webkit-box",
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
                 }}
               >
-                {store?.isHasDelivery && (
-                  <IconButton
-                    size="small"
-                    onClick={(e) => addToCart(product, e)}
+                {product.name}
+              </Typography>
+
+              {/* Brand name if available */}
+              {product.brandId && product.brandId.name && (
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: "#666",
+                    fontSize: "0.8rem",
+                    mb: 1,
+                    fontStyle: "italic",
+                    textAlign: "center",
+                  }}
+                >
+                  {product.brandId.name}
+                </Typography>
+              )}
+
+              {/* Pricing Section */}
+              {showPrice && (
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    mb: 1,
+                  }}
+                >
+                  {product.previousPrice &&
+                    product.previousPrice > product.newPrice && (
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          textDecoration: "line-through",
+                          color: "red",
+                          fontSize: { xs: "0.8rem", sm: "0.9rem" },
+                          fontWeight: 500,
+                        }}
+                      >
+                        {formatPrice(product.previousPrice)}
+                      </Typography>
+                    )}
+                  <Typography
+                    variant="h6"
                     sx={{
-                      marginRight: 8,
-                      p: 0.5,
-                      color: "white",
-                      backgroundColor: "rgba(0, 0, 0, 0.7)",
-                      "&:hover": { backgroundColor: "rgba(0, 0, 0, 0.82)" },
+                      color: "var(--brand-light-orange)",
+                      fontWeight: 700,
+                      fontSize: { xs: "1.1rem", sm: "1.3rem" },
                     }}
-                    aria-label={t("Add to cart")}
                   >
-                    <AddIcon sx={{ fontSize: "1rem" }} />
-                  </IconButton>
+                    {formatPrice(product.newPrice)}
+                  </Typography>
+                </Box>
+              )}
+
+              {/* Bottom Section with Discount Badge and Like Button */}
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-end",
+                  mt: "auto",
+                }}
+              >
+                {/* Discount Badge - Bottom Left */}
+                {(discount > 0 || product.isDiscount) && (
+                  <Chip
+                    label={discount > 0 ? `-${discount}%` : t("Discount")}
+                    sx={{
+                      backgroundColor: "#e53e3e",
+                      color: "white",
+                      fontWeight: 700,
+                      fontSize: "0.75rem",
+                      height: "24px",
+                    }}
+                  />
                 )}
 
-                {product.viewCount > 0 && (
+                {/* Add to cart (delivery) or Like + count — bottom right */}
+                {store?.isHasDelivery ? (
+                  <IconButton
+                    onClick={(e) => addToCart(product, e)}
+                    size="small"
+                    sx={{
+                      backgroundColor: "orange",
+                      "&:hover": {
+                        transform: "scale(1.05)",
+                      },
+                    }}
+                    variant="contained"
+                    aria-label="Add to cart"
+                    id="add-to-cart"
+                  >
+                    <AddShoppingCartIcon sx={{ fontSize: "2rem" }} />
+                  </IconButton>
+                ) : (
                   <Box
                     sx={{
                       display: "flex",
                       alignItems: "center",
                       gap: 0.5,
-                      backgroundColor: "rgba(0, 0, 0, 0.7)",
-                      color: "white",
-                      px: 1,
-                      py: 0.5,
-                      borderRadius: 1,
-                      fontSize: "0.7rem",
-                      whiteSpace: "nowrap",
                     }}
                   >
-                    <VisibilityIcon sx={{ fontSize: "0.8rem" }} />
-                    {product.viewCount}
-                  </Box>
-                )}
-              </Box>
-            )}
-          </Box>
-
-          {/* Product Content */}
-          <CardContent
-            sx={{
-              p: { xs: 1.5, md: 2 },
-              flex: 1,
-              display: "flex",
-              flexDirection: "column",
-              position: "relative",
-            }}
-          >
-            {/* Product Name */}
-            <Typography
-              variant="h6"
-              sx={{
-                color: "#000000",
-                fontWeight: 600,
-                fontSize: { xs: "0.9rem", sm: "1rem" },
-                textAlign: "center",
-                mb: 1,
-                lineHeight: 1.3,
-                minHeight: "2.6em",
-                display: "-webkit-box",
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: "vertical",
-                overflow: "hidden",
-              }}
-            >
-              {product.name}
-            </Typography>
-
-            {/* Brand name if available */}
-            {product.brandId && product.brandId.name && (
-              <Typography
-                variant="body2"
-                sx={{
-                  color: "#666",
-                  fontSize: "0.8rem",
-                  mb: 1,
-                  fontStyle: "italic",
-                  textAlign: "center",
-                }}
-              >
-                {product.brandId.name}
-              </Typography>
-            )}
-
-            {/* Pricing Section */}
-            {showPrice && (
-              <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  mb: 1,
-                }}
-              >
-                {product.previousPrice &&
-                  product.previousPrice > product.newPrice && (
                     <Typography
-                      variant="body2"
+                      variant="caption"
                       sx={{
-                        textDecoration: "line-through",
-                        color: "red",
-                        fontSize: { xs: "0.8rem", sm: "0.9rem" },
+                        color: "#666",
+                        fontSize: "0.8rem",
                         fontWeight: 500,
                       }}
                     >
-                      {formatPrice(product.previousPrice)}
+                      {likeCounts[product._id] || product.likeCount || 0}
                     </Typography>
-                  )}
-                <Typography
-                  variant="h6"
-                  sx={{
-                    color: "var(--brand-light-orange)",
-                    fontWeight: 700,
-                    fontSize: { xs: "1.1rem", sm: "1.3rem" },
-                  }}
-                >
-                  {formatPrice(product.newPrice)}
-                </Typography>
+                    <IconButton
+                      onClick={(e) => handleLikeClick(product._id, e)}
+                      disabled={likeLoading[product._id]}
+                      sx={{
+                        color:
+                          likeStates[product._id] || isProductLiked(product._id)
+                            ? "#e53e3e"
+                            : "#666",
+                        "&:hover": {
+                          color: "#e53e3e",
+                          transform: "scale(1.1)",
+                        },
+                        transition: "all 0.2s ease",
+                        p: 0.5,
+                      }}
+                      size="small"
+                    >
+                      {likeStates[product._id] ||
+                      isProductLiked(product._id) ? (
+                        <FavoriteIcon sx={{ fontSize: "1.2rem" }} />
+                      ) : (
+                        <FavoriteBorderIcon sx={{ fontSize: "1.2rem" }} />
+                      )}
+                    </IconButton>
+                  </Box>
+                )}
               </Box>
-            )}
-
-            {/* Bottom Section with Discount Badge and Like Button */}
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-end",
-                mt: "auto",
-              }}
-            >
-              {/* Discount Badge - Bottom Left */}
-              {(discount > 0 || product.isDiscount) && (
-                <Chip
-                  label={discount > 0 ? `-${discount}%` : t("Discount")}
-                  sx={{
-                    backgroundColor: "#e53e3e",
-                    color: "white",
-                    fontWeight: 700,
-                    fontSize: "0.75rem",
-                    height: "24px",
-                  }}
-                />
-              )}
-
-              {/* Like Button and Count - Bottom Right */}
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 0.5,
-                }}
-              >
-                <Typography
-                  variant="caption"
-                  sx={{
-                    color: "#666",
-                    fontSize: "0.8rem",
-                    fontWeight: 500,
-                  }}
-                >
-                  {likeCounts[product._id] || product.likeCount || 0}
-                </Typography>
-                <IconButton
-                  onClick={(e) => handleLikeClick(product._id, e)}
-                  disabled={likeLoading[product._id]}
-                  sx={{
-                    color:
-                      likeStates[product._id] || isProductLiked(product._id)
-                        ? "#e53e3e"
-                        : "#666",
-                    "&:hover": {
-                      color: "#e53e3e",
-                      transform: "scale(1.1)",
-                    },
-                    transition: "all 0.2s ease",
-                    p: 0.5,
-                  }}
-                  size="small"
-                >
-                  {likeStates[product._id] || isProductLiked(product._id) ? (
-                    <FavoriteIcon sx={{ fontSize: "1.2rem" }} />
-                  ) : (
-                    <FavoriteBorderIcon sx={{ fontSize: "1.2rem" }} />
-                  )}
-                </IconButton>
-              </Box>
-            </Box>
-
-            {/* Expiry Date - Bottom */}
-            {product.expireDate && (
-              <Typography
-                variant="caption"
-                sx={{
-                  color: "red",
-                  fontSize: { xs: "0.7rem", sm: "0.8rem" },
-                  textAlign: "center",
-                  mt: 1,
-                  fontWeight: 500,
-                }}
-              >
-                {t("Expire Date")}:{" "}
-                {new Date(product.expireDate).toLocaleDateString("ar-SY", {
-                  year: "numeric",
-                  month: "numeric",
-                  day: "numeric",
-                })}
-              </Typography>
-            )}
-          </CardContent>
-        </Card>
-      </Fade>
+            </CardContent>
+          </Card>
+        </Fade>
+      </ProductViewTracker>
     );
   };
 
@@ -1583,24 +1720,41 @@ const StoreProfile = () => {
           }}
         >
           <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-            <Button
-              variant="contained"
-              startIcon={<ShoppingCartIcon />}
-              disabled={cartCount <= 0}
-              onClick={async () => {
-                await syncCartWithLatestProducts();
-                setCartOpen(true);
-              }}
-              sx={{
+            <motion.div
+              key={cartPulseKey}
+              initial={{ scale: 1 }}
+              animate={
+                cartPulseKey > 0
+                  ? { scale: [1, 1.14, 0.97, 1.06, 1] }
+                  : { scale: 1 }
+              }
+              transition={{ duration: 0.55, ease: [0.34, 1.3, 0.64, 1] }}
+              style={{
+                display: "inline-block",
                 pointerEvents: "auto",
-                borderRadius: 999,
-                px: 2.25,
-                py: 1,
-                fontWeight: 900,
+                borderRadius: 9999,
+                overflow: "visible",
               }}
             >
-              {t("Cart")} ({cartCount})
-            </Button>
+              <Button
+                variant="contained"
+                startIcon={<ShoppingCartIcon />}
+                disabled={cartCount <= 0}
+                onClick={async () => {
+                  await syncCartWithLatestProducts();
+                  setCartOpen(true);
+                }}
+                sx={{
+                  pointerEvents: "auto",
+                  borderRadius: 999,
+                  px: 2.25,
+                  py: 1,
+                  fontWeight: 900,
+                }}
+              >
+                {t("Cart")} ({cartCount})
+              </Button>
+            </motion.div>
           </Box>
         </Box>
       )}
@@ -1690,7 +1844,7 @@ const StoreProfile = () => {
               >
                 {store.logo ? (
                   <Avatar
-                    src={`${process.env.REACT_APP_BACKEND_URL}${store.logo}`}
+                    src={resolveMediaUrl(store.logo)}
                     alt={store.name}
                     sx={{
                       width: 60,
@@ -1820,7 +1974,7 @@ const StoreProfile = () => {
               <Grid item xs={12} md={3}>
                 {store.logo ? (
                   <Avatar
-                    src={`${process.env.REACT_APP_BACKEND_URL}${store.logo}`}
+                    src={resolveMediaUrl(store.logo)}
                     alt={store.name}
                     sx={{
                       width: { xs: 80, sm: 100, md: 150 },
@@ -2392,9 +2546,7 @@ const StoreProfile = () => {
               }}
             >
               {reels.map((reel) => {
-                const src = reel?.videoUrl?.startsWith("http")
-                  ? reel.videoUrl
-                  : `${process.env.REACT_APP_BACKEND_URL || "http://localhost:5000"}${reel.videoUrl || ""}`;
+                const src = resolveMediaUrl(reel?.videoUrl || "");
 
                 return (
                   <Card
@@ -2479,9 +2631,7 @@ const StoreProfile = () => {
               component="img"
               src={
                 selectedJob?.image
-                  ? String(selectedJob.image).startsWith("http")
-                    ? selectedJob.image
-                    : `${API_URL}${selectedJob.image}`
+                  ? resolveMediaUrl(selectedJob.image) || "/logo192.png"
                   : "/logo192.png"
               }
               alt="job"
@@ -2545,7 +2695,7 @@ const StoreProfile = () => {
               {selectedGift.image && (
                 <Box display="flex" justifyContent="center" mb={2}>
                   <img
-                    src={`${process.env.REACT_APP_BACKEND_URL}${selectedGift.image}`}
+                    src={resolveMediaUrl(selectedGift.image)}
                     alt={selectedGift.name || "Gift image"}
                     style={{
                       maxWidth: 220,
@@ -2657,7 +2807,7 @@ const StoreProfile = () => {
         <DialogTitle sx={{ fontWeight: 900 }}>
           {t("Cart")} ({cartCount})
         </DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ overflowX: "hidden" }}>
           {cartSyncing ? (
             <Typography color="text.secondary" sx={{ py: 2 }}>
               {t("Loading...")}
@@ -2679,13 +2829,21 @@ const StoreProfile = () => {
                     <Box
                       sx={{
                         display: "flex",
-                        alignItems: "center",
+                        alignItems: "flex-start",
                         justifyContent: "space-between",
                         gap: 1,
+                        overflow: "hidden",
                       }}
                     >
-                      <Box sx={{ minWidth: 0 }}>
-                        <Typography sx={{ fontWeight: 900 }} noWrap>
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography
+                          sx={{
+                            fontWeight: 700,
+                            overflowWrap: "anywhere",
+                            wordBreak: "break-word",
+                            whiteSpace: "normal",
+                          }}
+                        >
                           {item.product.name}
                         </Typography>
                         {typeof item.product.newPrice === "number" && (
@@ -2695,7 +2853,14 @@ const StoreProfile = () => {
                         )}
                       </Box>
 
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
+                          flexShrink: 0,
+                        }}
+                      >
                         <IconButton
                           onClick={() =>
                             updateCartQty(

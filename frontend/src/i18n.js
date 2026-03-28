@@ -33,6 +33,10 @@ const resources = {
       "Light Mode": "Light Mode",
       "Dark Mode": "Dark Mode",
       "Admin Dashboard": "Admin Dashboard",
+      adminTabGroupManaging: "Managing data",
+      adminTabGroupService: "Service",
+      adminTabGroupMainSystem: "Main system",
+      adminTabGroupSettings: "Settings & notifications",
       "Manage stores and products efficiently":
         "Manage stores and products efficiently",
       "Welcome back, Admin": "Welcome back, Admin",
@@ -89,6 +93,9 @@ const resources = {
       Brand: "Brand",
       Expires: "Expires",
       Close: "Close",
+      "Draft cart": "Draft cart",
+      "No draft cart items":
+        "No saved carts yet. Add items from a store with delivery.",
       "Admin Panel": "Admin Panel",
       "Add stores and products to the storeplace":
         "Add stores and products to the storeplace",
@@ -624,6 +631,10 @@ const resources = {
       Discounted: "مخفضة",
       items: "عناصر",
       "Admin Dashboard": "لوحة التحكم",
+      adminTabGroupManaging: "إدارة البيانات",
+      adminTabGroupService: "الخدمات",
+      adminTabGroupMainSystem: "النظام الرئيسي",
+      adminTabGroupSettings: "الإعدادات والإشعارات",
       "Manage stores and products efficiently":
         "إدارة المتاجر والمنتجات بكفاءة",
       "Welcome back, Admin": "مرحباً بعودتك أيها المسؤول",
@@ -686,6 +697,9 @@ const resources = {
       "No stores found. Add some stores through the admin panel.":
         "لم يتم العثور على متاجر. أضف بعض المتاجر من لوحة التحكم.",
       Close: "إغلاق",
+      "Draft cart": "عربة مسودة",
+      "No draft cart items":
+        "لا توجد سلات محفوظة بعد. أضف منتجات من متجر يوفر التوصيل.",
       "Admin Panel": "لوحة المسؤول",
       "Add stores and products to the storeplace":
         "أضف متاجر ومنتجات إلى السوق",
@@ -705,7 +719,7 @@ const resources = {
       "Previous Price": "السعر السابق",
       "New Price": "السعر الجديد",
       "Expire Date": "تاريخ الانتهاء",
-      "Discount Center": "منتجات السوق",
+      "Discount Center": "iDashkan",
       Stores: "الأسواق",
       Categories: "الفئات",
       Home: "الرئيسية",
@@ -732,6 +746,10 @@ const resources = {
       Theme: "المظهر",
       "Light Mode": "الوضع الفاتح",
       "Admin Dashboard": "لوحة التحكم الإدارية",
+      adminTabGroupManaging: "إدارة البيانات",
+      adminTabGroupService: "الخدمات",
+      adminTabGroupMainSystem: "النظام الرئيسي",
+      adminTabGroupSettings: "الإعدادات والإشعارات",
       "Manage stores and products efficiently":
         "إدارة الأسواق والمنتجات بكفاءة",
       "Welcome back, Admin": "مرحباً بعودتك، المدير",
@@ -787,6 +805,9 @@ const resources = {
       Brand: "الشركة",
       Expires: "تاريخ الانتهاء",
       Close: "إغلاق",
+      "Draft cart": "عربة مسودة",
+      "No draft cart items":
+        "لا توجد سلات محفوظة بعد. أضف منتجات من متجر يوفر التوصيل.",
       "Admin Panel": "لوحة الإدارة",
       "Add stores and products to the storeplace":
         "إضافة الأسواق والمنتجات إلى السوق",
@@ -1339,7 +1360,7 @@ const resources = {
       "Edit User": "دەستکاریکردنى بەکارهێنەر",
       users: "بەکارهێنەران",
       "Change account name": "گۆڕینی ناوی بەکارهێنەر",
-      "Change name": "گۆڕینی ناو",
+      "Change Your Account Name": "گۆڕینی ناوی ئەکاونت",
       Users: "بەکارهێنەران",
       "Created At": "ڕێکەوتى دروستکردن",
       "address not provided": "ناونیشان نەدۆزرایەوە",
@@ -1365,6 +1386,10 @@ const resources = {
       Discounted: "داشکێندراوەکان",
       items: "کاڵا",
       "Admin Dashboard": "ڕێکخستنی بەڕێوەبەری",
+      adminTabGroupManaging: "بەڕێوەبردنی داتا",
+      adminTabGroupService: "خزمەتگوزاری",
+      adminTabGroupMainSystem: "زانیاری سەرەکى",
+      adminTabGroupSettings: "ڕێکخستن و ئاگادارکردنەوە",
       "Manage stores and products efficiently":
         "بەڕێوەبردنی فرۆشگا و کاڵاکان بە شێوازێکی باش",
       "Welcome back, Admin": "بەخێربێیتەوە، بەڕێوەبەر",
@@ -1430,6 +1455,9 @@ const resources = {
       "No stores found. Add some stores through the admin panel.":
         "هیچ فرۆشگاێک نەدۆزرایەوە. لە ئێستادا هیچ داتایەک بوونى نییە.",
       Close: "داخستن",
+      "Draft cart": "سەبەتەکەم",
+      "No draft cart items":
+        "هیچ داتایەک لەنێو سەبەتەکەدا نەدۆزرایەوە ، گەڕان بکە بەنێو ئەو فرۆشگایانەى گەیاندنیان هەیە.",
       "Admin Panel": "پەڕەی ئەدمین",
       "Add stores and products to the storeplace":
         "فرۆشگا و کاڵا زیاد بکە بۆ بازاڕ",
@@ -1440,9 +1468,14 @@ const resources = {
       "Upload Logo": "بارکردنی لوگۆ",
       Address: "ناونیشان",
       Phone: "تەلەفون",
+      Cart: "سەبەتەکەم",
+      "Cart is empty": "سەبەتەکە بەتاڵە",
+      Clear: "سڕینەوە",
+      Order: "ناردن",
       Description: "وەسف",
       "Creating...": "لە دروستکردن...",
       "Uploading...": "لە بارکردن...",
+      Delivery: "گەیاندن",
       "Product Name": "ناوی کاڵا",
       "Product Type": "جۆری کاڵا",
       "Upload Image": "بارکردنی وێنە",

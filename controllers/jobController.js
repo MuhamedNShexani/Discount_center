@@ -1,4 +1,5 @@
 const Job = require("../models/Job");
+const { normalizeExpiryDate } = require("../utils/normalizeExpiryDate");
 
 const isAdminUser = (user) => {
   if (!user) return false;
@@ -14,10 +15,9 @@ const getJobs = async (req, res) => {
     const q = String(req.query.q || "").trim();
     const storeTypeId = String(req.query.storeTypeId || "").trim();
 
-    const now = new Date();
     const filter = {
       active: { $ne: false },
-      $or: [{ expireDate: null }, { expireDate: { $gte: now } }],
+      $or: [{ expireDate: null }, { expireDate: { $gt: new Date() } }],
     };
     if (q) {
       const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -102,9 +102,32 @@ const updateJob = async (req, res) => {
     const job = await Job.findById(req.params.id);
     if (!job) return res.status(404).json({ message: "Job not found" });
 
-    const fields = ["title", "description", "gender", "image", "storeId", "brandId", "expireDate", "active"];
+    const fields = ["title", "description", "gender", "image", "expireDate", "active"];
     for (const f of fields) {
-      if (req.body?.[f] !== undefined) job[f] = req.body[f];
+      if (req.body?.[f] !== undefined) {
+        if (f === "expireDate") {
+          job[f] =
+            req.body.expireDate != null && req.body.expireDate !== ""
+              ? normalizeExpiryDate(req.body.expireDate)
+              : null;
+        } else {
+          job[f] = req.body[f];
+        }
+      }
+    }
+    // Owner fields must be updated together so switching Store ↔ Brand clears the other side.
+    // Omitting storeId in JSON left the old storeId set when only brandId was sent.
+    if (req.body.storeId !== undefined || req.body.brandId !== undefined) {
+      const storeId =
+        req.body.storeId != null && String(req.body.storeId).trim() !== ""
+          ? req.body.storeId
+          : null;
+      const brandId =
+        req.body.brandId != null && String(req.body.brandId).trim() !== ""
+          ? req.body.brandId
+          : null;
+      job.storeId = storeId;
+      job.brandId = brandId;
     }
     await job.save();
     const populated = await Job.findById(job._id)
