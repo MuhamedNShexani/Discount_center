@@ -1,7 +1,7 @@
 /**
- * WhatsApp deep links from mobile browsers / in-app WebViews (Instagram, Facebook, etc.)
- * often fail with window.open('_blank') (blocked or blank tab). Prefer api.whatsapp.com
- * and same-window navigation on iOS / WebView.
+ * Open WhatsApp without replacing the current SPA URL.
+ * Using location.assign() leaves users on api.whatsapp.com when they press “back” in the
+ * WebView instead of returning to the app — same fix for cart orders and Profile “Contact us”.
  */
 
 /**
@@ -40,20 +40,21 @@ export function openWhatsAppLink(url) {
   const target = normalizeWhatsAppUrl(url);
   if (!target) return;
 
-  const ua = typeof navigator !== "undefined" ? navigator.userAgent || "" : "";
-  const isIOS = /iPhone|iPad|iPod/i.test(ua);
-  const inWebView =
-    /\bwv\b|; wv\)|Instagram|FBAN|FBAV|FB_IAB|Line\/|MicroMessenger|Twitter|Snapchat|Pinterest|LinkedInApp|GSA\/|CriOS/i.test(
-      ua,
-    );
-
-  if (isIOS || inWebView) {
-    window.location.assign(target);
+  const w = window.open(target, "_blank", "noopener,noreferrer");
+  if (w && !w.closed) {
     return;
   }
 
-  const w = window.open(target, "_blank", "noopener,noreferrer");
-  if (!w || w.closed) {
+  try {
+    const a = document.createElement("a");
+    a.href = target;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  } catch {
     window.location.assign(target);
   }
 }

@@ -1,13 +1,14 @@
 const Category = require("../models/Category");
 const path = require("path");
 const fs = require("fs");
+const { storeTypeList } = require("../utils/refPopulate");
 
 // @desc    Get all categories
 // @route   GET /api/categories
 const getCategories = async (req, res) => {
   try {
     const categories = await Category.find({ isActive: true })
-      .populate("storeTypeId", "name icon")
+      .populate("storeTypeId", storeTypeList)
       .sort({ createdAt: 1 });
     res.json(categories);
   } catch (err) {
@@ -22,7 +23,7 @@ const getCategoryById = async (req, res) => {
   try {
     const category = await Category.findById(req.params.id).populate(
       "storeTypeId",
-      "name icon"
+      storeTypeList
     );
     if (!category) return res.status(404).json({ msg: "Category not found" });
     res.json(category);
@@ -50,7 +51,7 @@ const createCategory = async (req, res) => {
     await category.save();
     const populated = await Category.findById(category._id).populate(
       "storeTypeId",
-      "name icon"
+      storeTypeList
     );
     res.json(populated);
   } catch (err) {
@@ -80,7 +81,7 @@ const updateCategory = async (req, res) => {
       {
         new: true,
       }
-    ).populate("storeTypeId", "name icon");
+    ).populate("storeTypeId", storeTypeList);
     if (!category) return res.status(404).json({ msg: "Category not found" });
     res.json(category);
   } catch (err) {
@@ -143,7 +144,7 @@ const getCategoriesByStoreType = async (req, res) => {
       storeTypeId: st._id,
       isActive: true,
     })
-      .populate("storeTypeId", "name icon")
+      .populate("storeTypeId", storeTypeList)
       .sort({ createdAt: 1 });
     res.json(categories);
   } catch (err) {

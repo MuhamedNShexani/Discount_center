@@ -20,6 +20,7 @@ import "slick-carousel/slick/slick-theme.css";
 import Slider from "react-slick";
 import { useTranslation } from "react-i18next";
 import { resolveMediaUrl } from "../utils/mediaUrl";
+import { useLocalizedContent } from "../hooks/useLocalizedContent";
 
 const genderLabel = (t, g) => {
   const v = String(g || "any").toLowerCase();
@@ -31,6 +32,7 @@ const genderLabel = (t, g) => {
 const FindJobShowcase = ({ jobs }) => {
   const theme = useTheme();
   const { t } = useTranslation();
+  const { locName, locTitle } = useLocalizedContent();
 
   const displayJobs = Array.isArray(jobs) ? jobs.slice(-5) : [];
   if (displayJobs.length === 0) return null;
@@ -107,9 +109,10 @@ const FindJobShowcase = ({ jobs }) => {
 
       <Slider {...settings}>
         {displayJobs.map((job) => {
-          const ownerName = job?.storeId?.name || job?.brandId?.name || "";
+          const ownerName =
+            locName(job?.storeId) || locName(job?.brandId) || "";
           const ownerIsBrand = Boolean(job?.brandId?._id);
-          const label = job?.title || t("Job");
+          const label = locTitle(job) || t("Job");
 
           return (
             <Box key={job._id} sx={{ px: 0.5, width: "100%" }}>

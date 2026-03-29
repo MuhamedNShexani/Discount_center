@@ -1,7 +1,9 @@
+const mongoose = require("mongoose");
 const User = require("../models/User");
 const Product = require("../models/Product");
 const Store = require("../models/Store");
 const Video = require("../models/Video");
+const { categoryList, storeList, brandList } = require("../utils/refPopulate");
 
 // @desc    Get or create user by device ID (for anonymous tracking)
 // @route   GET /api/users/device/:deviceId
@@ -258,23 +260,50 @@ const recordProductView = async (req, res) => {
       { new: true },
     );
 
-    // Update user's viewed products
-    const existingView = user.viewedProducts.find(
-      (view) => view.productId.toString() === productId,
+    // Update user's viewed products atomically (avoids VersionError when concurrent
+    // view requests race on the same User document).
+    const uid = user._id;
+    const pid =
+      product._id instanceof mongoose.Types.ObjectId
+        ? product._id
+        : new mongoose.Types.ObjectId(String(productId));
+    const now = new Date();
+
+    let r = await User.updateOne(
+      { _id: uid, "viewedProducts.productId": pid },
+      {
+        $inc: { "viewedProducts.$.viewCount": 1 },
+        $set: { "viewedProducts.$.lastViewed": now },
+      },
     );
 
-    if (existingView) {
-      existingView.viewCount += 1;
-      existingView.lastViewed = Date.now();
-    } else {
-      user.viewedProducts.push({
-        productId,
-        viewCount: 1,
-        lastViewed: Date.now(),
-      });
+    if (r.modifiedCount === 0) {
+      r = await User.updateOne(
+        {
+          _id: uid,
+          $nor: [{ viewedProducts: { $elemMatch: { productId: pid } } }],
+        },
+        {
+          $push: {
+            viewedProducts: {
+              productId: pid,
+              viewCount: 1,
+              lastViewed: now,
+            },
+          },
+        },
+      );
     }
 
-    await user.save();
+    if (r.modifiedCount === 0) {
+      await User.updateOne(
+        { _id: uid, "viewedProducts.productId": pid },
+        {
+          $inc: { "viewedProducts.$.viewCount": 1 },
+          $set: { "viewedProducts.$.lastViewed": now },
+        },
+      );
+    }
 
     res.json({
       success: true,
@@ -315,9 +344,9 @@ const getLikedProducts = async (req, res) => {
     const populatedUser = await User.findById(user._id).populate({
       path: "likedProducts",
       populate: [
-        { path: "brandId", select: "name logo" },
-        { path: "storeId", select: "name logo" },
-        { path: "categoryId", select: "name" },
+        { path: "brandId", select: brandList },
+        { path: "storeId", select: storeList },
+        { path: "categoryId", select: categoryList },
       ],
     });
 
@@ -365,9 +394,9 @@ const getViewedProducts = async (req, res) => {
     const populatedUser = await User.findById(user._id).populate({
       path: "viewedProducts.productId",
       populate: [
-        { path: "brandId", select: "name logo" },
-        { path: "storeId", select: "name logo" },
-        { path: "categoryId", select: "name" },
+        { path: "brandId", select: brandList },
+        { path: "storeId", select: storeList },
+        { path: "categoryId", select: categoryList },
       ],
     });
 

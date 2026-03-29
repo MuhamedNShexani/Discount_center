@@ -3,6 +3,9 @@ const mongoose = require("mongoose");
 const videoSchema = new mongoose.Schema(
   {
     title: { type: String, required: true, trim: true },
+    titleEn: { type: String, required: false, trim: true },
+    titleAr: { type: String, required: false, trim: true },
+    titleKu: { type: String, required: false, trim: true },
     videoUrl: { type: String, required: true, trim: true },
     key: { type: String, trim: true },
     storeId: {

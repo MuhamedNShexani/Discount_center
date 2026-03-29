@@ -1,8 +1,47 @@
 const Product = require("../models/Product");
 const Store = require("../models/Store");
 const Brand = require("../models/Brand");
+const Category = require("../models/Category");
+const {
+  storeList,
+  brandList,
+  categoryList,
+  storeTypeList,
+} = require("../utils/refPopulate");
 
-// @desc    Search products, stores, and brands by name (optional: filter by city)
+function escapeRegex(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Match primary + localized name fields (any script / language). */
+function nameLangOr(regex) {
+  return {
+    $or: [
+      { name: regex },
+      { nameEn: regex },
+      { nameAr: regex },
+      { nameKu: regex },
+    ],
+  };
+}
+
+function productTextOr(regex) {
+  return {
+    $or: [
+      { name: regex },
+      { nameEn: regex },
+      { nameAr: regex },
+      { nameKu: regex },
+      { description: regex },
+      { descriptionEn: regex },
+      { descriptionAr: regex },
+      { descriptionKu: regex },
+      { barcode: regex },
+    ],
+  };
+}
+
+// @desc    Search products, stores, brands, categories (all name languages + category/types)
 // @route   GET /api/search?q=query&city=Erbil
 // @access  Public
 const search = async (req, res) => {
@@ -12,21 +51,26 @@ const search = async (req, res) => {
     if (!q || q.length < 2) {
       return res.json({
         success: true,
-        data: { products: [], stores: [], brands: [] },
+        data: {
+          products: [],
+          stores: [],
+          brands: [],
+          categories: [],
+          categoryTypes: [],
+        },
       });
     }
 
-    const regex = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+    const regex = new RegExp(escapeRegex(q), "i");
     const limit = 20;
 
     const storeQuery = {
-      name: regex,
       show: { $ne: false },
       statusAll: { $ne: "off" },
+      ...nameLangOr(regex),
     };
     if (city) storeQuery.storecity = city;
 
-    // When city is set, we need all store IDs in that city for product search (not only stores matching the query)
     const storeIdsInCityPromise = city
       ? Store.find({
           storecity: city,
@@ -37,16 +81,89 @@ const search = async (req, res) => {
           .lean()
       : Promise.resolve([]);
 
+    const publishedOr = {
+      $or: [{ status: "published" }, { status: { $exists: false } }],
+    };
+
+    const [catsByTopName, catsWithTypeFieldMatch] = await Promise.all([
+      Category.find({
+        isActive: true,
+        ...nameLangOr(regex),
+      })
+        .select("name nameEn nameAr nameKu image icon")
+        .limit(limit)
+        .lean(),
+      Category.find({
+        isActive: true,
+        $or: [
+          { "types.name": regex },
+          { "types.nameEn": regex },
+          { "types.nameAr": regex },
+          { "types.nameKu": regex },
+        ],
+      })
+        .select("name nameEn nameAr nameKu image icon types")
+        .limit(80)
+        .lean(),
+    ]);
+
+    const categoryIdsFromTop = catsByTopName.map((c) => c._id);
+    const typeIdsSet = new Set();
+    const categoryTypeHits = [];
+    const seenTypeHit = new Set();
+
+    for (const c of catsWithTypeFieldMatch) {
+      for (const t of c.types || []) {
+        const parts = [t.name, t.nameEn, t.nameAr, t.nameKu].filter(Boolean);
+        if (!parts.some((text) => regex.test(String(text)))) continue;
+        const tid = String(t._id);
+        typeIdsSet.add(tid);
+        const key = `${c._id}:${tid}`;
+        if (seenTypeHit.has(key) || categoryTypeHits.length >= limit) continue;
+        seenTypeHit.add(key);
+        categoryTypeHits.push({
+          category: {
+            _id: c._id,
+            name: c.name,
+            nameEn: c.nameEn,
+            nameAr: c.nameAr,
+            nameKu: c.nameKu,
+            image: c.image,
+            icon: c.icon,
+          },
+          type: {
+            _id: t._id,
+            name: t.name,
+            nameEn: t.nameEn,
+            nameAr: t.nameAr,
+            nameKu: t.nameKu,
+          },
+        });
+      }
+    }
+    const typeIds = [...typeIdsSet];
+
+    const productOr = [...(productTextOr(regex).$or || [])];
+    if (categoryIdsFromTop.length) {
+      productOr.push({ categoryId: { $in: categoryIdsFromTop } });
+    }
+    if (typeIds.length) {
+      productOr.push({ categoryTypeId: { $in: typeIds } });
+    }
+
+    const productBaseFilter = {
+      $and: [publishedOr, { $or: productOr }],
+    };
+
     const [
       stores,
       storeIdsInCityDocs,
       visibleStoreIdsDocs,
       productsRaw,
       brandsAll,
-    ] =
-      await Promise.all([
+    ] = await Promise.all([
       Store.find(storeQuery)
-        .populate("storeTypeId", "name icon")
+        .populate("storeTypeId", storeTypeList)
         .limit(limit)
         .lean(),
       storeIdsInCityPromise,
@@ -58,40 +175,40 @@ const search = async (req, res) => {
         .lean(),
       city
         ? null
-        : Product.find({
-            name: regex,
-            $or: [{ status: "published" }, { status: { $exists: false } }],
-          })
-            .populate("brandId", "name logo statusAll")
-            .populate("storeId", "name logo")
+        : Product.find(productBaseFilter)
+            .populate("brandId", brandList)
+            .populate("storeId", storeList)
+            .populate("categoryId", categoryList)
             .limit(limit)
             .lean(),
-      Brand.find({ name: regex, statusAll: { $ne: "off" } })
-        .populate("brandTypeId", "name")
+      Brand.find({
+        statusAll: { $ne: "off" },
+        ...nameLangOr(regex),
+      })
+        .populate("brandTypeId", "name nameEn nameAr nameKu icon")
         .limit(limit)
         .lean(),
-      ]);
+    ]);
 
     const storeIdsInCity = (storeIdsInCityDocs || []).map((s) => s._id);
-    const visibleStoreIds = (visibleStoreIdsDocs || []).map((s) => String(s._id));
+    const visibleStoreIds = (visibleStoreIdsDocs || []).map((s) =>
+      String(s._id),
+    );
 
     let products;
     let brands;
 
     if (city) {
       const productDocs = await Product.find({
-        name: regex,
+        ...productBaseFilter,
         storeId: { $in: storeIdsInCity },
-        $or: [{ status: "published" }, { status: { $exists: false } }],
       })
-        .populate("brandId", "name logo statusAll")
-        .populate("storeId", "name logo")
+        .populate("brandId", brandList)
+        .populate("storeId", storeList)
+        .populate("categoryId", categoryList)
         .limit(limit)
         .lean();
       products = productDocs;
-      // In city mode, still allow direct brand name search results.
-      // Previously we limited brands to only those present in matching products,
-      // which caused "2 letters works, more letters shows nothing" for brands.
       brands = brandsAll;
     } else {
       products = (productsRaw || []).filter((p) => {
@@ -104,7 +221,13 @@ const search = async (req, res) => {
 
     res.json({
       success: true,
-      data: { products, stores, brands },
+      data: {
+        products,
+        stores,
+        brands,
+        categories: catsByTopName,
+        categoryTypes: categoryTypeHits,
+      },
     });
   } catch (err) {
     console.error("Search error:", err);

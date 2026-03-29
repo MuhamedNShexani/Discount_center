@@ -10,6 +10,9 @@ const giftSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    descriptionEn: { type: String, required: false },
+    descriptionAr: { type: String, required: false },
+    descriptionKu: { type: String, required: false },
     storeId: [
       {
         type: mongoose.Schema.Types.ObjectId,

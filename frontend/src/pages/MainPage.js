@@ -82,11 +82,13 @@ import {
   shouldShowExpiryChip,
   expiryChipBg,
 } from "../utils/expiryDate";
+import { useLocalizedContent } from "../hooks/useLocalizedContent";
 
 const MainPage = () => {
   const theme = useTheme();
   const isMobile = useIsMobileLayout();
   const navigate = useNavigate();
+  const { locName, locDescription } = useLocalizedContent();
   const [stores, setStores] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
   const [productsByStore, setProductsByStore] = useState({});
@@ -659,7 +661,7 @@ const MainPage = () => {
         t._id?.toString() === String(categoryTypeId) ||
         t.name === categoryTypeId,
     );
-    return type?.name || "N/A";
+    return type ? locName(type) || "N/A" : "N/A";
   };
 
   const storeIdsInCity = useMemo(
@@ -1027,14 +1029,6 @@ const MainPage = () => {
       return isExpiryStillValid(j.expireDate);
     });
   }, [jobs]);
-
-  const storeNameById = useMemo(() => {
-    const map = {};
-    stores.forEach((store) => {
-      map[String(getID(store?._id))] = store?.name || "";
-    });
-    return map;
-  }, [stores]);
 
   const storeCityById = useMemo(() => {
     const map = {};
@@ -1747,7 +1741,7 @@ const MainPage = () => {
                         // wordBreak: "break-word",
                       }}
                     >
-                      {t(type.name)}
+                      {locName(type) || t(type.name)}
                     </span>
                   </Button>
                 ),
@@ -1857,7 +1851,7 @@ const MainPage = () => {
                       },
                     }}
                   >
-                    {t(category.name)}
+                    {locName(category) || t(category.name)}
                   </Button>
                 ))}
               </Box>
@@ -2159,8 +2153,10 @@ const MainPage = () => {
                       product.newPrice &&
                       product.previousPrice > product.newPrice;
                     const storeName =
-                      product?.storeId?.name ||
-                      storeNameById[String(getID(product?.storeId))] ||
+                      locName(product?.storeId) ||
+                      locName(
+                        storeById[String(getID(product?.storeId))],
+                      ) ||
                       t("Unknown Store");
 
                     return (
@@ -2204,7 +2200,7 @@ const MainPage = () => {
                             <CardMedia
                               component="img"
                               image={resolveMediaUrl(product.image)}
-                              alt={product.name}
+                              alt={locName(product)}
                               sx={{
                                 width: "100%",
                                 height: "100%",
@@ -2247,7 +2243,7 @@ const MainPage = () => {
                               overflow: "hidden",
                             }}
                           >
-                            {product.name}
+                            {locName(product)}
                           </Typography>
 
                           <Box
@@ -2475,7 +2471,7 @@ const MainPage = () => {
                                     objectFit: "cover",
                                   }}
                                   image={resolveMediaUrl(store.logo)}
-                                  alt={store.name}
+                                  alt={locName(store)}
                                 />
                               </Box>
                             ) : (
@@ -2534,7 +2530,7 @@ const MainPage = () => {
                                 },
                               }}
                             >
-                              {store.name}
+                              {locName(store)}
                             </Typography>
                             <IconButton
                               onClick={(e) => handleFollowClick(store._id, e)}
@@ -2809,7 +2805,7 @@ const MainPage = () => {
                                           component="img"
                                           height="150"
                                           image={resolveMediaUrl(product.image)}
-                                          alt={product.name}
+                                          alt={locName(product)}
                                           sx={{
                                             objectFit: "contain",
                                             width: "100%",
@@ -2996,7 +2992,7 @@ const MainPage = () => {
                                           overflow: "hidden",
                                         }}
                                       >
-                                        {product.name}
+                                        {locName(product)}
                                       </Typography>
 
                                       {/* Pricing Section */}
@@ -3191,7 +3187,7 @@ const MainPage = () => {
                                   objectFit: "cover",
                                 }}
                                 image={resolveMediaUrl(store.logo)}
-                                alt={store.name}
+                                alt={locName(store)}
                               />
                             </Box>
                           ) : (
@@ -3272,7 +3268,7 @@ const MainPage = () => {
                               },
                             }}
                           >
-                            {store.name}
+                            {locName(store)}
                           </Typography>
                           <IconButton
                             onClick={(e) => handleFollowClick(store._id, e)}
@@ -3493,7 +3489,7 @@ const MainPage = () => {
                                     <CardMedia
                                       component="img"
                                       image={resolveMediaUrl(product.image)}
-                                      alt={product.name}
+                                      alt={locName(product)}
                                       height="150"
                                       sx={{
                                         objectFit: "contain",
@@ -3649,7 +3645,7 @@ const MainPage = () => {
                                       overflow: "hidden",
                                     }}
                                   >
-                                    {product.name}
+                                    {locName(product)}
                                   </Typography>
                                   <Box
                                     sx={{
@@ -3784,7 +3780,7 @@ const MainPage = () => {
                     <CardMedia
                       component="img"
                       image={resolveMediaUrl(selectedProduct.image)}
-                      alt={selectedProduct.name}
+                      alt={locName(selectedProduct)}
                       sx={{
                         height: { xs: 200, sm: 280, md: 320 },
                         objectFit: "contain",
@@ -3839,7 +3835,7 @@ const MainPage = () => {
                           lineHeight: 1.3,
                         }}
                       >
-                        {selectedProduct.name}
+                        {locName(selectedProduct)}
                       </Typography>
                     </Box>
 
@@ -3911,7 +3907,7 @@ const MainPage = () => {
                           }}
                         >
                           {t("Category")}:{" "}
-                          {selectedProduct.categoryId.name || "N/A"}
+                          {locName(selectedProduct.categoryId) || "N/A"}
                         </Typography>
                       </Box>
                     )}
@@ -3943,7 +3939,7 @@ const MainPage = () => {
                             fontSize: { xs: "0.875rem", sm: "1rem" },
                           }}
                         >
-                          {t("Brand")}: {selectedProduct.brandId.name}
+                          {t("Brand")}: {locName(selectedProduct.brandId)}
                         </Typography>
                       </Box>
                     )} */}
@@ -3980,7 +3976,7 @@ const MainPage = () => {
                             fontSize: { xs: "0.875rem", sm: "1rem" },
                           }}
                         >
-                          {t("store")}: {selectedProduct.storeId.name}
+                          {t("store")}: {locName(selectedProduct.storeId)}
                         </Typography>
                       </Box>
                     )}

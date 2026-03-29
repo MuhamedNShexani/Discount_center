@@ -2,6 +2,9 @@ const mongoose = require("mongoose");
 
 const storeSchema = new mongoose.Schema({
   name: { type: String, required: true },
+  nameEn: { type: String, required: false },
+  nameAr: { type: String, required: false },
+  nameKu: { type: String, required: false },
   logo: { type: String },
   address: { type: String },
   phone: { type: String },
@@ -19,6 +22,9 @@ const storeSchema = new mongoose.Schema({
     waze: { type: String, default: "" },
   },
   description: { type: String },
+  descriptionEn: { type: String, required: false },
+  descriptionAr: { type: String, required: false },
+  descriptionKu: { type: String, required: false },
   storeTypeId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "StoreType",

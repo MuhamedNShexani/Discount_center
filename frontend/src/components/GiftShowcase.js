@@ -18,10 +18,12 @@ import "slick-carousel/slick/slick-theme.css";
 import Slider from "react-slick";
 import { useTranslation } from "react-i18next";
 import { resolveMediaUrl } from "../utils/mediaUrl";
+import { useLocalizedContent } from "../hooks/useLocalizedContent";
 
 const GiftShowcase = ({ gifts }) => {
   const theme = useTheme();
   const { t } = useTranslation();
+  const { locName, locDescription } = useLocalizedContent();
 
   const displayGifts = Array.isArray(gifts) ? gifts.slice(-5) : [];
   if (displayGifts.length === 0) return null;
@@ -94,7 +96,8 @@ const GiftShowcase = ({ gifts }) => {
 
       <Slider {...settings}>
         {displayGifts.map((gift) => {
-          const label = gift?.description || gift?.name || t("Gift");
+          const label =
+            locDescription(gift) || locName(gift) || t("Gift");
           // const remainingDays = getRemainingDays(gift?.expireDate);
           // const brandId = gift?.brandId?._id || gift?.brandId;
 

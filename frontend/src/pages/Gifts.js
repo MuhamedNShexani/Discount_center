@@ -40,6 +40,7 @@ import { useNavigate } from "react-router-dom";
 import { useCityFilter } from "../context/CityFilterContext";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { resolveMediaUrl } from "../utils/mediaUrl";
+import { useLocalizedContent } from "../hooks/useLocalizedContent";
 import {
   isExpiryStillValid,
   getExpiryRemainingInfo,
@@ -54,6 +55,7 @@ const Gifts = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const { t } = useTranslation();
+  const { locName, locDescription } = useLocalizedContent();
   const navigate = useNavigate();
   const [gifts, setGifts] = useState([]);
   const [filteredGifts, setFilteredGifts] = useState([]);
@@ -321,7 +323,7 @@ const Gifts = () => {
                 <MenuItem value="">{t("All Stores")}</MenuItem>
                 {stores.map((store) => (
                   <MenuItem key={store._id} value={store._id}>
-                    {store.name}
+                    {locName(store)}
                   </MenuItem>
                 ))}
               </Select>
@@ -339,7 +341,7 @@ const Gifts = () => {
                 <MenuItem value="">{t("All Brands")}</MenuItem>
                 {brands.map((brand) => (
                   <MenuItem key={brand._id} value={brand._id}>
-                    {brand.name}
+                    {locName(brand)}
                   </MenuItem>
                 ))}
               </Select>
@@ -441,7 +443,7 @@ const Gifts = () => {
           <CardMedia
             component="img"
             image={resolveMediaUrl(gift.image)}
-            alt={gift.description}
+            alt={locDescription(gift) || locName(gift) || ""}
             sx={{
               width: "100%",
               height: "100%",
@@ -478,7 +480,7 @@ const Gifts = () => {
                 <Box
                   component="img"
                   src={resolveMediaUrl(primaryStore.logo)}
-                  alt={primaryStore.name}
+                  alt={locName(primaryStore)}
                   sx={{
                     width: 32,
                     height: 32,
@@ -499,7 +501,7 @@ const Gifts = () => {
                   whiteSpace: "nowrap",
                 }}
               >
-                {primaryStore.name}
+                {locName(primaryStore)}
               </Typography>
             </Box>
           )}
@@ -519,7 +521,7 @@ const Gifts = () => {
                 <Box
                   component="img"
                   src={resolveMediaUrl(brand.logo)}
-                  alt={brand.name}
+                  alt={locName(brand)}
                   sx={{
                     width: 32,
                     height: 32,
@@ -540,7 +542,7 @@ const Gifts = () => {
                   whiteSpace: "nowrap",
                 }}
               >
-                {brand.name}
+                {locName(brand)}
               </Typography>
             </Box>
           )}
@@ -636,7 +638,7 @@ const Gifts = () => {
                         },
                       }}
                     >
-                      {store.name}
+                      {locName(store)}
                     </Typography>
                   ))}
                 </Box>
@@ -678,7 +680,7 @@ const Gifts = () => {
                     whiteSpace: "nowrap",
                   }}
                 >
-                  {t("Brand")}: {gift.brandId.name}
+                  {t("Brand")}: {locName(gift.brandId)}
                 </Typography>
               </Box>
             )}
@@ -1032,7 +1034,7 @@ const Gifts = () => {
                 <Box display="flex" justifyContent="center" mb={2}>
                   <img
                     src={resolveMediaUrl(selectedGift.image)}
-                    alt={selectedGift.name || "Gift image"}
+                    alt={locName(selectedGift) || "Gift image"}
                     style={{
                       maxWidth: 220,
                       maxHeight: 220,
@@ -1050,7 +1052,7 @@ const Gifts = () => {
                   align="center"
                   gutterBottom
                 >
-                  {selectedGift.description}
+                  {locDescription(selectedGift)}
                 </Typography>
 
                 {selectedGift.brandId && (
@@ -1066,7 +1068,7 @@ const Gifts = () => {
                         );
                       }}
                     >
-                      {t("Brand")}: {selectedGift.brandId.name}
+                      {t("Brand")}: {locName(selectedGift.brandId)}
                     </Typography>
                   </Box>
                 )}
@@ -1091,7 +1093,7 @@ const Gifts = () => {
                         {selectedGift.storeId.map((store) => (
                           <Chip
                             key={store._id}
-                            label={store.name}
+                            label={locName(store)}
                             onClick={(e) => {
                               e.stopPropagation();
                               navigate(`/stores/${store._id}?tab=gifts`);

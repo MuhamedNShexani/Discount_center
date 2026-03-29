@@ -15,12 +15,12 @@ const getBrandTypes = async (req, res) => {
 // @desc    Create brand type
 const createBrandType = async (req, res) => {
   try {
-    const { name, icon } = req.body;
+    const { name, icon, nameEn, nameAr, nameKu } = req.body;
     if (!name) return res.status(400).json({ msg: "Name is required" });
     const exists = await BrandType.findOne({ name });
     if (exists)
       return res.status(409).json({ msg: "Brand type already exists" });
-    const doc = await BrandType.create({ name, icon });
+    const doc = await BrandType.create({ name, icon, nameEn, nameAr, nameKu });
     res.status(201).json(doc);
   } catch (err) {
     console.error(err.message);
@@ -31,12 +31,15 @@ const createBrandType = async (req, res) => {
 // @desc    Update brand type
 const updateBrandType = async (req, res) => {
   try {
-    const { name, icon } = req.body;
+    const { name, icon, nameEn, nameAr, nameKu } = req.body;
     const doc = await BrandType.findByIdAndUpdate(
       req.params.id,
       {
         ...(name !== undefined ? { name } : {}),
         ...(icon !== undefined ? { icon } : {}),
+        ...(nameEn !== undefined ? { nameEn } : {}),
+        ...(nameAr !== undefined ? { nameAr } : {}),
+        ...(nameKu !== undefined ? { nameKu } : {}),
       },
       { new: true }
     );

@@ -8,10 +8,12 @@ import "slick-carousel/slick/slick-theme.css";
 import Slider from "react-slick";
 import { useTranslation } from "react-i18next";
 import { resolveMediaUrl } from "../utils/mediaUrl";
+import { useLocalizedContent } from "../hooks/useLocalizedContent";
 
 const BrandShowcase = ({ brands }) => {
   const theme = useTheme();
   const { t } = useTranslation();
+  const { locName } = useLocalizedContent();
 
   if (!brands || brands.length === 0) {
     return null;
@@ -118,7 +120,7 @@ const BrandShowcase = ({ brands }) => {
           >
             <Avatar
               src={resolveMediaUrl(brand.logo)}
-              alt={brand.name}
+              alt={locName(brand)}
               className="brand-avatar"
               sx={{
                 width: 80,
@@ -140,7 +142,7 @@ const BrandShowcase = ({ brands }) => {
                 color: theme.palette.text.secondary,
               }}
             >
-              {brand.name}
+              {locName(brand)}
             </Typography>
           </Box>
         ))}

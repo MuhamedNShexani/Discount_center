@@ -81,9 +81,11 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import VideoLibraryIcon from "@mui/icons-material/VideoLibrary";
 import WorkOutlineIcon from "@mui/icons-material/WorkOutline";
+import TranslateIcon from "@mui/icons-material/Translate";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 import { useAppSettings } from "../context/AppSettingsContext";
+import MultilingualFieldGroup from "../components/MultilingualFieldGroup";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
 
@@ -115,6 +117,35 @@ const DATA_LIST_TAB_TOOLBAR_SCROLL_SX = {
   pb: 0.5,
   "& > *": { flexShrink: 0 },
 };
+
+const emptyCategoryTypeRow = () => ({
+  name: "",
+  nameEn: "",
+  nameAr: "",
+  nameKu: "",
+  description: "",
+  descriptionEn: "",
+  descriptionAr: "",
+  descriptionKu: "",
+});
+
+function normalizeCategoryTypeRow(t) {
+  if (t == null || t === "") return emptyCategoryTypeRow();
+  if (typeof t === "string") {
+    return { ...emptyCategoryTypeRow(), name: t };
+  }
+  return {
+    ...emptyCategoryTypeRow(),
+    name: t.name || "",
+    nameEn: t.nameEn || "",
+    nameAr: t.nameAr || "",
+    nameKu: t.nameKu || "",
+    description: t.description || "",
+    descriptionEn: t.descriptionEn || "",
+    descriptionAr: t.descriptionAr || "",
+    descriptionKu: t.descriptionKu || "",
+  };
+}
 
 const DataEntryForm = () => {
   const theme = useTheme();
@@ -169,6 +200,19 @@ const DataEntryForm = () => {
   const [categoryStoreTypeFilter, setCategoryStoreTypeFilter] = useState("all");
   const [storeTypes, setStoreTypes] = useState([]);
   const [brandTypes, setBrandTypes] = useState([]);
+  const EMPTY_TYPE_ADD_FORM = {
+    name: "",
+    icon: "",
+    nameEn: "",
+    nameAr: "",
+    nameKu: "",
+  };
+  const [storeTypeAddForm, setStoreTypeAddForm] = useState(() => ({
+    ...EMPTY_TYPE_ADD_FORM,
+  }));
+  const [brandTypeAddForm, setBrandTypeAddForm] = useState(() => ({
+    ...EMPTY_TYPE_ADD_FORM,
+  }));
 
   // Notification send form
   const [notificationTitle, setNotificationTitle] = useState("");
@@ -192,6 +236,9 @@ const DataEntryForm = () => {
   // Brand form state
   const [brandForm, setBrandForm] = useState({
     name: "",
+    nameEn: "",
+    nameAr: "",
+    nameKu: "",
     logo: "",
     address: "",
     phone: "",
@@ -204,6 +251,9 @@ const DataEntryForm = () => {
     appleMaps: "",
     waze: "",
     description: "",
+    descriptionEn: "",
+    descriptionAr: "",
+    descriptionKu: "",
     isVip: false,
     brandTypeId: "",
     expireDate: "",
@@ -212,6 +262,9 @@ const DataEntryForm = () => {
   // Store form state
   const [storeForm, setStoreForm] = useState({
     name: "",
+    nameEn: "",
+    nameAr: "",
+    nameKu: "",
     logo: "",
     address: "",
     phone: "",
@@ -224,6 +277,9 @@ const DataEntryForm = () => {
     appleMaps: "",
     waze: "",
     description: "",
+    descriptionEn: "",
+    descriptionAr: "",
+    descriptionKu: "",
     isVip: false,
     storeTypeId: "",
     storecity: "Erbil",
@@ -237,11 +293,17 @@ const DataEntryForm = () => {
   // Product form state
   const [productForm, setProductForm] = useState({
     name: "",
+    nameEn: "",
+    nameAr: "",
+    nameKu: "",
     image: "",
     previousPrice: "",
     newPrice: "",
     isDiscount: false,
     description: "",
+    descriptionEn: "",
+    descriptionAr: "",
+    descriptionKu: "",
     barcode: "",
     weight: "",
     brandId: "",
@@ -271,7 +333,13 @@ const DataEntryForm = () => {
 
   const defaultJobForm = {
     title: "",
+    titleEn: "",
+    titleAr: "",
+    titleKu: "",
     description: "",
+    descriptionEn: "",
+    descriptionAr: "",
+    descriptionKu: "",
     gender: "any",
     storeId: "",
     brandId: "",
@@ -285,6 +353,9 @@ const DataEntryForm = () => {
 
   const defaultVideoForm = {
     title: "",
+    titleEn: "",
+    titleAr: "",
+    titleKu: "",
     storeId: "",
     brandId: "",
     videoUrl: "",
@@ -302,6 +373,9 @@ const DataEntryForm = () => {
   const [giftForm, setGiftForm] = useState({
     image: "",
     description: "",
+    descriptionEn: "",
+    descriptionAr: "",
+    descriptionKu: "",
     storeId: [],
     brandId: "",
     productId: "",
@@ -311,8 +385,15 @@ const DataEntryForm = () => {
   // Category form state
   const [categoryForm, setCategoryForm] = useState({
     name: "",
+    nameEn: "",
+    nameAr: "",
+    nameKu: "",
+    description: "",
+    descriptionEn: "",
+    descriptionAr: "",
+    descriptionKu: "",
     storeTypeId: "",
-    types: [""], // Array of category types
+    types: [emptyCategoryTypeRow()],
   });
 
   // File upload state
@@ -332,6 +413,8 @@ const DataEntryForm = () => {
   const [brandBulkUploadLoading, setBrandBulkUploadLoading] = useState(false);
   const [storeBulkUploadLoading, setStoreBulkUploadLoading] = useState(false);
   const [deleteExpiredLoading, setDeleteExpiredLoading] = useState(false);
+  const [translateMissingLoading, setTranslateMissingLoading] =
+    useState(false);
 
   const [selectedStoreFilter, setSelectedStoreFilter] = useState("");
   const [editDialog, setEditDialog] = useState({
@@ -845,6 +928,9 @@ const DataEntryForm = () => {
     setEditingVideoId(reel?._id || "");
     setVideoForm({
       title: reel?.title || "",
+      titleEn: reel?.titleEn || "",
+      titleAr: reel?.titleAr || "",
+      titleKu: reel?.titleKu || "",
       storeId: reel?.storeId?._id || reel?.storeId || "",
       brandId: reel?.brandId?._id || reel?.brandId || "",
       videoUrl: reel?.videoUrl || "",
@@ -1187,7 +1273,13 @@ const DataEntryForm = () => {
           : null;
       const payload = {
         title: jobForm.title.trim(),
+        titleEn: jobForm.titleEn?.trim() || "",
+        titleAr: jobForm.titleAr?.trim() || "",
+        titleKu: jobForm.titleKu?.trim() || "",
         description: jobForm.description.trim(),
+        descriptionEn: jobForm.descriptionEn?.trim() || "",
+        descriptionAr: jobForm.descriptionAr?.trim() || "",
+        descriptionKu: jobForm.descriptionKu?.trim() || "",
         gender: jobForm.gender || "any",
         image: imageUrl || "",
         storeId: sid,
@@ -1262,6 +1354,9 @@ const DataEntryForm = () => {
 
       const payload = {
         title: videoForm.title.trim(),
+        titleEn: videoForm.titleEn?.trim() || "",
+        titleAr: videoForm.titleAr?.trim() || "",
+        titleKu: videoForm.titleKu?.trim() || "",
         videoUrl: uploaded?.videoUrl || videoForm.videoUrl || undefined,
         key: uploaded?.key || videoForm.key || undefined,
         storeId: videoForm.storeId || undefined,
@@ -1546,6 +1641,9 @@ const DataEntryForm = () => {
       setMessage({ type: "success", text: t("Brand created successfully!") });
       setBrandForm({
         name: "",
+        nameEn: "",
+        nameAr: "",
+        nameKu: "",
         logo: "",
         address: "",
         phone: "",
@@ -1559,6 +1657,9 @@ const DataEntryForm = () => {
         waze: "",
         brandTypeId: "",
         description: "",
+        descriptionEn: "",
+        descriptionAr: "",
+        descriptionKu: "",
         isVip: false,
         expireDate: "",
         statusAll: "on",
@@ -1620,6 +1721,9 @@ const DataEntryForm = () => {
       setMessage({ type: "success", text: t("Store created successfully!") });
       setStoreForm({
         name: "",
+        nameEn: "",
+        nameAr: "",
+        nameKu: "",
         logo: "",
         address: "",
         phone: "",
@@ -1632,6 +1736,9 @@ const DataEntryForm = () => {
         appleMaps: "",
         waze: "",
         description: "",
+        descriptionEn: "",
+        descriptionAr: "",
+        descriptionKu: "",
         isVip: false,
         storeTypeId: "",
         storecity: "Erbil",
@@ -1690,11 +1797,17 @@ const DataEntryForm = () => {
       setMessage({ type: "success", text: t("Product created successfully!") });
       setProductForm({
         name: "",
+        nameEn: "",
+        nameAr: "",
+        nameKu: "",
         image: "",
         previousPrice: "",
         newPrice: "",
         isDiscount: false,
         description: "",
+        descriptionEn: "",
+        descriptionAr: "",
+        descriptionKu: "",
         barcode: "",
         weight: "",
         storeId: "",
@@ -1773,6 +1886,9 @@ const DataEntryForm = () => {
       setGiftForm({
         image: "",
         description: "",
+        descriptionEn: "",
+        descriptionAr: "",
+        descriptionKu: "",
         storeId: [],
         brandId: "",
         productId: "",
@@ -1812,7 +1928,9 @@ const DataEntryForm = () => {
     if (
       !categoryForm.types ||
       categoryForm.types.length === 0 ||
-      categoryForm.types.every((type) => !type.trim())
+      categoryForm.types.every(
+        (type) => !normalizeCategoryTypeRow(type).name.trim(),
+      )
     ) {
       setMessage({
         type: "error",
@@ -1823,16 +1941,29 @@ const DataEntryForm = () => {
     }
 
     try {
-      // Filter out empty types and convert to proper format
       const validTypes = categoryForm.types
-        .filter((type) => type.trim() !== "")
-        .map((type) => ({
-          name: type.trim(),
-          description: "", // Optional description field
+        .map(normalizeCategoryTypeRow)
+        .filter((row) => row.name.trim() !== "")
+        .map((row) => ({
+          name: row.name.trim(),
+          nameEn: row.nameEn?.trim() || "",
+          nameAr: row.nameAr?.trim() || "",
+          nameKu: row.nameKu?.trim() || "",
+          description: row.description?.trim() || "",
+          descriptionEn: row.descriptionEn?.trim() || "",
+          descriptionAr: row.descriptionAr?.trim() || "",
+          descriptionKu: row.descriptionKu?.trim() || "",
         }));
 
       const categoryData = {
         name: categoryForm.name.trim(),
+        nameEn: categoryForm.nameEn?.trim() || "",
+        nameAr: categoryForm.nameAr?.trim() || "",
+        nameKu: categoryForm.nameKu?.trim() || "",
+        description: categoryForm.description?.trim() || "",
+        descriptionEn: categoryForm.descriptionEn?.trim() || "",
+        descriptionAr: categoryForm.descriptionAr?.trim() || "",
+        descriptionKu: categoryForm.descriptionKu?.trim() || "",
         storeTypeId: categoryForm.storeTypeId || "",
         types: validTypes,
       };
@@ -1844,8 +1975,15 @@ const DataEntryForm = () => {
       });
       setCategoryForm({
         name: "",
+        nameEn: "",
+        nameAr: "",
+        nameKu: "",
+        description: "",
+        descriptionEn: "",
+        descriptionAr: "",
+        descriptionKu: "",
         storeTypeId: "",
-        types: [""],
+        types: [emptyCategoryTypeRow()],
       });
       fetchCategories();
     } catch (err) {
@@ -1864,6 +2002,9 @@ const DataEntryForm = () => {
     if (type === "brand") {
       setEditForm({
         name: data.name,
+        nameEn: data.nameEn || "",
+        nameAr: data.nameAr || "",
+        nameKu: data.nameKu || "",
         logo: data.logo,
         address: data.address,
         phone: data.contactInfo?.phone || data.phone || "",
@@ -1879,6 +2020,9 @@ const DataEntryForm = () => {
         brandTypeId:
           (data.brandTypeId && data.brandTypeId._id) || data.brandTypeId || "",
         description: data.description || "",
+        descriptionEn: data.descriptionEn || "",
+        descriptionAr: data.descriptionAr || "",
+        descriptionKu: data.descriptionKu || "",
         expireDate: data.expireDate
           ? toDatetimeLocalValue(data.expireDate)
           : "",
@@ -1887,6 +2031,9 @@ const DataEntryForm = () => {
     } else if (type === "store") {
       setEditForm({
         name: data.name,
+        nameEn: data.nameEn || "",
+        nameAr: data.nameAr || "",
+        nameKu: data.nameKu || "",
         logo: data.logo,
         address: data.address,
         phone: data.contactInfo?.phone || data.phone || "",
@@ -1903,6 +2050,9 @@ const DataEntryForm = () => {
           (data.storeTypeId && data.storeTypeId._id) || data.storeTypeId || "",
         storecity: data.storecity || "Erbil",
         description: data.description || "",
+        descriptionEn: data.descriptionEn || "",
+        descriptionAr: data.descriptionAr || "",
+        descriptionKu: data.descriptionKu || "",
         branches: data.branches || [],
         show: data.show !== undefined ? data.show : true,
         expireDate: data.expireDate
@@ -1919,20 +2069,33 @@ const DataEntryForm = () => {
         (data.storeTypeId && data.storeTypeId._id) || data.storeTypeId || "";
       setEditForm({
         name: data.name || "",
+        nameEn: data.nameEn || "",
+        nameAr: data.nameAr || "",
+        nameKu: data.nameKu || "",
+        description: data.description || "",
+        descriptionEn: data.descriptionEn || "",
+        descriptionAr: data.descriptionAr || "",
+        descriptionKu: data.descriptionKu || "",
         storeTypeId: rawStoreTypeId != null ? String(rawStoreTypeId) : "",
         types: Array.isArray(data.types)
-          ? data.types.map((t) => (typeof t === "string" ? t : t.name || ""))
-          : [""],
+          ? data.types.map((t) => normalizeCategoryTypeRow(t))
+          : [emptyCategoryTypeRow()],
       });
     } else if (type === "product") {
       const productCategoryId = data.categoryId?._id || data.categoryId || "";
       setEditForm({
         name: data.name,
+        nameEn: data.nameEn || "",
+        nameAr: data.nameAr || "",
+        nameKu: data.nameKu || "",
         image: data.image,
         previousPrice: data.previousPrice,
         newPrice: data.newPrice,
         isDiscount: data.isDiscount || false,
         description: data.description || "",
+        descriptionEn: data.descriptionEn || "",
+        descriptionAr: data.descriptionAr || "",
+        descriptionKu: data.descriptionKu || "",
         barcode: data.barcode || "",
         weight: data.weight || "",
         storeId: data.storeId?._id || data.storeId,
@@ -1950,6 +2113,9 @@ const DataEntryForm = () => {
       setEditForm({
         image: data.image,
         description: data.description || "",
+        descriptionEn: data.descriptionEn || "",
+        descriptionAr: data.descriptionAr || "",
+        descriptionKu: data.descriptionKu || "",
         storeId: data.storeId?.map((m) => m._id) || data.storeId || [],
         brandId: data.brandId?._id || data.brandId || "",
         productId: data.productId || "",
@@ -1982,17 +2148,26 @@ const DataEntryForm = () => {
     setEditDialog({ open: true, type, data });
   };
 
-  // Edit Category Types handlers
-  const handleEditCategoryTypeChange = (index, value) => {
+  const updateEditCategoryTypeField = (index, partial) => {
     setEditForm((prev) => {
-      const updated = [...(prev.types || [""])];
-      updated[index] = value;
+      const updated = [...(prev.types || [])].map(normalizeCategoryTypeRow);
+      updated[index] = { ...updated[index], ...partial };
       return { ...prev, types: updated };
     });
   };
 
+  const handleEditCategoryTypeChange = (index, value) => {
+    updateEditCategoryTypeField(index, { name: value });
+  };
+
   const addEditCategoryType = () => {
-    setEditForm((prev) => ({ ...prev, types: [...(prev.types || []), ""] }));
+    setEditForm((prev) => ({
+      ...prev,
+      types: [
+        ...(prev.types || []).map(normalizeCategoryTypeRow),
+        emptyCategoryTypeRow(),
+      ],
+    }));
   };
 
   const removeEditCategoryType = (index) => {
@@ -2086,11 +2261,37 @@ const DataEntryForm = () => {
         });
         fetchStores();
       } else if (editDialog.type === "category") {
-        const validTypes = (editForm.types || [])
-          .filter((t) => (t || "").trim() !== "")
-          .map((t) => ({ name: t.trim(), description: "" }));
+        const prevTypes = editDialog.data?.types || [];
+        const rawTypes = editForm.types || [];
+        const validTypes = [];
+        rawTypes.forEach((t, index) => {
+          const row = normalizeCategoryTypeRow(t);
+          const name = row.name.trim();
+          if (!name) return;
+          const prev = prevTypes[index];
+          const base =
+            prev && typeof prev === "object" && prev !== null ? { ...prev } : {};
+          validTypes.push({
+            ...base,
+            name,
+            nameEn: row.nameEn?.trim() || "",
+            nameAr: row.nameAr?.trim() || "",
+            nameKu: row.nameKu?.trim() || "",
+            description: row.description?.trim() || base.description || "",
+            descriptionEn: row.descriptionEn?.trim() || "",
+            descriptionAr: row.descriptionAr?.trim() || "",
+            descriptionKu: row.descriptionKu?.trim() || "",
+          });
+        });
         await categoryAPI.update(editDialog.data._id, {
           name: (editForm.name || "").trim(),
+          nameEn: editForm.nameEn?.trim() || "",
+          nameAr: editForm.nameAr?.trim() || "",
+          nameKu: editForm.nameKu?.trim() || "",
+          description: editForm.description?.trim() || "",
+          descriptionEn: editForm.descriptionEn?.trim() || "",
+          descriptionAr: editForm.descriptionAr?.trim() || "",
+          descriptionKu: editForm.descriptionKu?.trim() || "",
           storeTypeId: editForm.storeTypeId || "",
           types: validTypes,
         });
@@ -2107,6 +2308,9 @@ const DataEntryForm = () => {
           body: JSON.stringify({
             name: (editForm.name || "").trim(),
             icon: editForm.icon || "",
+            nameEn: editForm.nameEn?.trim() || "",
+            nameAr: editForm.nameAr?.trim() || "",
+            nameKu: editForm.nameKu?.trim() || "",
           }),
         });
         const res = await storeTypeAPI.getAll();
@@ -2119,6 +2323,9 @@ const DataEntryForm = () => {
         await brandTypeAPI.update(editDialog.data._id, {
           name: (editForm.name || "").trim(),
           icon: editForm.icon || "",
+          nameEn: editForm.nameEn?.trim() || "",
+          nameAr: editForm.nameAr?.trim() || "",
+          nameKu: editForm.nameKu?.trim() || "",
         });
         const res = await brandTypeAPI.getAll();
         setBrandTypes(res.data || []);
@@ -2394,21 +2601,22 @@ const DataEntryForm = () => {
     }));
   };
 
-  const handleCategoryTypeChange = (index, value) => {
+  const updateCategoryFormTypeField = (index, partial) => {
     setCategoryForm((prev) => {
-      const newTypes = [...prev.types];
-      newTypes[index] = value;
-      return {
-        ...prev,
-        types: newTypes,
-      };
+      const newTypes = [...prev.types].map(normalizeCategoryTypeRow);
+      newTypes[index] = { ...newTypes[index], ...partial };
+      return { ...prev, types: newTypes };
     });
+  };
+
+  const handleCategoryTypeChange = (index, value) => {
+    updateCategoryFormTypeField(index, { name: value });
   };
 
   const addCategoryType = () => {
     setCategoryForm((prev) => ({
       ...prev,
-      types: [...prev.types, ""],
+      types: [...prev.types.map(normalizeCategoryTypeRow), emptyCategoryTypeRow()],
     }));
   };
 
@@ -2417,6 +2625,48 @@ const DataEntryForm = () => {
       ...prev,
       types: prev.types.filter((_, i) => i !== index),
     }));
+  };
+
+  const handleTranslateMissingProductLocales = async () => {
+    if (!isAdmin) return;
+    const confirmed = window.confirm(
+      t(
+        "Fill missing English, Arabic, and Kurdish names from each product's primary name using Google Translate? Rows that already have an English name are skipped.",
+      ),
+    );
+    if (!confirmed) return;
+    setTranslateMissingLoading(true);
+    setMessage({ type: "", text: "" });
+    try {
+      const { data } = await adminAPI.translateMissingProducts();
+      if (!data?.success) {
+        setMessage({
+          type: "error",
+          text: data?.message || t("Translation failed."),
+        });
+        return;
+      }
+      await fetchProducts(selectedStoreFilter);
+      const lines = [
+        t("Translated: {{count}} products.", { count: data.updated || 0 }),
+        t("Failed: {{count}}.", { count: data.failed || 0 }),
+        t("Products that already had English (unchanged): {{count}}.", {
+          count: data.skippedAlreadyTranslated ?? 0,
+        }),
+      ];
+      setMessage({
+        type: data.failed ? "warning" : "success",
+        text: lines.join("\n"),
+      });
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.message ||
+        t("Translation request failed.");
+      setMessage({ type: "error", text: msg });
+    } finally {
+      setTranslateMissingLoading(false);
+    }
   };
 
   const handleDeleteExpiredDiscountProducts = async () => {
@@ -3156,9 +3406,10 @@ const DataEntryForm = () => {
                 <Button
                   variant="contained"
                   startIcon={<AddIcon />}
-                  onClick={() =>
-                    setAddDialog({ open: true, type: "storeType" })
-                  }
+                  onClick={() => {
+                    setStoreTypeAddForm({ ...EMPTY_TYPE_ADD_FORM });
+                    setAddDialog({ open: true, type: "storeType" });
+                  }}
                   sx={{ flexShrink: 0 }}
                 >
                   {t("Add Store Type")}
@@ -3198,6 +3449,9 @@ const DataEntryForm = () => {
                                 _id: st._id,
                                 name: st.name,
                                 icon: st.icon || "",
+                                nameEn: st.nameEn || "",
+                                nameAr: st.nameAr || "",
+                                nameKu: st.nameKu || "",
                               });
                             }}
                           >
@@ -3246,9 +3500,10 @@ const DataEntryForm = () => {
                 <Button
                   variant="contained"
                   startIcon={<AddIcon />}
-                  onClick={() =>
-                    setAddDialog({ open: true, type: "brandType" })
-                  }
+                  onClick={() => {
+                    setBrandTypeAddForm({ ...EMPTY_TYPE_ADD_FORM });
+                    setAddDialog({ open: true, type: "brandType" });
+                  }}
                   sx={{ flexShrink: 0 }}
                 >
                   {t("Add Brand Type")}
@@ -3288,6 +3543,9 @@ const DataEntryForm = () => {
                                 _id: bt._id,
                                 name: bt.name,
                                 icon: bt.icon || "",
+                                nameEn: bt.nameEn || "",
+                                nameAr: bt.nameAr || "",
+                                nameKu: bt.nameKu || "",
                               });
                             }}
                           >
@@ -3960,6 +4218,28 @@ const DataEntryForm = () => {
                   >
                     {t("Bulk Upload")}
                   </Button>
+                  {isAdmin && (
+                    <Button
+                      variant="outlined"
+                      color="secondary"
+                      disabled={translateMissingLoading || loading}
+                      sx={{
+                        justifyContent: "flex-start",
+                      }}
+                      startIcon={
+                        translateMissingLoading ? (
+                          <CircularProgress size={20} color="inherit" />
+                        ) : (
+                          <TranslateIcon />
+                        )
+                      }
+                      onClick={handleTranslateMissingProductLocales}
+                    >
+                      {translateMissingLoading
+                        ? t("Translating...")
+                        : t("Translate missing names")}
+                    </Button>
+                  )}
                   <Button
                     variant="outlined"
                     color="warning"
@@ -5102,6 +5382,15 @@ const DataEntryForm = () => {
                           color: "primary.contrastText",
                         }}
                       >
+                        {t("Expiry status")}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor: "primary.light",
+                          color: "primary.contrastText",
+                        }}
+                      >
                         {t("Actions")}
                       </TableCell>
                     </TableRow>
@@ -5116,6 +5405,10 @@ const DataEntryForm = () => {
                         const ownerName =
                           job?.storeId?.name || job?.brandId?.name || "";
                         const gender = String(job?.gender || "any");
+                        const hasExpiry = Boolean(job.expireDate);
+                        const stillValid = hasExpiry
+                          ? isExpiryStillValid(job.expireDate)
+                          : null;
                         return (
                           <TableRow key={job._id}>
                             <TableCell>
@@ -5130,13 +5423,43 @@ const DataEntryForm = () => {
                                 : t("No expiry")}
                             </TableCell>
                             <TableCell>
+                              {!hasExpiry ? (
+                                <Chip
+                                  label={t("No expiry")}
+                                  color="default"
+                                  size="small"
+                                  variant="outlined"
+                                />
+                              ) : stillValid ? (
+                                <Chip
+                                  label={t("Active")}
+                                  color="success"
+                                  size="small"
+                                  variant="outlined"
+                                />
+                              ) : (
+                                <Chip
+                                  label={t("Expired")}
+                                  color="error"
+                                  size="small"
+                                  variant="outlined"
+                                />
+                              )}
+                            </TableCell>
+                            <TableCell>
                               <IconButton
                                 onClick={() => {
                                   setEditingJobId(job._id);
                                   setSelectedJobImage(null);
                                   setJobForm({
                                     title: job.title || "",
+                                    titleEn: job.titleEn || "",
+                                    titleAr: job.titleAr || "",
+                                    titleKu: job.titleKu || "",
                                     description: job.description || "",
+                                    descriptionEn: job.descriptionEn || "",
+                                    descriptionAr: job.descriptionAr || "",
+                                    descriptionKu: job.descriptionKu || "",
                                     gender: job.gender || "any",
                                     storeId:
                                       job?.storeId?._id || job?.storeId || "",
@@ -5390,6 +5713,26 @@ const DataEntryForm = () => {
                     }}
                   />
                 </Grid>
+                <Grid xs={12}>
+                  <MultilingualFieldGroup
+                    sectionLabel={t("Store name (translations)")}
+                    value={{
+                      english: storeForm.nameEn,
+                      arabic: storeForm.nameAr,
+                      kurdish: storeForm.nameKu,
+                    }}
+                    onValueChange={(v) =>
+                      setStoreForm((p) => ({
+                        ...p,
+                        nameEn: v.english,
+                        nameAr: v.arabic,
+                        nameKu: v.kurdish,
+                      }))
+                    }
+                    sourceText={storeForm.name}
+                    aiType="store"
+                  />
+                </Grid>
                 <Grid xs={12} sm={6}>
                   <FormControl fullWidth required>
                     <InputLabel shrink>{t("Store Type")}</InputLabel>
@@ -5531,6 +5874,28 @@ const DataEntryForm = () => {
                     onChange={handleStoreFormChange}
                     multiline
                     rows={3}
+                  />
+                </Grid>
+                <Grid xs={12}>
+                  <MultilingualFieldGroup
+                    sectionLabel={t("Description (translations)")}
+                    value={{
+                      english: storeForm.descriptionEn,
+                      arabic: storeForm.descriptionAr,
+                      kurdish: storeForm.descriptionKu,
+                    }}
+                    onValueChange={(v) =>
+                      setStoreForm((p) => ({
+                        ...p,
+                        descriptionEn: v.english,
+                        descriptionAr: v.arabic,
+                        descriptionKu: v.kurdish,
+                      }))
+                    }
+                    sourceText={storeForm.description}
+                    aiType="general"
+                    multiline
+                    minRows={2}
                   />
                 </Grid>
                 <Grid xs={12}>
@@ -5745,17 +6110,23 @@ const DataEntryForm = () => {
               sx={{ mt: 1 }}
               onSubmit={async (e) => {
                 e.preventDefault();
-                const form = new FormData(e.currentTarget);
-                const name = form.get("name");
-                const icon = form.get("icon");
+                const name = storeTypeAddForm.name?.trim();
+                if (!name) return;
                 try {
                   await fetch(`${API_URL}/api/store-types`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ name, icon }),
+                    body: JSON.stringify({
+                      name,
+                      icon: storeTypeAddForm.icon || "",
+                      nameEn: storeTypeAddForm.nameEn?.trim() || "",
+                      nameAr: storeTypeAddForm.nameAr?.trim() || "",
+                      nameKu: storeTypeAddForm.nameKu?.trim() || "",
+                    }),
                   });
                   const res = await storeTypeAPI.getAll();
                   setStoreTypes(res.data || []);
+                  setStoreTypeAddForm({ ...EMPTY_TYPE_ADD_FORM });
                   setAddDialog({ open: false, type: "" });
                 } catch (e) {}
               }}
@@ -5766,6 +6137,28 @@ const DataEntryForm = () => {
                 label={t("Name")}
                 fullWidth
                 required
+                value={storeTypeAddForm.name}
+                onChange={(e) =>
+                  setStoreTypeAddForm((p) => ({ ...p, name: e.target.value }))
+                }
+              />
+              <MultilingualFieldGroup
+                sectionLabel={t("Store type name (translations)")}
+                value={{
+                  english: storeTypeAddForm.nameEn,
+                  arabic: storeTypeAddForm.nameAr,
+                  kurdish: storeTypeAddForm.nameKu,
+                }}
+                onValueChange={(v) =>
+                  setStoreTypeAddForm((p) => ({
+                    ...p,
+                    nameEn: v.english,
+                    nameAr: v.arabic,
+                    nameKu: v.kurdish,
+                  }))
+                }
+                sourceText={storeTypeAddForm.name}
+                aiType="storeType"
               />
               <TextField
                 margin="normal"
@@ -5773,6 +6166,10 @@ const DataEntryForm = () => {
                 label={t("Icon")}
                 placeholder="e.g. 🛒"
                 fullWidth
+                value={storeTypeAddForm.icon}
+                onChange={(e) =>
+                  setStoreTypeAddForm((p) => ({ ...p, icon: e.target.value }))
+                }
               />
               <Box sx={{ mt: 2, textAlign: "right" }}>
                 <Button
@@ -5792,13 +6189,19 @@ const DataEntryForm = () => {
               sx={{ mt: 1 }}
               onSubmit={async (e) => {
                 e.preventDefault();
-                const form = new FormData(e.currentTarget);
-                const name = form.get("name");
-                const icon = form.get("icon");
+                const name = brandTypeAddForm.name?.trim();
+                if (!name) return;
                 try {
-                  await brandTypeAPI.create({ name, icon });
+                  await brandTypeAPI.create({
+                    name,
+                    icon: brandTypeAddForm.icon || "",
+                    nameEn: brandTypeAddForm.nameEn?.trim() || "",
+                    nameAr: brandTypeAddForm.nameAr?.trim() || "",
+                    nameKu: brandTypeAddForm.nameKu?.trim() || "",
+                  });
                   const res = await brandTypeAPI.getAll();
                   setBrandTypes(res.data || []);
+                  setBrandTypeAddForm({ ...EMPTY_TYPE_ADD_FORM });
                   setAddDialog({ open: false, type: "" });
                 } catch (e) {}
               }}
@@ -5809,6 +6212,28 @@ const DataEntryForm = () => {
                 label={t("Name")}
                 fullWidth
                 required
+                value={brandTypeAddForm.name}
+                onChange={(e) =>
+                  setBrandTypeAddForm((p) => ({ ...p, name: e.target.value }))
+                }
+              />
+              <MultilingualFieldGroup
+                sectionLabel={t("Brand type name (translations)")}
+                value={{
+                  english: brandTypeAddForm.nameEn,
+                  arabic: brandTypeAddForm.nameAr,
+                  kurdish: brandTypeAddForm.nameKu,
+                }}
+                onValueChange={(v) =>
+                  setBrandTypeAddForm((p) => ({
+                    ...p,
+                    nameEn: v.english,
+                    nameAr: v.arabic,
+                    nameKu: v.kurdish,
+                  }))
+                }
+                sourceText={brandTypeAddForm.name}
+                aiType="storeBrand"
               />
               <TextField
                 margin="normal"
@@ -5816,6 +6241,10 @@ const DataEntryForm = () => {
                 label={t("Icon")}
                 placeholder="e.g. 🏷️"
                 fullWidth
+                value={brandTypeAddForm.icon}
+                onChange={(e) =>
+                  setBrandTypeAddForm((p) => ({ ...p, icon: e.target.value }))
+                }
               />
               <Box sx={{ mt: 2, textAlign: "right" }}>
                 <Button
@@ -5847,6 +6276,26 @@ const DataEntryForm = () => {
                         </InputAdornment>
                       ),
                     }}
+                  />
+                </Grid>
+                <Grid xs={12}>
+                  <MultilingualFieldGroup
+                    sectionLabel={t("Brand name (translations)")}
+                    value={{
+                      english: brandForm.nameEn,
+                      arabic: brandForm.nameAr,
+                      kurdish: brandForm.nameKu,
+                    }}
+                    onValueChange={(v) =>
+                      setBrandForm((p) => ({
+                        ...p,
+                        nameEn: v.english,
+                        nameAr: v.arabic,
+                        nameKu: v.kurdish,
+                      }))
+                    }
+                    sourceText={brandForm.name}
+                    aiType="brand"
                   />
                 </Grid>
                 <Grid xs={12}>
@@ -5972,6 +6421,28 @@ const DataEntryForm = () => {
                   />
                 </Grid>
                 <Grid xs={12}>
+                  <MultilingualFieldGroup
+                    sectionLabel={t("Description (translations)")}
+                    value={{
+                      english: brandForm.descriptionEn,
+                      arabic: brandForm.descriptionAr,
+                      kurdish: brandForm.descriptionKu,
+                    }}
+                    onValueChange={(v) =>
+                      setBrandForm((p) => ({
+                        ...p,
+                        descriptionEn: v.english,
+                        descriptionAr: v.arabic,
+                        descriptionKu: v.kurdish,
+                      }))
+                    }
+                    sourceText={brandForm.description}
+                    aiType="general"
+                    multiline
+                    minRows={2}
+                  />
+                </Grid>
+                <Grid xs={12}>
                   <input
                     accept="image/*"
                     style={{ display: "none" }}
@@ -6081,6 +6552,26 @@ const DataEntryForm = () => {
                   />
                 </Grid>
                 <Grid xs={12}>
+                  <MultilingualFieldGroup
+                    sectionLabel={t("Product name (translations)")}
+                    value={{
+                      english: productForm.nameEn,
+                      arabic: productForm.nameAr,
+                      kurdish: productForm.nameKu,
+                    }}
+                    onValueChange={(v) =>
+                      setProductForm((p) => ({
+                        ...p,
+                        nameEn: v.english,
+                        nameAr: v.arabic,
+                        nameKu: v.kurdish,
+                      }))
+                    }
+                    sourceText={productForm.name}
+                    aiType="product"
+                  />
+                </Grid>
+                <Grid xs={12}>
                   <TextField
                     fullWidth
                     label={t("Description")}
@@ -6089,6 +6580,28 @@ const DataEntryForm = () => {
                     onChange={handleProductFormChange}
                     multiline
                     rows={3}
+                  />
+                </Grid>
+                <Grid xs={12}>
+                  <MultilingualFieldGroup
+                    sectionLabel={t("Description (translations)")}
+                    value={{
+                      english: productForm.descriptionEn,
+                      arabic: productForm.descriptionAr,
+                      kurdish: productForm.descriptionKu,
+                    }}
+                    onValueChange={(v) =>
+                      setProductForm((p) => ({
+                        ...p,
+                        descriptionEn: v.english,
+                        descriptionAr: v.arabic,
+                        descriptionKu: v.kurdish,
+                      }))
+                    }
+                    sourceText={productForm.description}
+                    aiType="general"
+                    multiline
+                    minRows={2}
                   />
                 </Grid>
                 <Grid xs={12}>
@@ -6385,6 +6898,28 @@ const DataEntryForm = () => {
                     rows={3}
                   />
                 </Grid>
+                <Grid xs={12}>
+                  <MultilingualFieldGroup
+                    sectionLabel={t("Gift description (translations)")}
+                    value={{
+                      english: giftForm.descriptionEn,
+                      arabic: giftForm.descriptionAr,
+                      kurdish: giftForm.descriptionKu,
+                    }}
+                    onValueChange={(v) =>
+                      setGiftForm((p) => ({
+                        ...p,
+                        descriptionEn: v.english,
+                        descriptionAr: v.arabic,
+                        descriptionKu: v.kurdish,
+                      }))
+                    }
+                    sourceText={giftForm.description}
+                    aiType="gift"
+                    multiline
+                    minRows={2}
+                  />
+                </Grid>
                 <Grid xs={12} sm={6}>
                   <FormControl fullWidth>
                     <InputLabel>{t("Stores")}</InputLabel>
@@ -6506,6 +7041,26 @@ const DataEntryForm = () => {
                     }}
                   />
                 </Grid>
+                <Grid xs={12}>
+                  <MultilingualFieldGroup
+                    sectionLabel={t("Category name (translations)")}
+                    value={{
+                      english: categoryForm.nameEn,
+                      arabic: categoryForm.nameAr,
+                      kurdish: categoryForm.nameKu,
+                    }}
+                    onValueChange={(v) =>
+                      setCategoryForm((p) => ({
+                        ...p,
+                        nameEn: v.english,
+                        nameAr: v.arabic,
+                        nameKu: v.kurdish,
+                      }))
+                    }
+                    sourceText={categoryForm.name}
+                    aiType="category"
+                  />
+                </Grid>
                 <Grid xs={12} sm={6}>
                   <FormControl fullWidth>
                     <InputLabel>{t("Store Type")}</InputLabel>
@@ -6527,29 +7082,136 @@ const DataEntryForm = () => {
                   </FormControl>
                 </Grid>
                 <Grid xs={12}>
+                  <TextField
+                    fullWidth
+                    label={t("Category description (optional)")}
+                    name="description"
+                    value={categoryForm.description}
+                    onChange={handleCategoryFormChange}
+                    multiline
+                    rows={2}
+                  />
+                </Grid>
+                <Grid xs={12}>
+                  <MultilingualFieldGroup
+                    sectionLabel={t("Category description (translations)")}
+                    value={{
+                      english: categoryForm.descriptionEn,
+                      arabic: categoryForm.descriptionAr,
+                      kurdish: categoryForm.descriptionKu,
+                    }}
+                    onValueChange={(v) =>
+                      setCategoryForm((p) => ({
+                        ...p,
+                        descriptionEn: v.english,
+                        descriptionAr: v.arabic,
+                        descriptionKu: v.kurdish,
+                      }))
+                    }
+                    sourceText={categoryForm.description}
+                    aiType="general"
+                    multiline
+                    minRows={2}
+                  />
+                </Grid>
+                <Grid xs={12}>
                   <Typography variant="h6" gutterBottom>
                     {t("Category Types")}
                   </Typography>
-                  {categoryForm.types.map((type, index) => (
-                    <Box key={index} sx={{ display: "flex", gap: 1, mb: 1 }}>
-                      <TextField
-                        fullWidth
-                        label={`${t("Category Type")} ${index + 1}`}
-                        value={type}
-                        onChange={(e) =>
-                          handleCategoryTypeChange(index, e.target.value)
-                        }
-                        placeholder={t("Enter category type name")}
-                      />
-                      <IconButton
-                        onClick={() => removeCategoryType(index)}
-                        disabled={categoryForm.types.length === 1}
-                        color="error"
+                  {categoryForm.types.map((type, index) => {
+                    const row = normalizeCategoryTypeRow(type);
+                    return (
+                      <Box
+                        key={index}
+                        sx={{
+                          mb: 2,
+                          p: 2,
+                          border: "1px solid",
+                          borderColor: "divider",
+                          borderRadius: 1,
+                          bgcolor: "action.hover",
+                        }}
                       >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Box>
-                  ))}
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "flex-start",
+                            gap: 1,
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          <TextField
+                            sx={{ flex: "1 1 240px", minWidth: 0 }}
+                            label={`${t("Type name (primary)")} ${index + 1}`}
+                            value={row.name}
+                            onChange={(e) =>
+                              handleCategoryTypeChange(index, e.target.value)
+                            }
+                            placeholder={t("Enter category type name")}
+                          />
+                          <IconButton
+                            onClick={() => removeCategoryType(index)}
+                            disabled={categoryForm.types.length === 1}
+                            color="error"
+                            sx={{ mt: 0.5 }}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Box>
+                        <MultilingualFieldGroup
+                          sectionLabel={t("Category type name (translations)")}
+                          value={{
+                            english: row.nameEn,
+                            arabic: row.nameAr,
+                            kurdish: row.nameKu,
+                          }}
+                          onValueChange={(v) =>
+                            updateCategoryFormTypeField(index, {
+                              nameEn: v.english,
+                              nameAr: v.arabic,
+                              nameKu: v.kurdish,
+                            })
+                          }
+                          sourceText={row.name}
+                          aiType="categoryType"
+                        />
+                        <TextField
+                          fullWidth
+                          sx={{ mt: 1 }}
+                          label={t("Type description (optional)")}
+                          value={row.description}
+                          onChange={(e) =>
+                            updateCategoryFormTypeField(index, {
+                              description: e.target.value,
+                            })
+                          }
+                          multiline
+                          rows={2}
+                        />
+                        <MultilingualFieldGroup
+                          sectionLabel={t(
+                            "Category type description (translations)",
+                          )}
+                          value={{
+                            english: row.descriptionEn,
+                            arabic: row.descriptionAr,
+                            kurdish: row.descriptionKu,
+                          }}
+                          onValueChange={(v) =>
+                            updateCategoryFormTypeField(index, {
+                              descriptionEn: v.english,
+                              descriptionAr: v.arabic,
+                              descriptionKu: v.kurdish,
+                            })
+                          }
+                          sourceText={row.description}
+                          aiType="general"
+                          multiline
+                          minRows={2}
+                        />
+                      </Box>
+                    );
+                  })}
                   <Button
                     variant="outlined"
                     onClick={addCategoryType}
@@ -6837,6 +7499,26 @@ const DataEntryForm = () => {
                     required
                   />
                 </Grid>
+                <Grid xs={12}>
+                  <MultilingualFieldGroup
+                    sectionLabel={t("Job title (translations)")}
+                    value={{
+                      english: jobForm.titleEn,
+                      arabic: jobForm.titleAr,
+                      kurdish: jobForm.titleKu,
+                    }}
+                    onValueChange={(v) =>
+                      setJobForm((p) => ({
+                        ...p,
+                        titleEn: v.english,
+                        titleAr: v.arabic,
+                        titleKu: v.kurdish,
+                      }))
+                    }
+                    sourceText={jobForm.title}
+                    aiType="job"
+                  />
+                </Grid>
                 <Grid xs={12} sm={6}>
                   <FormControl fullWidth>
                     <InputLabel>{t("Gender")}</InputLabel>
@@ -6936,6 +7618,28 @@ const DataEntryForm = () => {
                     minRows={3}
                   />
                 </Grid>
+                <Grid xs={12}>
+                  <MultilingualFieldGroup
+                    sectionLabel={t("Job description (translations)")}
+                    value={{
+                      english: jobForm.descriptionEn,
+                      arabic: jobForm.descriptionAr,
+                      kurdish: jobForm.descriptionKu,
+                    }}
+                    onValueChange={(v) =>
+                      setJobForm((p) => ({
+                        ...p,
+                        descriptionEn: v.english,
+                        descriptionAr: v.arabic,
+                        descriptionKu: v.kurdish,
+                      }))
+                    }
+                    sourceText={jobForm.description}
+                    aiType="job"
+                    multiline
+                    minRows={2}
+                  />
+                </Grid>
 
                 <Grid xs={12}>
                   <Button
@@ -6970,6 +7674,26 @@ const DataEntryForm = () => {
                     onChange={(e) =>
                       setVideoForm({ ...videoForm, title: e.target.value })
                     }
+                  />
+                </Grid>
+                <Grid xs={12}>
+                  <MultilingualFieldGroup
+                    sectionLabel={t("Reel title (translations)")}
+                    value={{
+                      english: videoForm.titleEn,
+                      arabic: videoForm.titleAr,
+                      kurdish: videoForm.titleKu,
+                    }}
+                    onValueChange={(v) =>
+                      setVideoForm((p) => ({
+                        ...p,
+                        titleEn: v.english,
+                        titleAr: v.arabic,
+                        titleKu: v.kurdish,
+                      }))
+                    }
+                    sourceText={videoForm.title}
+                    aiType="reel"
                   />
                 </Grid>
                 <Grid xs={12}>
@@ -7520,6 +8244,24 @@ const DataEntryForm = () => {
                 value={editForm.name}
                 onChange={handleEditFormChange}
               />
+              <MultilingualFieldGroup
+                sectionLabel={t("Brand name (translations)")}
+                value={{
+                  english: editForm.nameEn,
+                  arabic: editForm.nameAr,
+                  kurdish: editForm.nameKu,
+                }}
+                onValueChange={(v) =>
+                  setEditForm((prev) => ({
+                    ...prev,
+                    nameEn: v.english,
+                    nameAr: v.arabic,
+                    nameKu: v.kurdish,
+                  }))
+                }
+                sourceText={editForm.name}
+                aiType="brand"
+              />
               <FormControl fullWidth required sx={{ mt: 2 }}>
                 <InputLabel shrink>{t("Brand Type")}</InputLabel>
                 <Select
@@ -7670,6 +8412,26 @@ const DataEntryForm = () => {
                 value={editForm.description}
                 onChange={handleEditFormChange}
               />
+              <MultilingualFieldGroup
+                sectionLabel={t("Description (translations)")}
+                value={{
+                  english: editForm.descriptionEn,
+                  arabic: editForm.descriptionAr,
+                  kurdish: editForm.descriptionKu,
+                }}
+                onValueChange={(v) =>
+                  setEditForm((prev) => ({
+                    ...prev,
+                    descriptionEn: v.english,
+                    descriptionAr: v.arabic,
+                    descriptionKu: v.kurdish,
+                  }))
+                }
+                sourceText={editForm.description}
+                aiType="general"
+                multiline
+                minRows={2}
+              />
               <TextField
                 margin="normal"
                 fullWidth
@@ -7719,6 +8481,24 @@ const DataEntryForm = () => {
                 name="name"
                 value={editForm.name}
                 onChange={handleEditFormChange}
+              />
+              <MultilingualFieldGroup
+                sectionLabel={t("Store name (translations)")}
+                value={{
+                  english: editForm.nameEn,
+                  arabic: editForm.nameAr,
+                  kurdish: editForm.nameKu,
+                }}
+                onValueChange={(v) =>
+                  setEditForm((prev) => ({
+                    ...prev,
+                    nameEn: v.english,
+                    nameAr: v.arabic,
+                    nameKu: v.kurdish,
+                  }))
+                }
+                sourceText={editForm.name}
+                aiType="store"
               />
               {/* Image Upload */}
               <Box sx={{ mt: 2, mb: 2 }}>
@@ -7889,6 +8669,26 @@ const DataEntryForm = () => {
                 name="description"
                 value={editForm.description}
                 onChange={handleEditFormChange}
+              />
+              <MultilingualFieldGroup
+                sectionLabel={t("Description (translations)")}
+                value={{
+                  english: editForm.descriptionEn,
+                  arabic: editForm.descriptionAr,
+                  kurdish: editForm.descriptionKu,
+                }}
+                onValueChange={(v) =>
+                  setEditForm((prev) => ({
+                    ...prev,
+                    descriptionEn: v.english,
+                    descriptionAr: v.arabic,
+                    descriptionKu: v.kurdish,
+                  }))
+                }
+                sourceText={editForm.description}
+                aiType="general"
+                multiline
+                minRows={2}
               />
               <TextField
                 margin="normal"
@@ -8069,6 +8869,26 @@ const DataEntryForm = () => {
                     onChange={handleEditFormChange}
                   />
                 </Grid>
+                <Grid xs={12}>
+                  <MultilingualFieldGroup
+                    sectionLabel={t("Category name (translations)")}
+                    value={{
+                      english: editForm.nameEn,
+                      arabic: editForm.nameAr,
+                      kurdish: editForm.nameKu,
+                    }}
+                    onValueChange={(v) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        nameEn: v.english,
+                        nameAr: v.arabic,
+                        nameKu: v.kurdish,
+                      }))
+                    }
+                    sourceText={editForm.name}
+                    aiType="category"
+                  />
+                </Grid>
                 <Grid xs={12} sm={6}>
                   <FormControl fullWidth margin="normal">
                     <InputLabel>{t("Store Type")}</InputLabel>
@@ -8089,30 +8909,143 @@ const DataEntryForm = () => {
                     </Select>
                   </FormControl>
                 </Grid>
+                <Grid xs={12}>
+                  <TextField
+                    margin="normal"
+                    fullWidth
+                    label={t("Category description (optional)")}
+                    name="description"
+                    value={editForm.description || ""}
+                    onChange={handleEditFormChange}
+                    multiline
+                    rows={2}
+                  />
+                </Grid>
+                <Grid xs={12}>
+                  <MultilingualFieldGroup
+                    sectionLabel={t("Category description (translations)")}
+                    value={{
+                      english: editForm.descriptionEn,
+                      arabic: editForm.descriptionAr,
+                      kurdish: editForm.descriptionKu,
+                    }}
+                    onValueChange={(v) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        descriptionEn: v.english,
+                        descriptionAr: v.arabic,
+                        descriptionKu: v.kurdish,
+                      }))
+                    }
+                    sourceText={editForm.description}
+                    aiType="general"
+                    multiline
+                    minRows={2}
+                  />
+                </Grid>
 
                 <Grid xs={12}>
                   <Typography variant="subtitle1" sx={{ mt: 1 }}>
                     {t("Category Types")}
                   </Typography>
-                  {(editForm.types || [""]).map((type, index) => (
-                    <Box key={index} sx={{ display: "flex", gap: 1, mb: 1 }}>
-                      <TextField
-                        fullWidth
-                        label={`${t("Category Type")} ${index + 1}`}
-                        value={type}
-                        onChange={(e) =>
-                          handleEditCategoryTypeChange(index, e.target.value)
-                        }
-                      />
-                      <IconButton
-                        onClick={() => removeEditCategoryType(index)}
-                        disabled={(editForm.types || []).length <= 1}
-                        color="error"
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Box>
-                  ))}
+                  {(editForm.types || [emptyCategoryTypeRow()]).map(
+                    (type, index) => {
+                      const row = normalizeCategoryTypeRow(type);
+                      return (
+                        <Box
+                          key={index}
+                          sx={{
+                            mb: 2,
+                            p: 2,
+                            border: "1px solid",
+                            borderColor: "divider",
+                            borderRadius: 1,
+                            bgcolor: "action.hover",
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "flex-start",
+                              gap: 1,
+                              flexWrap: "wrap",
+                            }}
+                          >
+                            <TextField
+                              sx={{ flex: "1 1 240px", minWidth: 0 }}
+                              label={`${t("Type name (primary)")} ${index + 1}`}
+                              value={row.name}
+                              onChange={(e) =>
+                                handleEditCategoryTypeChange(
+                                  index,
+                                  e.target.value,
+                                )
+                              }
+                            />
+                            <IconButton
+                              onClick={() => removeEditCategoryType(index)}
+                              disabled={(editForm.types || []).length <= 1}
+                              color="error"
+                              sx={{ mt: 0.5 }}
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </Box>
+                          <MultilingualFieldGroup
+                            sectionLabel={t("Category type name (translations)")}
+                            value={{
+                              english: row.nameEn,
+                              arabic: row.nameAr,
+                              kurdish: row.nameKu,
+                            }}
+                            onValueChange={(v) =>
+                              updateEditCategoryTypeField(index, {
+                                nameEn: v.english,
+                                nameAr: v.arabic,
+                                nameKu: v.kurdish,
+                              })
+                            }
+                            sourceText={row.name}
+                            aiType="categoryType"
+                          />
+                          <TextField
+                            fullWidth
+                            sx={{ mt: 1 }}
+                            label={t("Type description (optional)")}
+                            value={row.description}
+                            onChange={(e) =>
+                              updateEditCategoryTypeField(index, {
+                                description: e.target.value,
+                              })
+                            }
+                            multiline
+                            rows={2}
+                          />
+                          <MultilingualFieldGroup
+                            sectionLabel={t(
+                              "Category type description (translations)",
+                            )}
+                            value={{
+                              english: row.descriptionEn,
+                              arabic: row.descriptionAr,
+                              kurdish: row.descriptionKu,
+                            }}
+                            onValueChange={(v) =>
+                              updateEditCategoryTypeField(index, {
+                                descriptionEn: v.english,
+                                descriptionAr: v.arabic,
+                                descriptionKu: v.kurdish,
+                              })
+                            }
+                            sourceText={row.description}
+                            aiType="general"
+                            multiline
+                            minRows={2}
+                          />
+                        </Box>
+                      );
+                    },
+                  )}
                   <Button
                     variant="outlined"
                     onClick={addEditCategoryType}
@@ -8134,6 +9067,26 @@ const DataEntryForm = () => {
                 onChange={handleEditFormChange}
                 multiline
                 rows={3}
+              />
+              <MultilingualFieldGroup
+                sectionLabel={t("Gift description (translations)")}
+                value={{
+                  english: editForm.descriptionEn,
+                  arabic: editForm.descriptionAr,
+                  kurdish: editForm.descriptionKu,
+                }}
+                onValueChange={(v) =>
+                  setEditForm((prev) => ({
+                    ...prev,
+                    descriptionEn: v.english,
+                    descriptionAr: v.arabic,
+                    descriptionKu: v.kurdish,
+                  }))
+                }
+                sourceText={editForm.description}
+                aiType="gift"
+                multiline
+                minRows={2}
               />
 
               {/* Image Upload */}
@@ -8467,6 +9420,9 @@ const DataEntryForm = () => {
                     body: JSON.stringify({
                       name: editForm.name,
                       icon: editForm.icon || "",
+                      nameEn: editForm.nameEn?.trim() || "",
+                      nameAr: editForm.nameAr?.trim() || "",
+                      nameKu: editForm.nameKu?.trim() || "",
                     }),
                   });
                   const res = await storeTypeAPI.getAll();
@@ -8484,6 +9440,24 @@ const DataEntryForm = () => {
                 onChange={(e) =>
                   setEditForm({ ...editForm, name: e.target.value })
                 }
+              />
+              <MultilingualFieldGroup
+                sectionLabel={t("Store type name (translations)")}
+                value={{
+                  english: editForm.nameEn,
+                  arabic: editForm.nameAr,
+                  kurdish: editForm.nameKu,
+                }}
+                onValueChange={(v) =>
+                  setEditForm((prev) => ({
+                    ...prev,
+                    nameEn: v.english,
+                    nameAr: v.arabic,
+                    nameKu: v.kurdish,
+                  }))
+                }
+                sourceText={editForm.name}
+                aiType="storeType"
               />
               <TextField
                 margin="normal"
@@ -8506,6 +9480,9 @@ const DataEntryForm = () => {
                   await brandTypeAPI.update(editForm._id, {
                     name: (editForm.name || "").trim(),
                     icon: editForm.icon || "",
+                    nameEn: editForm.nameEn?.trim() || "",
+                    nameAr: editForm.nameAr?.trim() || "",
+                    nameKu: editForm.nameKu?.trim() || "",
                   });
                   const res = await brandTypeAPI.getAll();
                   setBrandTypes(res.data || []);
@@ -8522,6 +9499,24 @@ const DataEntryForm = () => {
                 onChange={(e) =>
                   setEditForm({ ...editForm, name: e.target.value })
                 }
+              />
+              <MultilingualFieldGroup
+                sectionLabel={t("Brand type name (translations)")}
+                value={{
+                  english: editForm.nameEn,
+                  arabic: editForm.nameAr,
+                  kurdish: editForm.nameKu,
+                }}
+                onValueChange={(v) =>
+                  setEditForm((prev) => ({
+                    ...prev,
+                    nameEn: v.english,
+                    nameAr: v.arabic,
+                    nameKu: v.kurdish,
+                  }))
+                }
+                sourceText={editForm.name}
+                aiType="storeBrand"
               />
               <TextField
                 margin="normal"
@@ -8543,6 +9538,54 @@ const DataEntryForm = () => {
                 name="name"
                 value={editForm.name}
                 onChange={handleEditFormChange}
+              />
+              <MultilingualFieldGroup
+                sectionLabel={t("Product name (translations)")}
+                value={{
+                  english: editForm.nameEn,
+                  arabic: editForm.nameAr,
+                  kurdish: editForm.nameKu,
+                }}
+                onValueChange={(v) =>
+                  setEditForm((prev) => ({
+                    ...prev,
+                    nameEn: v.english,
+                    nameAr: v.arabic,
+                    nameKu: v.kurdish,
+                  }))
+                }
+                sourceText={editForm.name}
+                aiType="product"
+              />
+              <TextField
+                margin="normal"
+                fullWidth
+                label={t("Description")}
+                name="description"
+                value={editForm.description || ""}
+                onChange={handleEditFormChange}
+                multiline
+                rows={3}
+              />
+              <MultilingualFieldGroup
+                sectionLabel={t("Description (translations)")}
+                value={{
+                  english: editForm.descriptionEn,
+                  arabic: editForm.descriptionAr,
+                  kurdish: editForm.descriptionKu,
+                }}
+                onValueChange={(v) =>
+                  setEditForm((prev) => ({
+                    ...prev,
+                    descriptionEn: v.english,
+                    descriptionAr: v.arabic,
+                    descriptionKu: v.kurdish,
+                  }))
+                }
+                sourceText={editForm.description}
+                aiType="general"
+                multiline
+                minRows={2}
               />
 
               {/* Current Image Display */}

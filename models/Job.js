@@ -3,7 +3,13 @@ const mongoose = require("mongoose");
 const jobSchema = new mongoose.Schema(
   {
     title: { type: String, required: true, trim: true, maxlength: 120 },
+    titleEn: { type: String, required: false, trim: true, maxlength: 120 },
+    titleAr: { type: String, required: false, trim: true, maxlength: 120 },
+    titleKu: { type: String, required: false, trim: true, maxlength: 120 },
     description: { type: String, required: true, trim: true, maxlength: 4000 },
+    descriptionEn: { type: String, required: false, trim: true, maxlength: 4000 },
+    descriptionAr: { type: String, required: false, trim: true, maxlength: 4000 },
+    descriptionKu: { type: String, required: false, trim: true, maxlength: 4000 },
     gender: {
       type: String,
       enum: ["any", "male", "female"],

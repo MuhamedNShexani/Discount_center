@@ -1,21 +1,59 @@
 /**
- * Get the localized display value for a field that may be stored in multiple languages.
- * Handles: name_en/name_ar/name_ku, name as { en, ar, ku }, or plain string.
- * @param {object} item - The object (product, store, brand, etc.)
- * @param {string} field - Field name (default 'name')
- * @param {string} lang - Current i18n language (en, ar, ku)
- * @returns {string} Localized value or fallback
+ * Content language for API fields: primary `name` / `description` / `title` plus
+ * camelCase `nameEn`, `nameAr`, `nameKu` (and same for description/title).
+ *
+ * @param {'normal'|'en'|'ar'|'ku'} dataLang - `normal` = primary/source field only
+ */
+
+export function getLocalizedField(item, field, dataLang = "normal") {
+  if (!item) return "";
+  const primary = item[field];
+
+  if (
+    typeof primary === "object" &&
+    primary !== null &&
+    !Array.isArray(primary) &&
+    (primary.en != null || primary.ar != null || primary.ku != null)
+  ) {
+    if (dataLang === "normal" || !dataLang) {
+      return primary.en || primary.ar || primary.ku || "";
+    }
+    const key =
+      dataLang === "en" ? "en" : dataLang === "ar" ? "ar" : "ku";
+    return (
+      primary[key] ||
+      primary.en ||
+      primary.ar ||
+      primary.ku ||
+      ""
+    );
+  }
+
+  if (dataLang === "normal" || !dataLang) {
+    if (typeof primary === "string") return primary;
+    return primary != null ? String(primary) : "";
+  }
+
+  const suffix = dataLang === "en" ? "En" : dataLang === "ar" ? "Ar" : "Ku";
+  const camelKey = `${field}${suffix}`;
+  let loc = item[camelKey];
+  if (loc != null && String(loc).trim() !== "") return String(loc).trim();
+
+  const snakeKey = `${field}_${dataLang}`;
+  if (item[snakeKey] != null && String(item[snakeKey]).trim() !== "") {
+    return String(item[snakeKey]).trim();
+  }
+
+  if (typeof primary === "string") return primary;
+  return primary != null ? String(primary) : "";
+}
+
+/**
+ * Legacy: map i18n UI language code to a content variant (used where UI lang
+ * used to drive content). Prefer {@link getLocalizedField} + DataLanguageContext.
  */
 export const getLocalizedName = (item, field = "name", lang) => {
-  if (!item) return "";
-  const base = item[field];
-  if (typeof base === "object" && base !== null && (base.en || base.ar || base.ku)) {
-    return base[lang] || base.en || base.ar || base.ku || "";
-  }
-  const key = `${field}_${lang}`;
-  if (item[key] != null && item[key] !== "") return item[key];
-  const enKey = `${field}_en`;
-  if (item[enKey] != null) return item[enKey];
-  if (typeof base === "string") return base;
-  return "";
+  const map = { en: "en", ar: "ar", ku: "ku", ckb: "ku" };
+  const dataLang = map[lang] || "normal";
+  return getLocalizedField(item, field, dataLang);
 };

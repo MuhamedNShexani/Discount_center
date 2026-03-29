@@ -6,6 +6,7 @@ const { r2Client, r2BucketName, r2PublicUrl } = require("../config/r2");
 const { normalizeExpiryDate } = require("../utils/normalizeExpiryDate");
 const { getUploadDateFolder } = require("../utils/uploadDateFolder");
 const { appendExpiryToFilename } = require("../utils/appendExpiryToFilename");
+const { storeVideo, brandVideo } = require("../utils/refPopulate");
 
 const router = express.Router();
 
@@ -98,6 +99,9 @@ router.post("/", async (req, res) => {
   try {
     const {
       title,
+      titleEn,
+      titleAr,
+      titleKu,
       videoUrl,
       key,
       storeId,
@@ -124,6 +128,9 @@ router.post("/", async (req, res) => {
 
     const video = await Video.create({
       title,
+      titleEn,
+      titleAr,
+      titleKu,
       videoUrl,
       key,
       storeId: storeId || null,
@@ -147,6 +154,9 @@ router.put("/:id", async (req, res) => {
   try {
     const {
       title,
+      titleEn,
+      titleAr,
+      titleKu,
       videoUrl,
       key,
       storeId,
@@ -178,6 +188,9 @@ router.put("/:id", async (req, res) => {
     }
 
     video.title = String(title).trim();
+    if (titleEn !== undefined) video.titleEn = titleEn;
+    if (titleAr !== undefined) video.titleAr = titleAr;
+    if (titleKu !== undefined) video.titleKu = titleKu;
     if (videoUrl) video.videoUrl = videoUrl;
     if (key !== undefined) video.key = key || video.key;
     video.storeId = nextStoreId;
@@ -205,8 +218,8 @@ router.get("/", async (req, res) => {
   try {
     const videos = await Video.find()
       .sort({ createdAt: -1 })
-      .populate("storeId", "name logo storecity city")
-      .populate("brandId", "name logo brandcity storecity city");
+      .populate("storeId", storeVideo)
+      .populate("brandId", brandVideo);
 
     return res.json(videos);
   } catch (error) {

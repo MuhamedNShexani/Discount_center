@@ -100,6 +100,24 @@ import {
   expiryChipBg,
   expiryGiftCardBg,
 } from "../utils/expiryDate";
+import { useLocalizedContent } from "../hooks/useLocalizedContent";
+
+/** Cart/localStorage snapshot: include name* so `locName` respects data language. */
+function cartProductSnapshot(p) {
+  if (!p?._id) return null;
+  return {
+    _id: p._id,
+    name: p.name,
+    nameEn: p.nameEn,
+    nameAr: p.nameAr,
+    nameKu: p.nameKu,
+    newPrice: p.newPrice,
+    previousPrice: p.previousPrice,
+    isDiscount: p.isDiscount,
+    status: p.status,
+    expireDate: p.expireDate,
+  };
+}
 
 const StoreProfile = () => {
   const { id } = useParams();
@@ -107,6 +125,7 @@ const StoreProfile = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const theme = useTheme();
   const { t } = useTranslation();
+  const { locName, locDescription, locTitle } = useLocalizedContent();
   const { isAuthenticated } = useAuth();
   const {
     toggleLike,
@@ -343,13 +362,7 @@ const StoreProfile = () => {
       const next = { ...(prev || {}) };
       const existing = next[product._id];
       next[product._id] = {
-        product: {
-          _id: product._id,
-          name: product.name,
-          newPrice: product.newPrice,
-          previousPrice: product.previousPrice,
-          isDiscount: product.isDiscount,
-        },
+        product: cartProductSnapshot(product),
         qty: Math.min(99, (Number(existing?.qty) || 0) + 1),
       };
       return next;
@@ -389,17 +402,17 @@ const StoreProfile = () => {
   const buildWhatsAppOrderText = () => {
     const orderId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
     const lines = [];
-    lines.push(`Order To: ${store?.name || ""}`.trim());
+    lines.push(`Order To: ${locName(store) || ""}`.trim());
     lines.push("");
     const items = Object.values(cartItems || {})
       .filter((i) => (Number(i?.qty) || 0) > 0 && i?.product?._id)
       .sort((a, b) =>
-        String(a.product.name || "").localeCompare(
-          String(b.product.name || ""),
+        String(locName(a.product) || "").localeCompare(
+          String(locName(b.product) || ""),
         ),
       );
     items.forEach((item, idx) => {
-      const name = item.product?.name || "-";
+      const name = locName(item.product) || "-";
       const qty = Number(item.qty) || 0;
       lines.push(`${idx + 1}) ${name} x${qty}`);
     });
@@ -471,15 +484,7 @@ const StoreProfile = () => {
           const qty = Math.max(0, Math.min(99, Number(item?.qty) || 0));
           if (qty <= 0) return;
           next[String(pid)] = {
-            product: {
-              _id: p._id,
-              name: p.name,
-              newPrice: p.newPrice,
-              previousPrice: p.previousPrice,
-              isDiscount: p.isDiscount,
-              status: p.status,
-              expireDate: p.expireDate,
-            },
+            product: cartProductSnapshot(p),
             qty,
           };
         });
@@ -564,15 +569,7 @@ const StoreProfile = () => {
         const qty = Math.max(0, Math.min(99, Number(item?.qty) || 0));
         if (qty <= 0) return;
         next[String(pid)] = {
-          product: {
-            _id: p._id,
-            name: p.name,
-            newPrice: p.newPrice,
-            previousPrice: p.previousPrice,
-            isDiscount: p.isDiscount,
-            status: p.status,
-            expireDate: p.expireDate,
-          },
+          product: cartProductSnapshot(p),
           qty,
         };
       });
@@ -605,19 +602,19 @@ const StoreProfile = () => {
   // Get product category type name from categoryId (populated) and categoryTypeId
   const getProductCategoryTypeName = (product) => {
     if (!product.categoryId || !product.categoryTypeId) {
-      return product.categoryId?.name || t("Uncategorized");
+      return locName(product.categoryId) || t("Uncategorized");
     }
     const category = product.categoryId;
     if (!category.types || !Array.isArray(category.types)) {
-      return category.name || t("Uncategorized");
+      return locName(category) || t("Uncategorized");
     }
     const categoryType =
       category.types.find(
         (type) => type._id?.toString() === product.categoryTypeId?.toString(),
       ) || category.types.find((type) => type.name === product.categoryTypeId);
     return categoryType
-      ? categoryType.name
-      : category.name || t("Uncategorized");
+      ? locName(categoryType)
+      : locName(category) || t("Uncategorized");
   };
 
   // Filter products based on current filters
@@ -883,7 +880,7 @@ const StoreProfile = () => {
                     },
                   }}
                 >
-                  {t("Brand")}: {gift.brandId.name}
+                  {t("Brand")}: {locName(gift.brandId)}
                 </Typography>
               </Box>
             )}
@@ -968,7 +965,7 @@ const StoreProfile = () => {
                   component="img"
                   height="180"
                   image={resolveMediaUrl(product.image)}
-                  alt={product.name}
+                  alt={locName(product)}
                   sx={{
                     objectFit: "contain",
                     width: "100%",
@@ -1136,7 +1133,7 @@ const StoreProfile = () => {
                   overflow: "hidden",
                 }}
               >
-                {product.name}
+                {locName(product)}
               </Typography>
 
               {/* Brand name if available */}
@@ -1855,7 +1852,7 @@ const StoreProfile = () => {
                 {store.logo ? (
                   <Avatar
                     src={resolveMediaUrl(store.logo)}
-                    alt={store.name}
+                    alt={locName(store)}
                     sx={{
                       width: 60,
                       height: 60,
@@ -1888,7 +1885,7 @@ const StoreProfile = () => {
                     flex: 1,
                   }}
                 >
-                  {store.name}
+                  {locName(store)}
                 </Typography>
               </Box>
               <Box
@@ -1985,7 +1982,7 @@ const StoreProfile = () => {
                 {store.logo ? (
                   <Avatar
                     src={resolveMediaUrl(store.logo)}
-                    alt={store.name}
+                    alt={locName(store)}
                     sx={{
                       width: { xs: 80, sm: 100, md: 150 },
                       height: { xs: 80, sm: 100, md: 150 },
@@ -2023,7 +2020,7 @@ const StoreProfile = () => {
                     color: "white",
                   }}
                 >
-                  {store.name}
+                  {locName(store)}
                 </Typography>
                 <Box
                   sx={{
@@ -2633,7 +2630,7 @@ const StoreProfile = () => {
         maxWidth="sm"
       >
         <DialogTitle sx={{ fontWeight: 900 }}>
-          {selectedJob?.title || t("Job")}
+          {locTitle(selectedJob) || t("Job")}
         </DialogTitle>
         <DialogContent>
           <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
@@ -2666,8 +2663,8 @@ const StoreProfile = () => {
                     : t("Any")}
               </Typography>
               <Typography sx={{ fontWeight: 800 }}>
-                {selectedJob?.storeId?.name ||
-                  selectedJob?.brandId?.name ||
+                {locName(selectedJob?.storeId) ||
+                  locName(selectedJob?.brandId) ||
                   "-"}
               </Typography>
             </Box>
@@ -2677,7 +2674,7 @@ const StoreProfile = () => {
             {t("Description")}
           </Typography>
           <Typography sx={{ whiteSpace: "pre-wrap" }} color="text.secondary">
-            {selectedJob?.description || "-"}
+            {locDescription(selectedJob) || "-"}
           </Typography>
         </DialogContent>
       </Dialog>
@@ -2706,7 +2703,7 @@ const StoreProfile = () => {
                 <Box display="flex" justifyContent="center" mb={2}>
                   <img
                     src={resolveMediaUrl(selectedGift.image)}
-                    alt={selectedGift.name || "Gift image"}
+                    alt={locName(selectedGift) || "Gift image"}
                     style={{
                       maxWidth: 220,
                       maxHeight: 220,
@@ -2724,14 +2721,14 @@ const StoreProfile = () => {
                   align="center"
                   gutterBottom
                 >
-                  {selectedGift.description}
+                  {locDescription(selectedGift)}
                 </Typography>
 
                 {selectedGift.brandId && (
                   <Box display="flex" alignItems="center" gap={1}>
                     <Business fontSize="small" color="action" />
                     <Typography variant="body2" color="text.secondary">
-                      {t("Brand")}: {selectedGift.brandId.name}
+                      {t("Brand")}: {locName(selectedGift.brandId)}
                     </Typography>
                   </Box>
                 )}
@@ -2854,7 +2851,7 @@ const StoreProfile = () => {
                             whiteSpace: "normal",
                           }}
                         >
-                          {item.product.name}
+                          {locName(item.product)}
                         </Typography>
                         {typeof item.product.newPrice === "number" && (
                           <Typography variant="caption" color="text.secondary">

@@ -22,7 +22,7 @@ import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import CloseIcon from "@mui/icons-material/Close";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { storeAPI, storeTypeAPI } from "../services/api";
 import { useTranslation } from "react-i18next";
 import { resolveMediaUrl } from "../utils/mediaUrl";
@@ -31,6 +31,7 @@ import {
   totalDraftCartQty,
 } from "../utils/draftCarts";
 import { ShoppingBag as ShoppingBagIcon } from "@mui/icons-material";
+import { useLocalizedContent } from "../hooks/useLocalizedContent";
 
 const getStoreTypeId = (store) =>
   String(store?.storeTypeId?._id ?? store?.storeTypeId ?? "");
@@ -38,7 +39,9 @@ const getStoreTypeId = (store) =>
 const ShoppingPage = () => {
   const theme = useTheme();
   const { t } = useTranslation();
+  const { locName } = useLocalizedContent();
   const navigate = useNavigate();
+  const routerLocation = useLocation();
   const [stores, setStores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [storeTypes, setStoreTypes] = useState([]);
@@ -101,6 +104,14 @@ const ShoppingPage = () => {
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
   }, []);
+
+  useEffect(() => {
+    if (routerLocation.state?.openDraftCart) {
+      setCartRefresh((k) => k + 1);
+      setDraftDrawerOpen(true);
+      navigate(routerLocation.pathname, { replace: true, state: {} });
+    }
+  }, [routerLocation.state, routerLocation.pathname, navigate]);
 
   const draftCartGroups = useMemo(
     () => readDraftCartGroupsByStore(stores),
@@ -227,7 +238,9 @@ const ShoppingPage = () => {
                       textAlign: "left",
                     }}
                   >
-                    {g.storeName}
+                    {locName(
+                      stores.find((s) => String(s._id) === String(g.storeId)),
+                    ) || g.storeName}
                   </Box>
                   <Chip
                     size="small"
@@ -283,7 +296,7 @@ const ShoppingPage = () => {
             key={st._id}
             clickable
             onClick={() => setSelectedStoreTypeId(String(st._id))}
-            label={`${st.icon || "🏪"} ${t(st.name)}`}
+            label={`${st.icon || "🏪"} ${locName(st) || t(st.name)}`}
             color={
               String(selectedStoreTypeId) === String(st._id)
                 ? "primary"
@@ -349,7 +362,7 @@ const ShoppingPage = () => {
                       component="img"
                       height="120"
                       image={resolveMediaUrl(store.logo)}
-                      alt={store.name}
+                      alt={locName(store)}
                       sx={{
                         height: 120,
                         width: "100%",
@@ -409,7 +422,7 @@ const ShoppingPage = () => {
                       minHeight: "2.6em",
                     }}
                   >
-                    {store.name}
+                    {locName(store)}
                   </Typography>
                   <Typography
                     variant="caption"
@@ -426,7 +439,7 @@ const ShoppingPage = () => {
                     }}
                   >
                     {store.storeTypeId?.name
-                      ? t(store.storeTypeId.name)
+                      ? locName(store.storeTypeId) || t(store.storeTypeId.name)
                       : "\u00A0"}
                   </Typography>
                 </CardContent>

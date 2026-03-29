@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AppBar,
   Toolbar,
@@ -134,7 +134,8 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
 
   // Gifts "new" badge (per account / guest device)
   const GIFTS_LAST_SEEN_KEY_PREFIX = "giftsLastSeenAt.v1";
-  const [newGiftsCount, setNewGiftsCount] = useState(0);
+  /** null until identity is ready and first fetch completes — avoids bogus badge during hydration */
+  const [newGiftsCount, setNewGiftsCount] = useState(null);
   const latestGiftTsRef = useRef(0);
 
   const getGiftSeenStorageKey = useCallback(() => {
@@ -151,6 +152,26 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
     user?.email,
     user?.id,
   ]);
+
+  const giftsBadgeIdentityReady = useMemo(
+    () =>
+      Boolean(
+        user?._id ||
+          user?.id ||
+          user?.email ||
+          guestUser?.deviceId ||
+          guestUser?._id ||
+          guestUser?.id,
+      ),
+    [
+      guestUser?._id,
+      guestUser?.deviceId,
+      guestUser?.id,
+      user?._id,
+      user?.email,
+      user?.id,
+    ],
+  );
 
   const getLastSeenGiftTs = () => {
     try {
@@ -189,7 +210,14 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
         return isExpiryStillValid(g.expireDate);
       });
 
-      const lastSeen = getLastSeenGiftTs();
+      let lastSeen = 0;
+      try {
+        const raw = localStorage.getItem(getGiftSeenStorageKey());
+        const ts = raw ? Number(raw) : 0;
+        lastSeen = Number.isFinite(ts) ? ts : 0;
+      } catch {
+        lastSeen = 0;
+      }
       let newest = 0;
       let count = 0;
       visible.forEach((g) => {
@@ -202,24 +230,29 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
       latestGiftTsRef.current = newest || latestGiftTsRef.current || 0;
       setNewGiftsCount(count);
     } catch {
-      // ignore
+      setNewGiftsCount(0);
     }
-  }, [getLastSeenGiftTs]);
+  }, [getGiftSeenStorageKey]);
 
   useEffect(() => {
+    if (!giftsBadgeIdentityReady) {
+      setNewGiftsCount(null);
+      return undefined;
+    }
     fetchNewGiftsCount();
     const id = window.setInterval(fetchNewGiftsCount, 60000);
     return () => window.clearInterval(id);
-  }, [fetchNewGiftsCount]);
+  }, [giftsBadgeIdentityReady, fetchNewGiftsCount]);
 
   useEffect(() => {
+    if (!giftsBadgeIdentityReady) return undefined;
     const onVis = () => {
       if (document.hidden) return;
       fetchNewGiftsCount();
     };
     document.addEventListener("visibilitychange", onVis);
     return () => document.removeEventListener("visibilitychange", onVis);
-  }, [fetchNewGiftsCount]);
+  }, [giftsBadgeIdentityReady, fetchNewGiftsCount]);
 
   const handleLangChange = (event) => {
     i18n.changeLanguage(event.target.value);
@@ -287,10 +320,10 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
 
   const giftsIconWithBadge = (
     <Badge
-      badgeContent={newGiftsCount}
+      badgeContent={newGiftsCount ?? 0}
       color="error"
       overlap="circular"
-      invisible={!newGiftsCount}
+      invisible={newGiftsCount == null || newGiftsCount < 1}
     >
       <CardGiftcardIcon />
     </Badge>

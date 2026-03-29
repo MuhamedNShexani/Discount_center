@@ -45,6 +45,7 @@ import {
   formatExpiryChipLabel,
   formatExpiredAgoText,
 } from "../utils/expiryDate";
+import { useLocalizedContent } from "../hooks/useLocalizedContent";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -56,6 +57,7 @@ const ProductDetail = () => {
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [relatedLoading, setRelatedLoading] = useState(false);
   const { t } = useTranslation();
+  const { locName } = useLocalizedContent();
   const theme = useTheme();
 
   // User tracking hook (user = device user for guests)
@@ -245,29 +247,27 @@ const ProductDetail = () => {
 
   // Helper function to get category type name from categoryTypeId
   const getCategoryTypeName = (categoryTypeId, categoryId) => {
-    // If categoryTypeId is available, try to find the type name
-    if (categoryTypeId && categoryId) {
-      const category = categories.find((cat) => cat._id === categoryId);
+    if (!categoryTypeId || !categoryId) return "N/A";
 
-      if (category && category.types) {
-        // First try to find by ID (converting ObjectId to string)
-        let type = category.types.find(
-          (t) => t._id.toString() === categoryTypeId,
-        );
+    const category =
+      typeof categoryId === "object" && Array.isArray(categoryId.types)
+        ? categoryId
+        : categories.find(
+            (cat) =>
+              String(cat._id) === String(categoryId?._id ?? categoryId),
+          );
 
-        // If not found by ID, try to find by name directly
-        if (!type) {
-          type = category.types.find((t) => t.name === categoryTypeId);
-        }
+    if (!category?.types?.length) return "N/A";
 
-        if (type) {
-          return type.name;
-        }
-      }
+    const ctId = String(categoryTypeId);
+    let type = category.types.find((t) => String(t._id) === ctId);
+    if (!type) {
+      type = category.types.find(
+        (t) => t.name === categoryTypeId || String(t._id) === ctId,
+      );
     }
 
-    // Return N/A if no valid category type found
-    return "N/A";
+    return type ? locName(type) : "N/A";
   };
 
   const formatPrice = (price) => {
@@ -363,7 +363,7 @@ const ProductDetail = () => {
               <CardMedia
                 component="img"
                 image={resolveMediaUrl(product.image)}
-                alt={product.name}
+                alt={locName(product)}
                 sx={{
                   display: "flex",
                   alignItems: "center",
@@ -414,7 +414,7 @@ const ProductDetail = () => {
                     lineHeight: { xs: 1.2, md: 1.3 },
                   }}
                 >
-                  {product.name}
+                  {locName(product)}
                 </Typography>
               </Box>
 
@@ -448,7 +448,7 @@ const ProductDetail = () => {
                         fontWeight: "bold",
                       }}
                     >
-                      {product.categoryId.name || "N/A"}
+                      {locName(product.categoryId) || "N/A"}
                     </span>
                   </Typography>
                 </Box>
@@ -483,7 +483,7 @@ const ProductDetail = () => {
                         fontWeight: "bold",
                       }}
                     >
-                      {product.brandId.name}
+                      {locName(product.brandId)}
                     </span>
                   </Typography>
                 </Box>
@@ -517,7 +517,7 @@ const ProductDetail = () => {
                         fontWeight: "bold",
                       }}
                     >
-                      {product.storeId.name}
+                      {locName(product.storeId)}
                     </span>
                   </Typography>
                 </Box>
@@ -998,7 +998,7 @@ const ProductDetail = () => {
                   <CardMedia
                     component="img"
                     image={resolveMediaUrl(relatedProduct.image)}
-                    alt={relatedProduct.name}
+                    alt={locName(relatedProduct)}
                     sx={{
                       height: { xs: "120px", sm: "140px", md: "160px" },
                       objectFit: "contain",
@@ -1032,7 +1032,7 @@ const ProductDetail = () => {
                           whiteSpace: "nowrap",
                         }}
                       >
-                        {relatedProduct.name}
+                        {locName(relatedProduct)}
                       </Typography>
 
                       {/* {relatedProduct.categoryTypeId && (
@@ -1071,7 +1071,7 @@ const ProductDetail = () => {
                                 fontSize: { xs: "0.7rem", sm: "0.75rem" },
                               }}
                             >
-                              {relatedProduct.brandId.name}
+                              {locName(relatedProduct.brandId)}
                             </Typography>
                           </Box>
                         )}
@@ -1092,7 +1092,7 @@ const ProductDetail = () => {
                               fontSize: { xs: "0.7rem", sm: "0.75rem" },
                             }}
                           >
-                            {relatedProduct.storeId.name}
+                            {locName(relatedProduct.storeId)}
                           </Typography>
                         </Box>
                       )}

@@ -23,12 +23,12 @@ const getStoreTypes = async (req, res) => {
 // @desc    Create store type
 const createStoreType = async (req, res) => {
   try {
-    const { name, icon } = req.body;
+    const { name, icon, nameEn, nameAr, nameKu } = req.body;
     if (!name) return res.status(400).json({ msg: "Name is required" });
     const exists = await StoreType.findOne({ name });
     if (exists)
       return res.status(409).json({ msg: "Store type already exists" });
-    const st = await StoreType.create({ name, icon });
+    const st = await StoreType.create({ name, icon, nameEn, nameAr, nameKu });
     res.status(201).json(st);
   } catch (err) {
     console.error(err.message);
@@ -39,12 +39,15 @@ const createStoreType = async (req, res) => {
 // @desc    Update store type
 const updateStoreType = async (req, res) => {
   try {
-    const { name, icon } = req.body;
+    const { name, icon, nameEn, nameAr, nameKu } = req.body;
     const st = await StoreType.findByIdAndUpdate(
       req.params.id,
       {
         ...(name !== undefined ? { name } : {}),
         ...(icon !== undefined ? { icon } : {}),
+        ...(nameEn !== undefined ? { nameEn } : {}),
+        ...(nameAr !== undefined ? { nameAr } : {}),
+        ...(nameKu !== undefined ? { nameKu } : {}),
       },
       { new: true }
     );

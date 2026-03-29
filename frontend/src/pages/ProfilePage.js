@@ -53,6 +53,13 @@ import { useAppSettings } from "../context/AppSettingsContext";
 import { useActiveTheme } from "../context/ActiveThemeContext";
 import kurdishFlag from "../styles/kurdish_flag.jpg";
 import { normalizeWhatsAppUrl } from "../utils/openWhatsAppLink";
+import {
+  useDataLanguage,
+  DATA_LANG_AR,
+  DATA_LANG_EN,
+  DATA_LANG_KU,
+  DATA_LANG_NORMAL,
+} from "../context/DataLanguageContext";
 
 const THEME_OPTIONS = [
   { id: "default", label: "Default Theme" },
@@ -87,6 +94,7 @@ const ProfilePage = () => {
     setUserThemeOverride,
     clearUserThemeOverride,
   } = useActiveTheme();
+  const { dataLanguage, setDataLanguage } = useDataLanguage();
 
   const [guestNameDialogOpen, setGuestNameDialogOpen] = useState(false);
   const [guestNameInput, setGuestNameInput] = useState("");
@@ -371,6 +379,84 @@ const ProfilePage = () => {
                   />
                   {t("Kurdish")}
                 </Box>
+              </Button>
+            </Box>
+          </Box>
+
+          <Box sx={{ px: 2, pb: 2, pt: 0 }}>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ mb: 1, display: "block" }}
+            >
+              {t("System Data Language")}
+            </Typography>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ mb: 1, display: "block", opacity: 0.9 }}
+            >
+              {t(
+                "Choose which language to use for names and descriptions from the database (stores, brands, products, categories, gifts, jobs). This is separate from the interface language above.",
+              )}
+            </Typography>
+            <Box
+              sx={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 1,
+              }}
+            >
+              <Button
+                size="small"
+                variant={
+                  dataLanguage === DATA_LANG_NORMAL ? "contained" : "outlined"
+                }
+                onClick={() => setDataLanguage(DATA_LANG_NORMAL)}
+              >
+                🌐 {t("Normal")}
+              </Button>
+              <Button
+                size="small"
+                variant={
+                  dataLanguage === DATA_LANG_KU ? "contained" : "outlined"
+                }
+                onClick={() => setDataLanguage(DATA_LANG_KU)}
+              >
+                <Box
+                  component="span"
+                  sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+                >
+                  <img
+                    src={kurdishFlag}
+                    alt="Kurdish"
+                    style={{
+                      width: 16,
+                      height: 12,
+                      objectFit: "cover",
+                      borderRadius: 2,
+                    }}
+                  />
+                  {t("Kurdish")}
+                </Box>
+              </Button>
+              <Button
+                size="small"
+                variant={
+                  dataLanguage === DATA_LANG_EN ? "contained" : "outlined"
+                }
+                onClick={() => setDataLanguage(DATA_LANG_EN)}
+              >
+                🇺🇸 {t("English")}
+              </Button>
+              <Button
+                size="small"
+                variant={
+                  dataLanguage === DATA_LANG_AR ? "contained" : "outlined"
+                }
+                onClick={() => setDataLanguage(DATA_LANG_AR)}
+              >
+                🇸🇦 {t("Arabic")}
               </Button>
             </Box>
           </Box>

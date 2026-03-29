@@ -3,6 +3,15 @@ const Store = require("../models/Store");
 const Brand = require("../models/Brand");
 const Category = require("../models/Category");
 const { normalizeExpiryDate } = require("../utils/normalizeExpiryDate");
+const {
+  categoryList,
+  categoryDetail,
+  storeList,
+  storeDetail,
+  brandList,
+  brandDetail,
+  storeTypeList,
+} = require("../utils/refPopulate");
 
 const getPublicStoreIds = async () => {
   const stores = await Store.find({ statusAll: { $ne: "off" } }).select("_id").lean();
@@ -65,10 +74,10 @@ const getProducts = async (req, res) => {
     }
 
     const products = await Product.find(finalQuery)
-      .populate("brandId", "name logo statusAll")
-      .populate("storeId", "name logo storecity")
-      .populate("categoryId", "name types")
-      .populate("storeTypeId", "name icon")
+      .populate("brandId", brandList)
+      .populate("storeId", storeList)
+      .populate("categoryId", categoryList)
+      .populate("storeTypeId", storeTypeList)
       .sort({ name: 1 });
     res.json(products);
   } catch (err) {
@@ -104,10 +113,10 @@ const getProductById = async (req, res) => {
     }
 
     const product = await Product.findById(req.params.id)
-      .populate("brandId", "name logo address phone description statusAll")
-      .populate("storeId", "name address phone description")
-      .populate("categoryId", "name types description")
-      .populate("storeTypeId", "name icon");
+      .populate("brandId", brandDetail)
+      .populate("storeId", storeDetail)
+      .populate("categoryId", categoryDetail)
+      .populate("storeTypeId", storeTypeList);
 
     if (!product) {
       return res.status(404).json({ msg: "Product not found" });
@@ -131,6 +140,9 @@ const createProduct = async (req, res) => {
   console.log("[createProduct] Request body:", req.body);
   const {
     name,
+    nameEn,
+    nameAr,
+    nameKu,
     type,
     categoryTypeId,
     image,
@@ -141,6 +153,9 @@ const createProduct = async (req, res) => {
     brandId,
     categoryId,
     description,
+    descriptionEn,
+    descriptionAr,
+    descriptionKu,
     barcode,
     storeId,
     storeTypeId: providedStoreTypeId,
@@ -209,10 +224,16 @@ const createProduct = async (req, res) => {
 
     const newProduct = new Product({
       name,
+      nameEn,
+      nameAr,
+      nameKu,
       type,
       categoryId,
       categoryTypeId,
       description,
+      descriptionEn,
+      descriptionAr,
+      descriptionKu,
       barcode,
       image,
       previousPrice,
@@ -253,10 +274,10 @@ const getProductsByBrand = async (req, res) => {
         applyPublicVisibilityToProductQuery({ brandId: req.params.brandId }, storeIds)
       )
     )
-      .populate("brandId", "name logo statusAll")
-      .populate("storeId", "name logo storecity")
-      .populate("categoryId", "name types")
-      .populate("storeTypeId", "name icon")
+      .populate("brandId", brandList)
+      .populate("storeId", storeList)
+      .populate("categoryId", categoryList)
+      .populate("storeTypeId", storeTypeList)
       .sort({ name: 1 });
     res.json(products);
   } catch (err) {
@@ -284,10 +305,10 @@ const getProductsByStore = async (req, res) => {
         applyPublicVisibilityToProductQuery({ storeId: req.params.storeId }, storeIds)
       )
     )
-      .populate("brandId", "name logo statusAll")
-      .populate("storeId", "name logo storecity")
-      .populate("categoryId", "name types")
-      .populate("storeTypeId", "name icon")
+      .populate("brandId", brandList)
+      .populate("storeId", storeList)
+      .populate("categoryId", categoryList)
+      .populate("storeTypeId", storeTypeList)
       .sort({ name: 1 });
     res.json(products);
   } catch (err) {
@@ -308,10 +329,10 @@ const getProductsByCategory = async (req, res) => {
         applyPublicVisibilityToProductQuery({ categoryId: req.params.category }, storeIds)
       )
     )
-      .populate("brandId", "name logo statusAll")
-      .populate("storeId", "name logo storecity")
-      .populate("categoryId", "name types")
-      .populate("storeTypeId", "name icon")
+      .populate("brandId", brandList)
+      .populate("storeId", storeList)
+      .populate("categoryId", categoryList)
+      .populate("storeTypeId", storeTypeList)
       .sort({ name: 1 });
     res.json(products);
   } catch (err) {
@@ -355,8 +376,8 @@ const updateProduct = async (req, res) => {
     const product = await Product.findByIdAndUpdate(req.params.id, updateDoc, {
       new: true,
     })
-      .populate("brandId", "name logo")
-      .populate("storeTypeId", "name icon");
+      .populate("brandId", brandList)
+      .populate("storeTypeId", storeTypeList);
 
     if (!product) {
       return res.status(404).json({ msg: "Product not found" });

@@ -4,6 +4,7 @@ import { useTheme } from "@mui/material/styles";
 import BusinessIcon from "@mui/icons-material/Business";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import { useTranslation } from "react-i18next";
+import { useLocalizedContent } from "../hooks/useLocalizedContent";
 import { normalizeImage } from "../utils/mediaUrl";
 
 const genderLabel = (t, g) => {
@@ -16,7 +17,9 @@ const genderLabel = (t, g) => {
 export default function JobCardRow({ job, onClick }) {
   const theme = useTheme();
   const { t } = useTranslation();
-  const ownerName = job?.storeId?.name || job?.brandId?.name || "";
+  const { locName, locTitle } = useLocalizedContent();
+  const ownerName =
+    locName(job?.storeId) || locName(job?.brandId) || "";
   const ownerIsBrand = Boolean(job?.brandId?._id || job?.brandId);
   const imageSrc = normalizeImage(job?.image);
 
@@ -36,7 +39,7 @@ export default function JobCardRow({ job, onClick }) {
       <CardMedia
         component="img"
         image={imageSrc || "/logo192.png"}
-        alt={job?.title || "job"}
+        alt={locTitle(job) || "job"}
         sx={{
           width: 110,
           height: 92,
@@ -47,7 +50,7 @@ export default function JobCardRow({ job, onClick }) {
       />
       <CardContent sx={{ py: 1.2, px: 1.5, flex: 1, minWidth: 0 }}>
         <Typography sx={{ fontWeight: 900 }} noWrap>
-          {job?.title || t("Job")}
+          {locTitle(job) || t("Job")}
         </Typography>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5, flexWrap: "wrap" }}>
           <Chip size="small" label={genderLabel(t, job?.gender)} />

@@ -3,6 +3,12 @@ const Product = require("../models/Product");
 const Store = require("../models/Store");
 const Brand = require("../models/Brand");
 const Gift = require("../models/Gift");
+const {
+  getTranslateApiKey,
+  translateToEnArKu,
+  formatGoogleFailure,
+} = require("../utils/googleTranslate");
+const { storeList, brandList } = require("../utils/refPopulate");
 
 // Simple admin check helper (by email)
 const isAdminUser = (user) => {
@@ -228,8 +234,8 @@ const deleteUser = async (req, res) => {
 const getMostLikedProducts = async (req, res) => {
   try {
     const products = await Product.find({})
-      .populate("storeId", "name")
-      .populate("brandId", "name")
+      .populate("storeId", storeList)
+      .populate("brandId", brandList)
       .sort({ likeCount: -1 })
       .limit(500)
       .lean();
@@ -245,8 +251,8 @@ const getMostLikedProducts = async (req, res) => {
 const getMostViewedProducts = async (req, res) => {
   try {
     const products = await Product.find({})
-      .populate("storeId", "name")
-      .populate("brandId", "name")
+      .populate("storeId", storeList)
+      .populate("brandId", brandList)
       .sort({ viewCount: -1 })
       .limit(500)
       .lean();
@@ -283,8 +289,8 @@ const getStoreReport = async (req, res) => {
     }
 
     const products = await Product.find(query)
-      .populate("storeId", "name")
-      .populate("brandId", "name")
+      .populate("storeId", storeList)
+      .populate("brandId", brandList)
       .sort({ "storeId.name": 1, likeCount: -1 })
       .lean();
     res.json(products);
@@ -320,8 +326,8 @@ const getBrandReport = async (req, res) => {
     }
 
     const products = await Product.find(query)
-      .populate("storeId", "name")
-      .populate("brandId", "name")
+      .populate("storeId", storeList)
+      .populate("brandId", brandList)
       .sort({ "brandId.name": 1, likeCount: -1 })
       .lean();
     res.json(products);
@@ -364,6 +370,114 @@ const deleteExpiredProducts = async (req, res) => {
   }
 };
 
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Products missing English name (null, absent, empty, or whitespace-only nameEn). */
+function productMissingEnglishName(doc) {
+  const v = doc?.nameEn;
+  if (v == null) return true;
+  return typeof v === "string" ? v.trim() === "" : String(v).trim() === "";
+}
+
+// @desc    Fill nameEn / nameAr / nameKu from primary name via Google Translate (skip if nameEn already set)
+// @route   POST /api/admin/products/translate-missing
+const translateMissingProductLocales = async (req, res) => {
+  try {
+    if (!isAdminUser(req.user)) {
+      return res.status(403).json({
+        success: false,
+        message: "Admin privileges required",
+      });
+    }
+
+    const apiKey = getTranslateApiKey();
+    if (!apiKey) {
+      return res.status(503).json({
+        success: false,
+        message:
+          "Translation is not configured. Set GOOGLE_TRANSLATE_API_KEY (Google Cloud Translation API key) in server .env.",
+      });
+    }
+
+    const raw = await Product.find({
+      $or: [
+        { nameEn: { $exists: false } },
+        { nameEn: null },
+        { nameEn: "" },
+        { nameEn: { $regex: /^\s+$/ } },
+      ],
+    })
+      .select("_id name nameEn")
+      .lean();
+
+    const candidates = raw.filter((p) => productMissingEnglishName(p));
+    const skippedAlreadyTranslated = await Product.countDocuments({
+      nameEn: { $regex: /\S/ },
+    });
+
+    let updated = 0;
+    let failed = 0;
+    const errors = [];
+
+    for (let i = 0; i < candidates.length; i++) {
+      const p = candidates[i];
+      const source =
+        typeof p.name === "string" ? p.name.trim() : String(p.name || "").trim();
+      if (!source) {
+        failed += 1;
+        if (errors.length < 20) {
+          errors.push({
+            productId: p._id,
+            message: "Empty product name; cannot translate.",
+          });
+        }
+        continue;
+      }
+
+      try {
+        const { english, arabic, kurdish } = await translateToEnArKu(
+          apiKey,
+          source,
+        );
+        await Product.updateOne(
+          { _id: p._id },
+          { $set: { nameEn: english, nameAr: arabic, nameKu: kurdish } },
+        );
+        updated += 1;
+      } catch (err) {
+        failed += 1;
+        console.error(
+          "[translateMissingProductLocales]",
+          p._id,
+          err?.message || err,
+        );
+        if (errors.length < 20) {
+          errors.push({
+            productId: p._id,
+            message: formatGoogleFailure(err),
+          });
+        }
+      }
+
+      if (i < candidates.length - 1) {
+        await delay(150);
+      }
+    }
+
+    return res.json({
+      success: true,
+      updated,
+      failed,
+      attempted: candidates.length,
+      skippedAlreadyTranslated,
+      errors: errors.length ? errors : undefined,
+    });
+  } catch (err) {
+    console.error("Admin translateMissingProductLocales error:", err?.message);
+    return res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+
 module.exports = {
   getStats,
   getMostLikedProducts,
@@ -375,4 +489,5 @@ module.exports = {
   updateUser,
   deleteUser,
   deleteExpiredProducts,
+  translateMissingProductLocales,
 };

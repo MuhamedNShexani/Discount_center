@@ -24,11 +24,13 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import Loader from "../components/Loader";
 import { useTranslation } from "react-i18next";
 import { resolveMediaUrl } from "../utils/mediaUrl";
+import { useLocalizedContent } from "../hooks/useLocalizedContent";
 
 const BrandList = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const { t } = useTranslation();
+  const { locName } = useLocalizedContent();
 
   const [searchParams] = useSearchParams();
   const [Brands, setBrands] = useState([]);
@@ -242,7 +244,7 @@ const BrandList = () => {
           { key: "all", label: t("All") },
           ...brandTypes.map((bt) => ({
             key: bt._id,
-            label: t(capitalize(bt.name)),
+            label: locName(bt) || t(capitalize(bt.name)),
           })),
         ].map((tItem) => (
           <Chip
@@ -338,7 +340,7 @@ const BrandList = () => {
                   component="img"
                   height="200"
                   image={resolveMediaUrl(brand.logo)}
-                  alt={brand.name}
+                  alt={locName(brand)}
                   className="brand-image"
                   sx={{
                     objectFit: "cover",
@@ -437,7 +439,7 @@ const BrandList = () => {
                     textAlign: "center",
                   }}
                 >
-                  {brand.statusAll === "off" ? "" : brand.name}
+                  {brand.statusAll === "off" ? "" : locName(brand)}
                 </Typography>
                 {brand.isVip && (
                   <Box

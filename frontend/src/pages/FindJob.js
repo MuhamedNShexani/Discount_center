@@ -34,11 +34,13 @@ import {
   shouldShowExpiryChip,
   expiryChipBg,
 } from "../utils/expiryDate";
+import { useLocalizedContent } from "../hooks/useLocalizedContent";
 
 const FindJob = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { locName, locDescription, locTitle } = useLocalizedContent();
 
   const [loading, setLoading] = useState(true);
   const [jobs, setJobs] = useState([]);
@@ -126,7 +128,7 @@ const FindJob = () => {
     return null;
   };
 
-  const getOwnerName = (job) => getOwner(job)?.name || "";
+  const getOwnerName = (job) => locName(getOwner(job)) || "";
   const getOwnerIcon = (job) =>
     getOwner(job)?.type === "brand" ? <BusinessIcon /> : <StorefrontIcon />;
 
@@ -213,7 +215,7 @@ const FindJob = () => {
               <MenuItem value="all">{t("All")}</MenuItem>
               {storeTypes.map((st) => (
                 <MenuItem key={st._id} value={st._id}>
-                  {st.icon || "🏪"} {t(st.name)}
+                  {st.icon || "🏪"} {locName(st) || t(st.name)}
                 </MenuItem>
               ))}
             </Select>
@@ -304,7 +306,7 @@ const FindJob = () => {
                   </Box>
                   <CardContent sx={{ py: 1.2, px: 1.5, flex: 1, minWidth: 0 }}>
                     <Typography sx={{ fontWeight: 900 }} noWrap>
-                      {job?.title || t("Job")}
+                      {locTitle(job) || t("Job")}
                     </Typography>
                     <Box
                       sx={{
@@ -339,7 +341,7 @@ const FindJob = () => {
         maxWidth="sm"
       >
         <DialogTitle sx={{ fontWeight: 900 }}>
-          {selectedJob?.title || t("Job")}
+          {locTitle(selectedJob) || t("Job")}
         </DialogTitle>
         <DialogContent>
           <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
@@ -371,7 +373,7 @@ const FindJob = () => {
             {t("Description")}
           </Typography>
           <Typography sx={{ whiteSpace: "pre-wrap" }} color="text.secondary">
-            {selectedJob?.description || "-"}
+            {locDescription(selectedJob) || "-"}
           </Typography>
         </DialogContent>
       </Dialog>

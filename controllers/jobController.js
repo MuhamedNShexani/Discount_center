@@ -1,5 +1,6 @@
 const Job = require("../models/Job");
 const { normalizeExpiryDate } = require("../utils/normalizeExpiryDate");
+const { storeJob, brandJob, storeTypeList } = require("../utils/refPopulate");
 
 const isAdminUser = (user) => {
   if (!user) return false;
@@ -14,11 +15,15 @@ const getJobs = async (req, res) => {
   try {
     const q = String(req.query.q || "").trim();
     const storeTypeId = String(req.query.storeTypeId || "").trim();
+    const adminList = isAdminUser(req.user);
 
-    const filter = {
-      active: { $ne: false },
-      $or: [{ expireDate: null }, { expireDate: { $gt: new Date() } }],
-    };
+    // Public app: only active, non-expired jobs. Admin (data entry): all rows so expiry status is visible.
+    const filter = adminList
+      ? {}
+      : {
+          active: { $ne: false },
+          $or: [{ expireDate: null }, { expireDate: { $gt: new Date() } }],
+        };
     if (q) {
       const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       filter.$and = [
@@ -35,10 +40,10 @@ const getJobs = async (req, res) => {
       .sort({ createdAt: -1 })
       .populate({
         path: "storeId",
-        select: "name logo storeTypeId",
-        populate: { path: "storeTypeId", select: "name icon" },
+        select: storeJob,
+        populate: { path: "storeTypeId", select: storeTypeList },
       })
-      .populate({ path: "brandId", select: "name logo brandTypeId" })
+      .populate({ path: "brandId", select: brandJob })
       .lean();
 
     // storeType filter is applied only to store-owned jobs (brand jobs bypass)
@@ -69,7 +74,13 @@ const createJob = async (req, res) => {
     }
     const job = await Job.create({
       title: req.body?.title,
+      titleEn: req.body?.titleEn,
+      titleAr: req.body?.titleAr,
+      titleKu: req.body?.titleKu,
       description: req.body?.description,
+      descriptionEn: req.body?.descriptionEn,
+      descriptionAr: req.body?.descriptionAr,
+      descriptionKu: req.body?.descriptionKu,
       gender: req.body?.gender,
       image: req.body?.image || "",
       storeId: req.body?.storeId || null,
@@ -80,10 +91,10 @@ const createJob = async (req, res) => {
     const populated = await Job.findById(job._id)
       .populate({
         path: "storeId",
-        select: "name logo storeTypeId",
-        populate: { path: "storeTypeId", select: "name icon" },
+        select: storeJob,
+        populate: { path: "storeTypeId", select: storeTypeList },
       })
-      .populate({ path: "brandId", select: "name logo brandTypeId" })
+      .populate({ path: "brandId", select: brandJob })
       .lean();
     res.json(populated);
   } catch (err) {
@@ -102,7 +113,20 @@ const updateJob = async (req, res) => {
     const job = await Job.findById(req.params.id);
     if (!job) return res.status(404).json({ message: "Job not found" });
 
-    const fields = ["title", "description", "gender", "image", "expireDate", "active"];
+    const fields = [
+      "title",
+      "titleEn",
+      "titleAr",
+      "titleKu",
+      "description",
+      "descriptionEn",
+      "descriptionAr",
+      "descriptionKu",
+      "gender",
+      "image",
+      "expireDate",
+      "active",
+    ];
     for (const f of fields) {
       if (req.body?.[f] !== undefined) {
         if (f === "expireDate") {
@@ -133,10 +157,10 @@ const updateJob = async (req, res) => {
     const populated = await Job.findById(job._id)
       .populate({
         path: "storeId",
-        select: "name logo storeTypeId",
-        populate: { path: "storeTypeId", select: "name icon" },
+        select: storeJob,
+        populate: { path: "storeTypeId", select: storeTypeList },
       })
-      .populate({ path: "brandId", select: "name logo brandTypeId" })
+      .populate({ path: "brandId", select: brandJob })
       .lean();
     res.json(populated);
   } catch (err) {

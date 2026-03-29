@@ -21,6 +21,8 @@ import { Link, useNavigate } from "react-router-dom";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
+import { aiAPI } from "../services/api";
+
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import ArrowBack from "@mui/icons-material/ArrowBack";
@@ -36,11 +38,13 @@ import {
   expiryChipBg,
 } from "../utils/expiryDate";
 import ProductViewTracker from "../components/ProductViewTracker";
+import { useLocalizedContent } from "../hooks/useLocalizedContent";
 
 const FavouritesPage = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { locName } = useLocalizedContent();
   const { getLikedProducts, toggleLike, isProductLiked, user, recordView } =
     useUserTracking();
   const [products, setProducts] = useState([]);
@@ -166,10 +170,10 @@ const FavouritesPage = () => {
   const getMarketInfo = (product) => {
     const store = product.storeId;
     const brand = product.brandId;
-    if (store?.name || store?.logo)
-      return { name: store.name, logo: store.logo };
-    if (brand?.name || brand?.logo)
-      return { name: brand.name, logo: brand.logo };
+    if (locName(store) || store?.logo)
+      return { name: locName(store), logo: store.logo };
+    if (locName(brand) || brand?.logo)
+      return { name: locName(brand), logo: brand.logo };
     return null;
   };
 
@@ -384,7 +388,7 @@ const FavouritesPage = () => {
                       <CardMedia
                         component="img"
                         image={resolveMediaUrl(product.image)}
-                        alt={product.name}
+                        alt={locName(product)}
                         sx={{
                           height: 100,
                           objectFit: "contain",
@@ -480,7 +484,7 @@ const FavouritesPage = () => {
                         minHeight: "2.5em", // reserve space for 2 lines
                       }}
                     >
-                      {product.name}
+                      {locName(product)}
                     </Typography>
                     <Box
                       sx={{

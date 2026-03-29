@@ -38,6 +38,7 @@ import NavigationBar from "./NavigationBar";
 import BottomNavigationBar from "./components/BottomNavigation";
 import { AuthProvider } from "./context/AuthContext";
 import { CityFilterProvider } from "./context/CityFilterContext";
+import { DataLanguageProvider } from "./context/DataLanguageContext";
 import { AppSettingsProvider } from "./context/AppSettingsContext";
 import { NotificationProvider } from "./context/NotificationContext";
 import LoginPage from "./pages/LoginPage";
@@ -307,16 +308,18 @@ const Root = () => (
   <ErrorBoundary>
     <AuthProvider>
       <CityFilterProvider>
-        <AppSettingsProvider>
-          <ActiveThemeProvider>
-            <NotificationProvider>
-              <Router>
-                <ScrollToTop />
-                <App />
-              </Router>
-            </NotificationProvider>
-          </ActiveThemeProvider>
-        </AppSettingsProvider>
+        <DataLanguageProvider>
+          <AppSettingsProvider>
+            <ActiveThemeProvider>
+              <NotificationProvider>
+                <Router>
+                  <ScrollToTop />
+                  <App />
+                </Router>
+              </NotificationProvider>
+            </ActiveThemeProvider>
+          </AppSettingsProvider>
+        </DataLanguageProvider>
       </CityFilterProvider>
     </AuthProvider>
   </ErrorBoundary>

@@ -269,6 +269,11 @@ export const translationAPI = {
   getAll: () => api.get("/translations"),
 };
 
+// AI translation (English, Arabic, Kurdish Sorani) — POST /api/ai/translate
+export const aiAPI = {
+  translate: (body) => api.post("/ai/translate", body),
+};
+
 // Search API calls
 export const searchAPI = {
   search: (q, city = null) =>
@@ -288,6 +293,8 @@ export const adminAPI = {
   updateUser: (id, data) => api.put(`/admin/users/${id}`, data),
   deleteUser: (id) => api.delete(`/admin/users/${id}`),
   deleteExpiredProducts: () => api.delete("/admin/products/expired"),
+  translateMissingProducts: () =>
+    api.post("/admin/products/translate-missing"),
   upsertTranslation: (data) => api.put("/admin/translations", data),
   deleteTranslation: (id) => api.delete(`/admin/translations/${id}`),
 };

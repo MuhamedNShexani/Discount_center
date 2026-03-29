@@ -62,6 +62,7 @@ import { useCityFilter } from "../context/CityFilterContext";
 import useIsMobileLayout from "../hooks/useIsMobileLayout";
 import { resolveMediaUrl } from "../utils/mediaUrl";
 import { isExpiryStillValid } from "../utils/expiryDate";
+import { useLocalizedContent } from "../hooks/useLocalizedContent";
 
 const ProductCategory = () => {
   const theme = useTheme();
@@ -69,6 +70,7 @@ const ProductCategory = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { dataLanguage, locName, locDescription } = useLocalizedContent();
   const { toggleLike, isProductLiked, recordView } = useUserTracking();
   const { selectedCity } = useCityFilter();
 
@@ -169,7 +171,7 @@ const ProductCategory = () => {
   useEffect(() => {
     applyFilters();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [products, selectedCategoryType, filters, selectedCity]);
+  }, [products, selectedCategoryType, filters, selectedCity, dataLanguage]);
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -202,8 +204,10 @@ const ProductCategory = () => {
             typeof state.category === "string"
               ? state.category
               : state.category?.name;
+          const stateCatId = state.category?._id;
           let matchedCategory = response.data.find(
             (c) =>
+              (stateCatId && String(c._id) === String(stateCatId)) ||
               c.name === categoryName ||
               c.name?.toLowerCase() === categoryName?.toLowerCase(),
           );
@@ -212,6 +216,7 @@ const ProductCategory = () => {
             const allCats = allRes.data || [];
             matchedCategory = allCats.find(
               (c) =>
+                (stateCatId && String(c._id) === String(stateCatId)) ||
                 c.name === categoryName ||
                 c.name?.toLowerCase() === categoryName?.toLowerCase(),
             );
@@ -229,8 +234,10 @@ const ProductCategory = () => {
                 typeof state.categoryType === "string"
                   ? state.categoryType
                   : state.categoryType?.name;
+              const stateTypeId = state.categoryType?._id;
               const matchedType = types.find(
                 (t) =>
+                  (stateTypeId && String(t._id) === String(stateTypeId)) ||
                   t.name === typeName ||
                   t.name?.toLowerCase() === typeName?.toLowerCase(),
               );
@@ -384,19 +391,19 @@ const ProductCategory = () => {
 
     if (filters.name) {
       filtered = filtered.filter((product) =>
-        product.name?.toLowerCase().includes(filters.name.toLowerCase()),
+        locName(product).toLowerCase().includes(filters.name.toLowerCase()),
       );
     }
 
     if (filters.brand) {
       filtered = filtered.filter(
-        (product) => product.brandId?.name === filters.brand,
+        (product) => locName(product.brandId) === filters.brand,
       );
     }
 
     if (filters.store) {
       filtered = filtered.filter(
-        (product) => product.storeId?.name === filters.store,
+        (product) => locName(product.storeId) === filters.store,
       );
     }
 
@@ -440,14 +447,14 @@ const ProductCategory = () => {
 
   const getBrands = () => {
     const brands = products
-      .map((product) => product.brandId?.name)
+      .map((product) => locName(product.brandId))
       .filter(Boolean);
     return [...new Set(brands)];
   };
 
   const getStores = () => {
     const stores = products
-      .map((product) => product.storeId?.name)
+      .map((product) => locName(product.storeId))
       .filter(Boolean);
     return [...new Set(stores)];
   };
@@ -490,7 +497,7 @@ const ProductCategory = () => {
     const categoryType = category.types.find(
       (type) => type._id === categoryTypeId,
     );
-    return categoryType ? categoryType.name : "";
+    return categoryType ? locName(categoryType) : "";
   };
 
   const renderMobileLayout = () => (
@@ -562,7 +569,7 @@ const ProductCategory = () => {
                 <Typography
                   component="span"
                   role="img"
-                  aria-label={t(type.name)}
+                  aria-label={locName(type) || t(type.name)}
                 >
                   {type.icon || "🏪"}
                 </Typography>
@@ -575,7 +582,7 @@ const ProductCategory = () => {
                   fontSize: "0.875rem",
                 }}
               >
-                {t(type.name)}
+                {locName(type) || t(type.name)}
               </Typography>
             </Box>
           </Button>
@@ -635,10 +642,10 @@ const ProductCategory = () => {
                         mb: 1,
                       }}
                     >
-                      {category.icon || category.name?.charAt(0)}
+                      {category.icon || (locName(category) || "").charAt(0)}
                     </Avatar>
                     <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
-                      {category.name}
+                      {locName(category)}
                     </Typography>
                   </Card>
                 </Box>
@@ -682,7 +689,7 @@ const ProductCategory = () => {
                         theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
                     }}
                   >
-                    {selectedCategory?.name}
+                    {locName(selectedCategory)}
                   </Typography>
                   <Button
                     size="small"
@@ -725,7 +732,7 @@ const ProductCategory = () => {
                       {categoryTypes.map((type) => (
                         <Chip
                           key={type._id}
-                          label={type.name}
+                          label={locName(type)}
                           onClick={() => setSelectedCategoryType(type)}
                           variant={
                             selectedCategoryType?._id === type._id
@@ -807,7 +814,7 @@ const ProductCategory = () => {
                                 <CardMedia
                                   component="img"
                                   image={resolveMediaUrl(product.image)}
-                                  alt={product.name || "Product image"}
+                                  alt={locName(product) || "Product image"}
                                   sx={{
                                     height: 130,
                                     objectFit: "contain",
@@ -883,7 +890,7 @@ const ProductCategory = () => {
                                 overflow: "hidden",
                               }}
                             >
-                              {product.name || "\u00A0"}
+                              {locName(product) || "\u00A0"}
                             </Typography>
 
                             {/* Category type chip or N/A */}
@@ -908,13 +915,13 @@ const ProductCategory = () => {
                       </Box> */}
 
                             {/* Optional meta */}
-                            {product.storeId?.name && (
+                            {product.storeId && locName(product.storeId) && (
                               <Typography
                                 variant="caption"
                                 color="var(--color-primary)"
                                 sx={{ display: "block", textAlign: "center" }}
                               >
-                                {product.storeId.name}
+                                {locName(product.storeId)}
                               </Typography>
                             )}
 
@@ -1057,7 +1064,7 @@ const ProductCategory = () => {
                     },
                   }}
                 >
-                  {type.icon || "🏪"} {t(type.name)}
+                  {type.icon || "🏪"} {locName(type) || t(type.name)}
                 </Button>
               ),
             )}
@@ -1154,9 +1161,9 @@ const ProductCategory = () => {
                         mr: 1,
                       }}
                     >
-                      {category.icon || category.name.charAt(0)}
+                      {category.icon || (locName(category) || "").charAt(0)}
                     </Avatar>
-                    {category.name}
+                    {locName(category)}
                   </Button>
                 ))}
               </Box>
@@ -1192,7 +1199,7 @@ const ProductCategory = () => {
                       theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
                   }}
                 />
-                {t("Types")} - {selectedCategory.name}
+                {t("Types")} - {locName(selectedCategory)}
               </Typography>
               <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
                 <Button
@@ -1259,7 +1266,7 @@ const ProductCategory = () => {
                       },
                     }}
                   >
-                    {type.name}
+                    {locName(type)}
                   </Button>
                 ))}
               </Box>
@@ -1335,7 +1342,7 @@ const ProductCategory = () => {
                               <CardMedia
                                 component="img"
                                 image={resolveMediaUrl(product.image)}
-                                alt={product.name || "Product image"}
+                                alt={locName(product) || "Product image"}
                                 sx={{
                                   height: 180,
                                   objectFit: "contain",
@@ -1410,7 +1417,7 @@ const ProductCategory = () => {
                                   : "black",
                             }}
                           >
-                            {product.name || "\u00A0"}
+                            {locName(product) || "\u00A0"}
                           </Typography>
 
                           {/* {product.categoryTypeId && (
@@ -1431,13 +1438,13 @@ const ProductCategory = () => {
                         </Box>
                       )} */}
 
-                          {product.storeId?.name && (
+                          {product.storeId && locName(product.storeId) && (
                             <Typography
                               variant="caption"
                               color="text.secondary"
                               sx={{ display: "block", textAlign: "center" }}
                             >
-                              {product.storeId.name}
+                              {locName(product.storeId)}
                             </Typography>
                           )}
 
@@ -1661,7 +1668,7 @@ const ProductCategory = () => {
                     component="img"
                     height="200"
                     image={resolveMediaUrl(selectedProduct.image)}
-                    alt={selectedProduct.name}
+                    alt={locName(selectedProduct)}
                     sx={{ objectFit: "contain", borderRadius: 1 }}
                   />
                 ) : (
@@ -1683,16 +1690,17 @@ const ProductCategory = () => {
               </Grid>
               <Grid item xs={12} md={6}>
                 <Typography variant="h5" gutterBottom>
-                  {selectedProduct.name}
+                  {locName(selectedProduct)}
                 </Typography>
 
-                {selectedProduct.description && (
+                {locDescription(selectedProduct) && (
                   <Typography variant="body1" color="text.secondary" paragraph>
-                    {selectedProduct.description}
+                    {locDescription(selectedProduct)}
                   </Typography>
                 )}
 
-                {selectedProduct.brandId?.name && (
+                {selectedProduct.brandId &&
+                  locName(selectedProduct.brandId) && (
                   <Typography
                     variant="body1"
                     gutterBottom
@@ -1702,11 +1710,12 @@ const ProductCategory = () => {
                       navigate(`/brands/${selectedProduct.brandId._id}`);
                     }}
                   >
-                    <strong>Brand:</strong> {selectedProduct.brandId.name}
+                    <strong>Brand:</strong> {locName(selectedProduct.brandId)}
                   </Typography>
                 )}
 
-                {selectedProduct.storeId?.name && (
+                {selectedProduct.storeId &&
+                  locName(selectedProduct.storeId) && (
                   <Typography
                     variant="body1"
                     gutterBottom
@@ -1717,7 +1726,7 @@ const ProductCategory = () => {
                     }}
                   >
                     <strong>{t("Store")}:</strong>{" "}
-                    {selectedProduct.storeId.name}
+                    {locName(selectedProduct.storeId)}
                   </Typography>
                 )}
 

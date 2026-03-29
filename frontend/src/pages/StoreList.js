@@ -24,9 +24,10 @@ import Loader from "../components/Loader";
 import { useTranslation } from "react-i18next";
 import { useCityFilter } from "../context/CityFilterContext";
 import { resolveMediaUrl } from "../utils/mediaUrl";
+import { useLocalizedContent } from "../hooks/useLocalizedContent";
 
 // ------------------ Reusable StoreCard ------------------
-const StoreCard = ({ store, index, theme, t, onClick }) => {
+const StoreCard = ({ store, index, theme, t, onClick, locName }) => {
   return (
     <Fade in={true} timeout={300 + index * 100}>
       <Card
@@ -178,7 +179,7 @@ const StoreCard = ({ store, index, theme, t, onClick }) => {
               whiteSpace: "nowrap",
             }}
           >
-            {store.name}
+            {locName(store)}
           </Typography>
 
           {store.storeType && (
@@ -248,6 +249,7 @@ const StoreList = () => {
   const [searchParams] = useSearchParams();
   const theme = useTheme();
   const { t } = useTranslation();
+  const { locName } = useLocalizedContent();
   const { selectedCity } = useCityFilter();
 
   const [stores, setStores] = useState([]);
@@ -454,7 +456,9 @@ const StoreList = () => {
           (tItem) => (
             <Chip
               key={tItem._id}
-              label={`${tItem.icon || "🏪"} ${t(tItem.name)}`}
+              label={`${tItem.icon || "🏪"} ${
+                tItem._id === "all" ? t(tItem.name) : locName(tItem) || t(tItem.name)
+              }`}
               onClick={() => setSelectedTypeId(tItem._id)}
               color={selectedTypeId === tItem._id ? "primary" : "default"}
               variant={selectedTypeId === tItem._id ? "filled" : "outlined"}
@@ -498,6 +502,7 @@ const StoreList = () => {
             index={index}
             theme={theme}
             t={t}
+            locName={locName}
             onClick={() => handleStoreClick(store)}
           />
         ))}

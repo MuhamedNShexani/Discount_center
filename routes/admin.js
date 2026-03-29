@@ -11,6 +11,7 @@ const {
   updateUser,
   deleteUser,
   deleteExpiredProducts,
+  translateMissingProductLocales,
 } = require("../controllers/adminController");
 const { sendNotification } = require("../controllers/adminNotificationController");
 const { upsertTranslation, deleteTranslation } = require("../controllers/translationController");
@@ -42,6 +43,13 @@ router.delete("/users/:id", protect, deleteUser);
 
 // Delete expired products - admin-only, requires auth
 router.delete("/products/expired", protect, deleteExpiredProducts);
+
+// Bulk translate product names to EN/AR/KU (skips rows that already have nameEn)
+router.post(
+  "/products/translate-missing",
+  protect,
+  translateMissingProductLocales,
+);
 
 // UI translations (database overrides; list via GET /api/translations)
 router.put("/translations", protect, upsertTranslation);

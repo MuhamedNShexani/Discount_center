@@ -85,6 +85,7 @@ import {
   formatExpiryExpiresPrefixedLabel,
   expiryGiftCardBg,
 } from "../utils/expiryDate";
+import { useLocalizedContent } from "../hooks/useLocalizedContent";
 
 /** When scrolled near this row, load the next chunk for that product-type section (same idea as MainPage store sentinel). */
 const ProductTypeLoadSentinel = ({ typeKey, hasMore, onLoadMore }) => {
@@ -116,11 +117,7 @@ const ProductTypeLoadSentinel = ({ typeKey, hasMore, onLoadMore }) => {
 
   if (!hasMore) return null;
   return (
-    <Box
-      ref={ref}
-      sx={{ width: "100%", height: 12, mt: 1 }}
-      aria-hidden
-    />
+    <Box ref={ref} sx={{ width: "100%", height: 12, mt: 1 }} aria-hidden />
   );
 };
 
@@ -130,6 +127,7 @@ const BrandProfile = () => {
   const [searchParams] = useSearchParams();
   const theme = useTheme();
   const { t } = useTranslation();
+  const { locName, locDescription, locTitle } = useLocalizedContent();
   const { isAuthenticated } = useAuth();
   const { toggleLike, isProductLiked, recordView } = useUserTracking();
 
@@ -316,32 +314,32 @@ const BrandProfile = () => {
   // Get product category type name from categoryId (populated) and categoryTypeId
   const getProductCategoryTypeName = (product) => {
     if (!product.categoryId || !product.categoryTypeId) {
-      return product.categoryId?.name || t("Uncategorized");
+      return locName(product.categoryId) || t("Uncategorized");
     }
     const category = product.categoryId;
     if (!category.types || !Array.isArray(category.types)) {
-      return category.name || t("Uncategorized");
+      return locName(category) || t("Uncategorized");
     }
     const categoryType =
       category.types.find(
         (type) => type._id?.toString() === product.categoryTypeId?.toString(),
       ) || category.types.find((type) => type.name === product.categoryTypeId);
     return categoryType
-      ? categoryType.name
-      : category.name || t("Uncategorized");
+      ? locName(categoryType)
+      : locName(category) || t("Uncategorized");
   };
 
   // Filter products based on current filters
   const getFilteredProducts = () => {
     return products.filter((product) => {
-      const matchesName = product.name
+      const matchesName = locName(product)
         .toLowerCase()
         .includes(filters.name.toLowerCase());
       const matchesStore =
         !filters.store ||
         (product.storeId &&
-          product.storeId.name &&
-          product.storeId.name
+          locName(product.storeId) &&
+          locName(product.storeId)
             .toLowerCase()
             .includes(filters.store.toLowerCase()));
       const matchesBarcode =
@@ -395,8 +393,8 @@ const BrandProfile = () => {
   const getStores = () => {
     const stores = products
       .map((product) => product.storeId)
-      .filter((store) => store && store.name)
-      .map((store) => store.name);
+      .filter((store) => store && locName(store))
+      .map((store) => locName(store));
     return [...new Set(stores)].sort();
   };
 
@@ -515,7 +513,7 @@ const BrandProfile = () => {
           <CardMedia
             component="img"
             image={resolveMediaUrl(gift.image)}
-            alt={gift.description}
+            alt={locDescription(gift)}
             sx={{
               width: "100%",
               height: "100%",
@@ -551,7 +549,7 @@ const BrandProfile = () => {
               WebkitBoxOrient: "vertical",
             }}
           >
-            {gift.description}
+            {locDescription(gift)}
           </Typography>
 
           {/* Store Info */}
@@ -612,7 +610,7 @@ const BrandProfile = () => {
                         },
                       }}
                     >
-                      {store.name}
+                      {locName(store)}
                     </Typography>
                   ))}
                 </Box>
@@ -662,268 +660,267 @@ const BrandProfile = () => {
       >
         <Fade in={true} timeout={300 + index * 50}>
           <Card
-          component={Link}
-          to={`/products/${product._id}`}
-          sx={{
-            height: { xs: "320px", sm: "380px" },
-            width: { xs: "160px", sm: "220px", md: "280px" },
-            maxWidth: { xs: "160px", sm: "220px", md: "280px" },
-            minWidth: { xs: "160px", sm: "220px", md: "280px" },
-            textDecoration: "none",
-            borderRadius: 2,
-            overflow: "hidden",
-            display: "flex",
-            flexDirection: "column",
-            flexShrink: 0,
-            background: "white",
-            border: "1px solid #e2e8f0",
-            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-            "&:hover": {
-              transform: "translateY(-4px)",
-              boxShadow: "0 12px 24px rgba(0,0,0,0.15)",
-            },
-          }}
-        >
-          {/* Product Image */}
-          <Box
+            component={Link}
+            to={`/products/${product._id}`}
             sx={{
-              position: "relative",
+              height: { xs: "320px", sm: "380px" },
+              width: { xs: "160px", sm: "220px", md: "280px" },
+              maxWidth: { xs: "160px", sm: "220px", md: "280px" },
+              minWidth: { xs: "160px", sm: "220px", md: "280px" },
+              textDecoration: "none",
+              borderRadius: 2,
               overflow: "hidden",
-              height: { xs: "180px", sm: "250px", md: "250px" },
-              flexShrink: 0,
-              backgroundColor: "#f8f9fa",
-            }}
-          >
-            {product.image ? (
-              <CardMedia
-                component="img"
-                height="250"
-                image={resolveMediaUrl(product.image)}
-                alt={product.name}
-                sx={{
-                  objectFit: "contain",
-                  width: "100%",
-                  height: "100%",
-                  transition: "transform 0.3s ease",
-                  "&:hover": { transform: "scale(1.05)" },
-                }}
-              />
-            ) : (
-              <Box
-                sx={{
-                  height: "100%",
-                  width: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  background: "#f8f9fa",
-                }}
-              >
-                <StorefrontIcon
-                  sx={{
-                    fontSize: 60,
-                    color: "#a0aec0",
-                  }}
-                />
-              </Box>
-            )}
-
-            {/* View Count Badge - Top Right */}
-            {product.viewCount > 0 && (
-              <Box
-                sx={{
-                  position: "absolute",
-                  top: 8,
-                  right: 8,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 0.5,
-                  backgroundColor: "rgba(0, 0, 0, 0.7)",
-                  color: "white",
-                  px: 1,
-                  py: 0.5,
-                  borderRadius: 1,
-                  fontSize: "0.7rem",
-                }}
-              >
-                <VisibilityIcon sx={{ fontSize: "0.8rem" }} />
-                {product.viewCount}
-              </Box>
-            )}
-          </Box>
-
-          {/* Product Content */}
-          <CardContent
-            sx={{
-              p: { xs: 1.5, md: 2 },
-              flex: 1,
               display: "flex",
               flexDirection: "column",
-              position: "relative",
+              flexShrink: 0,
+              background: "white",
+              border: "1px solid #e2e8f0",
+              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+              "&:hover": {
+                transform: "translateY(-4px)",
+                boxShadow: "0 12px 24px rgba(0,0,0,0.15)",
+              },
             }}
           >
-            {/* Product Name */}
-            <Typography
-              variant="h6"
-              sx={{
-                color: "#000000",
-                fontWeight: 600,
-                fontSize: { xs: "0.9rem", sm: "1rem" },
-                textAlign: "center",
-                mb: 1,
-                lineHeight: 1.3,
-                minHeight: "2em",
-                display: "-webkit-box",
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: "vertical",
-                overflow: "hidden",
-              }}
-            >
-              {product.name}
-            </Typography>
-
-            {/* Store name if available */}
-            {product.storeId && product.storeId.name && (
-              <Typography
-                variant="body2"
-                sx={{
-                  color: "#666",
-                  fontSize: "0.8rem",
-                  mb: 1,
-                  fontStyle: "italic",
-                  textAlign: "center",
-                }}
-              >
-                {product.storeId.name}
-              </Typography>
-            )}
-
-            {/* Pricing Section */}
-            {showPrice && (
-              <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  mb: 1,
-                }}
-              >
-                {product.previousPrice &&
-                  product.previousPrice > product.newPrice && (
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        textDecoration: "line-through",
-                        color: "red",
-                        fontSize: { xs: "0.8rem", sm: "0.9rem" },
-                        fontWeight: 500,
-                      }}
-                    >
-                      {formatPrice(product.previousPrice)}
-                    </Typography>
-                  )}
-                <Typography
-                  variant="h6"
-                  sx={{
-                    color: "var(--brand-light-orange)",
-                    fontWeight: 700,
-                    fontSize: { xs: "1.1rem", sm: "1.3rem" },
-                  }}
-                >
-                  {formatPrice(product.newPrice)}
-                </Typography>
-              </Box>
-            )}
-
-            {/* Bottom Section with Discount Badge and Like Button */}
+            {/* Product Image */}
             <Box
               sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-end",
-                mt: "auto",
+                position: "relative",
+                overflow: "hidden",
+                height: { xs: "140px", sm: "200px", md: "200px" },
+                flexShrink: 0,
+                backgroundColor: "#f8f9fa",
               }}
             >
-              {/* Discount Badge - Bottom Left */}
-              {(discount > 0 || product.isDiscount) && (
-                <Chip
-                  label={discount > 0 ? `-${discount}%` : t("Discount")}
+              {product.image ? (
+                <CardMedia
+                  component="img"
+                  image={resolveMediaUrl(product.image)}
+                  alt={locName(product)}
                   sx={{
-                    backgroundColor: "#e53e3e",
-                    color: "white",
-                    fontWeight: 700,
-                    fontSize: "0.75rem",
-                    height: "24px",
+                    objectFit: "contain",
+                    width: "100%",
+                    height: "100%",
+                    transition: "transform 0.3s ease",
+                    "&:hover": { transform: "scale(1.05)" },
                   }}
                 />
+              ) : (
+                <Box
+                  sx={{
+                    height: "100%",
+                    width: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: "#f8f9fa",
+                  }}
+                >
+                  <StorefrontIcon
+                    sx={{
+                      fontSize: 60,
+                      color: "#a0aec0",
+                    }}
+                  />
+                </Box>
               )}
 
-              {/* Like Button and Count - Bottom Right */}
-              <Box
+              {/* View Count Badge - Top Right */}
+              {product.viewCount > 0 && (
+                <Box
+                  sx={{
+                    position: "absolute",
+                    top: 8,
+                    right: 8,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 0.5,
+                    backgroundColor: "rgba(0, 0, 0, 0.7)",
+                    color: "white",
+                    px: 1,
+                    py: 0.5,
+                    borderRadius: 1,
+                    fontSize: "0.7rem",
+                  }}
+                >
+                  <VisibilityIcon sx={{ fontSize: "0.8rem" }} />
+                  {product.viewCount}
+                </Box>
+              )}
+            </Box>
+
+            {/* Product Content */}
+            <CardContent
+              sx={{
+                p: { xs: 1.5, md: 2 },
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                position: "relative",
+              }}
+            >
+              {/* Product Name */}
+              <Typography
+                variant="h6"
                 sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 0.5,
+                  color: "#000000",
+                  fontWeight: 600,
+                  fontSize: { xs: "0.9rem", sm: "1rem" },
+                  textAlign: "center",
+                  mb: 1,
+                  lineHeight: 1.3,
+                  minHeight: "2em",
+                  display: "-webkit-box",
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
                 }}
               >
+                {locName(product)}
+              </Typography>
+
+              {/* Store name if available */}
+              {product.storeId && locName(product.storeId) && (
                 <Typography
-                  variant="caption"
+                  variant="body2"
                   sx={{
                     color: "#666",
                     fontSize: "0.8rem",
+                    mb: 1,
+                    fontStyle: "italic",
+                    textAlign: "center",
+                  }}
+                >
+                  {locName(product.storeId)}
+                </Typography>
+              )}
+
+              {/* Pricing Section */}
+              {showPrice && (
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    mb: 1,
+                  }}
+                >
+                  {/* {product.previousPrice &&
+                    product.previousPrice > product.newPrice && (
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          textDecoration: "line-through",
+                          color: "red",
+                          fontSize: { xs: "0.8rem", sm: "0.9rem" },
+                          fontWeight: 500,
+                        }}
+                      >
+                        {formatPrice(product.previousPrice)}
+                      </Typography>
+                    )} */}
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      color: "var(--brand-light-orange)",
+                      fontWeight: 700,
+                      fontSize: { xs: "1.1rem", sm: "1.3rem" },
+                    }}
+                  >
+                    {formatPrice(product.newPrice)}
+                  </Typography>
+                </Box>
+              )}
+
+              {/* Bottom Section with Discount Badge and Like Button */}
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-end",
+                  mt: "auto",
+                }}
+              >
+                {/* Discount Badge - Bottom Left */}
+                {(discount > 0 || product.isDiscount) && (
+                  <Chip
+                    label={discount > 0 ? `-${discount}%` : t("Discount")}
+                    sx={{
+                      backgroundColor: "#e53e3e",
+                      color: "white",
+                      fontWeight: 700,
+                      fontSize: "0.75rem",
+                      height: "24px",
+                    }}
+                  />
+                )}
+
+                {/* Like Button and Count - Bottom Right */}
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 0.5,
+                  }}
+                >
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: "#666",
+                      fontSize: "0.8rem",
+                      fontWeight: 500,
+                    }}
+                  >
+                    {likeCounts[product._id] || product.likeCount || 0}
+                  </Typography>
+                  <IconButton
+                    onClick={(e) => handleLikeClick(product._id, e)}
+                    disabled={likeLoading[product._id]}
+                    sx={{
+                      color:
+                        likeStates[product._id] || isProductLiked(product._id)
+                          ? "#e53e3e"
+                          : "#666",
+                      "&:hover": {
+                        color: "#e53e3e",
+                        transform: "scale(1.1)",
+                      },
+                      transition: "all 0.2s ease",
+                      p: 0.5,
+                    }}
+                    size="small"
+                  >
+                    {likeStates[product._id] || isProductLiked(product._id) ? (
+                      <FavoriteIcon sx={{ fontSize: "1.2rem" }} />
+                    ) : (
+                      <FavoriteBorderIcon sx={{ fontSize: "1.2rem" }} />
+                    )}
+                  </IconButton>
+                </Box>
+              </Box>
+
+              {/* Expiry Date - Bottom */}
+              {product.expireDate && (
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "red",
+                    fontSize: { xs: "0.7rem", sm: "0.8rem" },
+                    textAlign: "center",
+                    mt: 1,
                     fontWeight: 500,
                   }}
                 >
-                  {likeCounts[product._id] || product.likeCount || 0}
+                  {t("Expire Date")}:{" "}
+                  {new Date(product.expireDate).toLocaleDateString("ar-SY", {
+                    year: "numeric",
+                    month: "numeric",
+                    day: "numeric",
+                  })}
                 </Typography>
-                <IconButton
-                  onClick={(e) => handleLikeClick(product._id, e)}
-                  disabled={likeLoading[product._id]}
-                  sx={{
-                    color:
-                      likeStates[product._id] || isProductLiked(product._id)
-                        ? "#e53e3e"
-                        : "#666",
-                    "&:hover": {
-                      color: "#e53e3e",
-                      transform: "scale(1.1)",
-                    },
-                    transition: "all 0.2s ease",
-                    p: 0.5,
-                  }}
-                  size="small"
-                >
-                  {likeStates[product._id] || isProductLiked(product._id) ? (
-                    <FavoriteIcon sx={{ fontSize: "1.2rem" }} />
-                  ) : (
-                    <FavoriteBorderIcon sx={{ fontSize: "1.2rem" }} />
-                  )}
-                </IconButton>
-              </Box>
-            </Box>
-
-            {/* Expiry Date - Bottom */}
-            {product.expireDate && (
-              <Typography
-                variant="caption"
-                sx={{
-                  color: "red",
-                  fontSize: { xs: "0.7rem", sm: "0.8rem" },
-                  textAlign: "center",
-                  mt: 1,
-                  fontWeight: 500,
-                }}
-              >
-                {t("Expire Date")}:{" "}
-                {new Date(product.expireDate).toLocaleDateString("ar-SY", {
-                  year: "numeric",
-                  month: "numeric",
-                  day: "numeric",
-                })}
-              </Typography>
-            )}
-          </CardContent>
-        </Card>
+              )}
+            </CardContent>
+          </Card>
         </Fade>
       </ProductViewTracker>
     );
@@ -1404,7 +1401,7 @@ const BrandProfile = () => {
             {brand.logo ? (
               <Avatar
                 src={resolveMediaUrl(brand.logo)}
-                alt={brand.name}
+                alt={locName(brand)}
                 sx={{
                   width: 60,
                   height: 60,
@@ -1435,7 +1432,7 @@ const BrandProfile = () => {
                 position: "relative",
               }}
             >
-              {brand.name}
+              {locName(brand)}
               {/* {brand.isVip && (
                 <Box
                   sx={{
@@ -1481,7 +1478,7 @@ const BrandProfile = () => {
 
             <Box sx={{ mb: 1 }}>{renderContactRow()}</Box>
 
-            {brand.description && (
+            {locDescription(brand) && (
               <Typography
                 variant="body2"
                 sx={{
@@ -1493,7 +1490,7 @@ const BrandProfile = () => {
                   color: "white",
                 }}
               >
-                {brand.description}
+                {locDescription(brand)}
               </Typography>
             )}
 
@@ -1565,7 +1562,7 @@ const BrandProfile = () => {
                 {brand.logo ? (
                   <Avatar
                     src={resolveMediaUrl(brand.logo)}
-                    alt={brand.name}
+                    alt={locName(brand)}
                     sx={{
                       width: { xs: 80, sm: 100, md: 150 },
                       height: { xs: 80, sm: 100, md: 150 },
@@ -1604,7 +1601,7 @@ const BrandProfile = () => {
                     position: "relative",
                   }}
                 >
-                  {brand.name}
+                  {locName(brand)}
                   {/* {brand.isVip && (
                     <Box
                       sx={{
@@ -1663,7 +1660,7 @@ const BrandProfile = () => {
                   </Box>
                 </Box> */}
 
-                {brand.description && (
+                {locDescription(brand) && (
                   <Typography
                     variant="body1"
                     sx={{
@@ -1676,7 +1673,7 @@ const BrandProfile = () => {
                       color: "white",
                     }}
                   >
-                    {brand.description}
+                    {locDescription(brand)}
                   </Typography>
                 )}
 
@@ -1872,7 +1869,7 @@ const BrandProfile = () => {
                           sx={{ color: "white", fontWeight: 700 }}
                           noWrap
                         >
-                          {reel?.title || t("Reel")}
+                          {locTitle(reel) || t("Reel")}
                         </Typography>
                       </Box>
                     </Box>
@@ -1905,7 +1902,7 @@ const BrandProfile = () => {
         maxWidth="sm"
       >
         <DialogTitle sx={{ fontWeight: 900 }}>
-          {selectedJob?.title || t("Job")}
+          {locTitle(selectedJob) || t("Job")}
         </DialogTitle>
         <DialogContent>
           <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
@@ -1938,8 +1935,8 @@ const BrandProfile = () => {
                     : t("Any")}
               </Typography>
               <Typography sx={{ fontWeight: 800 }}>
-                {selectedJob?.storeId?.name ||
-                  selectedJob?.brandId?.name ||
+                {locName(selectedJob?.storeId) ||
+                  locName(selectedJob?.brandId) ||
                   "-"}
               </Typography>
             </Box>
@@ -1949,7 +1946,7 @@ const BrandProfile = () => {
             {t("Description")}
           </Typography>
           <Typography sx={{ whiteSpace: "pre-wrap" }} color="text.secondary">
-            {selectedJob?.description || "-"}
+            {locDescription(selectedJob) || "-"}
           </Typography>
         </DialogContent>
       </Dialog>
@@ -1978,7 +1975,7 @@ const BrandProfile = () => {
                 <Box display="flex" justifyContent="center" mb={2}>
                   <img
                     src={resolveMediaUrl(selectedGift.image)}
-                    alt={selectedGift.name || "Gift image"}
+                    alt={locName(selectedGift) || "Gift image"}
                     style={{
                       maxWidth: 220,
                       maxHeight: 220,
@@ -1996,14 +1993,14 @@ const BrandProfile = () => {
                   align="center"
                   gutterBottom
                 >
-                  {selectedGift.description}
+                  {locDescription(selectedGift)}
                 </Typography>
 
                 {selectedGift.brandId && (
                   <Box display="flex" alignItems="center" gap={1}>
                     <Business fontSize="small" color="action" />
                     <Typography variant="body2" color="text.secondary">
-                      {t("Brand")}: {selectedGift.brandId.name}
+                      {t("Brand")}: {locName(selectedGift.brandId)}
                     </Typography>
                   </Box>
                 )}

@@ -31,7 +31,8 @@ import { searchAPI, adAPI } from "../services/api";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 import { useCityFilter } from "../context/CityFilterContext";
-import { getLocalizedName } from "../utils/localize";
+import { getLocalizedField } from "../utils/localize";
+import { useDataLanguage } from "../context/DataLanguageContext";
 import { getDeviceId } from "../utils/deviceId";
 import {
   getSearchHistory,
@@ -42,10 +43,26 @@ import {
 import { resolveMediaUrl } from "../utils/mediaUrl";
 import { isExpiryStillValid } from "../utils/expiryDate";
 
+/** Opens Shopping draft cart drawer (EN/KU/AR-friendly keywords). */
+function isCartSearchIntent(raw) {
+  const q = (raw || "").trim();
+  if (q.length < 2) return false;
+  const t = q.toLowerCase();
+  if (
+    /^(my\s*)?(cart|basket|draft|bag)$/.test(t) ||
+    /^(my\s+)?(cart|basket|draft(\s+cart)?)$/.test(t) ||
+    /^(shopping\s*)?(cart|bag)$/.test(t) ||
+    /\b(draft\s+cart|my\s+cart|shopping\s+cart)\b/i.test(q)
+  ) {
+    return true;
+  }
+  return /سلة|کارت|باسکێت|هەڵگرتن/i.test(q);
+}
+
 const SearchPage = () => {
   const theme = useTheme();
-  const { t, i18n } = useTranslation();
-  const lang = i18n.language || "en";
+  const { t } = useTranslation();
+  const { dataLanguage } = useDataLanguage();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { selectedCity } = useCityFilter();
@@ -58,6 +75,8 @@ const SearchPage = () => {
     products: [],
     stores: [],
     brands: [],
+    categories: [],
+    categoryTypes: [],
   });
   const [searched, setSearched] = useState(false);
   const [recentSearches, setRecentSearches] = useState([]);
@@ -97,8 +116,27 @@ const SearchPage = () => {
     async (q) => {
       const trimmed = (q || "").trim();
       if (trimmed.length < 2) {
-        setResults({ products: [], stores: [], brands: [] });
+        setResults({
+          products: [],
+          stores: [],
+          brands: [],
+          categories: [],
+          categoryTypes: [],
+        });
         setSearched(trimmed.length > 0);
+        return;
+      }
+      if (isCartSearchIntent(trimmed)) {
+        setResults({
+          products: [],
+          stores: [],
+          brands: [],
+          categories: [],
+          categoryTypes: [],
+        });
+        navigate("/shopping", { state: { openDraftCart: true } });
+        setSearched(true);
+        setLoading(false);
         return;
       }
       setLoading(true);
@@ -114,24 +152,38 @@ const SearchPage = () => {
           products: visibleProducts,
           stores: data.stores || [],
           brands: data.brands || [],
+          categories: data.categories || [],
+          categoryTypes: data.categoryTypes || [],
         });
         addToSearchHistory(trimmed, userId, deviceId);
         refreshRecentSearches();
       } catch (err) {
         console.error("Search error:", err);
-        setResults({ products: [], stores: [], brands: [] });
+        setResults({
+          products: [],
+          stores: [],
+          brands: [],
+          categories: [],
+          categoryTypes: [],
+        });
       } finally {
         setLoading(false);
       }
     },
-    [userId, deviceId, refreshRecentSearches, selectedCity],
+    [userId, deviceId, refreshRecentSearches, selectedCity, navigate],
   );
 
   useEffect(() => {
     if (qParam) {
       setQuery(qParam);
     } else {
-      setResults({ products: [], stores: [], brands: [] });
+      setResults({
+        products: [],
+        stores: [],
+        brands: [],
+        categories: [],
+        categoryTypes: [],
+      });
       setSearched(false);
     }
   }, [qParam]);
@@ -178,6 +230,21 @@ const SearchPage = () => {
     navigate(`/brands/${id}`);
   };
 
+  const handleCategoryClick = (cat) => {
+    navigate("/categories", {
+      state: { category: { _id: cat._id, name: cat.name } },
+    });
+  };
+
+  const handleCategoryTypeClick = (hit) => {
+    navigate("/categories", {
+      state: {
+        category: hit.category,
+        categoryType: hit.type,
+      },
+    });
+  };
+
   // const bannerAdsWithImages = useMemo(
   //   () =>
   //     (bannerAds || [])
@@ -217,10 +284,23 @@ const SearchPage = () => {
     if (!Number.isFinite(n)) return null;
     return `${n.toLocaleString()} ${t("ID")}`;
   };
+
+  const searchProducts = Array.isArray(results.products) ? results.products : [];
+  const searchStores = Array.isArray(results.stores) ? results.stores : [];
+  const searchBrands = Array.isArray(results.brands) ? results.brands : [];
+  const searchCategories = Array.isArray(results.categories)
+    ? results.categories
+    : [];
+  const searchCategoryTypes = Array.isArray(results.categoryTypes)
+    ? results.categoryTypes
+    : [];
+
   const hasResults =
-    results.products.length > 0 ||
-    results.stores.length > 0 ||
-    results.brands.length > 0;
+    searchProducts.length > 0 ||
+    searchStores.length > 0 ||
+    searchBrands.length > 0 ||
+    searchCategories.length > 0 ||
+    searchCategoryTypes.length > 0;
 
   return (
     <Box sx={{ pt: 5 }}>
@@ -291,7 +371,9 @@ const SearchPage = () => {
           <TextField
             fullWidth
             autoFocus
-            placeholder={t("Search products, stores, brands")}
+            placeholder={t(
+              "Search products, stores, brands, categories — any language",
+            )}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => {
@@ -437,7 +519,141 @@ const SearchPage = () => {
             border: `1px solid ${theme.palette.divider}`,
           }}
         >
-          {results.products.length > 0 && (
+          {searchCategories.length > 0 && (
+            <>
+              <Box
+                sx={{
+                  px: 2,
+                  py: 1.5,
+                  bgcolor: "action.hover",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                }}
+              >
+                <CategoryIcon fontSize="small" color="primary" />
+                <Typography variant="subtitle2" fontWeight={600}>
+                  {t("Categories")}
+                </Typography>
+              </Box>
+              <List disablePadding>
+                {searchCategories.map((cat) => (
+                  <ListItemButton
+                    key={cat._id}
+                    onClick={() => handleCategoryClick(cat)}
+                    sx={{
+                      py: 1.5,
+                      "&:hover": { bgcolor: "action.hover" },
+                    }}
+                  >
+                    <ListItemAvatar>
+                      <Avatar
+                        variant="rounded"
+                        sx={{
+                          width: 48,
+                          height: 48,
+                          bgcolor: "grey.200",
+                        }}
+                      >
+                        {cat.image ? (
+                          <img
+                            src={resolveMediaUrl(cat.image)}
+                            alt=""
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                            }}
+                          />
+                        ) : (
+                          <CategoryIcon sx={{ color: "grey.600" }} />
+                        )}
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={
+                        getLocalizedField(cat, "name", dataLanguage) || cat.name
+                      }
+                      primaryTypographyProps={{ fontWeight: 500 }}
+                    />
+                  </ListItemButton>
+                ))}
+              </List>
+              <Divider />
+            </>
+          )}
+
+          {searchCategoryTypes.length > 0 && (
+            <>
+              <Box
+                sx={{
+                  px: 2,
+                  py: 1.5,
+                  bgcolor: "action.hover",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                }}
+              >
+                <CategoryIcon fontSize="small" color="primary" />
+                <Typography variant="subtitle2" fontWeight={600}>
+                  {t("Category types")}
+                </Typography>
+              </Box>
+              <List disablePadding>
+                {searchCategoryTypes.map((hit) => (
+                  <ListItemButton
+                    key={`${hit.category._id}-${hit.type._id}`}
+                    onClick={() => handleCategoryTypeClick(hit)}
+                    sx={{
+                      py: 1.5,
+                      "&:hover": { bgcolor: "action.hover" },
+                    }}
+                  >
+                    <ListItemAvatar>
+                      <Avatar
+                        variant="rounded"
+                        sx={{
+                          width: 48,
+                          height: 48,
+                          bgcolor: "grey.200",
+                        }}
+                      >
+                        {hit.category.image ? (
+                          <img
+                            src={resolveMediaUrl(hit.category.image)}
+                            alt=""
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                            }}
+                          />
+                        ) : (
+                          <CategoryIcon sx={{ color: "grey.600" }} />
+                        )}
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={
+                        getLocalizedField(hit.type, "name", dataLanguage) ||
+                        hit.type.name
+                      }
+                      secondary={
+                        getLocalizedField(hit.category, "name", dataLanguage) ||
+                        hit.category.name
+                      }
+                      primaryTypographyProps={{ fontWeight: 600 }}
+                      secondaryTypographyProps={{ fontSize: "0.8rem" }}
+                    />
+                  </ListItemButton>
+                ))}
+              </List>
+              <Divider />
+            </>
+          )}
+
+          {searchProducts.length > 0 && (
             <>
               <Box
                 sx={{
@@ -455,7 +671,7 @@ const SearchPage = () => {
                 </Typography>
               </Box>
               <List disablePadding>
-                {results.products.map((p, i) => (
+                {searchProducts.map((p, i) => (
                   <ListItemButton
                     key={p._id}
                     onClick={() => handleProductClick(p._id)}
@@ -493,15 +709,17 @@ const SearchPage = () => {
                       </Avatar>
                     </ListItemAvatar>
                     <ListItemText
-                      primary={getLocalizedName(p, "name", lang) || p.name}
+                      primary={
+                        getLocalizedField(p, "name", dataLanguage) || p.name
+                      }
                       secondary={
                         [
                           formatPrice(p.newPrice) || formatPrice(p.price),
                           p.brandId?.statusAll === "off"
                             ? null
-                            : getLocalizedName(p.brandId, "name", lang) ||
+                            : getLocalizedField(p.brandId, "name", dataLanguage) ||
                               p.brandId?.name,
-                          getLocalizedName(p.storeId, "name", lang) ||
+                          getLocalizedField(p.storeId, "name", dataLanguage) ||
                             p.storeId?.name,
                         ]
                           .filter(Boolean)
@@ -516,7 +734,7 @@ const SearchPage = () => {
             </>
           )}
 
-          {results.stores.length > 0 && (
+          {searchStores.length > 0 && (
             <>
               <Box
                 sx={{
@@ -534,7 +752,7 @@ const SearchPage = () => {
                 </Typography>
               </Box>
               <List disablePadding>
-                {results.stores.map((s) => (
+                {searchStores.map((s) => (
                   <ListItemButton
                     key={s._id}
                     onClick={() => handleStoreClick(s._id)}
@@ -561,9 +779,14 @@ const SearchPage = () => {
                       </Avatar>
                     </ListItemAvatar>
                     <ListItemText
-                      primary={getLocalizedName(s, "name", lang) || s.name}
+                      primary={
+                        getLocalizedField(s, "name", dataLanguage) || s.name
+                      }
                       secondary={
-                        s.storeTypeId?.name ? t(s.storeTypeId.name) : undefined
+                        s.storeTypeId?.name
+                          ? getLocalizedField(s.storeTypeId, "name", dataLanguage) ||
+                            t(s.storeTypeId.name)
+                          : undefined
                       }
                       primaryTypographyProps={{ fontWeight: 500 }}
                     />
@@ -574,7 +797,7 @@ const SearchPage = () => {
             </>
           )}
 
-          {results.brands.length > 0 && (
+          {searchBrands.length > 0 && (
             <>
               <Box
                 sx={{
@@ -592,7 +815,7 @@ const SearchPage = () => {
                 </Typography>
               </Box>
               <List disablePadding>
-                {results.brands.map((b) => (
+                {searchBrands.map((b) => (
                   <ListItemButton
                     key={b._id}
                     onClick={() => handleBrandClick(b._id)}
@@ -617,9 +840,14 @@ const SearchPage = () => {
                       </Avatar>
                     </ListItemAvatar>
                     <ListItemText
-                      primary={getLocalizedName(b, "name", lang) || b.name}
+                      primary={
+                        getLocalizedField(b, "name", dataLanguage) || b.name
+                      }
                       secondary={
-                        b.brandTypeId?.name ? t(b.brandTypeId.name) : undefined
+                        b.brandTypeId?.name
+                          ? getLocalizedField(b.brandTypeId, "name", dataLanguage) ||
+                            t(b.brandTypeId.name)
+                          : undefined
                       }
                       primaryTypographyProps={{ fontWeight: 500 }}
                     />

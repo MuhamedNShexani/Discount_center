@@ -6,10 +6,16 @@ const categorySchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
+  nameEn: { type: String, required: false },
+  nameAr: { type: String, required: false },
+  nameKu: { type: String, required: false },
   description: {
     type: String,
     required: false,
   },
+  descriptionEn: { type: String, required: false },
+  descriptionAr: { type: String, required: false },
+  descriptionKu: { type: String, required: false },
   image: {
     type: String,
     required: false,
@@ -29,10 +35,16 @@ const categorySchema = new mongoose.Schema({
         type: String,
         required: true,
       },
+      nameEn: { type: String, required: false },
+      nameAr: { type: String, required: false },
+      nameKu: { type: String, required: false },
       description: {
         type: String,
         required: false,
       },
+      descriptionEn: { type: String, required: false },
+      descriptionAr: { type: String, required: false },
+      descriptionKu: { type: String, required: false },
       image: {
         type: String,
         required: false,
