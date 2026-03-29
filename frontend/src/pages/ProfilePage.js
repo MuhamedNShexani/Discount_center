@@ -391,15 +391,7 @@ const ProfilePage = () => {
             >
               {t("System Data Language")}
             </Typography>
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{ mb: 1, display: "block", opacity: 0.9 }}
-            >
-              {t(
-                "Choose which language to use for names and descriptions from the database (stores, brands, products, categories, gifts, jobs). This is separate from the interface language above.",
-              )}
-            </Typography>
+
             <Box
               sx={{
                 display: "flex",
@@ -422,24 +414,7 @@ const ProfilePage = () => {
                   dataLanguage === DATA_LANG_KU ? "contained" : "outlined"
                 }
                 onClick={() => setDataLanguage(DATA_LANG_KU)}
-              >
-                <Box
-                  component="span"
-                  sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
-                >
-                  <img
-                    src={kurdishFlag}
-                    alt="Kurdish"
-                    style={{
-                      width: 16,
-                      height: 12,
-                      objectFit: "cover",
-                      borderRadius: 2,
-                    }}
-                  />
-                  {t("Kurdish")}
-                </Box>
-              </Button>
+              ></Button>
               <Button
                 size="small"
                 variant={
@@ -458,6 +433,22 @@ const ProfilePage = () => {
               >
                 🇸🇦 {t("Arabic")}
               </Button>
+              <Box
+                component="span"
+                sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+              >
+                <img
+                  src={kurdishFlag}
+                  alt="Kurdish"
+                  style={{
+                    width: 16,
+                    height: 12,
+                    objectFit: "cover",
+                    borderRadius: 2,
+                  }}
+                />
+                {t("Kurdish")}
+              </Box>
             </Box>
           </Box>
           <Divider />
