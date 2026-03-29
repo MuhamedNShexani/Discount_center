@@ -408,13 +408,7 @@ const ProfilePage = () => {
               >
                 🌐 {t("Normal")}
               </Button>
-              <Button
-                size="small"
-                variant={
-                  dataLanguage === DATA_LANG_KU ? "contained" : "outlined"
-                }
-                onClick={() => setDataLanguage(DATA_LANG_KU)}
-              ></Button>
+
               <Button
                 size="small"
                 variant={
@@ -433,22 +427,30 @@ const ProfilePage = () => {
               >
                 🇸🇦 {t("Arabic")}
               </Button>
-              <Box
-                component="span"
-                sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+              <Button
+                size="small"
+                variant={
+                  dataLanguage === DATA_LANG_KU ? "contained" : "outlined"
+                }
+                onClick={() => setDataLanguage(DATA_LANG_KU)}
               >
-                <img
-                  src={kurdishFlag}
-                  alt="Kurdish"
-                  style={{
-                    width: 16,
-                    height: 12,
-                    objectFit: "cover",
-                    borderRadius: 2,
-                  }}
-                />
-                {t("Kurdish")}
-              </Box>
+                <Box
+                  component="span"
+                  sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+                >
+                  <img
+                    src={kurdishFlag}
+                    alt="Kurdish"
+                    style={{
+                      width: 16,
+                      height: 12,
+                      objectFit: "cover",
+                      borderRadius: 2,
+                    }}
+                  />
+                  {t("Kurdish")}
+                </Box>
+              </Button>
             </Box>
           </Box>
           <Divider />
