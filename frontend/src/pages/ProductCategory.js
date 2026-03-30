@@ -862,39 +862,41 @@ const ProductCategory = () => {
                                     zIndex: 1,
                                   }}
                                 >
-                                  <VisibilityIcon sx={{ fontSize: "0.75rem" }} />
+                                  <VisibilityIcon
+                                    sx={{ fontSize: "0.75rem" }}
+                                  />
                                   {product.viewCount}
                                 </Box>
                               )}
                             </Box>
 
-                          {/* Content */}
-                          <CardContent
-                            sx={{
-                              p: 1.5,
-                              display: "flex",
-                              flexDirection: "column",
-                              gap: 0.5,
-                              flexGrow: 1,
-                            }}
-                          >
-                            <Typography
-                              variant="body2"
+                            {/* Content */}
+                            <CardContent
                               sx={{
-                                fontWeight: 600,
-                                textAlign: "center",
-                                minHeight: "2.4em",
-                                display: "-webkit-box",
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: "vertical",
-                                overflow: "hidden",
+                                p: 1.5,
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 0.5,
+                                flexGrow: 1,
                               }}
                             >
-                              {locName(product) || "\u00A0"}
-                            </Typography>
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  fontWeight: 600,
+                                  textAlign: "center",
+                                  minHeight: "2.4em",
+                                  display: "-webkit-box",
+                                  WebkitLineClamp: 2,
+                                  WebkitBoxOrient: "vertical",
+                                  overflow: "hidden",
+                                }}
+                              >
+                                {locName(product) || "\u00A0"}
+                              </Typography>
 
-                            {/* Category type chip or N/A */}
-                            {/* <Box sx={{ display: "flex", justifyContent: "center" }}>
+                              {/* Category type chip or N/A */}
+                              {/* <Box sx={{ display: "flex", justifyContent: "center" }}>
                         <Chip
                           label={
                             product.categoryTypeId
@@ -914,28 +916,28 @@ const ProductCategory = () => {
                         />
                       </Box> */}
 
-                            {/* Optional meta */}
-                            {product.storeId && locName(product.storeId) && (
-                              <Typography
-                                variant="caption"
-                                color="var(--color-primary)"
-                                sx={{ display: "block", textAlign: "center" }}
-                              >
-                                {locName(product.storeId)}
-                              </Typography>
-                            )}
+                              {/* Optional meta */}
+                              {product.storeId && locName(product.storeId) && (
+                                <Typography
+                                  variant="caption"
+                                  color="var(--color-primary)"
+                                  sx={{ display: "block", textAlign: "center" }}
+                                >
+                                  {locName(product.storeId)}
+                                </Typography>
+                              )}
 
-                            <Box sx={{ mt: "auto" }}>
-                              {/* Price + discount */}
-                              <Box
-                                sx={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  gap: 1,
-                                }}
-                              >
-                                {/* {isDiscountValid(product) &&
+                              <Box sx={{ mt: "auto" }}>
+                                {/* Price + discount */}
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    gap: 1,
+                                  }}
+                                >
+                                  {/* {isDiscountValid(product) &&
                                   product.previousPrice &&
                                   product.previousPrice > product.newPrice && (
                                     <Typography
@@ -953,19 +955,22 @@ const ProductCategory = () => {
                                       {formatPrice(product.previousPrice)}
                                     </Typography>
                                   )} */}
-                                {product.newPrice && (
-                                  <Typography
-                                    variant="h6"
-                                    sx={{
-                                      color: "var(--color-secondary)",
-                                      fontWeight: 700,
-                                      fontSize: { xs: "1.1rem", sm: "1.3rem" },
-                                    }}
-                                  >
-                                    {formatPrice(product.newPrice)}
-                                  </Typography>
-                                )}
-                                {/* {isDiscountValid(product) && (
+                                  {product.newPrice && (
+                                    <Typography
+                                      variant="h6"
+                                      sx={{
+                                        color: "var(--color-secondary)",
+                                        fontWeight: 700,
+                                        fontSize: {
+                                          xs: "1.1rem",
+                                          sm: "1.3rem",
+                                        },
+                                      }}
+                                    >
+                                      {formatPrice(product.newPrice)}
+                                    </Typography>
+                                  )}
+                                  {/* {isDiscountValid(product) && (
                                   <Chip
                                     label={(() => {
                                       const off = calculateDiscount(
@@ -985,9 +990,9 @@ const ProductCategory = () => {
                                     }}
                                   />
                                 )} */}
-                              </Box>
+                                </Box>
 
-                              {/* View details button
+                                {/* View details button
                         <Button
                           variant="outlined"
                           size="small"
@@ -1005,9 +1010,9 @@ const ProductCategory = () => {
                         >
                           View details
                         </Button> */}
-                            </Box>
-                          </CardContent>
-                        </Card>
+                              </Box>
+                            </CardContent>
+                          </Card>
                         </Box>
                       </ProductViewTracker>
                     ))}
@@ -1392,35 +1397,35 @@ const ProductCategory = () => {
                               </Box>
                             )}
                           </Box>
-                        <CardContent
-                          sx={{
-                            p: 2,
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 0.5,
-                            flexGrow: 1,
-                          }}
-                        >
-                          <Typography
-                            variant="h6"
+                          <CardContent
                             sx={{
-                              fontWeight: 600,
-                              textAlign: "center",
-                              minHeight: "2.6em",
-                              display: "-webkit-box",
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: "vertical",
-                              overflow: "hidden",
-                              color:
-                                theme.palette.mode === "dark"
-                                  ? "white"
-                                  : "black",
+                              p: 2,
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: 0.5,
+                              flexGrow: 1,
                             }}
                           >
-                            {locName(product) || "\u00A0"}
-                          </Typography>
+                            <Typography
+                              variant="h6"
+                              sx={{
+                                fontWeight: 600,
+                                textAlign: "center",
+                                minHeight: "2.6em",
+                                display: "-webkit-box",
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: "vertical",
+                                overflow: "hidden",
+                                color:
+                                  theme.palette.mode === "dark"
+                                    ? "white"
+                                    : "black",
+                              }}
+                            >
+                              {locName(product) || "\u00A0"}
+                            </Typography>
 
-                          {/* {product.categoryTypeId && (
+                            {/* {product.categoryTypeId && (
                         <Box sx={{ display: "flex", justifyContent: "center" }}>
                           <Chip
                             label={getCategoryTypeName(
@@ -1438,26 +1443,26 @@ const ProductCategory = () => {
                         </Box>
                       )} */}
 
-                          {product.storeId && locName(product.storeId) && (
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                              sx={{ display: "block", textAlign: "center" }}
-                            >
-                              {locName(product.storeId)}
-                            </Typography>
-                          )}
+                            {product.storeId && locName(product.storeId) && (
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{ display: "block", textAlign: "center" }}
+                              >
+                                {locName(product.storeId)}
+                              </Typography>
+                            )}
 
-                          <Box sx={{ mt: "auto" }}>
-                            <Box
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                gap: 1,
-                              }}
-                            >
-                              {/* {isDiscountValid(product) &&
+                            <Box sx={{ mt: "auto" }}>
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  gap: 1,
+                                }}
+                              >
+                                {/* {isDiscountValid(product) &&
                                 product.previousPrice &&
                                 product.previousPrice > product.newPrice && (
                                   <Typography
@@ -1472,19 +1477,19 @@ const ProductCategory = () => {
                                     {formatPrice(product.previousPrice)}
                                   </Typography>
                                 )} */}
-                              {product.newPrice && (
-                                <Typography
-                                  variant="h6"
-                                  sx={{
-                                    color: "var(--color-secondary)",
-                                    fontWeight: 700,
-                                    fontSize: { xs: "1.1rem", sm: "1.3rem" },
-                                  }}
-                                >
-                                  {formatPrice(product.newPrice)}
-                                </Typography>
-                              )}
-                              {/* {isDiscountValid(product) && (
+                                {product.newPrice && (
+                                  <Typography
+                                    variant="h6"
+                                    sx={{
+                                      color: "var(--color-secondary)",
+                                      fontWeight: 700,
+                                      fontSize: { xs: "1.1rem", sm: "1.3rem" },
+                                    }}
+                                  >
+                                    {formatPrice(product.newPrice)}
+                                  </Typography>
+                                )}
+                                {/* {isDiscountValid(product) && (
                                 <Chip
                                   label={(() => {
                                     const off = calculateDiscount(
@@ -1504,10 +1509,10 @@ const ProductCategory = () => {
                                   }}
                                 />
                               )} */}
+                              </Box>
                             </Box>
-                          </Box>
-                        </CardContent>
-                      </Card>
+                          </CardContent>
+                        </Card>
                       </Box>
                     </ProductViewTracker>
                   ))}
@@ -1662,7 +1667,7 @@ const ProductCategory = () => {
         <DialogContent>
           {selectedProduct && (
             <Grid container spacing={3}>
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 {selectedProduct.image ? (
                   <CardMedia
                     component="img"
@@ -1688,7 +1693,7 @@ const ProductCategory = () => {
                   </Box>
                 )}
               </Grid>
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <Typography variant="h5" gutterBottom>
                   {locName(selectedProduct)}
                 </Typography>
@@ -1701,34 +1706,34 @@ const ProductCategory = () => {
 
                 {selectedProduct.brandId &&
                   locName(selectedProduct.brandId) && (
-                  <Typography
-                    variant="body1"
-                    gutterBottom
-                    sx={{ cursor: "pointer" }}
-                    onClick={() => {
-                      setDialogOpen(false);
-                      navigate(`/brands/${selectedProduct.brandId._id}`);
-                    }}
-                  >
-                    <strong>Brand:</strong> {locName(selectedProduct.brandId)}
-                  </Typography>
-                )}
+                    <Typography
+                      variant="body1"
+                      gutterBottom
+                      sx={{ cursor: "pointer" }}
+                      onClick={() => {
+                        setDialogOpen(false);
+                        navigate(`/brands/${selectedProduct.brandId._id}`);
+                      }}
+                    >
+                      <strong>Brand:</strong> {locName(selectedProduct.brandId)}
+                    </Typography>
+                  )}
 
                 {selectedProduct.storeId &&
                   locName(selectedProduct.storeId) && (
-                  <Typography
-                    variant="body1"
-                    gutterBottom
-                    sx={{ cursor: "pointer" }}
-                    onClick={() => {
-                      setDialogOpen(false);
-                      navigate(`/stores/${selectedProduct.storeId._id}`);
-                    }}
-                  >
-                    <strong>{t("Store")}:</strong>{" "}
-                    {locName(selectedProduct.storeId)}
-                  </Typography>
-                )}
+                    <Typography
+                      variant="body1"
+                      gutterBottom
+                      sx={{ cursor: "pointer" }}
+                      onClick={() => {
+                        setDialogOpen(false);
+                        navigate(`/stores/${selectedProduct.storeId._id}`);
+                      }}
+                    >
+                      <strong>{t("Store")}:</strong>{" "}
+                      {locName(selectedProduct.storeId)}
+                    </Typography>
+                  )}
 
                 {isDiscountValid(selectedProduct) && (
                   <Box sx={{ mt: 2 }}>

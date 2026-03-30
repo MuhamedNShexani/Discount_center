@@ -84,7 +84,13 @@ const getNotifications = async (req, res) => {
     const data = notifications.map((n) => ({
       _id: n._id,
       title: n.title,
+      titleEn: n.titleEn || "",
+      titleAr: n.titleAr || "",
+      titleKu: n.titleKu || "",
       body: n.body,
+      bodyEn: n.bodyEn || "",
+      bodyAr: n.bodyAr || "",
+      bodyKu: n.bodyKu || "",
       type: n.type,
       link: n.link || null,
       read:
@@ -192,7 +198,13 @@ const markAsRead = async (req, res) => {
       data: {
         _id: notification._id,
         title: notification.title,
+        titleEn: notification.titleEn || "",
+        titleAr: notification.titleAr || "",
+        titleKu: notification.titleKu || "",
         body: notification.body,
+        bodyEn: notification.bodyEn || "",
+        bodyAr: notification.bodyAr || "",
+        bodyKu: notification.bodyKu || "",
         type: notification.type,
         read: true,
         createdAt: notification.createdAt,

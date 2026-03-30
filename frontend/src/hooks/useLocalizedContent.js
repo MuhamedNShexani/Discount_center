@@ -14,6 +14,7 @@ export function useLocalizedContent() {
       locDescription: (o) =>
         o ? getLocalizedField(o, "description", dataLanguage) : "",
       locTitle: (o) => (o ? getLocalizedField(o, "title", dataLanguage) : ""),
+      locAddress: (o) => (o ? getLocalizedField(o, "address", dataLanguage) : ""),
     }),
     [dataLanguage],
   );

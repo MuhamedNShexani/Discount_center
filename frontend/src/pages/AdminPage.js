@@ -32,9 +32,6 @@ import {
   Store as StoresIcon,
   Business as BrandsIcon,
   CardGiftcard as GiftsIcon,
-  Favorite as FavoriteIcon,
-  Visibility as VisibilityIcon,
-  Star as StarIcon,
   FileDownload as FileDownloadIcon,
   AccessTime as AccessTimeIcon,
 } from "@mui/icons-material";

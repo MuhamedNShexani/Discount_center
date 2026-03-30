@@ -92,10 +92,7 @@ export const useUserTracking = () => {
                   (item) => String(item?._id ?? item) !== String(productId),
                 );
               } else {
-                authUser.likedProducts = [
-                  ...current,
-                  String(productId),
-                ];
+                authUser.likedProducts = [...current, String(productId)];
               }
               localStorage.setItem("user", JSON.stringify(authUser));
             }
@@ -180,7 +177,9 @@ export const useUserTracking = () => {
         return {
           success: false,
           message:
-            error.response?.data?.message || error.message || "Failed to toggle like",
+            error.response?.data?.message ||
+            error.message ||
+            "Failed to toggle like",
         };
       }
     },

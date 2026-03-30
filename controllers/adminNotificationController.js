@@ -18,7 +18,8 @@ const sendNotification = async (req, res) => {
       });
     }
 
-    const { title, body, type = "general", link } = req.body;
+    const { title, body, type = "general", link, titleEn, titleAr, titleKu, bodyEn, bodyAr, bodyKu } =
+      req.body;
 
     if (!title || !title.trim()) {
       return res.status(400).json({
@@ -44,6 +45,12 @@ const sendNotification = async (req, res) => {
     const createPayload = {
       title: title.trim(),
       body: (body || "").trim(),
+      titleEn: (titleEn || "").trim(),
+      titleAr: (titleAr || "").trim(),
+      titleKu: (titleKu || "").trim(),
+      bodyEn: (bodyEn || "").trim(),
+      bodyAr: (bodyAr || "").trim(),
+      bodyKu: (bodyKu || "").trim(),
       type: ["info", "promo", "alert", "general"].includes(type)
         ? type
         : "general",

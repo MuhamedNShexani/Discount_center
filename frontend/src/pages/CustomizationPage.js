@@ -65,6 +65,11 @@ const NAV_ACTIONS = [
   { id: "gifts", label: "Gifts" },
   { id: "shopping", label: "Shopping" },
   { id: "profile", label: "Account/Profile" },
+  { id: "brands", label: "Brands" },
+  { id: "jobs", label: "Jobs" },
+  { id: "city", label: "City selector" },
+  { id: "language", label: "Language" },
+  { id: "notifications", label: "Notifications" },
 ];
 
 const CustomizationPage = () => {

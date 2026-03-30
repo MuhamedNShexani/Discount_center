@@ -8,7 +8,37 @@ const broadcastNotificationSchema = new mongoose.Schema(
       trim: true,
       maxlength: 200,
     },
+    titleEn: {
+      type: String,
+      trim: true,
+      maxlength: 200,
+    },
+    titleAr: {
+      type: String,
+      trim: true,
+      maxlength: 200,
+    },
+    titleKu: {
+      type: String,
+      trim: true,
+      maxlength: 200,
+    },
     body: {
+      type: String,
+      trim: true,
+      maxlength: 1000,
+    },
+    bodyEn: {
+      type: String,
+      trim: true,
+      maxlength: 1000,
+    },
+    bodyAr: {
+      type: String,
+      trim: true,
+      maxlength: 1000,
+    },
+    bodyKu: {
       type: String,
       trim: true,
       maxlength: 1000,

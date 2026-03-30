@@ -243,7 +243,18 @@ const FavouritesPage = () => {
   }
 
   return (
-    <Box sx={{ py: 3, px: 2, pb: { xs: 10, sm: 3 } }}>
+    <Box
+      sx={{
+        py: 3,
+        px: 2,
+        pb: { xs: 10, sm: 3 },
+        width: "100%",
+        maxWidth: "100%",
+        minWidth: 0,
+        overflowX: "hidden",
+        boxSizing: "border-box",
+      }}
+    >
       <Button
         variant="outlined"
         startIcon={<ArrowBack />}
@@ -331,10 +342,14 @@ const FavouritesPage = () => {
                     display: "flex",
                     flexDirection: "column",
                     height: "100%",
-                    width: "100%",
+                    width: { xs: "160px", sm: "100%" },
+                    maxWidth: { xs: "160px", sm: "100%" },
                     minWidth: 0,
-                    transition: "transform 0.2s",
-                    "&:hover": { transform: "scale(1.02)" },
+                    overflow: "hidden",
+                    transition: "box-shadow 0.2s",
+                    "&:hover": {
+                      boxShadow: (th) => th.shadows[4],
+                    },
                   }}
                 >
                   {/* Logo and market name at top */}
@@ -347,6 +362,7 @@ const FavouritesPage = () => {
                         p: 1,
                         borderBottom: 1,
                         borderColor: "divider",
+                        minWidth: 0,
                       }}
                     >
                       {market.logo ? (
@@ -374,6 +390,8 @@ const FavouritesPage = () => {
                         variant="caption"
                         sx={{
                           fontWeight: 600,
+                          flex: 1,
+                          minWidth: 0,
                           overflow: "hidden",
                           textOverflow: "ellipsis",
                           whiteSpace: "nowrap",
@@ -391,6 +409,8 @@ const FavouritesPage = () => {
                         alt={locName(product)}
                         sx={{
                           height: 100,
+                          width: "100%",
+                          maxWidth: "100%",
                           objectFit: "contain",
                           backgroundColor: theme.palette.grey[100],
                         }}
@@ -469,7 +489,15 @@ const FavouritesPage = () => {
                       />
                     )}
                   </Box>
-                  <CardContent sx={{ flexGrow: 1, p: 1.5 }}>
+                  <CardContent
+                    sx={{
+                      flexGrow: 1,
+                      p: 1.5,
+                      minWidth: 0,
+                      width: "100%",
+                      boxSizing: "border-box",
+                    }}
+                  >
                     <Typography
                       variant="body2"
                       fontWeight={600}
@@ -481,6 +509,8 @@ const FavouritesPage = () => {
                         WebkitLineClamp: 2,
                         WebkitBoxOrient: "vertical",
                         overflow: "hidden",
+                        overflowWrap: "anywhere",
+                        wordBreak: "break-word",
                         minHeight: "2.5em", // reserve space for 2 lines
                       }}
                     >
@@ -528,8 +558,11 @@ const FavouritesPage = () => {
                                 color: "var(--color-secondary)",
                                 textAlign: "center",
                                 fontWeight: 700,
-                                fontSize: { xs: "1.3rem", sm: "1.5rem" },
+                                fontSize: { xs: "1.05rem", sm: "1.35rem" },
                                 minHeight: "1.4em",
+                                maxWidth: "100%",
+                                overflowWrap: "anywhere",
+                                wordBreak: "break-word",
                               }}
                             >
                               {product.newPrice

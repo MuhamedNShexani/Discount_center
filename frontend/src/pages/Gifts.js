@@ -294,7 +294,7 @@ const Gifts = () => {
         sx={{ display: { xs: filtersOpen ? "block" : "none", md: "block" } }}
       >
         <Grid container spacing={2}>
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
             <TextField
               fullWidth
               sx={{ width: "300px" }}
@@ -311,7 +311,7 @@ const Gifts = () => {
               }}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
             <FormControl sx={{ width: "140px" }} fullWidth>
               <InputLabel>{t("Store")}</InputLabel>
               <Select
@@ -329,7 +329,7 @@ const Gifts = () => {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
             <FormControl sx={{ width: "140px" }} fullWidth>
               <InputLabel>{t("Brand")}</InputLabel>
               <Select
@@ -707,7 +707,7 @@ const Gifts = () => {
         </Box>
         <Grid container spacing={2}>
           {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-            <Grid item xs={6} sm={4} md={3} key={i}>
+            <Grid size={{ xs: 6, sm: 4, md: 3 }} key={i}>
               <Card sx={{ borderRadius: 3, overflow: "hidden" }}>
                 <Skeleton variant="rectangular" sx={{ height: { xs: 130, sm: 160 } }} />
                 <CardContent sx={{ p: { xs: 1, sm: 1.5 } }}>

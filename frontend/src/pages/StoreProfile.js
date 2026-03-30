@@ -21,23 +21,12 @@ import {
   Chip,
   Alert,
   useTheme,
-  Container,
   Paper,
   Divider,
   IconButton,
   Fade,
-  Skeleton,
   Tabs,
   Tab,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  InputAdornment,
-  Tooltip,
-  Rating,
-  CircularProgress,
   Snackbar,
 } from "@mui/material";
 import {
@@ -45,11 +34,6 @@ import {
   Phone,
   LocationOn,
   Business,
-  Store,
-  Search,
-  FilterList,
-  ExpandMore,
-  ExpandLess,
   WhatsApp,
   Facebook,
   Instagram,
@@ -62,7 +46,6 @@ import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import PersonAddDisabledIcon from "@mui/icons-material/PersonAddDisabled";
-import StarIcon from "@mui/icons-material/Star";
 import {
   storeAPI,
   productAPI,
@@ -82,7 +65,6 @@ import { useTranslation } from "react-i18next";
 import Loader from "../components/Loader";
 import { useUserTracking } from "../hooks/useUserTracking";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
-import { useAuth } from "../context/AuthContext";
 import JobCardRow from "../components/JobCardRow";
 import ProductViewTracker from "../components/ProductViewTracker";
 import { motion } from "framer-motion";
@@ -125,8 +107,8 @@ const StoreProfile = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const theme = useTheme();
   const { t } = useTranslation();
-  const { locName, locDescription, locTitle } = useLocalizedContent();
-  const { isAuthenticated } = useAuth();
+  const { locName, locDescription, locTitle, locAddress } =
+    useLocalizedContent();
   const {
     toggleLike,
     toggleFollowStore,
@@ -164,6 +146,8 @@ const StoreProfile = () => {
   const [cartToast, setCartToast] = useState({ open: false, text: "" });
   /** Incremented on each add-to-cart to replay floating cart button animation */
   const [cartPulseKey, setCartPulseKey] = useState(0);
+  const cartButtonRef = useRef(null);
+  const cartCloseButtonRef = useRef(null);
   const [cartSyncing, setCartSyncing] = useState(false);
   const [cartHydrated, setCartHydrated] = useState(false);
 
@@ -184,7 +168,6 @@ const StoreProfile = () => {
   });
 
   // Branches toggle state
-  const [showBranches, setShowBranches] = useState(false);
 
   const productViewRecordedRef = useRef(new Set());
 
@@ -665,38 +648,6 @@ const StoreProfile = () => {
       grouped[typeName].push(product);
     });
     return grouped;
-  };
-
-  // Get unique product category types for filter dropdown
-  const getProductTypes = () => {
-    const types = [
-      ...new Set(
-        products.map((product) => getProductCategoryTypeName(product)),
-      ),
-    ];
-    return types.filter(Boolean).sort();
-  };
-
-  // Get unique companies for filter dropdown
-  const getBrands = () => {
-    const brands = products
-      .map((product) => product.brandId)
-      .filter((brand) => brand && brand.name)
-      .map((brand) => brand.name);
-    return [...new Set(brands)].sort();
-  };
-
-  // Handle filter changes
-  const handleFilterChange = (field, value) => {
-    setFilters((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  // Toggle filters visibility
-  const toggleFilters = () => {
-    setFiltersOpen(!filtersOpen);
   };
 
   // (tabs are computed later, after discountedProducts is initialized)
@@ -1380,140 +1331,6 @@ const StoreProfile = () => {
     });
   };
 
-  // Render filter section
-  const renderFilters = () => (
-    <Paper
-      elevation={0}
-      sx={{
-        p: 1,
-        mb: 1,
-        borderRadius: 3,
-        background:
-          theme.palette.mode === "dark"
-            ? "linear-gradient(135deg, #1E6FD9 0%, #4A90E2 100%)"
-            : "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
-        border: `1px solid ${
-          theme.palette.mode === "dark" ? "#1E6FD9" : "#e9ecef"
-        }`,
-      }}
-    >
-      {/* Mobile Filter Toggle */}
-      <Box
-        onClick={toggleFilters}
-        sx={{
-          display: { xs: "flex", md: "none" },
-          mb: 2,
-          justifyContent: "space-between",
-          alignItems: "center",
-          cursor: "pointer",
-        }}
-      >
-        <Typography
-          variant="h6"
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 1,
-            color: theme.palette.text.primary,
-          }}
-        >
-          <FilterList sx={{ color: "var(--brand-accent-orange)" }} />
-          {t("Filters")}
-        </Typography>
-      </Box>
-
-      {/* Desktop Filter Header */}
-      <Typography
-        variant="h6"
-        sx={{
-          mb: 3,
-          display: { xs: "none", md: "flex" },
-          alignItems: "center",
-          gap: 1,
-          color: theme.palette.text.primary,
-        }}
-      >
-        <FilterList sx={{ color: "var(--brand-accent-orange)" }} />
-        {t("Filters")}
-      </Typography>
-
-      <Box
-        sx={{ display: { xs: filtersOpen ? "block" : "none", md: "block" } }}
-      >
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6} md={3}>
-            <TextField
-              fullWidth
-              label={t("Search by Name")}
-              value={filters.name}
-              onChange={(e) => handleFilterChange("name", e.target.value)}
-              onClick={(e) => e.stopPropagation()}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search />
-                  </InputAdornment>
-                ),
-              }}
-            />
-          </Grid>
-          {/* <Grid item xs={12} sm={6} md={3}>
-            <FormControl sx={{ width: "200px" }} fullWidth>
-              <InputLabel>{t("Brand")}</InputLabel>
-              <Select
-                value={filters.brand}
-                onChange={(e) => handleFilterChange("brand", e.target.value)}
-                onClick={(e) => e.stopPropagation()}
-                label={t("Brand")}
-              >
-                <MenuItem value="">{t("All Brands")}</MenuItem>
-                {getBrands().map((brand) => (
-                  <MenuItem key={brand} value={brand}>
-                    {brand}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid> */}
-          {/* <Grid item xs={12} sm={6} md={3}>
-            <TextField
-              fullWidth
-              label={t("Search by Barcode")}
-              value={filters.barcode}
-              onChange={(e) => handleFilterChange("barcode", e.target.value)}
-              onClick={(e) => e.stopPropagation()}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search />
-                  </InputAdornment>
-                ),
-              }}
-            />
-          </Grid> */}
-          <Grid item xs={12} sm={6} md={3}>
-            <FormControl sx={{ width: "200px" }} fullWidth>
-              <InputLabel>{t("Product Type")}</InputLabel>
-              <Select
-                value={filters.type}
-                onChange={(e) => handleFilterChange("type", e.target.value)}
-                onClick={(e) => e.stopPropagation()}
-                label={t("Product Type")}
-              >
-                <MenuItem value="">{t("All Types")}</MenuItem>
-                {getProductTypes().map((type) => (
-                  <MenuItem key={type} value={type}>
-                    {t(type)}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-        </Grid>
-      </Box>
-    </Paper>
-  );
-
   const discountedProducts = getDiscountedProducts();
   const nonDiscountedProducts = getNonDiscountedProducts();
 
@@ -1747,7 +1564,10 @@ const StoreProfile = () => {
                 variant="contained"
                 startIcon={<ShoppingCartIcon />}
                 disabled={cartCount <= 0}
-                onClick={async () => {
+                ref={cartButtonRef}
+                onClick={async (e) => {
+                  // Prevent focus from staying on a now aria-hidden background element.
+                  e?.currentTarget?.blur?.();
                   await syncCartWithLatestProducts();
                   setCartOpen(true);
                 }}
@@ -1978,7 +1798,7 @@ const StoreProfile = () => {
               alignItems="center"
               sx={{ display: { xs: "none", md: "flex" } }}
             >
-              <Grid item xs={12} md={3}>
+              <Grid size={{ xs: 12, md: 3 }}>
                 {store.logo ? (
                   <Avatar
                     src={resolveMediaUrl(store.logo)}
@@ -2007,7 +1827,7 @@ const StoreProfile = () => {
                 )}
               </Grid>
 
-              <Grid item xs={12} md={9}>
+              <Grid size={{ xs: 12, md: 9 }}>
                 <Typography
                   variant="h2"
                   gutterBottom
@@ -2134,7 +1954,7 @@ const StoreProfile = () => {
                       }}
                       color="white"
                     >
-                      {store.address || t("address not provided")}
+                      {locAddress(store) || t("address not provided")}
                     </Typography>
                   </Box>
 
@@ -2277,7 +2097,7 @@ const StoreProfile = () => {
             {/* Mobile Content - Address, Phone, Description */}
             <Box sx={{ display: { xs: "block", md: "none" } }}>
               <Box sx={{ mb: 2 }}>
-                {store.address && (
+                {locAddress(store) && (
                   <Box display="flex" mb={1} color="white">
                     <LocationOn sx={{ mr: 1, fontSize: 18, opacity: 0.9 }} />
                     <Typography
@@ -2288,7 +2108,7 @@ const StoreProfile = () => {
                       }}
                       color="white"
                     >
-                      {store.address}
+                      {locAddress(store)}
                     </Typography>
                   </Box>
                 )}
@@ -2810,6 +2630,14 @@ const StoreProfile = () => {
         onClose={() => setCartOpen(false)}
         fullWidth
         maxWidth="sm"
+        TransitionProps={{
+          onEntered: () => {
+            cartCloseButtonRef.current?.focus?.();
+          },
+          onExited: () => {
+            cartButtonRef.current?.focus?.();
+          },
+        }}
       >
         <DialogTitle sx={{ fontWeight: 900 }}>
           {t("Cart")} ({cartCount})
@@ -2910,7 +2738,12 @@ const StoreProfile = () => {
           <Button onClick={clearCart} disabled={cartCount <= 0}>
             {t("Clear")}
           </Button>
-          <Button onClick={() => setCartOpen(false)} variant="outlined">
+          <Button
+            onClick={() => setCartOpen(false)}
+            variant="outlined"
+            autoFocus
+            ref={cartCloseButtonRef}
+          >
             {t("Close")}
           </Button>
           <Button

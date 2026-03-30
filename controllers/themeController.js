@@ -59,6 +59,11 @@ const ALLOWED_NAV_ACTIONS = [
   "gifts",
   "shopping",
   "profile",
+  "brands",
+  "jobs",
+  "city",
+  "language",
+  "notifications",
 ];
 
 const sanitizeSlot = (value) => {

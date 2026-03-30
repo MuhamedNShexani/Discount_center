@@ -127,7 +127,7 @@ const BrandProfile = () => {
   const [searchParams] = useSearchParams();
   const theme = useTheme();
   const { t } = useTranslation();
-  const { locName, locDescription, locTitle } = useLocalizedContent();
+  const { locName, locDescription, locTitle, locAddress } = useLocalizedContent();
   const { isAuthenticated } = useAuth();
   const { toggleLike, isProductLiked, recordView } = useUserTracking();
 
@@ -245,7 +245,12 @@ const BrandProfile = () => {
 
       // Fetch gifts for this brand
       const giftsResponse = await giftAPI.getByBrand(id);
-      setGifts(giftsResponse.data.data || []);
+      setGifts(
+        (giftsResponse.data.data || []).filter((g) => {
+          if (!g?.expireDate) return true;
+          return isExpiryStillValid(g.expireDate);
+        }),
+      );
 
       // Fetch reels for this brand (exclude expired)
       try {
@@ -596,6 +601,9 @@ const BrandProfile = () => {
                         fontFamily: "NRT reg, Arial, sans-serif",
                         cursor: "pointer",
                         userSelect: "none",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
                         px: 1,
                         py: 0.5,
                         borderRadius: 1,
@@ -787,6 +795,10 @@ const BrandProfile = () => {
                     color: "#666",
                     fontSize: "0.8rem",
                     mb: 1,
+                    noWrap: true,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
                     fontStyle: "italic",
                     textAlign: "center",
                   }}
@@ -1050,7 +1062,7 @@ const BrandProfile = () => {
         sx={{ display: { xs: filtersOpen ? "block" : "none", md: "block" } }}
       >
         <Grid container spacing={2}>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <TextField
               fullWidth
               label={t("Search by Name")}
@@ -1100,7 +1112,7 @@ const BrandProfile = () => {
               }}
             />
           </Grid> */}
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <FormControl sx={{ width: "200px" }} fullWidth>
               <InputLabel>{t("Product Type")}</InputLabel>
               <Select
@@ -1470,7 +1482,7 @@ const BrandProfile = () => {
                 }}
                 color="white"
               >
-                {brand.address || t("address not provided")}
+                {locAddress(brand) || t("address not provided")}
               </Typography>
             </Box>
 
@@ -1558,7 +1570,7 @@ const BrandProfile = () => {
               spacing={{ xs: 2, sm: 3, md: 4 }}
               alignItems="center"
             >
-              <Grid item xs={12} md={3}>
+              <Grid size={{ xs: 12, md: 3 }}>
                 {brand.logo ? (
                   <Avatar
                     src={resolveMediaUrl(brand.logo)}
@@ -1587,7 +1599,7 @@ const BrandProfile = () => {
                 )}
               </Grid>
 
-              <Grid item xs={12} md={9}>
+              <Grid size={{ xs: 12, md: 9 }}>
                 <Typography
                   variant="h2"
                   gutterBottom
@@ -1643,7 +1655,7 @@ const BrandProfile = () => {
                       }}
                       color="white"
                     >
-                      {brand.address || t("address not provided")}
+                      {locAddress(brand) || t("address not provided")}
                     </Typography>
                   </Box>
 
@@ -1698,7 +1710,7 @@ const BrandProfile = () => {
                     }}
                   />
                   <Chip
-                    icon={brand.isVip ? "" : <ShoppingCartIcon />}
+                    icon={brand.isVip ? undefined : <ShoppingCartIcon />}
                     label={brand.isVip ? t("VIP Brand") : t("Premium Brand")}
                     sx={{
                       backgroundColor: brand.isVip

@@ -356,9 +356,9 @@ const ProductDetail = () => {
       </Button>
 
       <Paper elevation={3} sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
-        <Grid container spacing={{ xs: 2, sm: 3, md: 4 }}>
+        <Grid container spacing={3}>
           {/* Product Image */}
-          <Grid xs={6} md={6} alignContent="center">
+          <Grid size={{ xs: 12, md: 6 }} alignContent="center">
             {product.image ? (
               <CardMedia
                 component="img"
@@ -395,7 +395,7 @@ const ProductDetail = () => {
           </Grid>
 
           {/* Product Details */}
-          <Grid xs={6} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Box>
               <Box display="flex" alignItems="center" mb={2}>
                 <ShoppingCartIcon

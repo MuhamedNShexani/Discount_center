@@ -196,7 +196,14 @@ const ShoppingPage = () => {
               mb: 2,
             }}
           >
-            <Typography variant="h6" sx={{ fontWeight: 900, pr: 1 }}>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 900,
+                pr: 1,
+                color: "black",
+              }}
+            >
               {t("Draft cart")}
             </Typography>
             <IconButton
@@ -319,15 +326,10 @@ const ShoppingPage = () => {
           {t("No delivery stores available")}
         </Typography>
       ) : (
-        <Grid
-          container
-          spacing={1.5}
-          sx={{ justifyContent: "center", width: "100%" }}
-        >
+        <Grid container spacing={1.5} sx={{ justifyContent: "left", width: "100%" }}>
           {filteredStores.map((store) => (
             <Grid
-              item
-              xs={6}
+              size={{ xs: 6 }}
               key={store._id}
               sx={{
                 display: "flex",

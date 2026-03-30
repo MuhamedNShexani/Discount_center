@@ -7,6 +7,9 @@ const storeSchema = new mongoose.Schema({
   nameKu: { type: String, required: false },
   logo: { type: String },
   address: { type: String },
+  addressEn: { type: String, required: false },
+  addressAr: { type: String, required: false },
+  addressKu: { type: String, required: false },
   phone: { type: String },
   contactInfo: {
     phone: { type: String, default: "" },

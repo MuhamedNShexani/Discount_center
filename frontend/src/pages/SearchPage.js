@@ -285,7 +285,9 @@ const SearchPage = () => {
     return `${n.toLocaleString()} ${t("ID")}`;
   };
 
-  const searchProducts = Array.isArray(results.products) ? results.products : [];
+  const searchProducts = Array.isArray(results.products)
+    ? results.products
+    : [];
   const searchStores = Array.isArray(results.stores) ? results.stores : [];
   const searchBrands = Array.isArray(results.brands) ? results.brands : [];
   const searchCategories = Array.isArray(results.categories)
@@ -717,8 +719,11 @@ const SearchPage = () => {
                           formatPrice(p.newPrice) || formatPrice(p.price),
                           p.brandId?.statusAll === "off"
                             ? null
-                            : getLocalizedField(p.brandId, "name", dataLanguage) ||
-                              p.brandId?.name,
+                            : getLocalizedField(
+                                p.brandId,
+                                "name",
+                                dataLanguage,
+                              ) || p.brandId?.name,
                           getLocalizedField(p.storeId, "name", dataLanguage) ||
                             p.storeId?.name,
                         ]
@@ -784,8 +789,11 @@ const SearchPage = () => {
                       }
                       secondary={
                         s.storeTypeId?.name
-                          ? getLocalizedField(s.storeTypeId, "name", dataLanguage) ||
-                            t(s.storeTypeId.name)
+                          ? getLocalizedField(
+                              s.storeTypeId,
+                              "name",
+                              dataLanguage,
+                            ) || t(s.storeTypeId.name)
                           : undefined
                       }
                       primaryTypographyProps={{ fontWeight: 500 }}
@@ -845,8 +853,11 @@ const SearchPage = () => {
                       }
                       secondary={
                         b.brandTypeId?.name
-                          ? getLocalizedField(b.brandTypeId, "name", dataLanguage) ||
-                            t(b.brandTypeId.name)
+                          ? getLocalizedField(
+                              b.brandTypeId,
+                              "name",
+                              dataLanguage,
+                            ) || t(b.brandTypeId.name)
                           : undefined
                       }
                       primaryTypographyProps={{ fontWeight: 500 }}

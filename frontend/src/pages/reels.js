@@ -29,8 +29,8 @@ import { resolveMediaUrl } from "../utils/mediaUrl";
 import { isExpiryStillValid } from "../utils/expiryDate";
 import { useLocalizedContent } from "../hooks/useLocalizedContent";
 
-const MotionBox = motion(Box);
-const MotionIconButton = motion(IconButton);
+const MotionBox = motion.create(Box);
+const MotionIconButton = motion.create(IconButton);
 
 const ReelCard = memo(function ReelCard({
   reel,
@@ -110,8 +110,8 @@ const ReelCard = memo(function ReelCard({
       sx={{
         position: "relative",
         height: "100dvh",
-          width: "100%",
-                      overflow: "hidden",
+        width: "100%",
+        overflow: "hidden",
         scrollSnapAlign: "start",
         scrollSnapStop: "always",
         backgroundColor: "#000",
@@ -124,7 +124,6 @@ const ReelCard = memo(function ReelCard({
           autoPlay={isActive && !isPaused}
           loop
           muted={false}
-          defaultMuted={false}
           playsInline
           preload="metadata"
           onLoadedMetadata={(e) => {
@@ -139,22 +138,22 @@ const ReelCard = memo(function ReelCard({
             }
           }}
           style={{
-                                  width: "100%",
-                                  height: "100%",
+            width: "100%",
+            height: "100%",
             objectFit: isLandscapeVideo ? "contain" : "cover",
             objectPosition: "center center",
             transform: "translateZ(0)",
-                                }}
-                              />
-                          ) : (
-                            <Box
+          }}
+        />
+      ) : (
+        <Box
           sx={{ width: "100%", height: "100%", backgroundColor: "#101010" }}
         />
       )}
 
       {!isActive && (
-                          <Box
-                            sx={{
+        <Box
+          sx={{
             position: "absolute",
             inset: 0,
             display: "grid",
@@ -171,20 +170,20 @@ const ReelCard = memo(function ReelCard({
       {isActive && (
         <Box
           onClick={onTogglePlayback}
-                                sx={{
-                                  position: "absolute",
+          sx={{
+            position: "absolute",
             inset: 0,
             zIndex: 2,
             cursor: "pointer",
-                                }}
-                              />
-                            )}
+          }}
+        />
+      )}
 
       <MotionBox
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: isActive ? 1 : 0.82, y: 0 }}
         transition={{ duration: 0.26, ease: "easeOut" }}
-                      sx={{
+        sx={{
           position: "absolute",
           left: 16,
           right: 86,
@@ -201,7 +200,7 @@ const ReelCard = memo(function ReelCard({
               component={Link}
               to={ownerProfilePath}
               onClick={(e) => e.stopPropagation()}
-                        sx={{
+              sx={{
                 opacity: 0.95,
                 fontSize: 18,
                 fontWeight: 900,
@@ -215,16 +214,16 @@ const ReelCard = memo(function ReelCard({
             </Typography>
             {canFollowOwner && (
               <Button
-                                        size="small"
+                size="small"
                 variant={isOwnerFollowed ? "contained" : "outlined"}
                 disabled={ownerFollowLoading}
                 onClick={(e) => {
                   e.stopPropagation();
                   onToggleOwnerFollow();
                 }}
-                              sx={{
+                sx={{
                   minWidth: 86,
-                                px: 1,
+                  px: 1,
                   py: 0.15,
                   borderRadius: 99,
                   fontSize: 12,
@@ -238,34 +237,34 @@ const ReelCard = memo(function ReelCard({
                 {isOwnerFollowed ? "Following" : "Follow"}
               </Button>
             )}
-                            </Box>
+          </Box>
         )}
-                                      <Typography
+        <Typography
           variant="subtitle1"
           sx={{ fontWeight: 2000, fontSize: 15, lineHeight: 1.25 }}
         >
           {locTitle(reel) || "Untitled Reel"}
-                                      </Typography>
+        </Typography>
         {!!locDescription(reel) && (
-                                            <Typography
-                                              variant="body2"
+          <Typography
+            variant="body2"
             sx={{ mt: 0.75, opacity: 0.92, fontSize: 16, fontWeight: 700 }}
           >
             {locDescription(reel)}
-                                            </Typography>
-                                          )}
+          </Typography>
+        )}
       </MotionBox>
 
       <MotionBox
         initial={{ opacity: 0, x: 12 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.25 }}
-                                        sx={{
+        sx={{
           position: "absolute",
           right: 12,
           bottom: actionBottom,
           zIndex: 7,
-                                          display: "flex",
+          display: "flex",
           flexDirection: "column",
           alignItems: "center",
           gap: 1.4,
@@ -278,7 +277,7 @@ const ReelCard = memo(function ReelCard({
               to={ownerProfilePath}
               whileTap={{ scale: 0.95 }}
               onClick={(e) => e.stopPropagation()}
-                                        sx={{
+              sx={{
                 color: "#fff",
                 p: 0.25,
                 border: "2px solid rgba(255,255,255,0.85)",
@@ -288,20 +287,20 @@ const ReelCard = memo(function ReelCard({
             >
               {ownerLogo ? (
                 <Box
-                              component="img"
+                  component="img"
                   src={ownerLogo}
                   alt={ownerName || "owner"}
-                              sx={{
+                  sx={{
                     width: 38,
                     height: 38,
                     borderRadius: "50%",
-                                objectFit: "cover",
+                    objectFit: "cover",
                     display: "block",
-                              }}
-                            />
-                        ) : (
-                          <Box
-                            sx={{
+                  }}
+                />
+              ) : (
+                <Box
+                  sx={{
                     width: 38,
                     height: 38,
                     borderRadius: "50%",
@@ -313,8 +312,8 @@ const ReelCard = memo(function ReelCard({
                   }}
                 >
                   {(ownerName || "?").slice(0, 1).toUpperCase()}
-                          </Box>
-                        )}
+                </Box>
+              )}
             </MotionIconButton>
           </Box>
         )}
@@ -328,7 +327,7 @@ const ReelCard = memo(function ReelCard({
               onLike(reel._id);
             }}
             disabled={likeLoading}
-                          sx={{
+            sx={{
               color: isLiked ? "#ff4d67" : "#fff",
               backgroundColor: "rgba(0,0,0,0.35)",
               "&:hover": { backgroundColor: "rgba(0,0,0,0.5)" },
@@ -336,17 +335,17 @@ const ReelCard = memo(function ReelCard({
           >
             <FavoriteIcon />
           </MotionIconButton>
-                          <Typography
+          <Typography
             variant="caption"
             sx={{ color: "#fff", display: "block", mt: 0.5 }}
           >
             {reel.like ?? 0}
-                          </Typography>
+          </Typography>
         </Box>
         <Box sx={{ textAlign: "center" }}>
-                          <IconButton
+          <IconButton
             disableRipple
-                            sx={{
+            sx={{
               color: "#fff",
               backgroundColor: "rgba(0,0,0,0.35)",
               cursor: "default",
@@ -354,14 +353,14 @@ const ReelCard = memo(function ReelCard({
             }}
           >
             <VisibilityIcon />
-                          </IconButton>
-                          <Typography
+          </IconButton>
+          <Typography
             variant="caption"
             sx={{ color: "#fff", display: "block", mt: 0.5 }}
           >
             {reel.views ?? 0}
-                          </Typography>
-                      </Box>
+          </Typography>
+        </Box>
         <Box sx={{ textAlign: "center" }}>
           <MotionIconButton
             whileTap={{ scale: 0.9 }}
@@ -369,7 +368,7 @@ const ReelCard = memo(function ReelCard({
               e.stopPropagation();
               onShare(reel);
             }}
-                    sx={{
+            sx={{
               color: "#fff",
               backgroundColor: "rgba(0,0,0,0.35)",
               "&:hover": { backgroundColor: "rgba(0,0,0,0.5)" },
@@ -387,8 +386,8 @@ const ReelCard = memo(function ReelCard({
       </MotionBox>
 
       {isActive && isPaused && (
-                    <Box
-                      sx={{
+        <Box
+          sx={{
             position: "absolute",
             inset: 0,
             display: "grid",
@@ -423,8 +422,8 @@ const ReelCard = memo(function ReelCard({
         onPointerCancel={() => {
           isDraggingSeekRef.current = false;
         }}
-                                  sx={{
-                                    position: "absolute",
+        sx={{
+          position: "absolute",
           left: 12,
           right: 12,
           bottom: progressBottom,
@@ -437,7 +436,7 @@ const ReelCard = memo(function ReelCard({
         }}
       >
         <Box
-                                      sx={{
+          sx={{
             width: `${Math.max(0, Math.min(buffered, 100))}%`,
             height: "100%",
             borderRadius: 999,
@@ -448,7 +447,7 @@ const ReelCard = memo(function ReelCard({
           }}
         />
         <Box
-                                      sx={{
+          sx={{
             width: `${Math.max(0, Math.min(progress, 100))}%`,
             height: "100%",
             borderRadius: 999,
@@ -522,7 +521,6 @@ const ReelsPage = () => {
   }, []);
 
   const displayedReels = useMemo(() => {
-    const now = Date.now();
     const normalizeCity = (value) =>
       String(value || "")
         .trim()
@@ -548,7 +546,8 @@ const ReelsPage = () => {
     const selectedCityCanonical = toCanonicalCity(selectedCity);
 
     const unexpiredAndCityMatched = reels.filter((reel) => {
-      if (reel?.expireDate && !isExpiryStillValid(reel.expireDate)) return false;
+      if (reel?.expireDate && !isExpiryStillValid(reel.expireDate))
+        return false;
 
       if (!selectedCityCanonical) return true;
 
@@ -1059,12 +1058,7 @@ const ReelsPage = () => {
     }, 3000);
 
     return () => window.clearTimeout(id);
-  }, [
-    mainPageTab,
-    followLoadingTab,
-    loading,
-    displayedReels.length,
-  ]);
+  }, [mainPageTab, followLoadingTab, loading, displayedReels.length]);
 
   const handleOwnerFollowToggle = useCallback(
     async (storeId) => {
@@ -1100,7 +1094,7 @@ const ReelsPage = () => {
     return (
       <Box sx={{ minHeight: "100vh", display: "grid", placeItems: "center" }}>
         <CircularProgress />
-                      </Box>
+      </Box>
     );
   }
 
@@ -1108,7 +1102,7 @@ const ReelsPage = () => {
     return (
       <Box sx={{ minHeight: "100vh", display: "grid", placeItems: "center" }}>
         <Typography color="error">{error}</Typography>
-                          </Box>
+      </Box>
     );
   }
 
@@ -1116,7 +1110,7 @@ const ReelsPage = () => {
     return (
       <Box sx={{ minHeight: "100vh", display: "grid", placeItems: "center" }}>
         <Typography>No reels available yet.</Typography>
-                    </Box>
+      </Box>
     );
   }
 
@@ -1125,7 +1119,7 @@ const ReelsPage = () => {
       sx={{ position: "relative", height: "100dvh", backgroundColor: "#000" }}
     >
       <Box
-                        sx={{
+        sx={{
           position: "absolute",
           top: isMobile
             ? "calc(72px + env(safe-area-inset-top))"
@@ -1157,11 +1151,11 @@ const ReelsPage = () => {
         >
           Following
         </Button>
-                      </Box>
+      </Box>
 
-                      <Box
+      <Box
         ref={containerRef}
-                        sx={{
+        sx={{
           height: "100dvh",
           overflowY: "auto",
           scrollSnapType: "y mandatory",
@@ -1176,7 +1170,7 @@ const ReelsPage = () => {
       >
         {refreshing && (
           <Box
-                          sx={{
+            sx={{
               position: "absolute",
               top: isMobile ? 56 : 70,
               left: "50%",
@@ -1189,22 +1183,22 @@ const ReelsPage = () => {
             }}
           >
             <CircularProgress size={18} />
-                        </Box>
-                      )}
+          </Box>
+        )}
 
         {mainPageTab === 1 && followLoadingTab && (
           <Box
             sx={{ minHeight: "100dvh", display: "grid", placeItems: "center" }}
           >
             <CircularProgress />
-                        </Box>
-                      )}
+          </Box>
+        )}
 
         {mainPageTab === 1 &&
           !followLoadingTab &&
           displayedReels.length === 0 && (
             <Box
-                      sx={{
+              sx={{
                 minHeight: "100dvh",
                 display: "grid",
                 placeItems: "center",
@@ -1214,7 +1208,7 @@ const ReelsPage = () => {
               <Typography sx={{ color: "#fff", textAlign: "center" }}>
                 No reels from followed stores yet.
               </Typography>
-                  </Box>
+            </Box>
           )}
 
         {(mainPageTab === 0 ||
@@ -1254,7 +1248,7 @@ const ReelsPage = () => {
               />
             );
           })}
-          </Box>
+      </Box>
     </Box>
   );
 };

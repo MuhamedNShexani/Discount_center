@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   AppBar,
   Toolbar,
@@ -56,6 +62,7 @@ import {
   Refresh as RefreshIcon,
   VideoLibrary as VideoLibraryIcon,
   ShoppingBag as ShoppingBagIcon,
+  WorkOutline as WorkOutlineIcon,
 } from "@mui/icons-material";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -68,11 +75,17 @@ import { useNotifications } from "./context/NotificationContext";
 import { useContentRefresh } from "./context/ContentRefreshContext";
 import useIsMobileLayout from "./hooks/useIsMobileLayout";
 import { useActiveTheme } from "./context/ActiveThemeContext";
+import {
+  DATA_LANG_AR,
+  DATA_LANG_EN,
+  DATA_LANG_KU,
+  useDataLanguage,
+} from "./context/DataLanguageContext";
 import { giftAPI } from "./services/api";
 import { isExpiryStillValid } from "./utils/expiryDate";
 
-// Set to true to show notification center (bell, profile toggle, enable banner)
-const NOTIFICATIONS_CENTER_ENABLED = false;
+// Enable notification center (bell + menu)
+const NOTIFICATIONS_CENTER_ENABLED = true;
 
 const NavigationBar = ({ darkMode, setDarkMode }) => {
   const theme = useTheme();
@@ -100,7 +113,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
   const isSmUp = !useIsMobileLayout();
   const { triggerRefresh } = useContentRefresh();
   const { navConfig } = useActiveTheme();
-  const lang = i18n.language;
+  const { dataLanguage } = useDataLanguage();
   const location = useLocation();
   const isAuthenticated = !!user;
   const isAdmin = !!user && user.email === "mshexani45@gmail.com";
@@ -121,6 +134,9 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
   // City submenu state (desktop profile)
   const [cityAnchorEl, setCityAnchorEl] = useState(null);
 
+  const [mobileNavCityAnchor, setMobileNavCityAnchor] = useState(null);
+  const [mobileNavLangAnchor, setMobileNavLangAnchor] = useState(null);
+
   const [guestNameDialogOpen, setGuestNameDialogOpen] = useState(false);
   const [guestNameInput, setGuestNameInput] = useState("");
   const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false);
@@ -131,6 +147,27 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
     severity: "info",
   });
   const [confirmPushOpen, setConfirmPushOpen] = useState(false);
+
+  const pickNotificationText = useCallback(
+    (n, field) => {
+      const isAr = dataLanguage === DATA_LANG_AR;
+      const isKu = dataLanguage === DATA_LANG_KU;
+      const isEn = dataLanguage === DATA_LANG_EN;
+      if (field === "title") {
+        return (
+          (isAr ? n?.titleAr : isKu ? n?.titleKu : isEn ? n?.titleEn : "") ||
+          n?.title ||
+          ""
+        );
+      }
+      return (
+        (isAr ? n?.bodyAr : isKu ? n?.bodyKu : isEn ? n?.bodyEn : "") ||
+        n?.body ||
+        ""
+      );
+    },
+    [dataLanguage],
+  );
 
   // Gifts "new" badge (per account / guest device)
   const GIFTS_LAST_SEEN_KEY_PREFIX = "giftsLastSeenAt.v1";
@@ -157,11 +194,11 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
     () =>
       Boolean(
         user?._id ||
-          user?.id ||
-          user?.email ||
-          guestUser?.deviceId ||
-          guestUser?._id ||
-          guestUser?.id,
+        user?.id ||
+        user?.email ||
+        guestUser?.deviceId ||
+        guestUser?._id ||
+        guestUser?.id,
       ),
     [
       guestUser?._id,
@@ -434,7 +471,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
               }}
             >
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.9 }}>
-                {/* {NOTIFICATIONS_CENTER_ENABLED && (
+                {NOTIFICATIONS_CENTER_ENABLED && (
                   <IconButton
                     onClick={handleNotificationMenuOpen}
                     sx={{
@@ -455,7 +492,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                       <NotificationsIcon />
                     </Badge>
                   </IconButton>
-                )} */}
+                )}
                 <IconButton
                   component={Link}
                   to="/search"
@@ -669,6 +706,8 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   gifts: { to: "/gifts", icon: giftsIconWithBadge },
                   shopping: { to: "/shopping", icon: <ShoppingBagIcon /> },
                   profile: { to: "/profile", icon: <PersonIcon /> },
+                  brands: { to: "/brands", icon: <BusinessIcon /> },
+                  jobs: { to: "/findjob", icon: <WorkOutlineIcon /> },
                 };
 
                 const renderAction = (action, key) => {
@@ -685,6 +724,44 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                         sx={sxBtn}
                       >
                         <RefreshIcon />
+                      </IconButton>
+                    );
+                  }
+                  if (action === "city") {
+                    return (
+                      <IconButton
+                        key={key}
+                        onClick={(e) => setMobileNavCityAnchor(e.currentTarget)}
+                        sx={sxBtn}
+                        aria-label={t("City")}
+                      >
+                        <LocationOnIcon />
+                      </IconButton>
+                    );
+                  }
+                  if (action === "language") {
+                    return (
+                      <IconButton
+                        key={key}
+                        onClick={(e) => setMobileNavLangAnchor(e.currentTarget)}
+                        sx={sxBtn}
+                        aria-label={t("Language")}
+                      >
+                        <LanguageIcon />
+                      </IconButton>
+                    );
+                  }
+                  if (action === "notifications") {
+                    return (
+                      <IconButton
+                        key={key}
+                        onClick={handleNotificationMenuOpen}
+                        sx={sxBtn}
+                        aria-label={t("Notifications")}
+                      >
+                        <Badge badgeContent={unreadCount} color="error">
+                          <NotificationsIcon />
+                        </Badge>
                       </IconButton>
                     );
                   }
@@ -745,6 +822,85 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   </>
                 );
               })()}
+              <Menu
+                anchorEl={mobileNavCityAnchor}
+                open={Boolean(mobileNavCityAnchor)}
+                onClose={() => setMobileNavCityAnchor(null)}
+                anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+                transformOrigin={{ vertical: "top", horizontal: "center" }}
+                PaperProps={{
+                  sx: {
+                    mt: 1,
+                    minWidth: 200,
+                    maxHeight: 320,
+                  },
+                }}
+              >
+                {cities.map((city) => (
+                  <MenuItem
+                    key={city.value}
+                    selected={selectedCity === city.value}
+                    onClick={() => {
+                      changeCity(city.value);
+                      setMobileNavCityAnchor(null);
+                    }}
+                  >
+                    {city.label}
+                  </MenuItem>
+                ))}
+              </Menu>
+              <Menu
+                anchorEl={mobileNavLangAnchor}
+                open={Boolean(mobileNavLangAnchor)}
+                onClose={() => setMobileNavLangAnchor(null)}
+                anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+                transformOrigin={{ vertical: "top", horizontal: "center" }}
+                PaperProps={{ sx: { mt: 1, minWidth: 200 } }}
+              >
+                <MenuItem
+                  selected={i18n.language === "en"}
+                  onClick={() => {
+                    i18n.changeLanguage("en");
+                    setMobileNavLangAnchor(null);
+                  }}
+                >
+                  🇺🇸 {t("English")}
+                </MenuItem>
+                <MenuItem
+                  selected={i18n.language === "ar"}
+                  onClick={() => {
+                    i18n.changeLanguage("ar");
+                    setMobileNavLangAnchor(null);
+                  }}
+                >
+                  🇸🇦 {t("Arabic")}
+                </MenuItem>
+                <MenuItem
+                  selected={i18n.language === "ku"}
+                  onClick={() => {
+                    i18n.changeLanguage("ku");
+                    setMobileNavLangAnchor(null);
+                  }}
+                >
+                  <Box
+                    component="span"
+                    sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+                  >
+                    <Box
+                      component="img"
+                      src={kurdishFlag}
+                      alt="Kurdish"
+                      sx={{
+                        width: 16,
+                        height: 12,
+                        objectFit: "cover",
+                        borderRadius: 0.5,
+                      }}
+                    />
+                    {t("Kurdish")}
+                  </Box>
+                </MenuItem>
+              </Menu>
             </Box>
           )}
 
@@ -1057,7 +1213,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   </Menu>
                 </>
               )}
-              {/* {NOTIFICATIONS_CENTER_ENABLED && (
+              {NOTIFICATIONS_CENTER_ENABLED && (
                 <IconButton
                   onClick={handleNotificationMenuOpen}
                   sx={{
@@ -1079,7 +1235,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                     <NotificationsIcon />
                   </Badge>
                 </IconButton>
-              )} */}
+              )}
               {/* Desktop Profile Icon (contains Favourites, Login/Logout, City, Mode) */}
               <IconButton
                 component={Link}
@@ -1108,7 +1264,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
         </Toolbar>
       </AppBar>
 
-      {/* {NOTIFICATIONS_CENTER_ENABLED && (
+      {NOTIFICATIONS_CENTER_ENABLED && (
         <Menu
           anchorEl={notificationAnchorEl}
           open={Boolean(notificationAnchorEl)}
@@ -1211,17 +1367,17 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                       fontWeight={n.read ? 400 : 600}
                       sx={{ mb: 0.25 }}
                     >
-                      {n.title}
+                      {pickNotificationText(n, "title")}
                     </Typography>
-                    {n.body && (
+                    {pickNotificationText(n, "body") && (
                       <Typography
                         variant="caption"
                         color="text.secondary"
                         display="block"
                       >
-                        {n.body.length > 120
-                          ? `${n.body.slice(0, 120)}...`
-                          : n.body}
+                        {pickNotificationText(n, "body").length > 120
+                          ? `${pickNotificationText(n, "body").slice(0, 120)}...`
+                          : pickNotificationText(n, "body")}
                       </Typography>
                     )}
                     {n.link && (
@@ -1252,7 +1408,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
             )}
           </Box>
         </Menu>
-      )} */}
+      )}
 
       {/* {NOTIFICATIONS_CENTER_ENABLED && (
         <Snackbar

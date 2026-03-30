@@ -12,9 +12,9 @@ const categoryList = `${CATEGORY_NAME_I18N} types image icon`;
 const categoryDetail = `${CATEGORY_NAME_I18N} types image icon ${DESC_I18N}`;
 
 const storeList = `${STORE_NAME_I18N} logo storecity`;
-const storeDetail = `${STORE_NAME_I18N} logo storecity address phone ${DESC_I18N}`;
+const storeDetail = `${STORE_NAME_I18N} logo storecity address addressEn addressAr addressKu phone ${DESC_I18N}`;
 const brandList = `${BRAND_NAME_I18N} logo statusAll`;
-const brandDetail = `${BRAND_NAME_I18N} logo address phone ${DESC_I18N} statusAll`;
+const brandDetail = `${BRAND_NAME_I18N} logo address addressEn addressAr addressKu phone ${DESC_I18N} statusAll`;
 /** Video/reel feed (keeps extra location fields some clients use) */
 const storeVideo = `${STORE_NAME_I18N} logo storecity city`;
 const brandVideo = `${BRAND_NAME_I18N} logo brandcity storecity city`;

@@ -216,7 +216,13 @@ const DataEntryForm = () => {
 
   // Notification send form
   const [notificationTitle, setNotificationTitle] = useState("");
+  const [notificationTitleEn, setNotificationTitleEn] = useState("");
+  const [notificationTitleAr, setNotificationTitleAr] = useState("");
+  const [notificationTitleKu, setNotificationTitleKu] = useState("");
   const [notificationBody, setNotificationBody] = useState("");
+  const [notificationBodyEn, setNotificationBodyEn] = useState("");
+  const [notificationBodyAr, setNotificationBodyAr] = useState("");
+  const [notificationBodyKu, setNotificationBodyKu] = useState("");
   const [notificationType, setNotificationType] = useState("general");
   const [notificationLinkType, setNotificationLinkType] = useState("none");
   const [notificationLinkId, setNotificationLinkId] = useState("");
@@ -241,6 +247,9 @@ const DataEntryForm = () => {
     nameKu: "",
     logo: "",
     address: "",
+    addressEn: "",
+    addressAr: "",
+    addressKu: "",
     phone: "",
     whatsapp: "",
     facebook: "",
@@ -267,6 +276,9 @@ const DataEntryForm = () => {
     nameKu: "",
     logo: "",
     address: "",
+    addressEn: "",
+    addressAr: "",
+    addressKu: "",
     phone: "",
     whatsapp: "",
     facebook: "",
@@ -1646,6 +1658,9 @@ const DataEntryForm = () => {
         nameKu: "",
         logo: "",
         address: "",
+        addressEn: "",
+        addressAr: "",
+        addressKu: "",
         phone: "",
         whatsapp: "",
         facebook: "",
@@ -1726,6 +1741,9 @@ const DataEntryForm = () => {
         nameKu: "",
         logo: "",
         address: "",
+        addressEn: "",
+        addressAr: "",
+        addressKu: "",
         phone: "",
         whatsapp: "",
         facebook: "",
@@ -2007,6 +2025,9 @@ const DataEntryForm = () => {
         nameKu: data.nameKu || "",
         logo: data.logo,
         address: data.address,
+        addressEn: data.addressEn || "",
+        addressAr: data.addressAr || "",
+        addressKu: data.addressKu || "",
         phone: data.contactInfo?.phone || data.phone || "",
         whatsapp: data.contactInfo?.whatsapp || "",
         facebook: data.contactInfo?.facebook || "",
@@ -2036,6 +2057,9 @@ const DataEntryForm = () => {
         nameKu: data.nameKu || "",
         logo: data.logo,
         address: data.address,
+        addressEn: data.addressEn || "",
+        addressAr: data.addressAr || "",
+        addressKu: data.addressKu || "",
         phone: data.contactInfo?.phone || data.phone || "",
         whatsapp: data.contactInfo?.whatsapp || "",
         facebook: data.contactInfo?.facebook || "",
@@ -2777,7 +2801,7 @@ const DataEntryForm = () => {
       >
         <Box sx={{ p: 4, color: "white", position: "relative" }}>
           <Grid container spacing={3} alignItems="center">
-            <Grid item xs={12} md={8}>
+            <Grid size={{ xs: 12, md: 8 }}>
               <Box display="flex" alignItems="center" mb={2}>
                 <Avatar
                   sx={{
@@ -2820,7 +2844,7 @@ const DataEntryForm = () => {
                 </Box>
               </Box>
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <Box
                 display="flex"
                 gap={2}
@@ -3586,7 +3610,7 @@ const DataEntryForm = () => {
                 )}
               </Typography>
               <Grid container spacing={2} alignItems="center">
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
                     fullWidth
                     label={t("WhatsApp")}
@@ -3601,7 +3625,7 @@ const DataEntryForm = () => {
                     placeholder="+9647503683478"
                   />
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
                     fullWidth
                     label={t("Facebook")}
@@ -3614,7 +3638,7 @@ const DataEntryForm = () => {
                     }
                   />
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
                     fullWidth
                     label={t("Instagram")}
@@ -3627,7 +3651,7 @@ const DataEntryForm = () => {
                     }
                   />
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
                     fullWidth
                     label={t("Snapchat")}
@@ -3640,7 +3664,7 @@ const DataEntryForm = () => {
                     }
                   />
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
                     fullWidth
                     label={t("Gmail")}
@@ -3653,7 +3677,7 @@ const DataEntryForm = () => {
                     }
                   />
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
                     fullWidth
                     label={t("TikTok")}
@@ -3666,7 +3690,7 @@ const DataEntryForm = () => {
                     }
                   />
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
                     fullWidth
                     label={t("Viber")}
@@ -3679,7 +3703,7 @@ const DataEntryForm = () => {
                     }
                   />
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
                     fullWidth
                     label={t("Telegram")}
@@ -3692,7 +3716,7 @@ const DataEntryForm = () => {
                     }
                   />
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Button
                     variant="contained"
                     startIcon={<SaveIcon />}
@@ -3748,7 +3772,7 @@ const DataEntryForm = () => {
                 )}
               </Typography>
               <Grid container spacing={2}>
-                <Grid item xs={12} md={8}>
+                <Grid size={{ xs: 12, md: 8 }}>
                   <TextField
                     fullWidth
                     label={t("Title")}
@@ -3757,6 +3781,21 @@ const DataEntryForm = () => {
                     placeholder={t("e.g. New deals available!")}
                     required
                     sx={{ mb: 2 }}
+                  />
+                  <MultilingualFieldGroup
+                    sectionLabel={t("Title (translations)")}
+                    value={{
+                      english: notificationTitleEn,
+                      arabic: notificationTitleAr,
+                      kurdish: notificationTitleKu,
+                    }}
+                    onValueChange={(v) => {
+                      setNotificationTitleEn(v.english);
+                      setNotificationTitleAr(v.arabic);
+                      setNotificationTitleKu(v.kurdish);
+                    }}
+                    sourceText={notificationTitle}
+                    aiType="general"
                   />
                   <TextField
                     fullWidth
@@ -3767,6 +3806,23 @@ const DataEntryForm = () => {
                     onChange={(e) => setNotificationBody(e.target.value)}
                     placeholder={t("Optional message body...")}
                     sx={{ mb: 2 }}
+                  />
+                  <MultilingualFieldGroup
+                    sectionLabel={t("Message (translations)")}
+                    value={{
+                      english: notificationBodyEn,
+                      arabic: notificationBodyAr,
+                      kurdish: notificationBodyKu,
+                    }}
+                    onValueChange={(v) => {
+                      setNotificationBodyEn(v.english);
+                      setNotificationBodyAr(v.arabic);
+                      setNotificationBodyKu(v.kurdish);
+                    }}
+                    sourceText={notificationBody}
+                    aiType="general"
+                    multiline
+                    minRows={3}
                   />
                   <FormControl fullWidth sx={{ mb: 2 }}>
                     <InputLabel>{t("Type")}</InputLabel>
@@ -3853,6 +3909,12 @@ const DataEntryForm = () => {
                         const res = await adminAPI.sendNotification({
                           title: notificationTitle.trim(),
                           body: notificationBody.trim(),
+                          titleEn: notificationTitleEn.trim(),
+                          titleAr: notificationTitleAr.trim(),
+                          titleKu: notificationTitleKu.trim(),
+                          bodyEn: notificationBodyEn.trim(),
+                          bodyAr: notificationBodyAr.trim(),
+                          bodyKu: notificationBodyKu.trim(),
                           type: notificationType,
                           ...(link && { link }),
                         });
@@ -3874,7 +3936,13 @@ const DataEntryForm = () => {
                             text: msg,
                           });
                           setNotificationTitle("");
+                          setNotificationTitleEn("");
+                          setNotificationTitleAr("");
+                          setNotificationTitleKu("");
                           setNotificationBody("");
+                          setNotificationBodyEn("");
+                          setNotificationBodyAr("");
+                          setNotificationBodyKu("");
                           setNotificationType("general");
                           setNotificationLinkType("none");
                           setNotificationLinkId("");
@@ -5696,7 +5764,7 @@ const DataEntryForm = () => {
           {addDialog.type === "store" && (
             <Box component="form" onSubmit={handleStoreSubmit} sx={{ mt: 1 }}>
               <Grid container spacing={2}>
-                <Grid xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
                     fullWidth
                     label={t("Store Name")}
@@ -5713,7 +5781,7 @@ const DataEntryForm = () => {
                     }}
                   />
                 </Grid>
-                <Grid xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <MultilingualFieldGroup
                     sectionLabel={t("Store name (translations)")}
                     value={{
@@ -5733,7 +5801,7 @@ const DataEntryForm = () => {
                     aiType="store"
                   />
                 </Grid>
-                <Grid xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <FormControl fullWidth required>
                     <InputLabel shrink>{t("Store Type")}</InputLabel>
                     <Select
@@ -5775,13 +5843,33 @@ const DataEntryForm = () => {
                     </Select>
                   </FormControl>
                 </Grid>
-                <Grid xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <TextField
                     fullWidth
                     label={t("Address")}
                     name="address"
                     value={storeForm.address}
                     onChange={handleStoreFormChange}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12 }}>
+                  <MultilingualFieldGroup
+                    sectionLabel={t("Address (translations)")}
+                    value={{
+                      english: storeForm.addressEn,
+                      arabic: storeForm.addressAr,
+                      kurdish: storeForm.addressKu,
+                    }}
+                    onValueChange={(v) =>
+                      setStoreForm((p) => ({
+                        ...p,
+                        addressEn: v.english,
+                        addressAr: v.arabic,
+                        addressKu: v.kurdish,
+                      }))
+                    }
+                    sourceText={storeForm.address}
+                    aiType="store"
                   />
                 </Grid>
                 <Grid xs={12} sm={6}>
@@ -5838,7 +5926,7 @@ const DataEntryForm = () => {
                     onChange={handleStoreFormChange}
                   />
                 </Grid>
-                <Grid xs={12} sm={4}>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <TextField
                     fullWidth
                     label={t("Google Maps")}
@@ -6305,6 +6393,26 @@ const DataEntryForm = () => {
                     name="address"
                     value={brandForm.address}
                     onChange={handleBrandFormChange}
+                  />
+                </Grid>
+                <Grid xs={12}>
+                  <MultilingualFieldGroup
+                    sectionLabel={t("Address (translations)")}
+                    value={{
+                      english: brandForm.addressEn,
+                      arabic: brandForm.addressAr,
+                      kurdish: brandForm.addressKu,
+                    }}
+                    onValueChange={(v) =>
+                      setBrandForm((p) => ({
+                        ...p,
+                        addressEn: v.english,
+                        addressAr: v.arabic,
+                        addressKu: v.kurdish,
+                      }))
+                    }
+                    sourceText={brandForm.address}
+                    aiType="brand"
                   />
                 </Grid>
                 <Grid xs={12} sm={6}>
@@ -6785,7 +6893,7 @@ const DataEntryForm = () => {
                     <InputLabel shrink>{t("Category Type")}</InputLabel>
                     <Select
                       name="categoryTypeId"
-                      value={productForm.categoryTypeId}
+                      value={productForm.categoryTypeId ?? ""}
                       onChange={handleProductFormChange}
                       label={t("Category Type")}
                       displayEmpty
@@ -8332,6 +8440,24 @@ const DataEntryForm = () => {
                 value={editForm.address}
                 onChange={handleEditFormChange}
               />
+              <MultilingualFieldGroup
+                sectionLabel={t("Address (translations)")}
+                value={{
+                  english: editForm.addressEn || "",
+                  arabic: editForm.addressAr || "",
+                  kurdish: editForm.addressKu || "",
+                }}
+                onValueChange={(v) =>
+                  setEditForm((prev) => ({
+                    ...prev,
+                    addressEn: v.english,
+                    addressAr: v.arabic,
+                    addressKu: v.kurdish,
+                  }))
+                }
+                sourceText={editForm.address || ""}
+                aiType="brand"
+              />
               <TextField
                 margin="normal"
                 fullWidth
@@ -8582,6 +8708,32 @@ const DataEntryForm = () => {
                   </Select>
                 </FormControl>
               </Grid>
+              <TextField
+                margin="normal"
+                fullWidth
+                label={t("Address")}
+                name="address"
+                value={editForm.address || ""}
+                onChange={handleEditFormChange}
+              />
+              <MultilingualFieldGroup
+                sectionLabel={t("Address (translations)")}
+                value={{
+                  english: editForm.addressEn || "",
+                  arabic: editForm.addressAr || "",
+                  kurdish: editForm.addressKu || "",
+                }}
+                onValueChange={(v) =>
+                  setEditForm((prev) => ({
+                    ...prev,
+                    addressEn: v.english,
+                    addressAr: v.arabic,
+                    addressKu: v.kurdish,
+                  }))
+                }
+                sourceText={editForm.address || ""}
+                aiType="store"
+              />
               <TextField
                 margin="normal"
                 fullWidth
@@ -9760,11 +9912,15 @@ const DataEntryForm = () => {
                 <InputLabel>{t("Category Type")}</InputLabel>
                 <Select
                   name="categoryTypeId"
-                  value={editForm.categoryTypeId}
+                  value={editForm.categoryTypeId ?? ""}
                   onChange={handleEditFormChange}
                   label={t("Category Type")}
                   disabled={!editForm.categoryId}
+                  displayEmpty
                 >
+                  <MenuItem value="">
+                    <em>{t("Select Category Type")}</em>
+                  </MenuItem>
                   {categoryTypes.map((type, index) => {
                     const typeValue =
                       typeof type === "string" ? type : String(type?._id || "");

@@ -96,8 +96,7 @@ const GiftShowcase = ({ gifts }) => {
 
       <Slider {...settings}>
         {displayGifts.map((gift) => {
-          const label =
-            locDescription(gift) || locName(gift) || t("Gift");
+          const label = locDescription(gift) || locName(gift) || t("Gift");
           // const remainingDays = getRemainingDays(gift?.expireDate);
           // const brandId = gift?.brandId?._id || gift?.brandId;
 

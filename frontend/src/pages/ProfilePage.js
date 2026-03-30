@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Box,
@@ -102,6 +102,9 @@ const ProfilePage = () => {
   const [userNameInput, setUserNameInput] = useState("");
   const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false);
   const [deactivating, setDeactivating] = useState(false);
+  const changeNameButtonRef = useRef(null);
+  const deactivateButtonRef = useRef(null);
+  const deactivateCancelButtonRef = useRef(null);
 
   const displayName =
     user?.displayName ||
@@ -206,7 +209,10 @@ const ProfilePage = () => {
 
         <List disablePadding>
           <ListItemButton
-            onClick={() => {
+            ref={changeNameButtonRef}
+            onClick={(e) => {
+              // Avoid keeping focus on a background element while a modal sets aria-hidden.
+              e?.currentTarget?.blur?.();
               if (user) {
                 setUserNameInput(user?.displayName || user?.username || "");
                 setUserNameDialogOpen(true);
@@ -454,11 +460,10 @@ const ProfilePage = () => {
             </Box>
           </Box>
           <Divider />
-          <ListItemButton onClick={() => openWhatsApp()}>
+          <ListItemButton>
             <ListItemIcon>
-              <ContactSupportIcon fontSize="small" />
+              <ListItemText primary={t("Contact Us")} />
             </ListItemIcon>
-            <ListItemText primary={t("Contact Us")} />
           </ListItemButton>
           {contactItems.length > 0 && (
             <Box
@@ -504,7 +509,12 @@ const ProfilePage = () => {
           {user ? (
             <>
               <ListItemButton
-                onClick={() => setDeactivateDialogOpen(true)}
+                ref={deactivateButtonRef}
+                onClick={(e) => {
+                  // Avoid keeping focus on a background element while a modal sets aria-hidden.
+                  e?.currentTarget?.blur?.();
+                  setDeactivateDialogOpen(true);
+                }}
                 sx={{ color: theme.palette.secondary.main }}
               >
                 <ListItemIcon>
@@ -551,6 +561,11 @@ const ProfilePage = () => {
         onClose={() => setGuestNameDialogOpen(false)}
         maxWidth="xs"
         fullWidth
+        TransitionProps={{
+          onExited: () => {
+            changeNameButtonRef.current?.focus?.();
+          },
+        }}
       >
         <DialogTitle>{t("Change Your Account Name")}</DialogTitle>
         <DialogContent>
@@ -585,6 +600,11 @@ const ProfilePage = () => {
         onClose={() => setUserNameDialogOpen(false)}
         maxWidth="xs"
         fullWidth
+        TransitionProps={{
+          onExited: () => {
+            changeNameButtonRef.current?.focus?.();
+          },
+        }}
       >
         <DialogTitle>{t("Change Your Account Name")}</DialogTitle>
         <DialogContent>
@@ -619,6 +639,14 @@ const ProfilePage = () => {
         onClose={() => !deactivating && setDeactivateDialogOpen(false)}
         maxWidth="sm"
         fullWidth
+        TransitionProps={{
+          onEntered: () => {
+            deactivateCancelButtonRef.current?.focus?.();
+          },
+          onExited: () => {
+            deactivateButtonRef.current?.focus?.();
+          },
+        }}
       >
         <DialogTitle>{t("Deactivate Account")}</DialogTitle>
         <DialogContent>
@@ -642,6 +670,8 @@ const ProfilePage = () => {
           <Button
             onClick={() => setDeactivateDialogOpen(false)}
             disabled={deactivating}
+            autoFocus
+            ref={deactivateCancelButtonRef}
           >
             {t("Cancel")}
           </Button>

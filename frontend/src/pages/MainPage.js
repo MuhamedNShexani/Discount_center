@@ -88,7 +88,7 @@ const MainPage = () => {
   const theme = useTheme();
   const isMobile = useIsMobileLayout();
   const navigate = useNavigate();
-  const { locName, locDescription } = useLocalizedContent();
+  const { locName, locDescription, locAddress } = useLocalizedContent();
   const [stores, setStores] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
   const [productsByStore, setProductsByStore] = useState({});
@@ -2605,7 +2605,7 @@ const MainPage = () => {
                               textAlign: "left",
                             }}
                           >
-                            {store.address}
+                            {locAddress(store)}
                           </Typography>
                           <Chip
                             label={`${totalDiscountedInStore} ${t(
@@ -3302,7 +3302,7 @@ const MainPage = () => {
                             )}
                           </IconButton>
                         </Box>
-                        {store.address && (
+                        {locAddress(store) && (
                           <Typography
                             variant="body1"
                             sx={{
@@ -3321,7 +3321,7 @@ const MainPage = () => {
                               textAlign: "left",
                             }}
                           >
-                            {store.address}
+                            {locAddress(store)}
                           </Typography>
                         )}
                         <Chip
@@ -3773,9 +3773,9 @@ const MainPage = () => {
         <DialogContent sx={{ p: 0 }}>
           {selectedProduct && (
             <Paper elevation={0} sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
-              <Grid container spacing={{ xs: 2, sm: 3, md: 4 }}>
+              <Grid container spacing={3}>
                 {/* Product Image */}
-                <Grid xs={12} md={6} alignContent="center">
+                <Grid size={{ xs: 12, md: 6 }} alignContent="center">
                   {selectedProduct.image ? (
                     <CardMedia
                       component="img"
@@ -3812,7 +3812,7 @@ const MainPage = () => {
                 </Grid>
 
                 {/* Product Details */}
-                <Grid xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <Box>
                     <Box display="flex" alignItems="center" mb={2}>
                       <ShoppingCartIcon
