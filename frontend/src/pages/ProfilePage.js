@@ -242,7 +242,7 @@ const ProfilePage = () => {
                 </Typography>
               )}
             </Box>
-            {!countdown.expired && (
+            {/* {!countdown.expired && (
               <Alert
                 severity="info"
                 sx={{
@@ -257,7 +257,7 @@ const ProfilePage = () => {
                 {countdown.days}d {countdown.hours}h {countdown.minutes}m{" "}
                 {countdown.seconds}s
               </Alert>
-            )}
+            )} */}
           </Box>
         </Box>
 
