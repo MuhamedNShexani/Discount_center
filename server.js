@@ -41,6 +41,14 @@ app.use(express.json());
 // Serve static files from uploads directory
 app.use("/uploads", express.static("uploads"));
 
+// Health check (used for keep-alive / monitoring)
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    ok: true,
+    ts: new Date().toISOString(),
+  });
+});
+
 // Routes
 app.use("/api/stores", require("./routes/store"));
 app.use("/api/brands", require("./routes/brand"));

@@ -138,7 +138,7 @@ const StoreProfile = () => {
   });
   const [expandedTypes, setExpandedTypes] = useState({});
   const [displayCounts, setDisplayCounts] = useState({});
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filtersOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedGift, setSelectedGift] = useState(null);
   const [cartOpen, setCartOpen] = useState(false);
@@ -160,7 +160,7 @@ const StoreProfile = () => {
   const [likeLoading, setLikeLoading] = useState({});
 
   // Filter states
-  const [filters, setFilters] = useState({
+  const [filters] = useState({
     name: "",
     brand: "",
     barcode: "",

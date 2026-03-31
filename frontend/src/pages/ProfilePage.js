@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Box,
@@ -17,18 +17,16 @@ import {
   DialogActions,
   TextField,
   FormControl,
-  InputLabel,
   Select,
   MenuItem,
   useTheme,
+  Alert,
 } from "@mui/material";
 import {
   Person as PersonIcon,
-  Favorite as FavoriteIcon,
   Login as LoginIcon,
   Logout as LogoutIcon,
   PrivacyTip as PrivacyTipIcon,
-  ContactSupport as ContactSupportIcon,
   LocationOn as LocationOnIcon,
   AdminPanelSettings as AdminPanelSettingsIcon,
   Dashboard as DashboardIcon,
@@ -87,7 +85,7 @@ const ProfilePage = () => {
   const { user, logout, updateProfile, deactivate } = useAuth();
   const { user: guestUser, updateGuestName } = useUserTracking();
   const { selectedCity, changeCity, cities } = useCityFilter();
-  const { openWhatsApp, contactInfo } = useAppSettings();
+  const { contactInfo } = useAppSettings();
   const {
     activeTheme,
     userThemeOverride,
@@ -105,6 +103,41 @@ const ProfilePage = () => {
   const changeNameButtonRef = useRef(null);
   const deactivateButtonRef = useRef(null);
   const deactivateCancelButtonRef = useRef(null);
+
+  const [countdown, setCountdown] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+    expired: false,
+  });
+
+  useEffect(() => {
+    const target = new Date(2026, 4, 30, 0, 0, 0); // 30/05/2026
+    const update = () => {
+      const now = new Date();
+      const diff = target.getTime() - now.getTime();
+      if (diff <= 0) {
+        setCountdown((prev) => ({ ...prev, expired: true }));
+        return;
+      }
+      const totalSeconds = Math.floor(diff / 1000);
+      const days = Math.floor(totalSeconds / (24 * 3600));
+      const hours = Math.floor((totalSeconds % (24 * 3600)) / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      setCountdown({
+        days,
+        hours,
+        minutes,
+        seconds,
+        expired: false,
+      });
+    };
+    update();
+    const id = window.setInterval(update, 1000);
+    return () => window.clearInterval(id);
+  }, []);
 
   const displayName =
     user?.displayName ||
@@ -183,7 +216,7 @@ const ProfilePage = () => {
                 : "rgba(0,0,0,0.02)",
           }}
         >
-          <Box display="flex" alignItems="center" gap={1.5}>
+          <Box display="flex" alignItems="center" gap={1.5} flexWrap="wrap">
             <Avatar
               sx={{
                 width: 46,
@@ -194,16 +227,37 @@ const ProfilePage = () => {
             >
               {(displayName || "U").charAt(0).toUpperCase()}
             </Avatar>
-            <Box>
-              <Typography variant="subtitle1" fontWeight={700}>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography variant="subtitle1" fontWeight={700} noWrap>
                 {displayName}
               </Typography>
               {!!email && (
-                <Typography variant="body2" color="text.secondary">
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  noWrap
+                  sx={{ maxWidth: 260 }}
+                >
                   {email}
                 </Typography>
               )}
             </Box>
+            {!countdown.expired && (
+              <Alert
+                severity="info"
+                sx={{
+                  ml: { xs: 0, sm: "auto" },
+                  mt: { xs: 1.5, sm: 0 },
+                  px: 1.5,
+                  py: 0.5,
+                  fontSize: "0.75rem",
+                }}
+              >
+                {t("Time until 30/05/2026")}:{" "}
+                {countdown.days}d {countdown.hours}h {countdown.minutes}m{" "}
+                {countdown.seconds}s
+              </Alert>
+            )}
           </Box>
         </Box>
 

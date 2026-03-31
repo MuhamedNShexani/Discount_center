@@ -24,10 +24,7 @@ import { productAPI, categoryAPI } from "../services/api";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import BusinessIcon from "@mui/icons-material/Business";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
-import DescriptionIcon from "@mui/icons-material/Description";
 import StorefrontIcon from "@mui/icons-material/Storefront";
-import PhoneIcon from "@mui/icons-material/Phone";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import CategoryIcon from "@mui/icons-material/Category";
 import FavoriteIcon from "@mui/icons-material/Favorite";
@@ -72,8 +69,7 @@ const ProductDetail = () => {
 
   // Notification dialog state (reason: "like" | "review")
   const [loginNotificationOpen, setLoginNotificationOpen] = useState(false);
-  const [loginNotificationReason, setLoginNotificationReason] =
-    useState("like");
+  const [loginNotificationReason] = useState("like");
 
   // Handle like button click (works for both logged-in and guest/device users)
   const handleLikeClick = async () => {
