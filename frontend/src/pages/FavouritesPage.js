@@ -16,6 +16,7 @@ import {
   Alert,
   Chip,
   Button,
+  Skeleton,
 } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import FavoriteIcon from "@mui/icons-material/Favorite";
@@ -201,13 +202,18 @@ const FavouritesPage = () => {
         >
           {t("Back")}
         </Button>
-        <Box
-          display="flex"
-          justifyContent="center"
-          alignItems="center"
-          minHeight="40vh"
-        >
-          <CircularProgress />
+        <Box sx={{ mt: 2 }}>
+          <Skeleton variant="text" sx={{ width: "50%", mb: 2 }} />
+          {Array.from({ length: 4 }).map((_, idx) => (
+            <Box key={idx} sx={{ mb: 2 }}>
+              <Skeleton
+                variant="rectangular"
+                sx={{ width: "100%", height: 140, borderRadius: 2, mb: 1 }}
+              />
+              <Skeleton variant="text" sx={{ width: "60%" }} />
+              <Skeleton variant="text" sx={{ width: "40%" }} />
+            </Box>
+          ))}
         </Box>
       </Box>
     );

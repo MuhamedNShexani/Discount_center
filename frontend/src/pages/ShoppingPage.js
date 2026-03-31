@@ -17,6 +17,7 @@ import {
   Paper,
   Typography,
   useTheme,
+  Skeleton,
 } from "@mui/material";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import StorefrontIcon from "@mui/icons-material/Storefront";
@@ -127,6 +128,27 @@ const ShoppingPage = () => {
     setCartRefresh((k) => k + 1);
     setDraftDrawerOpen(true);
   }, []);
+
+  if (loading) {
+    return (
+      <Box sx={{ py: { xs: 5, md: 8 }, px: { xs: 1, sm: 2, md: 3 } }}>
+        <Skeleton variant="text" sx={{ width: 180, mb: 2 }} />
+        <Skeleton variant="rectangular" sx={{ height: 48, borderRadius: 3, mb: 3 }} />
+        <Grid container spacing={2}>
+          {Array.from({ length: 6 }).map((_, idx) => (
+            <Grid key={idx} size={{ xs: 12, sm: 6, md: 4 }}>
+              <Skeleton
+                variant="rectangular"
+                sx={{ width: "100%", height: 180, borderRadius: 3, mb: 1.5 }}
+              />
+              <Skeleton variant="text" sx={{ width: "70%" }} />
+              <Skeleton variant="text" sx={{ width: "40%" }} />
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ py: { xs: 5, md: 8 }, px: { xs: 1, sm: 2, md: 3 } }}>

@@ -6,13 +6,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import {
-  Box,
-  Button,
-  CircularProgress,
-  IconButton,
-  Typography,
-} from "@mui/material";
+import { Box, Button, CircularProgress, IconButton, Typography, Skeleton } from "@mui/material";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import ShareIcon from "@mui/icons-material/Share";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
@@ -1092,8 +1086,32 @@ const ReelsPage = () => {
 
   if (loading) {
     return (
-      <Box sx={{ minHeight: "100vh", display: "grid", placeItems: "center" }}>
-        <CircularProgress />
+      <Box
+        sx={{
+          minHeight: "100vh",
+          p: 2,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          gap: 2,
+          backgroundColor: "#000",
+        }}
+      >
+        <Skeleton
+          variant="rectangular"
+          animation="wave"
+          sx={{ width: "100%", maxWidth: 360, height: 32, borderRadius: 16, mx: "auto" }}
+        />
+        <Skeleton
+          variant="rectangular"
+          animation="wave"
+          sx={{ width: "100%", maxWidth: 420, height: "60vh", borderRadius: 2, mx: "auto" }}
+        />
+        <Skeleton
+          variant="text"
+          animation="wave"
+          sx={{ width: "60%", maxWidth: 320, mx: "auto" }}
+        />
       </Box>
     );
   }

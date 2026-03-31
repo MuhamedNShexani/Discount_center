@@ -9,12 +9,14 @@ const isAdminUser = (user) => {
 };
 
 // @desc    Get jobs (public)
-// @route   GET /api/jobs?storeTypeId=...&q=...
+// @route   GET /api/jobs?storeTypeId=...&q=...&storeId=...&brandId=...
 // @access  Public
 const getJobs = async (req, res) => {
   try {
     const q = String(req.query.q || "").trim();
     const storeTypeId = String(req.query.storeTypeId || "").trim();
+    const storeId = String(req.query.storeId || "").trim();
+    const brandId = String(req.query.brandId || "").trim();
     const adminList = isAdminUser(req.user);
 
     // Public app: only active, non-expired jobs. Admin (data entry): all rows so expiry status is visible.
@@ -24,6 +26,9 @@ const getJobs = async (req, res) => {
           active: { $ne: false },
           $or: [{ expireDate: null }, { expireDate: { $gt: new Date() } }],
         };
+
+    if (storeId) filter.storeId = storeId;
+    if (brandId) filter.brandId = brandId;
     if (q) {
       const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       filter.$and = [

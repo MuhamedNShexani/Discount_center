@@ -235,53 +235,18 @@ const BrandProfile = () => {
     try {
       setLoading(true);
 
-      // Fetch brand details
-      const brandResponse = await brandAPI.getById(id);
+      // Fast initial load: brand + products only
+      const [brandResponse, productsResponse] = await Promise.all([
+        brandAPI.getById(id),
+        productAPI.getByBrand(id),
+      ]);
       setBrand(brandResponse.data);
-
-      // Fetch products for this brand
-      const productsResponse = await productAPI.getByBrand(id);
       setProducts(productsResponse.data);
 
-      // Fetch gifts for this brand
-      const giftsResponse = await giftAPI.getByBrand(id);
-      setGifts(
-        (giftsResponse.data.data || []).filter((g) => {
-          if (!g?.expireDate) return true;
-          return isExpiryStillValid(g.expireDate);
-        }),
-      );
-
-      // Fetch reels for this brand (exclude expired)
-      try {
-        const videosRes = await videoAPI.getAll();
-        const list = Array.isArray(videosRes?.data) ? videosRes.data : [];
-        const filtered = list.filter((v) => {
-          const brandId = v?.brandId?._id || v?.brandId || "";
-          if (String(brandId) !== String(id)) return false;
-          if (!v?.expireDate) return true;
-          return isExpiryStillValid(v.expireDate);
-        });
-        setReels(filtered);
-      } catch {
-        setReels([]);
-      }
-
-      // Fetch jobs for this brand (exclude expired)
-      try {
-        const jobsRes = await jobAPI.getAll();
-        const list = Array.isArray(jobsRes?.data) ? jobsRes.data : [];
-        const filtered = list.filter((j) => {
-          const brandId = j?.brandId?._id || j?.brandId || "";
-          if (String(brandId) !== String(id)) return false;
-          if (j?.active === false) return false;
-          if (!j?.expireDate) return true;
-          return isExpiryStillValid(j.expireDate);
-        });
-        setJobs(filtered);
-      } catch {
-        setJobs([]);
-      }
+      // Defer heavy tabs until opened
+      setGifts([]);
+      setReels([]);
+      setJobs([]);
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -294,6 +259,41 @@ const BrandProfile = () => {
       setLoading(false);
     }
   }
+
+  // Lazy-load heavy tab data when the user opens those tabs
+  useEffect(() => {
+    if (!id) return;
+    if (!brand) return;
+    if (loading) return;
+
+    if (activeTabKey === "gifts" && gifts.length === 0) {
+      giftAPI
+        .getByBrand(id)
+        .then((res) =>
+          setGifts(
+            (res.data.data || []).filter((g) => {
+              if (!g?.expireDate) return true;
+              return isExpiryStillValid(g.expireDate);
+            }),
+          ),
+        )
+        .catch(() => setGifts([]));
+    }
+
+    if (activeTabKey === "reels" && reels.length === 0) {
+      videoAPI
+        .getAll({ brandId: id })
+        .then((res) => setReels(Array.isArray(res.data) ? res.data : []))
+        .catch(() => setReels([]));
+    }
+
+    if (activeTabKey === "jobs" && jobs.length === 0) {
+      jobAPI
+        .getAll({ brandId: id })
+        .then((res) => setJobs(Array.isArray(res.data) ? res.data : []))
+        .catch(() => setJobs([]));
+    }
+  }, [activeTabKey, id, brand, loading]);
 
   const calculateDiscount = (previousPrice, newPrice) => {
     if (!previousPrice || !newPrice || previousPrice <= newPrice) return 0;
@@ -1185,7 +1185,29 @@ const BrandProfile = () => {
     }
   }, [activeTabKey, visibleTabs]);
 
-  if (loading) return <Loader message={t("Loading...")} />;
+  if (loading) {
+    return (
+      <Box sx={{ py: 4, px: { xs: 1.5, sm: 2 } }}>
+        <Skeleton variant="text" sx={{ width: 220, mb: 2 }} />
+        <Skeleton
+          variant="rectangular"
+          sx={{ width: "100%", height: 220, borderRadius: 3, mb: 3 }}
+        />
+        <Grid container spacing={2}>
+          {Array.from({ length: 4 }).map((_, idx) => (
+            <Grid key={idx} size={{ xs: 12, sm: 6, md: 3 }}>
+              <Skeleton
+                variant="rectangular"
+                sx={{ width: "100%", height: 160, borderRadius: 2, mb: 1.5 }}
+              />
+              <Skeleton variant="text" sx={{ width: "80%" }} />
+              <Skeleton variant="text" sx={{ width: "50%" }} />
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
+    );
+  }
   if (error) return <Loader message={error} />;
   if (!brand) return <Alert severity="error">Brand not found</Alert>;
 

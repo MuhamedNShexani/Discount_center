@@ -146,7 +146,7 @@ export const themeAPI = {
 
 // Video/Reels API calls
 export const videoAPI = {
-  getAll: () => api.get("/videos"),
+  getAll: (params = {}) => api.get("/videos", { params }),
   create: (data) =>
     api.post("/videos", data, {
       timeout: 120000,
