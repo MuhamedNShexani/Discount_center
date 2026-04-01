@@ -260,21 +260,50 @@ const StoreProfile = () => {
     try {
       setLoading(true);
 
-      // Fast initial load: store + products only
-      const [storeResponse, productsResponse] = await Promise.all([
-        storeAPI.getById(id),
-        productAPI.getByStore(id),
-      ]);
-
+      // Fetch store details
+      const storeResponse = await storeAPI.getById(id);
       const storeData = storeResponse.data;
       setStore(storeData);
       setFollowerCount(storeData?.followerCount ?? 0);
+
+      // Fetch products for this store
+      const productsResponse = await productAPI.getByStore(id);
       setProducts(productsResponse.data);
 
-      // Defer heavy tabs until opened
-      setGifts([]);
-      setReels([]);
-      setJobs([]);
+      // Fetch gifts for this store
+      const giftsResponse = await giftAPI.getByStore(id);
+      setGifts(giftsResponse.data.data || []);
+
+      // Fetch reels for this store (exclude expired)
+      try {
+        const videosRes = await videoAPI.getAll();
+        const list = Array.isArray(videosRes?.data) ? videosRes.data : [];
+        const filtered = list.filter((v) => {
+          const storeId = v?.storeId?._id || v?.storeId || "";
+          if (String(storeId) !== String(id)) return false;
+          if (!v?.expireDate) return true;
+          return isExpiryStillValid(v.expireDate);
+        });
+        setReels(filtered);
+      } catch {
+        setReels([]);
+      }
+
+      // Fetch jobs for this store (exclude expired)
+      try {
+        const jobsRes = await jobAPI.getAll();
+        const list = Array.isArray(jobsRes?.data) ? jobsRes.data : [];
+        const filtered = list.filter((j) => {
+          const storeId = j?.storeId?._id || j?.storeId || "";
+          if (String(storeId) !== String(id)) return false;
+          if (j?.active === false) return false;
+          if (!j?.expireDate) return true;
+          return isExpiryStillValid(j.expireDate);
+        });
+        setJobs(filtered);
+      } catch {
+        setJobs([]);
+      }
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -287,34 +316,6 @@ const StoreProfile = () => {
       setLoading(false);
     }
   }
-
-  // Lazy-load heavy tab data when the user opens those tabs
-  useEffect(() => {
-    if (!id) return;
-    if (!store) return;
-    if (loading) return;
-
-    if (activeTabKey === "gifts" && gifts.length === 0) {
-      giftAPI
-        .getByStore(id)
-        .then((res) => setGifts(res.data.data || []))
-        .catch(() => setGifts([]));
-    }
-
-    if (activeTabKey === "reels" && reels.length === 0) {
-      videoAPI
-        .getAll({ storeId: id })
-        .then((res) => setReels(Array.isArray(res.data) ? res.data : []))
-        .catch(() => setReels([]));
-    }
-
-    if (activeTabKey === "jobs" && jobs.length === 0) {
-      jobAPI
-        .getAll({ storeId: id })
-        .then((res) => setJobs(Array.isArray(res.data) ? res.data : []))
-        .catch(() => setJobs([]));
-    }
-  }, [activeTabKey, id, store, loading]);
 
   const calculateDiscount = (previousPrice, newPrice) => {
     if (!previousPrice || !newPrice || previousPrice <= newPrice) return 0;

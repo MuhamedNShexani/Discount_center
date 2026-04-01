@@ -216,17 +216,7 @@ router.put("/:id", async (req, res) => {
 
 router.get("/", async (req, res) => {
   try {
-    const storeId = String(req.query.storeId || "").trim();
-    const brandId = String(req.query.brandId || "").trim();
-
-    const filter = {};
-    if (storeId) filter.storeId = storeId;
-    if (brandId) filter.brandId = brandId;
-
-    // Public: hide expired rows
-    filter.$or = [{ expireDate: null }, { expireDate: { $gt: new Date() } }];
-
-    const videos = await Video.find(filter)
+    const videos = await Video.find()
       .sort({ createdAt: -1 })
       .populate("storeId", storeVideo)
       .populate("brandId", brandVideo);

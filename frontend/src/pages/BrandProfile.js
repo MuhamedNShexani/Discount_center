@@ -127,7 +127,8 @@ const BrandProfile = () => {
   const [searchParams] = useSearchParams();
   const theme = useTheme();
   const { t } = useTranslation();
-  const { locName, locDescription, locTitle, locAddress } = useLocalizedContent();
+  const { locName, locDescription, locTitle, locAddress } =
+    useLocalizedContent();
   const { isAuthenticated } = useAuth();
   const { toggleLike, isProductLiked, recordView } = useUserTracking();
 
@@ -235,18 +236,53 @@ const BrandProfile = () => {
     try {
       setLoading(true);
 
-      // Fast initial load: brand + products only
-      const [brandResponse, productsResponse] = await Promise.all([
-        brandAPI.getById(id),
-        productAPI.getByBrand(id),
-      ]);
+      // Fetch brand details
+      const brandResponse = await brandAPI.getById(id);
       setBrand(brandResponse.data);
+
+      // Fetch products for this brand
+      const productsResponse = await productAPI.getByBrand(id);
       setProducts(productsResponse.data);
 
-      // Defer heavy tabs until opened
-      setGifts([]);
-      setReels([]);
-      setJobs([]);
+      // Fetch gifts for this brand
+      const giftsResponse = await giftAPI.getByBrand(id);
+      setGifts(
+        (giftsResponse.data.data || []).filter((g) => {
+          if (!g?.expireDate) return true;
+          return isExpiryStillValid(g.expireDate);
+        }),
+      );
+
+      // Fetch reels for this brand (exclude expired)
+      try {
+        const videosRes = await videoAPI.getAll();
+        const list = Array.isArray(videosRes?.data) ? videosRes.data : [];
+        const filtered = list.filter((v) => {
+          const brandId = v?.brandId?._id || v?.brandId || "";
+          if (String(brandId) !== String(id)) return false;
+          if (!v?.expireDate) return true;
+          return isExpiryStillValid(v.expireDate);
+        });
+        setReels(filtered);
+      } catch {
+        setReels([]);
+      }
+
+      // Fetch jobs for this brand (exclude expired)
+      try {
+        const jobsRes = await jobAPI.getAll();
+        const list = Array.isArray(jobsRes?.data) ? jobsRes.data : [];
+        const filtered = list.filter((j) => {
+          const brandId = j?.brandId?._id || j?.brandId || "";
+          if (String(brandId) !== String(id)) return false;
+          if (j?.active === false) return false;
+          if (!j?.expireDate) return true;
+          return isExpiryStillValid(j.expireDate);
+        });
+        setJobs(filtered);
+      } catch {
+        setJobs([]);
+      }
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -259,41 +295,6 @@ const BrandProfile = () => {
       setLoading(false);
     }
   }
-
-  // Lazy-load heavy tab data when the user opens those tabs
-  useEffect(() => {
-    if (!id) return;
-    if (!brand) return;
-    if (loading) return;
-
-    if (activeTabKey === "gifts" && gifts.length === 0) {
-      giftAPI
-        .getByBrand(id)
-        .then((res) =>
-          setGifts(
-            (res.data.data || []).filter((g) => {
-              if (!g?.expireDate) return true;
-              return isExpiryStillValid(g.expireDate);
-            }),
-          ),
-        )
-        .catch(() => setGifts([]));
-    }
-
-    if (activeTabKey === "reels" && reels.length === 0) {
-      videoAPI
-        .getAll({ brandId: id })
-        .then((res) => setReels(Array.isArray(res.data) ? res.data : []))
-        .catch(() => setReels([]));
-    }
-
-    if (activeTabKey === "jobs" && jobs.length === 0) {
-      jobAPI
-        .getAll({ brandId: id })
-        .then((res) => setJobs(Array.isArray(res.data) ? res.data : []))
-        .catch(() => setJobs([]));
-    }
-  }, [activeTabKey, id, brand, loading]);
 
   const calculateDiscount = (previousPrice, newPrice) => {
     if (!previousPrice || !newPrice || previousPrice <= newPrice) return 0;
