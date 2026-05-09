@@ -15,6 +15,8 @@ const FORCE_LOCATION_SUBSTRINGS = [
   "google.com/maps",
   "maps.app.goo.gl",
   "goo.gl/maps",
+  "waze.com",
+  "waze.me",
   "facebook.com",
   "fb.com",
   "instagram.com",
@@ -138,6 +140,157 @@ function shouldUseLocationNavigation(url) {
   return false;
 }
 
+function isAndroid() {
+  return typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent);
+}
+
+/** Maps / Waze / Apple Maps links — hand off to native apps on Android WebView (in-web maps GPS is often wrong). */
+function isMapsHandoffUrl(url) {
+  const lower = String(url).toLowerCase();
+  if (lower.startsWith("geo:") || lower.startsWith("maps:")) return true;
+  return (
+    lower.includes("maps.google.") ||
+    lower.includes("google.com/maps") ||
+    lower.includes("maps.app.goo.gl") ||
+    lower.includes("goo.gl/maps") ||
+    lower.includes("waze.com") ||
+    lower.includes("waze.me") ||
+    lower.includes("maps.apple.com")
+  );
+}
+
+/**
+ * Pull lat/lng from common maps URLs so Android can use geo: (opens in Maps app with correct pin).
+ */
+function extractLatLngFromMapsLikeUrl(urlString) {
+  const text = String(urlString);
+  const patterns = [
+    /@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/,
+    /[?&](?:ll|query|daddr|saddr|destination)=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/,
+    /[?&]center=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/,
+  ];
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) {
+      const lat = Number(match[1]);
+      const lng = Number(match[2]);
+      if (
+        Number.isFinite(lat) &&
+        Number.isFinite(lng) &&
+        lat >= -90 &&
+        lat <= 90 &&
+        lng >= -180 &&
+        lng <= 180
+      ) {
+        return { lat, lng };
+      }
+    }
+  }
+  try {
+    const u = new URL(urlString);
+    const q = u.searchParams.get("q");
+    if (q) {
+      const trimmed = q.trim();
+      const m = /^(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)$/.exec(trimmed);
+      if (m) {
+        const lat = Number(m[1]);
+        const lng = Number(m[2]);
+        if (Number.isFinite(lat) && Number.isFinite(lng)) return { lat, lng };
+      }
+    }
+    const ll = u.searchParams.get("ll");
+    if (ll) {
+      const parts = ll.split(",");
+      if (parts.length >= 2) {
+        const lat = Number(parts[0]);
+        const lng = Number(parts[1]);
+        if (Number.isFinite(lat) && Number.isFinite(lng)) return { lat, lng };
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
+function googleHttpsUrlToMapsIntent(originalUrl) {
+  try {
+    const u = new URL(originalUrl);
+    const h = u.hostname.replace(/^www\./, "").toLowerCase();
+    if (h.includes("goo.gl") || h.includes("app.goo.gl")) return null;
+
+    const onGoogleMaps =
+      h === "maps.google.com" ||
+      h.endsWith(".maps.google.com") ||
+      h === "google.com" ||
+      (h.endsWith(".google.com") && u.pathname.startsWith("/maps"));
+
+    if (!onGoogleMaps) return null;
+
+    const pathQueryHash = u.pathname + u.search + u.hash;
+    const fallback = encodeURIComponent(originalUrl);
+    return `intent://maps.google.com${pathQueryHash}#Intent;scheme=https;package=com.google.android.apps.maps;S.browser_fallback_url=${fallback};end`;
+  } catch {
+    return null;
+  }
+}
+
+function wazeHttpsUrlToIntent(originalUrl) {
+  try {
+    const u = new URL(originalUrl);
+    const h = u.hostname.replace(/^www\./, "").toLowerCase();
+    if (!h.includes("waze")) return null;
+    const pathQueryHash = u.pathname + u.search + u.hash;
+    const fallback = encodeURIComponent(originalUrl);
+    const intentHost = u.hostname.toLowerCase();
+    return `intent://${intentHost}${pathQueryHash}#Intent;scheme=https;package=com.waze;S.browser_fallback_url=${fallback};end`;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * On Android WebView, prefer native Maps / Waze so GPS and pins match real apps (not the embedded browser).
+ */
+function openAndroidMapsHandoff(originalUrl) {
+  const coords = extractLatLngFromMapsLikeUrl(originalUrl);
+  if (coords) {
+    const geo = `geo:${coords.lat},${coords.lng}?q=${coords.lat},${coords.lng}`;
+    try {
+      window.location.href = geo;
+      return;
+    } catch {
+      /* fall through */
+    }
+  }
+
+  const googleIntent = googleHttpsUrlToMapsIntent(originalUrl);
+  if (googleIntent) {
+    try {
+      window.location.href = googleIntent;
+      return;
+    } catch {
+      /* fall through */
+    }
+  }
+
+  const wazeIntent = wazeHttpsUrlToIntent(originalUrl);
+  if (wazeIntent) {
+    try {
+      window.location.href = wazeIntent;
+      return;
+    } catch {
+      /* fall through */
+    }
+  }
+
+  try {
+    window.location.href = originalUrl;
+  } catch {
+    /* ignore */
+  }
+}
+
 /**
  * https://wa.me, api.whatsapp.com, web.whatsapp.com, etc. (not whatsapp: — handled above).
  */
@@ -178,10 +331,14 @@ export function openExternal(url) {
   }
 
   if (shouldUseLocationNavigation(u)) {
-    try {
-      window.location.href = u;
-    } catch {
-      /* ignore */
+    if (isAndroid() && isMapsHandoffUrl(u)) {
+      openAndroidMapsHandoff(u);
+    } else {
+      try {
+        window.location.href = u;
+      } catch {
+        /* ignore */
+      }
     }
     return;
   }
