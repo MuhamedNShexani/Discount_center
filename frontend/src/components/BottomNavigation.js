@@ -410,7 +410,7 @@ const BottomNavigationBar = () => {
         position: "fixed",
         left: 0,
         right: 0,
-        bottom: 5,
+        bottom: 8,
         width: "100%",
         zIndex: 1000,
         pointerEvents: "none",

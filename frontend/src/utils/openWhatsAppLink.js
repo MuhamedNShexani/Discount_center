@@ -213,7 +213,20 @@ export function openWhatsAppLink(url, options = {}) {
   const ua = typeof navigator !== "undefined" ? navigator.userAgent || "" : "";
   const isMobile = /Android|iPhone|iPad|iPod/i.test(ua);
   const inWebView = isEmbeddedWebView();
+  const isIOS = /iPhone|iPad|iPod/i.test(ua);
   let params = parseApiWhatsAppSend(target) || parseApiWhatsAppSendLoose(target);
+
+  /** `whatsapp://` from an <a> — avoid api.whatsapp.com handoff */
+  if (/^whatsapp:/i.test(String(target || "").trim())) {
+    try {
+      if (inWebView && isIOS) {
+        window.location.href = target;
+        return;
+      }
+      if (!tryAnchorDeepLink(target)) tryIframeDeepLink(target);
+    } catch (_) {}
+    return;
+  }
 
   /** Non-parseable: open in new tab or assign only when safe */
   if (!params) {
@@ -254,6 +267,48 @@ export function openWhatsAppLink(url, options = {}) {
 
   if (isMobile) {
     void runClipboardIfTruncated();
+
+    /** iOS WKWebView: same-document navigation to whatsapp:// is the most reliable handoff; never fall back to https (loads web WhatsApp in-view). */
+    if (inWebView && isIOS) {
+      try {
+        window.location.href = appUrl;
+      } catch (_) {}
+      kickDeepLinks();
+      let cancelled = false;
+      const fallback = setTimeout(() => {
+        if (cancelled) return;
+        const phoneOnlyApp = `whatsapp://send?phone=${params.phone}`;
+        try {
+          window.location.href = phoneOnlyApp;
+        } catch (_) {}
+        tryAnchorDeepLink(phoneOnlyApp);
+        tryIframeDeepLink(phoneOnlyApp);
+        void (async () => {
+          const ok = await copyTextToClipboard(originalText || params.text || "");
+          if (ok) {
+            onClipboardFallback?.(
+              "Order text copied. Open WhatsApp from your device, then paste the message.",
+            );
+          } else {
+            onClipboardFallback?.(
+              "Cannot open WhatsApp inside this viewer. Install WhatsApp or open this site in Safari.",
+            );
+          }
+        })();
+      }, 750);
+
+      const onBlur = () => {
+        cancelled = true;
+        clearTimeout(fallback);
+        window.removeEventListener("blur", onBlur);
+      };
+      window.addEventListener("blur", onBlur);
+      setTimeout(() => {
+        window.removeEventListener("blur", onBlur);
+      }, 1300);
+      return;
+    }
+
     kickDeepLinks();
 
     let cancelled = false;

@@ -3,14 +3,14 @@
  * Prefer programmatic use via openExternal(); global capture listener installed by useExternalLinkInterceptor.
  */
 
+import { openWhatsAppLink } from "./openWhatsAppLink";
+
 /** Backend hostname allowed as “internal” if linked directly (rare). */
 const DEFAULT_INTERNAL_EXTRA_HOSTS = ["idashkan-production.up.railway.app"];
 
-/** Domains where assigning location is preferred over window.open (deep links & maps). */
+/** Domains where assigning location is preferred over window.open (deep links & maps).
+ *  WhatsApp https URLs are NOT here — they go through openWhatsAppLink (whatsapp://) to avoid WKWebView loading web.whatsapp.com. */
 const FORCE_LOCATION_SUBSTRINGS = [
-  "wa.me/",
-  "whatsapp.com",
-  "api.whatsapp.com",
   "maps.google.",
   "google.com/maps",
   "maps.app.goo.gl",
@@ -139,12 +139,43 @@ function shouldUseLocationNavigation(url) {
 }
 
 /**
+ * https://wa.me, api.whatsapp.com, web.whatsapp.com, etc. (not whatsapp: — handled above).
+ */
+function isWhatsAppWebOrHttpsUrl(url) {
+  const s = String(url || "").trim();
+  if (!s) return false;
+  const lower = s.toLowerCase();
+  /** Custom scheme — always route through openWhatsAppLink */
+  if (lower.startsWith("whatsapp:")) return true;
+  try {
+    const resolved = new URL(
+      s,
+      typeof window !== "undefined" ? window.location.href : "https://localhost/",
+    );
+    const h = resolved.hostname.replace(/^www\./, "").toLowerCase();
+    return (
+      h === "wa.me" ||
+      h === "whatsapp.com" ||
+      h.endsWith(".whatsapp.com")
+    );
+  } catch {
+    return /\bwa\.me\b|whatsapp\.com/i.test(s);
+  }
+}
+
+/**
  * Opens an external URL: tries a new browsing context first when appropriate, then falls back safely.
  * @param {string} url
  */
 export function openExternal(url) {
   const u = String(url || "").trim();
   if (!u || u.toLowerCase().startsWith("javascript:")) return;
+
+  /** Never assign WhatsApp https URLs to location — iOS WKWebView loads web WhatsApp in-shell. Use deep links. */
+  if (isWhatsAppWebOrHttpsUrl(u)) {
+    openWhatsAppLink(u);
+    return;
+  }
 
   if (shouldUseLocationNavigation(u)) {
     try {
