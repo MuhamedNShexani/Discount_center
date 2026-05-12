@@ -169,6 +169,59 @@ function isMapsHandoffUrl(url) {
   );
 }
 
+function isInstagramHttpsUrl(url) {
+  if (!/^https?:\/\//i.test(String(url))) return false;
+  try {
+    const u = new URL(url);
+    const h = u.hostname.replace(/^www\./, "").toLowerCase();
+    return h === "instagram.com" || h.endsWith(".instagram.com");
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Avoid loading instagram.com inside WebView: IG's "Open app" uses intent:// which triggers ERR_UNKNOWN_URL_SCHEME.
+ * Prefer VIEW intent into the Instagram app (fallback URL opens Chrome if app missing).
+ */
+function instagramHttpsToAndroidIntent(originalUrl) {
+  try {
+    const u = new URL(originalUrl);
+    const h = u.hostname.replace(/^www\./, "").toLowerCase();
+    if (h !== "instagram.com" && !h.endsWith(".instagram.com")) return null;
+    const pathQueryHash = u.pathname + u.search + u.hash;
+    const fallback = encodeURIComponent(originalUrl);
+    const intentHost = u.hostname.toLowerCase();
+    return `intent://${intentHost}${pathQueryHash}#Intent;scheme=https;package=com.instagram.android;S.browser_fallback_url=${fallback};end`;
+  } catch {
+    return null;
+  }
+}
+
+function openAndroidInstagramHandoff(originalUrl) {
+  const intent = instagramHttpsToAndroidIntent(originalUrl);
+  if (intent) {
+    try {
+      window.location.href = intent;
+      return;
+    } catch {
+      /* fall through */
+    }
+  }
+  try {
+    const w = window.open(originalUrl, "_blank");
+    if (w == null || w.closed) {
+      window.location.href = originalUrl;
+    }
+  } catch {
+    try {
+      window.location.href = originalUrl;
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
 /**
  * Pull lat/lng from common maps URLs so Android can use geo: (opens in Maps app with correct pin).
  */
@@ -262,7 +315,9 @@ function googleHttpsUrlToMapsIntent(originalUrl) {
 
     const pathQueryHash = u.pathname + u.search + u.hash;
     const fallback = encodeURIComponent(originalUrl);
-    return `intent://maps.google.com${pathQueryHash}#Intent;scheme=https;package=com.google.android.apps.maps;S.browser_fallback_url=${fallback};end`;
+    /** Keep original host (e.g. www.google.com) so path/query match desktop opens exactly. */
+    const intentHost = u.hostname.toLowerCase();
+    return `intent://${intentHost}${pathQueryHash}#Intent;scheme=https;package=com.google.android.apps.maps;S.browser_fallback_url=${fallback};end`;
   } catch {
     return null;
   }
@@ -283,20 +338,10 @@ function wazeHttpsUrlToIntent(originalUrl) {
 }
 
 /**
- * On Android WebView, prefer native Maps / Waze so GPS and pins match real apps (not the embedded browser).
+ * On Android WebView, hand off to the Maps app with the **same** https URL as desktop (place id, path).
+ * Never prefer `geo:` first — extracted @lat,lng is often camera position, not the saved place pin.
  */
 function openAndroidMapsHandoff(originalUrl) {
-  const coords = extractLatLngFromMapsLikeUrl(originalUrl);
-  if (coords) {
-    const geo = `geo:${coords.lat},${coords.lng}?q=${coords.lat},${coords.lng}`;
-    try {
-      window.location.href = geo;
-      return;
-    } catch {
-      /* fall through */
-    }
-  }
-
   const googleIntent = googleHttpsUrlToMapsIntent(originalUrl);
   if (googleIntent) {
     try {
@@ -327,6 +372,17 @@ function openAndroidMapsHandoff(originalUrl) {
     }
   }
 
+  const coords = extractLatLngFromMapsLikeUrl(originalUrl);
+  if (coords) {
+    const geo = `geo:${coords.lat},${coords.lng}?q=${coords.lat},${coords.lng}`;
+    try {
+      window.location.href = geo;
+      return;
+    } catch {
+      /* fall through */
+    }
+  }
+
   try {
     window.location.href = originalUrl;
   } catch {
@@ -345,16 +401,17 @@ function isGoogleMapsHttpsUrl(url) {
 }
 
 /**
- * iOS WKWebView often shows a broken/in-app Google Maps web UI when assigning https to location.
- * Prefer native Maps / Google Maps URL schemes when we have coordinates; otherwise open Safari.
+ * iOS: open the **same** https Maps URL as desktop (`window.open` / Safari).
+ * Do not use `comgooglemaps://?q=lat,lng` — it drops place IDs / path and the pin can differ from pasted links.
  */
 function openIosMapsHandoff(originalUrl) {
   const lower = String(originalUrl).toLowerCase();
 
   const openHttpsFallback = () => {
     try {
-      const w = window.open(originalUrl, "_blank", "noopener,noreferrer");
-      if (w == null || typeof w.closed === "undefined" || w.closed) {
+      /** Two-arg open returns a Window; `noopener` in feature string makes browsers return null while still opening a tab → duplicate navigation if we then set location. */
+      const w = window.open(originalUrl, "_blank");
+      if (w == null || w.closed) {
         window.location.href = originalUrl;
       }
     } catch {
@@ -378,26 +435,9 @@ function openIosMapsHandoff(originalUrl) {
     }
   }
 
-  const coords = extractLatLngFromMapsLikeUrl(originalUrl);
-  const googleLike = isGoogleMapsHttpsUrl(originalUrl);
-
-  if (coords && googleLike) {
-    let handedOff = false;
-    const markBlur = () => {
-      handedOff = true;
-    };
-    window.addEventListener("blur", markBlur, { once: true });
-    try {
-      window.location.href = `comgooglemaps://?q=${coords.lat},${coords.lng}`;
-    } catch {
-      window.removeEventListener("blur", markBlur);
-      openHttpsFallback();
-      return;
-    }
-    window.setTimeout(() => {
-      window.removeEventListener("blur", markBlur);
-      if (!handedOff) openHttpsFallback();
-    }, 650);
+  /** Google Maps (full URL or goo.gl): match desktop — full URL preserves exact place. */
+  if (isGoogleMapsHttpsUrl(originalUrl) && /^https?:\/\//i.test(originalUrl)) {
+    openHttpsFallback();
     return;
   }
 
@@ -444,14 +484,19 @@ export function openExternal(url) {
   }
 
   if (shouldUseLocationNavigation(u)) {
-    if (isAndroid() && isMapsHandoffUrl(u)) {
+    if (isAndroid() && isInstagramHttpsUrl(u)) {
+      openAndroidInstagramHandoff(u);
+    } else if (isAndroid() && isMapsHandoffUrl(u)) {
       openAndroidMapsHandoff(u);
-    } else if (isIOS() && isMapsHandoffUrl(u)) {
+    } else if (
+      isIOS() &&
+      (isInstagramHttpsUrl(u) || isMapsHandoffUrl(u))
+    ) {
       openIosMapsHandoff(u);
     } else if (/^https?:\/\//i.test(u) && isMapsHandoffUrl(u)) {
       try {
-        const w = window.open(u, "_blank", "noopener,noreferrer");
-        if (w == null || typeof w.closed === "undefined" || w.closed) {
+        const w = window.open(u, "_blank");
+        if (w == null || w.closed) {
           window.location.href = u;
         }
       } catch {
@@ -472,8 +517,8 @@ export function openExternal(url) {
   }
 
   try {
-    const w = window.open(u, "_blank", "noopener,noreferrer");
-    if (w == null || typeof w.closed === "undefined" || w.closed) {
+    const w = window.open(u, "_blank");
+    if (w == null || w.closed) {
       window.location.href = u;
     }
   } catch {

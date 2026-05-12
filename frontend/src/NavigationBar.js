@@ -690,10 +690,9 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
             "&:hover": {
               backgroundColor: "rgba(255,255,255,0.2)",
               transform: isAndroidPerfMode ? "none" : "scale(1.06)",
-              boxShadow:
-                isAndroidPerfMode
-                  ? "none"
-                  : "0 8px 24px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.35)",
+              boxShadow: isAndroidPerfMode
+                ? "none"
+                : "0 8px 24px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.35)",
             },
           }
         : {
@@ -738,6 +737,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
         elevation={0}
         style={navAppBarStyle}
         sx={{
+          ...(isSmUp ? {} : { borderRadius: 0 }),
           backdropFilter: isDarkNav
             ? "blur(22px) saturate(170%)"
             : "blur(20px)",
@@ -770,8 +770,6 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
             gap: isSmUp ? 1 : 0,
             rowGap: isSmUp ? 1 : 0,
             px: { xs: 1, sm: 2, md: 4 },
-            borderBottomLeftRadius: isDarkNav ? 22 : "50%",
-            borderBottomRightRadius: isDarkNav ? 22 : "50%",
             ...(isSmUp ? {} : { minHeight: 56 }),
             position: "relative",
             ...(isDarkNav
@@ -780,7 +778,6 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                     content: '""',
                     position: "absolute",
                     inset: 0,
-                    borderRadius: "inherit",
                     pointerEvents: "none",
                     background:
                       "linear-gradient(180deg, rgba(255,255,255,0.07) 0%, transparent 42%)",
@@ -1056,11 +1053,12 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                           <Avatar
                             src={`${import.meta.env.BASE_URL}logo512.png`}
                             alt={NAV_BRAND_TITLE}
-                            variant="rounded"
+                            variant="square"
                             sx={{
                               width: 44,
                               height: 44,
                               flexShrink: 0,
+                              borderRadius: 0,
                               bgcolor: "rgba(255,255,255,0.12)",
                               "& img": {
                                 objectFit: "cover",
@@ -1173,7 +1171,12 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                   onClose={() => setMobileNavLangAnchor(null)}
                   anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
                   transformOrigin={{ vertical: "top", horizontal: "center" }}
-                  PaperProps={{ sx: { mt: 1, minWidth: 200 } }}
+                  PaperProps={{
+                    sx: {
+                      mt: 1,
+                      minWidth: 200,
+                    },
+                  }}
                 >
                   <MenuItem
                     selected={i18n.language === "en"}
@@ -1212,7 +1215,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                           width: 16,
                           height: 12,
                           objectFit: "cover",
-                          borderRadius: 0.5,
+                          borderRadius: 0,
                         }}
                       />
                       {t("Kurdish")}
@@ -2101,7 +2104,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                     width: 16,
                     height: 12,
                     objectFit: "cover",
-                    borderRadius: 0.5,
+                    borderRadius: isSmUp ? 0.5 : 0,
                   }}
                 />
                 {t("Kurdish")}

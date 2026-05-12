@@ -414,9 +414,10 @@ const BottomNavigationBar = () => {
         width: "100%",
         zIndex: 1000,
         pointerEvents: "none",
+
         paddingBottom: "max(1px, env(safe-area-inset-bottom))",
-        paddingLeft: "env(safe-area-inset-left, 0px)",
-        paddingRight: "env(safe-area-inset-right, 0px)",
+        paddingLeft: "5px",
+        paddingRight: "5px",
         boxSizing: "border-box",
       }}
     >
