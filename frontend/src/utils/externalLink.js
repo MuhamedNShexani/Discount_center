@@ -245,42 +245,70 @@ function extractInstagramProfileUsername(urlString) {
   }
 }
 
+/** New tab/window only — does not assign location (same WebView is not “browser launched”). */
+function tryOpenNewTabOnly(url) {
+  const u = String(url || "").trim();
+  if (!u) return false;
+  try {
+    const w = window.open(u, "_blank");
+    if (w != null && !w.closed) return true;
+  } catch {
+    /* ignore */
+  }
+  return false;
+}
+
 /**
- * Mobile WebViews load instagram.com in-shell; IG's "Open app" uses intent:// which breaks.
- * Prefer native app deep link first for profile URLs, then fall back to https.
+ * Second step after browser (`window.open`) fails: custom scheme, then delayed full https fallback.
+ */
+function scheduleCustomSchemeWithHttpsFallback(appSchemeUrl, httpsUrl) {
+  let fallbackTimer = window.setTimeout(() => {
+    fallbackTimer = null;
+    tryOpenExternalHttps(httpsUrl);
+  }, 900);
+
+  const cancelFallback = () => {
+    if (fallbackTimer != null) {
+      window.clearTimeout(fallbackTimer);
+      fallbackTimer = null;
+    }
+  };
+
+  document.addEventListener(
+    "visibilitychange",
+    () => {
+      if (document.visibilityState === "hidden") cancelFallback();
+    },
+    { once: true },
+  );
+  window.addEventListener("pagehide", cancelFallback, { once: true });
+
+  try {
+    window.location.href = appSchemeUrl;
+  } catch {
+    cancelFallback();
+    tryOpenExternalHttps(httpsUrl);
+  }
+}
+
+/**
+ * Mobile: open https in a new tab first (Safari/Chrome when allowed). If that fails, instagram:// then https fallback.
  */
 function openInstagramOutOfWebView(httpsUrl) {
   const mobile = isAndroid() || isIOS();
+  if (!mobile) {
+    tryOpenExternalHttps(httpsUrl);
+    return;
+  }
+
+  if (tryOpenNewTabOnly(httpsUrl)) {
+    return;
+  }
+
   const username = extractInstagramProfileUsername(httpsUrl);
-  if (mobile && username) {
+  if (username) {
     const appUrl = `instagram://user?username=${encodeURIComponent(username)}`;
-    let fallbackTimer = window.setTimeout(() => {
-      fallbackTimer = null;
-      tryOpenExternalHttps(httpsUrl);
-    }, 900);
-
-    const cancelFallback = () => {
-      if (fallbackTimer != null) {
-        window.clearTimeout(fallbackTimer);
-        fallbackTimer = null;
-      }
-    };
-
-    document.addEventListener(
-      "visibilitychange",
-      () => {
-        if (document.visibilityState === "hidden") cancelFallback();
-      },
-      { once: true },
-    );
-    window.addEventListener("pagehide", cancelFallback, { once: true });
-
-    try {
-      window.location.href = appUrl;
-    } catch {
-      cancelFallback();
-      tryOpenExternalHttps(httpsUrl);
-    }
+    scheduleCustomSchemeWithHttpsFallback(appUrl, httpsUrl);
     return;
   }
 
@@ -288,44 +316,21 @@ function openInstagramOutOfWebView(httpsUrl) {
 }
 
 /**
- * Same pattern as Instagram: avoid loading facebook.com in WebView first (Open app → intent:// breaks).
- * `fb://facewebmodal/f?href=` passes the full https URL into the Facebook app when installed.
+ * Mobile: browser tab first; if blocked, fb://facewebmodal then https fallback.
  */
 function openFacebookOutOfWebView(httpsUrl) {
   const mobile = isAndroid() || isIOS();
-  if (mobile) {
-    const appUrl = `fb://facewebmodal/f?href=${encodeURIComponent(httpsUrl)}`;
-    let fallbackTimer = window.setTimeout(() => {
-      fallbackTimer = null;
-      tryOpenExternalHttps(httpsUrl);
-    }, 900);
-
-    const cancelFallback = () => {
-      if (fallbackTimer != null) {
-        window.clearTimeout(fallbackTimer);
-        fallbackTimer = null;
-      }
-    };
-
-    document.addEventListener(
-      "visibilitychange",
-      () => {
-        if (document.visibilityState === "hidden") cancelFallback();
-      },
-      { once: true },
-    );
-    window.addEventListener("pagehide", cancelFallback, { once: true });
-
-    try {
-      window.location.href = appUrl;
-    } catch {
-      cancelFallback();
-      tryOpenExternalHttps(httpsUrl);
-    }
+  if (!mobile) {
+    tryOpenExternalHttps(httpsUrl);
     return;
   }
 
-  tryOpenExternalHttps(httpsUrl);
+  if (tryOpenNewTabOnly(httpsUrl)) {
+    return;
+  }
+
+  const appUrl = `fb://facewebmodal/f?href=${encodeURIComponent(httpsUrl)}`;
+  scheduleCustomSchemeWithHttpsFallback(appUrl, httpsUrl);
 }
 
 /**
