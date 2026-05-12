@@ -144,6 +144,16 @@ function isAndroid() {
   return typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent);
 }
 
+/** iPhone / iPad / iPod (includes iPadOS 13+ desktop UA). */
+function isIOS() {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent || "";
+  if (/iPad|iPhone|iPod/i.test(ua)) return true;
+  return (
+    navigator.platform === "MacIntel" && (navigator.maxTouchPoints || 0) > 1
+  );
+}
+
 /** Maps / Waze / Apple Maps links — hand off to native apps on Android WebView (in-web maps GPS is often wrong). */
 function isMapsHandoffUrl(url) {
   const lower = String(url).toLowerCase();
@@ -213,6 +223,29 @@ function extractLatLngFromMapsLikeUrl(urlString) {
   return null;
 }
 
+/**
+ * maps.app.goo.gl / goo.gl/maps — route through Maps app so WebView resolves short links natively.
+ */
+function googleMapsShortLinkToAndroidIntent(originalUrl) {
+  try {
+    const u = new URL(originalUrl);
+    const h = u.hostname.replace(/^www\./, "").toLowerCase();
+    if (
+      !h.includes("goo.gl") &&
+      !h.includes("maps.app.goo.gl") &&
+      h !== "maps.app.goo.gl"
+    ) {
+      return null;
+    }
+    const pathQueryHash = u.pathname + u.search + u.hash;
+    const fallback = encodeURIComponent(originalUrl);
+    const host = u.hostname.toLowerCase();
+    return `intent://${host}${pathQueryHash}#Intent;scheme=https;package=com.google.android.apps.maps;S.browser_fallback_url=${fallback};end`;
+  } catch {
+    return null;
+  }
+}
+
 function googleHttpsUrlToMapsIntent(originalUrl) {
   try {
     const u = new URL(originalUrl);
@@ -274,6 +307,16 @@ function openAndroidMapsHandoff(originalUrl) {
     }
   }
 
+  const shortIntent = googleMapsShortLinkToAndroidIntent(originalUrl);
+  if (shortIntent) {
+    try {
+      window.location.href = shortIntent;
+      return;
+    } catch {
+      /* fall through */
+    }
+  }
+
   const wazeIntent = wazeHttpsUrlToIntent(originalUrl);
   if (wazeIntent) {
     try {
@@ -289,6 +332,76 @@ function openAndroidMapsHandoff(originalUrl) {
   } catch {
     /* ignore */
   }
+}
+
+function isGoogleMapsHttpsUrl(url) {
+  const lower = String(url).toLowerCase();
+  return (
+    lower.includes("maps.google.") ||
+    lower.includes("google.com/maps") ||
+    lower.includes("maps.app.goo.gl") ||
+    lower.includes("goo.gl/maps")
+  );
+}
+
+/**
+ * iOS WKWebView often shows a broken/in-app Google Maps web UI when assigning https to location.
+ * Prefer native Maps / Google Maps URL schemes when we have coordinates; otherwise open Safari.
+ */
+function openIosMapsHandoff(originalUrl) {
+  const lower = String(originalUrl).toLowerCase();
+
+  const openHttpsFallback = () => {
+    try {
+      const w = window.open(originalUrl, "_blank", "noopener,noreferrer");
+      if (w == null || typeof w.closed === "undefined" || w.closed) {
+        window.location.href = originalUrl;
+      }
+    } catch {
+      try {
+        window.location.href = originalUrl;
+      } catch {
+        /* ignore */
+      }
+    }
+  };
+
+  /** Apple Maps web links → system Maps app */
+  if (lower.includes("maps.apple.com")) {
+    try {
+      const u = new URL(originalUrl);
+      window.location.href = `maps://maps.apple.com${u.pathname}${u.search}${u.hash}`;
+      return;
+    } catch {
+      openHttpsFallback();
+      return;
+    }
+  }
+
+  const coords = extractLatLngFromMapsLikeUrl(originalUrl);
+  const googleLike = isGoogleMapsHttpsUrl(originalUrl);
+
+  if (coords && googleLike) {
+    let handedOff = false;
+    const markBlur = () => {
+      handedOff = true;
+    };
+    window.addEventListener("blur", markBlur, { once: true });
+    try {
+      window.location.href = `comgooglemaps://?q=${coords.lat},${coords.lng}`;
+    } catch {
+      window.removeEventListener("blur", markBlur);
+      openHttpsFallback();
+      return;
+    }
+    window.setTimeout(() => {
+      window.removeEventListener("blur", markBlur);
+      if (!handedOff) openHttpsFallback();
+    }, 650);
+    return;
+  }
+
+  openHttpsFallback();
 }
 
 /**
@@ -333,6 +446,21 @@ export function openExternal(url) {
   if (shouldUseLocationNavigation(u)) {
     if (isAndroid() && isMapsHandoffUrl(u)) {
       openAndroidMapsHandoff(u);
+    } else if (isIOS() && isMapsHandoffUrl(u)) {
+      openIosMapsHandoff(u);
+    } else if (/^https?:\/\//i.test(u) && isMapsHandoffUrl(u)) {
+      try {
+        const w = window.open(u, "_blank", "noopener,noreferrer");
+        if (w == null || typeof w.closed === "undefined" || w.closed) {
+          window.location.href = u;
+        }
+      } catch {
+        try {
+          window.location.href = u;
+        } catch {
+          /* ignore */
+        }
+      }
     } else {
       try {
         window.location.href = u;

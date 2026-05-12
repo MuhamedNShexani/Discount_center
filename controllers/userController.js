@@ -1,4 +1,3 @@
-const mongoose = require("mongoose");
 const User = require("../models/User");
 const ProductViewEvent = require("../models/ProductViewEvent");
 const ProductLikeEvent = require("../models/ProductLikeEvent");
@@ -237,22 +236,18 @@ const recordProductView = async (req, res) => {
       });
     }
 
-    // For authenticated users, use their account
-    // For anonymous users, use device ID
-    let user;
-    if (userId) {
-      user = await User.findById(userId);
-    } else if (deviceId) {
-      user = await User.findOne({ deviceId });
-      if (!user) {
-        user = new User({ deviceId });
-        await user.save();
-      }
-    } else {
+    if (!userId && !deviceId) {
       return res.status(400).json({
         success: false,
         message: "Either user authentication or device ID is required",
       });
+    }
+    if (!userId && deviceId) {
+      let anon = await User.findOne({ deviceId });
+      if (!anon) {
+        anon = new User({ deviceId });
+        await anon.save();
+      }
     }
 
     const product = await Product.findById(productId);
@@ -280,51 +275,6 @@ const recordProductView = async (req, res) => {
       });
     } catch (e) {
       console.warn("ProductViewEvent:", e.message);
-    }
-
-    // Update user's viewed products atomically (avoids VersionError when concurrent
-    // view requests race on the same User document).
-    const uid = user._id;
-    const pid =
-      product._id instanceof mongoose.Types.ObjectId
-        ? product._id
-        : new mongoose.Types.ObjectId(String(productId));
-    const now = new Date();
-
-    let r = await User.updateOne(
-      { _id: uid, "viewedProducts.productId": pid },
-      {
-        $inc: { "viewedProducts.$.viewCount": 1 },
-        $set: { "viewedProducts.$.lastViewed": now },
-      },
-    );
-
-    if (r.modifiedCount === 0) {
-      r = await User.updateOne(
-        {
-          _id: uid,
-          $nor: [{ viewedProducts: { $elemMatch: { productId: pid } } }],
-        },
-        {
-          $push: {
-            viewedProducts: {
-              productId: pid,
-              viewCount: 1,
-              lastViewed: now,
-            },
-          },
-        },
-      );
-    }
-
-    if (r.modifiedCount === 0) {
-      await User.updateOne(
-        { _id: uid, "viewedProducts.productId": pid },
-        {
-          $inc: { "viewedProducts.$.viewCount": 1 },
-          $set: { "viewedProducts.$.lastViewed": now },
-        },
-      );
     }
 
     res.json({
@@ -385,56 +335,6 @@ const getLikedProducts = async (req, res) => {
     });
   } catch (error) {
     console.error("Error getting liked products:", error);
-    res.status(500).json({ success: false, message: "Server error" });
-  }
-};
-
-// @desc    Get user's viewed products (works with auth token OR deviceId for anonymous)
-// @route   GET /api/users/viewed-products
-// @access  Public (optionalAuth - supports both logged-in and anonymous users)
-const getViewedProducts = async (req, res) => {
-  try {
-    const userId = req.userId;
-    const deviceId = req.query.deviceId;
-
-    let user;
-    if (userId) {
-      user = await User.findById(userId);
-    } else if (deviceId) {
-      user = await User.findOne({ deviceId });
-    } else {
-      return res.status(400).json({
-        success: false,
-        message: "Either login or provide device ID to view history",
-      });
-    }
-
-    if (!user) {
-      return res.json({ success: true, data: [] });
-    }
-
-    const populatedUser = await User.findById(user._id).populate({
-      path: "viewedProducts.productId",
-      populate: [
-        { path: "brandId", select: brandList },
-        { path: "storeId", select: storeList },
-        { path: "categoryId", select: categoryList },
-      ],
-    });
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    res.json({
-      success: true,
-      data: populatedUser?.viewedProducts || [],
-    });
-  } catch (error) {
-    console.error("Error getting viewed products:", error);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
@@ -601,7 +501,6 @@ module.exports = {
   toggleFollowStore,
   recordProductView,
   getLikedProducts,
-  getViewedProducts,
   getFollowedStores,
   updateDeviceProfile,
 };

@@ -101,17 +101,12 @@ const testAuthSystem = async () => {
       password: "password123",
       displayName: "Tracking User",
       likedProducts: [],
-      viewedProducts: [],
     });
     await trackingUser.save();
     console.log("✅ Tracking user created successfully");
     console.log(
       "   Liked products array:",
       Array.isArray(trackingUser.likedProducts)
-    );
-    console.log(
-      "   Viewed products array:",
-      Array.isArray(trackingUser.viewedProducts)
     );
     console.log("   Reviews array:", Array.isArray(trackingUser.reviews));
 

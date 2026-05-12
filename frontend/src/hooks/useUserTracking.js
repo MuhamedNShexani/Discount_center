@@ -290,29 +290,6 @@ export const useUserTracking = () => {
     }
   }, [isAuthenticated, deviceId, getAuthHeaders]);
 
-  // Get user's viewed products (works for both logged-in and device users)
-  const getViewedProducts = useCallback(async () => {
-    if (!isAuthenticated && !deviceId) {
-      return {
-        success: false,
-        message: "Please wait for app to load",
-        requiresAuth: false,
-      };
-    }
-
-    try {
-      const headers = getAuthHeaders();
-      const response = await userAPI.getViewedProducts(
-        isAuthenticated ? null : deviceId,
-        headers,
-      );
-      return response.data;
-    } catch (error) {
-      console.error("Error getting viewed products:", error);
-      return { success: false, message: "Failed to get viewed products" };
-    }
-  }, [isAuthenticated, deviceId, getAuthHeaders]);
-
   // Toggle store follow (works for both logged-in and device users)
   const toggleFollowStore = useCallback(
     async (storeId) => {
@@ -470,6 +447,5 @@ export const useUserTracking = () => {
     isStoreFollowed,
     getLikedProducts,
     getFollowedStores,
-    getViewedProducts,
   };
 };

@@ -7,7 +7,6 @@ const {
   toggleFollowStore,
   recordProductView,
   getLikedProducts,
-  getViewedProducts,
   getFollowedStores,
   updateDeviceProfile,
 } = require("../controllers/userController");
@@ -25,7 +24,6 @@ router.post("/like-video", toggleVideoLike);
 router.post("/follow-store", toggleFollowStore);
 router.get("/liked-products", getLikedProducts);
 router.get("/followed-stores", getFollowedStores);
-router.get("/viewed-products", getViewedProducts);
 router.put("/device-profile", updateDeviceProfile);
 
 module.exports = router;

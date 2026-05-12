@@ -38,18 +38,6 @@ const testUserTracking = async () => {
       {
         deviceId: "test-device-1",
         likedProducts: [products[0]._id, products[1]._id],
-        viewedProducts: [
-          {
-            productId: products[0]._id,
-            viewCount: 3,
-            lastViewed: new Date(),
-          },
-          {
-            productId: products[1]._id,
-            viewCount: 2,
-            lastViewed: new Date(),
-          },
-        ],
         reviews: [
           {
             productId: products[0]._id,
@@ -62,13 +50,6 @@ const testUserTracking = async () => {
       {
         deviceId: "test-device-2",
         likedProducts: [products[2]._id],
-        viewedProducts: [
-          {
-            productId: products[2]._id,
-            viewCount: 1,
-            lastViewed: new Date(),
-          },
-        ],
         reviews: [
           {
             productId: products[2]._id,
@@ -94,18 +75,6 @@ const testUserTracking = async () => {
         likedProducts: product._id,
       });
 
-      // Count views from users
-      const viewCount = await User.aggregate([
-        { $unwind: "$viewedProducts" },
-        { $match: { "viewedProducts.productId": product._id } },
-        {
-          $group: {
-            _id: null,
-            totalViews: { $sum: "$viewedProducts.viewCount" },
-          },
-        },
-      ]);
-
       // Calculate average rating
       const ratingData = await User.aggregate([
         { $unwind: "$reviews" },
@@ -122,15 +91,12 @@ const testUserTracking = async () => {
       // Update product
       await Product.findByIdAndUpdate(product._id, {
         likeCount: likeCount,
-        viewCount: viewCount.length > 0 ? viewCount[0].totalViews : 0,
         averageRating: ratingData.length > 0 ? ratingData[0].avgRating : 0,
         reviewCount: ratingData.length > 0 ? ratingData[0].reviewCount : 0,
       });
 
       console.log(
         `Updated product ${product.name}: ${likeCount} likes, ${
-          viewCount.length > 0 ? viewCount[0].totalViews : 0
-        } views, ${
           ratingData.length > 0 ? ratingData[0].avgRating.toFixed(1) : 0
         } avg rating`
       );

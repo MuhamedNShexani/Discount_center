@@ -83,22 +83,6 @@ const userSchema = new mongoose.Schema({
       ref: "Store",
     },
   ],
-  viewedProducts: [
-    {
-      productId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Product",
-      },
-      viewCount: {
-        type: Number,
-        default: 1,
-      },
-      lastViewed: {
-        type: Date,
-        default: Date.now,
-      },
-    },
-  ],
 
   // Account status
   isActive: {
@@ -226,7 +210,6 @@ userSchema.methods.getPublicProfile = function () {
         role: this.role || "user",
         likedProducts: this.likedProducts,
         likedVideos: this.likedVideos,
-        viewedProducts: this.viewedProducts,
         createdAt: this.createdAt,
       };
     }
@@ -261,7 +244,6 @@ userSchema.methods.getPublicProfile = function () {
       ),
       likedProducts: this.likedProducts,
       likedVideos: this.likedVideos,
-      viewedProducts: this.viewedProducts,
       createdAt: this.createdAt,
     };
   } catch (error) {
@@ -275,7 +257,6 @@ userSchema.methods.getPublicProfile = function () {
       role: this.role || "user",
       likedProducts: this.likedProducts || [],
       likedVideos: this.likedVideos || [],
-      viewedProducts: this.viewedProducts || [],
       createdAt: this.createdAt,
     };
   }

@@ -307,11 +307,6 @@ export const userAPI = {
       params: deviceId ? { deviceId } : {},
       headers,
     }),
-  getViewedProducts: (deviceId, headers = {}) =>
-    api.get("/users/viewed-products", {
-      params: deviceId ? { deviceId } : {},
-      headers,
-    }),
   pushSubscribe: (subscription, deviceId) =>
     api.post("/users/push-subscribe", {
       subscription,
