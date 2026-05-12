@@ -181,6 +181,26 @@ function isInstagramHttpsUrl(url) {
   }
 }
 
+function isFacebookHttpsUrl(url) {
+  if (!/^https?:\/\//i.test(String(url))) return false;
+  try {
+    const u = new URL(url);
+    let h = u.hostname.replace(/^www\./, "").toLowerCase();
+    if (h.startsWith("m.")) {
+      h = h.slice(2);
+    }
+    return (
+      h === "facebook.com" ||
+      h.endsWith(".facebook.com") ||
+      h === "fb.com" ||
+      h.endsWith(".fb.com") ||
+      h === "fb.watch"
+    );
+  } catch {
+    return false;
+  }
+}
+
 /** Path segments that are not profile usernames (posts, reels, etc.). */
 const INSTAGRAM_RESERVED_FIRST_SEGMENT = new Set([
   "p",
@@ -234,6 +254,47 @@ function openInstagramOutOfWebView(httpsUrl) {
   const username = extractInstagramProfileUsername(httpsUrl);
   if (mobile && username) {
     const appUrl = `instagram://user?username=${encodeURIComponent(username)}`;
+    let fallbackTimer = window.setTimeout(() => {
+      fallbackTimer = null;
+      tryOpenExternalHttps(httpsUrl);
+    }, 900);
+
+    const cancelFallback = () => {
+      if (fallbackTimer != null) {
+        window.clearTimeout(fallbackTimer);
+        fallbackTimer = null;
+      }
+    };
+
+    document.addEventListener(
+      "visibilitychange",
+      () => {
+        if (document.visibilityState === "hidden") cancelFallback();
+      },
+      { once: true },
+    );
+    window.addEventListener("pagehide", cancelFallback, { once: true });
+
+    try {
+      window.location.href = appUrl;
+    } catch {
+      cancelFallback();
+      tryOpenExternalHttps(httpsUrl);
+    }
+    return;
+  }
+
+  tryOpenExternalHttps(httpsUrl);
+}
+
+/**
+ * Same pattern as Instagram: avoid loading facebook.com in WebView first (Open app → intent:// breaks).
+ * `fb://facewebmodal/f?href=` passes the full https URL into the Facebook app when installed.
+ */
+function openFacebookOutOfWebView(httpsUrl) {
+  const mobile = isAndroid() || isIOS();
+  if (mobile) {
+    const appUrl = `fb://facewebmodal/f?href=${encodeURIComponent(httpsUrl)}`;
     let fallbackTimer = window.setTimeout(() => {
       fallbackTimer = null;
       tryOpenExternalHttps(httpsUrl);
@@ -355,10 +416,14 @@ export function openExternal(url) {
   if (shouldUseLocationNavigation(u)) {
     if (isAndroid() && isInstagramHttpsUrl(u)) {
       openInstagramOutOfWebView(u);
+    } else if (isAndroid() && isFacebookHttpsUrl(u)) {
+      openFacebookOutOfWebView(u);
     } else if (isAndroid() && isMapsHandoffUrl(u)) {
       openAndroidMapsHandoff(u);
     } else if (isIOS() && isInstagramHttpsUrl(u)) {
       openInstagramOutOfWebView(u);
+    } else if (isIOS() && isFacebookHttpsUrl(u)) {
+      openFacebookOutOfWebView(u);
     } else if (isIOS() && isMapsHandoffUrl(u)) {
       openIosMapsHandoff(u);
     } else if (/^https?:\/\//i.test(u) && isMapsHandoffUrl(u)) {
