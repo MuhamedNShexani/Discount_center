@@ -86,7 +86,8 @@ export function isExternalUrl(rawUrl) {
   if (!t) return false;
   if (t.startsWith("#")) return false;
   const lower = t.toLowerCase();
-  if (lower.startsWith("javascript:") || lower.startsWith("data:")) return false;
+  if (lower.startsWith("javascript:") || lower.startsWith("data:"))
+    return false;
 
   if (
     lower.startsWith("tel:") ||
@@ -129,9 +130,7 @@ export function isExternalUrl(rawUrl) {
 
 function shouldUseLocationNavigation(url) {
   const lower = String(url).toLowerCase();
-  if (
-    /^tel:|^mailto:|^whatsapp:|^sms:|^geo:|^maps:|^viber:|^tg:/.test(lower)
-  ) {
+  if (/^tel:|^mailto:|^whatsapp:|^sms:|^geo:|^maps:|^viber:|^tg:/.test(lower)) {
     return true;
   }
   for (const sub of FORCE_LOCATION_SUBSTRINGS) {
@@ -141,7 +140,9 @@ function shouldUseLocationNavigation(url) {
 }
 
 function isAndroid() {
-  return typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent);
+  return (
+    typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent)
+  );
 }
 
 /** iPhone / iPad / iPod (includes iPadOS 13+ desktop UA). */
@@ -180,6 +181,92 @@ function isInstagramHttpsUrl(url) {
   }
 }
 
+/** Path segments that are not profile usernames (posts, reels, etc.). */
+const INSTAGRAM_RESERVED_FIRST_SEGMENT = new Set([
+  "p",
+  "reel",
+  "reels",
+  "tv",
+  "stories",
+  "explore",
+  "accounts",
+  "about",
+  "legal",
+  "help",
+  "support",
+  "web",
+  "static",
+  "download",
+  "press",
+  "developer",
+  "directory",
+  "locations",
+  "graph",
+  "direct",
+]);
+
+/**
+ * First path segment for profile URLs like instagram.com/mybrand/
+ * Returns null for /p/, /reel/, etc.
+ */
+function extractInstagramProfileUsername(urlString) {
+  try {
+    const u = new URL(urlString);
+    const h = u.hostname.replace(/^www\./, "").toLowerCase();
+    if (h !== "instagram.com" && !h.endsWith(".instagram.com")) return null;
+    const parts = u.pathname.split("/").filter(Boolean);
+    if (parts.length === 0) return null;
+    const first = parts[0];
+    if (INSTAGRAM_RESERVED_FIRST_SEGMENT.has(first.toLowerCase())) return null;
+    if (!/^[A-Za-z0-9._]+$/.test(first)) return null;
+    return first;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Mobile WebViews load instagram.com in-shell; IG's "Open app" uses intent:// which breaks.
+ * Prefer native app deep link first for profile URLs, then fall back to https.
+ */
+function openInstagramOutOfWebView(httpsUrl) {
+  const mobile = isAndroid() || isIOS();
+  const username = extractInstagramProfileUsername(httpsUrl);
+  if (mobile && username) {
+    const appUrl = `instagram://user?username=${encodeURIComponent(username)}`;
+    let fallbackTimer = window.setTimeout(() => {
+      fallbackTimer = null;
+      tryOpenExternalHttps(httpsUrl);
+    }, 900);
+
+    const cancelFallback = () => {
+      if (fallbackTimer != null) {
+        window.clearTimeout(fallbackTimer);
+        fallbackTimer = null;
+      }
+    };
+
+    document.addEventListener(
+      "visibilitychange",
+      () => {
+        if (document.visibilityState === "hidden") cancelFallback();
+      },
+      { once: true },
+    );
+    window.addEventListener("pagehide", cancelFallback, { once: true });
+
+    try {
+      window.location.href = appUrl;
+    } catch {
+      cancelFallback();
+      tryOpenExternalHttps(httpsUrl);
+    }
+    return;
+  }
+
+  tryOpenExternalHttps(httpsUrl);
+}
+
 /**
  * Never assign `intent://...` from JS inside embedded Android WebViews — they show ERR_UNKNOWN_URL_SCHEME.
  * Native shells must intercept intents in WebViewClient; until then use plain https opens only.
@@ -202,10 +289,6 @@ function tryOpenExternalHttps(url) {
       /* ignore */
     }
   }
-}
-
-function openAndroidInstagramHandoff(originalUrl) {
-  tryOpenExternalHttps(originalUrl);
 }
 
 function openAndroidMapsHandoff(originalUrl) {
@@ -244,14 +327,12 @@ function isWhatsAppWebOrHttpsUrl(url) {
   try {
     const resolved = new URL(
       s,
-      typeof window !== "undefined" ? window.location.href : "https://localhost/",
+      typeof window !== "undefined"
+        ? window.location.href
+        : "https://localhost/",
     );
     const h = resolved.hostname.replace(/^www\./, "").toLowerCase();
-    return (
-      h === "wa.me" ||
-      h === "whatsapp.com" ||
-      h.endsWith(".whatsapp.com")
-    );
+    return h === "wa.me" || h === "whatsapp.com" || h.endsWith(".whatsapp.com");
   } catch {
     return /\bwa\.me\b|whatsapp\.com/i.test(s);
   }
@@ -273,13 +354,12 @@ export function openExternal(url) {
 
   if (shouldUseLocationNavigation(u)) {
     if (isAndroid() && isInstagramHttpsUrl(u)) {
-      openAndroidInstagramHandoff(u);
+      openInstagramOutOfWebView(u);
     } else if (isAndroid() && isMapsHandoffUrl(u)) {
       openAndroidMapsHandoff(u);
-    } else if (
-      isIOS() &&
-      (isInstagramHttpsUrl(u) || isMapsHandoffUrl(u))
-    ) {
+    } else if (isIOS() && isInstagramHttpsUrl(u)) {
+      openInstagramOutOfWebView(u);
+    } else if (isIOS() && isMapsHandoffUrl(u)) {
       openIosMapsHandoff(u);
     } else if (/^https?:\/\//i.test(u) && isMapsHandoffUrl(u)) {
       tryOpenExternalHttps(u);
