@@ -155,6 +155,11 @@ function isIOS() {
   );
 }
 
+/** Instagram / Facebook / TikTok deep links use the same flow on Android and iOS (WKWebView-safe). */
+function isMobileDevice() {
+  return isAndroid() || isIOS();
+}
+
 /** Maps / Waze / Apple Maps links — hand off to native apps on Android WebView (in-web maps GPS is often wrong). */
 function isMapsHandoffUrl(url) {
   const lower = String(url).toLowerCase();
@@ -269,7 +274,7 @@ function extractInstagramProfileUsername(urlString) {
  * Prefer native app deep link first for profile URLs, then fall back to https.
  */
 function openInstagramOutOfWebView(httpsUrl) {
-  const mobile = isAndroid() || isIOS();
+  const mobile = isMobileDevice();
   const username = extractInstagramProfileUsername(httpsUrl);
   if (mobile && username) {
     const appUrl = `instagram://user?username=${encodeURIComponent(username)}`;
@@ -311,7 +316,7 @@ function openInstagramOutOfWebView(httpsUrl) {
  * `fb://facewebmodal/f?href=` passes the full https URL into the Facebook app when installed.
  */
 function openFacebookOutOfWebView(httpsUrl) {
-  const mobile = isAndroid() || isIOS();
+  const mobile = isMobileDevice();
   if (mobile) {
     const appUrl = `fb://facewebmodal/f?href=${encodeURIComponent(httpsUrl)}`;
     let fallbackTimer = window.setTimeout(() => {
@@ -400,7 +405,7 @@ function extractTikTokProfileUsername(urlString) {
  * Same pattern as Instagram: try native app (`tiktok://user/profile/`) then https fallback.
  */
 function openTikTokOutOfWebView(httpsUrl) {
-  const mobile = isAndroid() || isIOS();
+  const mobile = isMobileDevice();
   const username = extractTikTokProfileUsername(httpsUrl);
   if (mobile && username) {
     const appUrl = `tiktok://user/profile/${encodeURIComponent(username)}`;
@@ -523,20 +528,14 @@ export function openExternal(url) {
   }
 
   if (shouldUseLocationNavigation(u)) {
-    if (isAndroid() && isInstagramHttpsUrl(u)) {
+    if (isMobileDevice() && isInstagramHttpsUrl(u)) {
       openInstagramOutOfWebView(u);
-    } else if (isAndroid() && isFacebookHttpsUrl(u)) {
+    } else if (isMobileDevice() && isFacebookHttpsUrl(u)) {
       openFacebookOutOfWebView(u);
-    } else if (isAndroid() && isTikTokHttpsUrl(u)) {
+    } else if (isMobileDevice() && isTikTokHttpsUrl(u)) {
       openTikTokOutOfWebView(u);
     } else if (isAndroid() && isMapsHandoffUrl(u)) {
       openAndroidMapsHandoff(u);
-    } else if (isIOS() && isInstagramHttpsUrl(u)) {
-      openInstagramOutOfWebView(u);
-    } else if (isIOS() && isFacebookHttpsUrl(u)) {
-      openFacebookOutOfWebView(u);
-    } else if (isIOS() && isTikTokHttpsUrl(u)) {
-      openTikTokOutOfWebView(u);
     } else if (isIOS() && isMapsHandoffUrl(u)) {
       openIosMapsHandoff(u);
     } else if (/^https?:\/\//i.test(u) && isMapsHandoffUrl(u)) {
