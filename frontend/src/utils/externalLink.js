@@ -201,6 +201,25 @@ function isFacebookHttpsUrl(url) {
   }
 }
 
+function isTikTokHttpsUrl(url) {
+  if (!/^https?:\/\//i.test(String(url))) return false;
+  try {
+    const u = new URL(url);
+    let h = u.hostname.replace(/^www\./, "").toLowerCase();
+    if (h.startsWith("m.")) {
+      h = h.slice(2);
+    }
+    return (
+      h === "tiktok.com" ||
+      h.endsWith(".tiktok.com") ||
+      h === "vm.tiktok.com" ||
+      h === "vt.tiktok.com"
+    );
+  } catch {
+    return false;
+  }
+}
+
 /** Path segments that are not profile usernames (posts, reels, etc.). */
 const INSTAGRAM_RESERVED_FIRST_SEGMENT = new Set([
   "p",
@@ -245,70 +264,42 @@ function extractInstagramProfileUsername(urlString) {
   }
 }
 
-/** New tab/window only — does not assign location (same WebView is not “browser launched”). */
-function tryOpenNewTabOnly(url) {
-  const u = String(url || "").trim();
-  if (!u) return false;
-  try {
-    const w = window.open(u, "_blank");
-    if (w != null && !w.closed) return true;
-  } catch {
-    /* ignore */
-  }
-  return false;
-}
-
 /**
- * Second step after browser (`window.open`) fails: custom scheme, then delayed full https fallback.
- */
-function scheduleCustomSchemeWithHttpsFallback(appSchemeUrl, httpsUrl) {
-  let fallbackTimer = window.setTimeout(() => {
-    fallbackTimer = null;
-    tryOpenExternalHttps(httpsUrl);
-  }, 900);
-
-  const cancelFallback = () => {
-    if (fallbackTimer != null) {
-      window.clearTimeout(fallbackTimer);
-      fallbackTimer = null;
-    }
-  };
-
-  document.addEventListener(
-    "visibilitychange",
-    () => {
-      if (document.visibilityState === "hidden") cancelFallback();
-    },
-    { once: true },
-  );
-  window.addEventListener("pagehide", cancelFallback, { once: true });
-
-  try {
-    window.location.href = appSchemeUrl;
-  } catch {
-    cancelFallback();
-    tryOpenExternalHttps(httpsUrl);
-  }
-}
-
-/**
- * Mobile: open https in a new tab first (Safari/Chrome when allowed). If that fails, instagram:// then https fallback.
+ * Mobile WebViews load instagram.com in-shell; IG's "Open app" uses intent:// which breaks.
+ * Prefer native app deep link first for profile URLs, then fall back to https.
  */
 function openInstagramOutOfWebView(httpsUrl) {
   const mobile = isAndroid() || isIOS();
-  if (!mobile) {
-    tryOpenExternalHttps(httpsUrl);
-    return;
-  }
-
-  if (tryOpenNewTabOnly(httpsUrl)) {
-    return;
-  }
-
   const username = extractInstagramProfileUsername(httpsUrl);
-  if (username) {
+  if (mobile && username) {
     const appUrl = `instagram://user?username=${encodeURIComponent(username)}`;
-    scheduleCustomSchemeWithHttpsFallback(appUrl, httpsUrl);
+    let fallbackTimer = window.setTimeout(() => {
+      fallbackTimer = null;
+      tryOpenExternalHttps(httpsUrl);
+    }, 900);
+
+    const cancelFallback = () => {
+      if (fallbackTimer != null) {
+        window.clearTimeout(fallbackTimer);
+        fallbackTimer = null;
+      }
+    };
+
+    document.addEventListener(
+      "visibilitychange",
+      () => {
+        if (document.visibilityState === "hidden") cancelFallback();
+      },
+      { once: true },
+    );
+    window.addEventListener("pagehide", cancelFallback, { once: true });
+
+    try {
+      window.location.href = appUrl;
+    } catch {
+      cancelFallback();
+      tryOpenExternalHttps(httpsUrl);
+    }
     return;
   }
 
@@ -316,21 +307,134 @@ function openInstagramOutOfWebView(httpsUrl) {
 }
 
 /**
- * Mobile: browser tab first; if blocked, fb://facewebmodal then https fallback.
+ * Same pattern as Instagram: avoid loading facebook.com in WebView first (Open app → intent:// breaks).
+ * `fb://facewebmodal/f?href=` passes the full https URL into the Facebook app when installed.
  */
 function openFacebookOutOfWebView(httpsUrl) {
   const mobile = isAndroid() || isIOS();
-  if (!mobile) {
-    tryOpenExternalHttps(httpsUrl);
+  if (mobile) {
+    const appUrl = `fb://facewebmodal/f?href=${encodeURIComponent(httpsUrl)}`;
+    let fallbackTimer = window.setTimeout(() => {
+      fallbackTimer = null;
+      tryOpenExternalHttps(httpsUrl);
+    }, 900);
+
+    const cancelFallback = () => {
+      if (fallbackTimer != null) {
+        window.clearTimeout(fallbackTimer);
+        fallbackTimer = null;
+      }
+    };
+
+    document.addEventListener(
+      "visibilitychange",
+      () => {
+        if (document.visibilityState === "hidden") cancelFallback();
+      },
+      { once: true },
+    );
+    window.addEventListener("pagehide", cancelFallback, { once: true });
+
+    try {
+      window.location.href = appUrl;
+    } catch {
+      cancelFallback();
+      tryOpenExternalHttps(httpsUrl);
+    }
     return;
   }
 
-  if (tryOpenNewTabOnly(httpsUrl)) {
+  tryOpenExternalHttps(httpsUrl);
+}
+
+/** Not /@handle profile routes — videos, tags, short-link hosts, etc. */
+const TIKTOK_RESERVED_FIRST_SEGMENT = new Set([
+  "tag",
+  "music",
+  "discover",
+  "following",
+  "foryou",
+  "for-you",
+  "live",
+  "trending",
+  "legal",
+  "static",
+  "node",
+  "embed",
+  "share",
+  "v",
+  "video",
+  "photo",
+  "search",
+  "explore",
+  "t",
+]);
+
+/**
+ * Profile URLs: tiktok.com/@handle or tiktok.com/handle (vm/vt short links → null).
+ */
+function extractTikTokProfileUsername(urlString) {
+  try {
+    const u = new URL(urlString);
+    let host = u.hostname.replace(/^www\./, "").toLowerCase();
+    if (host.startsWith("m.")) {
+      host = host.slice(2);
+    }
+    if (host === "vm.tiktok.com" || host === "vt.tiktok.com") return null;
+    if (host !== "tiktok.com" && !host.endsWith(".tiktok.com")) return null;
+
+    const parts = u.pathname.split("/").filter(Boolean);
+    if (parts.length === 0) return null;
+    const first = parts[0];
+    if (TIKTOK_RESERVED_FIRST_SEGMENT.has(first.toLowerCase())) return null;
+
+    let handle = first.startsWith("@") ? first.slice(1) : first;
+    if (!handle || !/^[A-Za-z0-9._]+$/.test(handle)) return null;
+    return handle;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Same pattern as Instagram: try native app (`tiktok://user/profile/`) then https fallback.
+ */
+function openTikTokOutOfWebView(httpsUrl) {
+  const mobile = isAndroid() || isIOS();
+  const username = extractTikTokProfileUsername(httpsUrl);
+  if (mobile && username) {
+    const appUrl = `tiktok://user/profile/${encodeURIComponent(username)}`;
+    let fallbackTimer = window.setTimeout(() => {
+      fallbackTimer = null;
+      tryOpenExternalHttps(httpsUrl);
+    }, 900);
+
+    const cancelFallback = () => {
+      if (fallbackTimer != null) {
+        window.clearTimeout(fallbackTimer);
+        fallbackTimer = null;
+      }
+    };
+
+    document.addEventListener(
+      "visibilitychange",
+      () => {
+        if (document.visibilityState === "hidden") cancelFallback();
+      },
+      { once: true },
+    );
+    window.addEventListener("pagehide", cancelFallback, { once: true });
+
+    try {
+      window.location.href = appUrl;
+    } catch {
+      cancelFallback();
+      tryOpenExternalHttps(httpsUrl);
+    }
     return;
   }
 
-  const appUrl = `fb://facewebmodal/f?href=${encodeURIComponent(httpsUrl)}`;
-  scheduleCustomSchemeWithHttpsFallback(appUrl, httpsUrl);
+  tryOpenExternalHttps(httpsUrl);
 }
 
 /**
@@ -423,12 +527,16 @@ export function openExternal(url) {
       openInstagramOutOfWebView(u);
     } else if (isAndroid() && isFacebookHttpsUrl(u)) {
       openFacebookOutOfWebView(u);
+    } else if (isAndroid() && isTikTokHttpsUrl(u)) {
+      openTikTokOutOfWebView(u);
     } else if (isAndroid() && isMapsHandoffUrl(u)) {
       openAndroidMapsHandoff(u);
     } else if (isIOS() && isInstagramHttpsUrl(u)) {
       openInstagramOutOfWebView(u);
     } else if (isIOS() && isFacebookHttpsUrl(u)) {
       openFacebookOutOfWebView(u);
+    } else if (isIOS() && isTikTokHttpsUrl(u)) {
+      openTikTokOutOfWebView(u);
     } else if (isIOS() && isMapsHandoffUrl(u)) {
       openIosMapsHandoff(u);
     } else if (/^https?:\/\//i.test(u) && isMapsHandoffUrl(u)) {
