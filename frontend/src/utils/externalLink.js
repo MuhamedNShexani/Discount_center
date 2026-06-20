@@ -6,7 +6,9 @@
 import { openWhatsAppLink } from "./openWhatsAppLink";
 
 /** Backend hostname allowed as “internal” if linked directly (rare). */
-const DEFAULT_INTERNAL_EXTRA_HOSTS = ["idashkan-production.up.railway.app"];
+const DEFAULT_INTERNAL_EXTRA_HOSTS = [
+  "discountcenter-production.up.railway.app",
+];
 
 /** Domains where assigning location is preferred over window.open (deep links & maps).
  *  WhatsApp https URLs are NOT here — they go through openWhatsAppLink (whatsapp://) to avoid WKWebView loading web.whatsapp.com. */

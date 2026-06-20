@@ -1,9 +1,9 @@
 /**
- * Single source of truth for backend URLs (iDashkan production on Railway).
+ * Single source of truth for backend URLs (Discount Center production on Railway).
  * Override with VITE_API_BASE_URL / VITE_BACKEND_URL in .env / hosting dashboard.
  */
 export const PRODUCTION_BACKEND_ORIGIN =
-  "https://idashkan-production.up.railway.app";
+  "https://discountcenter-production.up.railway.app";
 
 function isLocalHost() {
   if (typeof window === "undefined") return false;
@@ -21,7 +21,9 @@ function isLocalHost() {
  * Priority: VITE_BACKEND_URL → local dev → Railway production.
  */
 export function getResolvedBackendOrigin() {
-  const env = (import.meta.env.VITE_BACKEND_URL || "").trim().replace(/\/$/, "");
+  const env = (import.meta.env.VITE_BACKEND_URL || "")
+    .trim()
+    .replace(/\/$/, "");
   if (env) return env;
   if (import.meta.env.DEV && isLocalHost()) return "http://localhost:5000";
   return PRODUCTION_BACKEND_ORIGIN;
@@ -37,7 +39,10 @@ export function getResolvedApiBaseUrl() {
     .replace(/\/$/, "");
   if (envApi) return envApi;
 
-  if (import.meta.env.VITE_USE_PROXY === "true" && typeof window !== "undefined") {
+  if (
+    import.meta.env.VITE_USE_PROXY === "true" &&
+    typeof window !== "undefined"
+  ) {
     return `${window.location.origin}/api`.replace(/\/$/, "");
   }
 

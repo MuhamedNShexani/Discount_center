@@ -9,8 +9,8 @@ dashkan.net is hosted on Hostgator. The build is uploaded to cPanel File Manager
 The repo includes `frontend/.env.production` with **Railway** URLs. To override, edit that file (or set `VITE_*` in CI before `npm run build`):
 
 ```
-VITE_API_BASE_URL=https://idashkan-production.up.railway.app/api
-VITE_BACKEND_URL=https://idashkan-production.up.railway.app
+VITE_API_BASE_URL=https://discountcenter-production.up.railway.app/api
+VITE_BACKEND_URL=https://discountcenter-production.up.railway.app
 ```
 
 - Use **HTTPS** – mobile blocks mixed content.

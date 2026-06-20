@@ -6,10 +6,10 @@ Your frontend is at **https://dashkan.net** (or https://idiscount.vercel.app). F
 
 In the Vercel project: **Settings → Environment Variables**, add:
 
-| Variable | Value | Required |
-|----------|-------|----------|
-| `VITE_API_BASE_URL` | `https://idashkan-production.up.railway.app/api` | **Recommended** |
-| `VITE_BACKEND_URL` | `https://idashkan-production.up.railway.app` | **Recommended** |
+| Variable            | Value                                                  | Required        |
+| ------------------- | ------------------------------------------------------ | --------------- |
+| `VITE_API_BASE_URL` | `https://discountcenter-production.up.railway.app/api` | **Recommended** |
+| `VITE_BACKEND_URL`  | `https://discountcenter-production.up.railway.app`     | **Recommended** |
 
 Alternatively rely on `src/config/backendUrl.js` defaults + `vercel.json` rewrites; set `VITE_USE_PROXY=true` for same-origin `/api` only.
 
