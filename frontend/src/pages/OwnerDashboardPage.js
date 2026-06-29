@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Link as RouterLink } from "react-router-dom";
 import {
   Alert,
   Box,
@@ -57,6 +56,7 @@ import {
 import { resolveMediaUrl } from "../utils/mediaUrl";
 import { useLocalizedContent } from "../hooks/useLocalizedContent";
 import { useAuth } from "../context/AuthContext";
+import { useProfileDrawer } from "../hooks/useProfileDrawer";
 import { normalizeOwnerEntities } from "../utils/ownerEntities";
 import { getAllLocalizedFieldValues } from "../utils/localize";
 
@@ -241,6 +241,7 @@ export default function OwnerDashboardPage() {
   const { t, i18n } = useTranslation();
   const { locName } = useLocalizedContent();
   const { user } = useAuth();
+  const { openProfile } = useProfileDrawer();
   const isRtl = i18n.language === "ar" || i18n.language === "ku";
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
@@ -567,8 +568,7 @@ export default function OwnerDashboardPage() {
       <Stack spacing={1.5} sx={{ mb: 2, mt: 6 }}>
         <Box>
           <IconButton
-            component={RouterLink}
-            to="/profile"
+            onClick={() => openProfile()}
             aria-label={t("Back")}
             size="small"
             sx={{

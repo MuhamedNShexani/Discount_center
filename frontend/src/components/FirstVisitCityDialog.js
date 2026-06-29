@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -8,18 +8,27 @@ import {
   useTheme,
   alpha,
   LinearProgress,
+  Divider,
 } from "@mui/material";
 import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
 import TranslateRoundedIcon from "@mui/icons-material/TranslateRounded";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
+import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
+import LoginRoundedIcon from "@mui/icons-material/LoginRounded";
+import PersonAddRoundedIcon from "@mui/icons-material/PersonAddRounded";
 import { useTranslation } from "react-i18next";
+import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   useCityFilter,
-  CITY_ONBOARDING_KEY,
+  CITY_STEP_KEY,
   LANGUAGE_ONBOARDING_KEY,
+  isOnboardingFullyComplete,
 } from "../context/CityFilterContext";
+import { useAuth } from "../context/AuthContext";
+import GoogleSignInButton from "./GoogleSignInButton";
+import { useGoogleOAuthReturn } from "../hooks/useGoogleOAuthReturn";
 import kurdishFlag from "../styles/kurdish_flag.jpg";
 
 const LANGUAGES = [
@@ -36,7 +45,8 @@ const LANGUAGES = [
 function getInitialFlowStep() {
   if (typeof window === "undefined") return "done";
   try {
-    if (localStorage.getItem(CITY_ONBOARDING_KEY) === "1") return "done";
+    if (isOnboardingFullyComplete()) return "done";
+    if (localStorage.getItem(CITY_STEP_KEY) === "1") return "account";
     if (localStorage.getItem(LANGUAGE_ONBOARDING_KEY) === "1") return "city";
   } catch {
     return "language";
@@ -45,17 +55,21 @@ function getInitialFlowStep() {
 }
 
 /**
- * First visit: step 1 language → step 2 city (modal, must complete).
+ * First visit: step 1 language → step 2 city → step 3 account (modal, must complete).
  */
 const FirstVisitCityDialog = () => {
   const theme = useTheme();
+  const navigate = useNavigate();
+  const location = useLocation();
   const { t, i18n } = useTranslation();
+  const { user, loading: authLoading } = useAuth();
   const {
     cities,
     citiesLoading,
     selectedCity,
     cityOnboardingDone,
-    completeCityOnboarding,
+    completeCityStep,
+    completeAccountOnboarding,
   } = useCityFilter();
 
   const [flowStep, setFlowStep] = useState(getInitialFlowStep);
@@ -84,9 +98,34 @@ const FirstVisitCityDialog = () => {
 
   const handleCityContinue = useCallback(() => {
     if (!pickedCity) return;
-    completeCityOnboarding(pickedCity);
+    completeCityStep(pickedCity);
+    setFlowStep("account");
+  }, [pickedCity, completeCityStep]);
+
+  const handleGuestContinue = useCallback(() => {
+    completeAccountOnboarding();
     setFlowStep("done");
-  }, [pickedCity, completeCityOnboarding]);
+  }, [completeAccountOnboarding]);
+
+  const handleLoginClick = useCallback(() => {
+    navigate("/login", {
+      state: {
+        from: { pathname: "/" },
+        fromOnboarding: true,
+        onboardingTab: "login",
+      },
+    });
+  }, [navigate]);
+
+  const handleRegisterClick = useCallback(() => {
+    navigate("/login", {
+      state: {
+        from: { pathname: "/" },
+        fromOnboarding: true,
+        onboardingTab: "register",
+      },
+    });
+  }, [navigate]);
 
   const handleBackToLanguage = useCallback(() => {
     try {
@@ -96,6 +135,29 @@ const FirstVisitCityDialog = () => {
     }
     setFlowStep("language");
   }, []);
+
+  const handleBackToCity = useCallback(() => {
+    try {
+      localStorage.removeItem(CITY_STEP_KEY);
+    } catch {
+      // ignore
+    }
+    setFlowStep("city");
+  }, []);
+
+  useEffect(() => {
+    if (flowStep !== "account" || authLoading || !user) return;
+    completeAccountOnboarding();
+    setFlowStep("done");
+  }, [flowStep, authLoading, user, completeAccountOnboarding]);
+
+  useGoogleOAuthReturn({
+    enabled: flowStep === "account",
+    onSuccess: () => {
+      completeAccountOnboarding();
+      setFlowStep("done");
+    },
+  });
 
   const isDark = theme.palette.mode === "dark";
 
@@ -115,9 +177,45 @@ const FirstVisitCityDialog = () => {
     [isDark, theme],
   );
 
+  const onLoginPage = location.pathname === "/login";
   const showDialog =
+    !onLoginPage &&
     flowStep !== "done" &&
-    (flowStep === "language" || (flowStep === "city" && !cityOnboardingDone));
+    (flowStep === "language" ||
+      flowStep === "account" ||
+      (flowStep === "city" && !cityOnboardingDone));
+
+  const stepIndex =
+    flowStep === "language" ? 0 : flowStep === "city" ? 1 : 2;
+
+  const primaryButtonSx = {
+    py: 1.5,
+    fontWeight: 800,
+    letterSpacing: "0.02em",
+    borderRadius: 2.5,
+    textTransform: "none",
+    fontSize: "1rem",
+    background: `linear-gradient(135deg, #1e6fd9 0%, #0d47a1 55%, #1e40af 100%)`,
+    boxShadow: `0 12px 36px ${alpha("#1e6fd9", 0.35)}`,
+    "&:hover": {
+      background: `linear-gradient(135deg, #2563eb 0%, #1e40af 100%)`,
+      boxShadow: `0 14px 40px ${alpha("#1e6fd9", 0.4)}`,
+    },
+  };
+
+  const outlinedButtonSx = {
+    py: 1.35,
+    fontWeight: 700,
+    borderRadius: 2.5,
+    textTransform: "none",
+    fontSize: "1rem",
+    borderColor: isDark ? alpha("#fff", 0.2) : alpha("#000", 0.12),
+    color: "text.primary",
+    "&:hover": {
+      borderColor: alpha("#1e6fd9", 0.55),
+      bgcolor: isDark ? alpha("#1e6fd9", 0.1) : alpha("#1e6fd9", 0.06),
+    },
+  };
 
   if (flowStep === "done") {
     return null;
@@ -157,34 +255,34 @@ const FirstVisitCityDialog = () => {
             mb: 2,
           }}
         >
-          <Box
-            sx={{
-              width: 8,
-              height: 8,
-              borderRadius: "50%",
-              bgcolor:
-                flowStep === "language"
-                  ? "primary.main"
-                  : alpha("#1e6fd9", 0.35),
-            }}
-          />
-          <Box
-            sx={{
-              width: 36,
-              height: 2,
-              borderRadius: 1,
-              bgcolor: alpha("#1e6fd9", 0.25),
-            }}
-          />
-          <Box
-            sx={{
-              width: 8,
-              height: 8,
-              borderRadius: "50%",
-              bgcolor:
-                flowStep === "city" ? "primary.main" : alpha("#1e6fd9", 0.35),
-            }}
-          />
+          {[0, 1, 2].map((index) => (
+            <React.Fragment key={index}>
+              {index > 0 && (
+                <Box
+                  sx={{
+                    width: 28,
+                    height: 2,
+                    borderRadius: 1,
+                    bgcolor:
+                      stepIndex >= index
+                        ? alpha("#1e6fd9", 0.45)
+                        : alpha("#1e6fd9", 0.2),
+                  }}
+                />
+              )}
+              <Box
+                sx={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: "50%",
+                  bgcolor:
+                    stepIndex >= index
+                      ? "primary.main"
+                      : alpha("#1e6fd9", 0.35),
+                }}
+              />
+            </React.Fragment>
+          ))}
         </Box>
 
         <AnimatePresence mode="wait">
@@ -382,27 +480,14 @@ const FirstVisitCityDialog = () => {
                 variant="contained"
                 size="large"
                 onClick={handleLanguageContinue}
-                sx={{
-                  py: 1.5,
-                  fontWeight: 800,
-                  letterSpacing: "0.02em",
-                  borderRadius: 2.5,
-                  textTransform: "none",
-                  fontSize: "1rem",
-                  background: `linear-gradient(135deg, #1e6fd9 0%, #0d47a1 55%, #1e40af 100%)`,
-                  boxShadow: `0 12px 36px ${alpha("#1e6fd9", 0.35)}`,
-                  "&:hover": {
-                    background: `linear-gradient(135deg, #2563eb 0%, #1e40af 100%)`,
-                    boxShadow: `0 14px 40px ${alpha("#1e6fd9", 0.4)}`,
-                  },
-                }}
+                sx={primaryButtonSx}
               >
                 {t("onboarding.language.continue", {
                   defaultValue: "Continue",
                 })}
               </Button>
             </motion.div>
-          ) : (
+          ) : flowStep === "city" ? (
             <motion.div
               key="city"
               initial={{ opacity: 0, x: 12 }}
@@ -608,18 +693,7 @@ const FirstVisitCityDialog = () => {
                 disabled={!pickedCity || citiesLoading || cities.length === 0}
                 onClick={handleCityContinue}
                 sx={{
-                  py: 1.5,
-                  fontWeight: 800,
-                  letterSpacing: "0.02em",
-                  borderRadius: 2.5,
-                  textTransform: "none",
-                  fontSize: "1rem",
-                  background: `linear-gradient(135deg, #1e6fd9 0%, #0d47a1 55%, #1e40af 100%)`,
-                  boxShadow: `0 12px 36px ${alpha("#1e6fd9", 0.35)}`,
-                  "&:hover": {
-                    background: `linear-gradient(135deg, #2563eb 0%, #1e40af 100%)`,
-                    boxShadow: `0 14px 40px ${alpha("#1e6fd9", 0.4)}`,
-                  },
+                  ...primaryButtonSx,
                   "&.Mui-disabled": {
                     background: alpha("#1e6fd9", 0.25),
                   },
@@ -627,6 +701,168 @@ const FirstVisitCityDialog = () => {
               >
                 {t("onboarding.city.continue", { defaultValue: "Continue" })}
               </Button>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="account"
+              initial={{ opacity: 0, x: 12 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -12 }}
+              transition={{ duration: 0.22 }}
+            >
+              <Button
+                startIcon={<ArrowBackRoundedIcon />}
+                onClick={handleBackToCity}
+                sx={{
+                  mb: 2,
+                  textTransform: "none",
+                  fontWeight: 600,
+                  color: "text.secondary",
+                }}
+              >
+                {t("onboarding.back", { defaultValue: "Back" })}
+              </Button>
+
+              <Box sx={{ textAlign: "center", mb: 3 }}>
+                <motion.div
+                  initial={{ scale: 0.85, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: "spring", stiffness: 260, damping: 22 }}
+                >
+                  <Box
+                    sx={{
+                      width: 72,
+                      height: 72,
+                      mx: "auto",
+                      mb: 2,
+                      borderRadius: "50%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: isDark
+                        ? `linear-gradient(135deg, ${alpha("#3b82f6", 0.35)} 0%, ${alpha("#8b5cf6", 0.25)} 100%)`
+                        : `linear-gradient(135deg, ${alpha("#1e6fd9", 0.2)} 0%, ${alpha("#6366f1", 0.15)} 100%)`,
+                      border: `1px solid ${alpha("#1e6fd9", isDark ? 0.35 : 0.25)}`,
+                      boxShadow: `0 8px 32px ${alpha("#1e6fd9", isDark ? 0.2 : 0.15)}`,
+                    }}
+                  >
+                    <PersonRoundedIcon
+                      sx={{
+                        fontSize: 40,
+                        color: isDark ? "#93c5fd" : "#1e6fd9",
+                      }}
+                    />
+                  </Box>
+                </motion.div>
+                <Typography
+                  variant="h5"
+                  sx={{
+                    fontWeight: 800,
+                    letterSpacing: "-0.02em",
+                    lineHeight: 1.2,
+                    mb: 1,
+                    background: isDark
+                      ? `linear-gradient(90deg, #f8fafc 0%, #cbd5e1 100%)`
+                      : `linear-gradient(90deg, #0f172a 0%, #334155 100%)`,
+                    backgroundClip: "text",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                  }}
+                >
+                  {t("onboarding.account.title", {
+                    defaultValue: "Sign in or continue as guest",
+                  })}
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: "text.secondary",
+                    maxWidth: 360,
+                    mx: "auto",
+                    lineHeight: 1.6,
+                  }}
+                >
+                  {t("onboarding.account.subtitle", {
+                    defaultValue:
+                      "Create an account to save likes and preferences, or continue without signing in.",
+                  })}
+                </Typography>
+              </Box>
+
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 1.25,
+                }}
+              >
+                <GoogleSignInButton
+                  returnTo="/"
+                  buttonSx={outlinedButtonSx}
+                  showEnvWarning={false}
+                />
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1.25,
+                    py: 0.25,
+                  }}
+                >
+                  <Divider sx={{ flex: 1 }} />
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: "text.secondary",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {t("or")}
+                  </Typography>
+                  <Divider sx={{ flex: 1 }} />
+                </Box>
+                <Button
+                  fullWidth
+                  variant="contained"
+                  size="large"
+                  startIcon={<LoginRoundedIcon />}
+                  onClick={handleLoginClick}
+                  sx={primaryButtonSx}
+                >
+                  {t("Sign In", { defaultValue: "Sign In" })}
+                </Button>
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  size="large"
+                  startIcon={<PersonAddRoundedIcon />}
+                  onClick={handleRegisterClick}
+                  sx={outlinedButtonSx}
+                >
+                  {t("Register", { defaultValue: "Register" })}
+                </Button>
+                <Button
+                  fullWidth
+                  variant="text"
+                  size="large"
+                  onClick={handleGuestContinue}
+                  sx={{
+                    py: 1.25,
+                    fontWeight: 700,
+                    borderRadius: 2.5,
+                    textTransform: "none",
+                    fontSize: "1rem",
+                    color: "text.secondary",
+                    "&:hover": {
+                      bgcolor: isDark
+                        ? alpha("#fff", 0.04)
+                        : alpha("#000", 0.04),
+                    },
+                  }}
+                >
+                  {t("Continue as Guest", { defaultValue: "Continue as Guest" })}
+                </Button>
+              </Box>
             </motion.div>
           )}
         </AnimatePresence>

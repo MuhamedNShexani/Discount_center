@@ -51,7 +51,6 @@ import { AppSettingsProvider } from "./context/AppSettingsContext";
 import { NotificationProvider } from "./context/NotificationContext";
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
-const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const OwnerDashboardPage = lazy(() => import("./pages/OwnerDashboardPage"));
 const OwnerDataEntryPage = lazy(() => import("./pages/OwnerDataEntryPage"));
 const PendingPage = lazy(() => import("./pages/PendingPage"));
@@ -83,6 +82,11 @@ import {
   useActiveTheme,
 } from "./context/ActiveThemeContext";
 import { DraftCartDrawerProvider } from "./context/DraftCartDrawerContext";
+import { NotificationDrawerProvider } from "./context/NotificationDrawerContext";
+import {
+  ProfileDrawerProvider,
+  ProfileRouteRedirect,
+} from "./context/ProfileDrawerContext";
 import { DarkModeProvider, useDarkMode } from "./context/DarkModeContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { appVisitAPI } from "./services/api";
@@ -128,6 +132,9 @@ function AppContent() {
   const isMobile = useIsMobileLayout();
   const isReelsPage = location.pathname === "/reels";
   const isDataEntryPage = location.pathname === "/admin";
+  const isSearchPage =
+    location.pathname === "/search" ||
+    location.pathname.startsWith("/search/");
   const isHomePage = location.pathname === "/";
   const { effectiveTheme, activeFontKey } = useActiveTheme();
 
@@ -257,6 +264,8 @@ function AppContent() {
     <CacheProvider value={cacheRtl}>
       <ThemeProvider theme={theme}>
         <DraftCartDrawerProvider>
+        <NotificationDrawerProvider>
+        <ProfileDrawerProvider>
         <CssBaseline />
         {!splashFinished ? (
           <SplashScreen
@@ -304,7 +313,7 @@ function AppContent() {
             key={refreshKey}
             sx={{
               flexGrow: 1, // Allows this Box to expand and push the footer down
-              py: isReelsPage || isDataEntryPage ? 0 : 3,
+              py: isReelsPage || isDataEntryPage ? 0 : isSearchPage && isMobile ? 1 : 3,
               pb: isMobile ? 10 : 3, // Add bottom padding for mobile to account for bottom navigation
               backgroundColor: (theme) => theme.palette.background.default,
             }}
@@ -473,7 +482,7 @@ function AppContent() {
                   <Route path="/search" element={<SearchPage />} />
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/profile" element={<ProfileRouteRedirect />} />
                   <Route
                     path="/owner-dashboard"
                     element={
@@ -510,6 +519,8 @@ function AppContent() {
           {false && <NotificationEnableBanner />}
         </Box>
         </Box>
+        </ProfileDrawerProvider>
+        </NotificationDrawerProvider>
         </DraftCartDrawerProvider>
       </ThemeProvider>
     </CacheProvider>

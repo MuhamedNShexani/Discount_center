@@ -1,6 +1,7 @@
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { ProfileRouteRedirect } from "../context/ProfileDrawerContext";
 import {
   canAccessOwnerDashboard,
   canAccessOwnerDataEntryPage,
@@ -61,7 +62,7 @@ export const ProtectedOwnerRoute = ({ children }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
   if (!canAccessOwnerDashboard(user)) {
-    return <Navigate to="/profile" replace />;
+    return <ProfileRouteRedirect />;
   }
 
   return children;
@@ -76,7 +77,7 @@ export const ProtectedOwnerDataEntryRoute = ({ children }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
   if (!canAccessOwnerDataEntryPage(user)) {
-    return <Navigate to="/profile" replace />;
+    return <ProfileRouteRedirect />;
   }
 
   return children;
@@ -91,7 +92,7 @@ export const ProtectedPendingRoute = ({ children }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
   if (!canAccessPendingPage(user)) {
-    return <Navigate to="/profile" replace />;
+    return <ProfileRouteRedirect />;
   }
 
   return children;

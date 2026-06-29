@@ -87,12 +87,6 @@ import { useNotifications } from "./context/NotificationContext";
 import { useContentRefresh } from "./context/ContentRefreshContext";
 import useIsMobileLayout from "./hooks/useIsMobileLayout";
 import { useActiveTheme } from "./context/ActiveThemeContext";
-import {
-  DATA_LANG_AR,
-  DATA_LANG_EN,
-  DATA_LANG_KU,
-  useDataLanguage,
-} from "./context/DataLanguageContext";
 import { giftAPI, productAPI } from "./services/api";
 import { isExpiryStillValid } from "./utils/expiryDate";
 import {
@@ -108,6 +102,8 @@ import {
   scrollWindowToTop,
 } from "./utils/mainPageScrollSession";
 import { useDraftCartDrawer } from "./hooks/useDraftCartDrawer";
+import { useNotificationDrawer } from "./hooks/useNotificationDrawer";
+import { useProfileDrawer } from "./hooks/useProfileDrawer";
 import { useDarkMode } from "./context/DarkModeContext";
 import {
   normalizeWhatsAppUrl,
@@ -146,31 +142,22 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
   const { colorMode, setColorMode } = useDarkMode();
 
   const {
-    notifications,
     unreadCount,
-    markAsRead,
-    markAllAsRead,
-    clearAll,
-    fetchNotifications,
-    pushSupported,
-    pushPermission,
-    pushSubscribing,
-    requestPushPermission,
-    pushEnabled,
-    setPushEnabled,
-    pushEnableError,
-    setPushEnableError,
   } = useNotifications();
   const isSmUp = !useIsMobileLayout();
   const { triggerRefresh } = useContentRefresh();
   const { navConfig } = useActiveTheme();
-  const { dataLanguage } = useDataLanguage();
   const { openDraftCart } = useDraftCartDrawer();
+  const { openNotifications } = useNotificationDrawer();
+  const { openProfile, isOpen: isProfileOpen } = useProfileDrawer();
   const location = useLocation();
-  const hideNavigationOnProfile = /^\/profile(\/|$)/.test(location.pathname);
   /** Full-screen reels on mobile: keep top bar off (also /reels/:videoId). */
   const hideMobileNavOnReels =
     !isSmUp && /^\/reels(\/|$)/.test(location.pathname);
+  /** Search has its own input chrome — hide top bar on mobile. */
+  const hideMobileNavOnSearch =
+    !isSmUp && /^\/search(\/|$)/.test(location.pathname);
+  const hideMobileNavChrome = hideMobileNavOnReels || hideMobileNavOnSearch;
   /** Toolbar refresh: scroll home to top + clear saved scroll, then bump refreshKey (all routes). */
   const handleNavRefresh = useCallback(() => {
     if (location.pathname === "/") {
@@ -186,9 +173,6 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
   const lastScrollYRef = useRef(0);
   // Profile menu state
   const [profileAnchorEl, setProfileAnchorEl] = useState(null);
-
-  // Notification menu state
-  const [notificationAnchorEl, setNotificationAnchorEl] = useState(null);
 
   // Admin dropdown state
   const [adminAnchorEl, setAdminAnchorEl] = useState(null);
@@ -207,27 +191,6 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
   const [userNameInput, setUserNameInput] = useState("");
   const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false);
   const [deactivating, setDeactivating] = useState(false);
-
-  const pickNotificationText = useCallback(
-    (n, field) => {
-      const isAr = dataLanguage === DATA_LANG_AR;
-      const isKu = dataLanguage === DATA_LANG_KU;
-      const isEn = dataLanguage === DATA_LANG_EN;
-      if (field === "title") {
-        return (
-          (isAr ? n?.titleAr : isKu ? n?.titleKu : isEn ? n?.titleEn : "") ||
-          n?.title ||
-          ""
-        );
-      }
-      return (
-        (isAr ? n?.bodyAr : isKu ? n?.bodyKu : isEn ? n?.bodyEn : "") ||
-        n?.body ||
-        ""
-      );
-    },
-    [dataLanguage],
-  );
 
   // Gifts "new" badge (per account / guest device)
   const GIFTS_LAST_SEEN_KEY_PREFIX = "giftsLastSeenAt.v1";
@@ -409,15 +372,6 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
 
   const handleAdminMenuClose = () => {
     setAdminAnchorEl(null);
-  };
-
-  const handleNotificationMenuOpen = (event) => {
-    setNotificationAnchorEl(event.currentTarget);
-    fetchNotifications();
-  };
-
-  const handleNotificationMenuClose = () => {
-    setNotificationAnchorEl(null);
   };
 
   const handleLogout = () => {
@@ -726,10 +680,6 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
     [],
   );
 
-  if (hideNavigationOnProfile) {
-    return null;
-  }
-
   return (
     <>
       <AppBar
@@ -754,7 +704,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
               : "0 8px 32px rgba(0,0,0,0.1)",
           transform: isSmUp
             ? "translateY(0)"
-            : hideMobileNavOnReels
+            : hideMobileNavChrome
               ? "translateY(-110%)"
               : showMobileNavbar
                 ? "translateY(0)"
@@ -800,7 +750,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.9 }}>
                 {NOTIFICATIONS_CENTER_ENABLED && (
                   <IconButton
-                    onClick={handleNotificationMenuOpen}
+                    onClick={() => openNotifications()}
                     sx={navIconBtnSx}
                   >
                     <Badge badgeContent={unreadCount} color="error">
@@ -852,7 +802,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                 <IconButton component={Link} to="/favourites" sx={navIconBtnSx}>
                   <FavoriteIcon />
                 </IconButton>
-                <IconButton component={Link} to="/profile" sx={navIconBtnSx}>
+                <IconButton onClick={() => openProfile()} sx={navIconBtnSx}>
                   <PersonIcon />
                 </IconButton>
               </Box>
@@ -997,7 +947,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                       return (
                         <IconButton
                           key={key}
-                          onClick={handleNotificationMenuOpen}
+                          onClick={() => openNotifications()}
                           sx={sxBtn}
                           aria-label={t("Notifications")}
                         >
@@ -1016,6 +966,18 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                           aria-label={t("Draft cart")}
                         >
                           <ShoppingCartIcon />
+                        </IconButton>
+                      );
+                    }
+                    if (action === "profile") {
+                      return (
+                        <IconButton
+                          key={key}
+                          onClick={() => openProfile()}
+                          sx={sxBtn}
+                          aria-label={t("Account")}
+                        >
+                          <PersonIcon />
                         </IconButton>
                       );
                     }
@@ -1529,25 +1491,42 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                         },
                       }}
                     >
-                      <MenuItem
-                        component={Link}
-                        to={ownerMyProfileNavPath}
-                        onClick={handleOwnerNavMenuClose}
-                        selected={
-                          ownerMyProfileNavPath === "/profile"
-                            ? location.pathname === "/profile"
-                            : location.pathname === ownerMyProfileNavPath
-                        }
-                      >
-                        <ListItemIcon>
-                          <PersonIcon fontSize="small" />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={t("ownerMyProfile", {
-                            defaultValue: "My profile",
-                          })}
-                        />
-                      </MenuItem>
+                      {ownerMyProfileNavPath === "/profile" ? (
+                        <MenuItem
+                          onClick={() => {
+                            handleOwnerNavMenuClose();
+                            openProfile();
+                          }}
+                          selected={isProfileOpen}
+                        >
+                          <ListItemIcon>
+                            <PersonIcon fontSize="small" />
+                          </ListItemIcon>
+                          <ListItemText
+                            primary={t("ownerMyProfile", {
+                              defaultValue: "My profile",
+                            })}
+                          />
+                        </MenuItem>
+                      ) : (
+                        <MenuItem
+                          component={Link}
+                          to={ownerMyProfileNavPath}
+                          onClick={handleOwnerNavMenuClose}
+                          selected={
+                            location.pathname === ownerMyProfileNavPath
+                          }
+                        >
+                          <ListItemIcon>
+                            <PersonIcon fontSize="small" />
+                          </ListItemIcon>
+                          <ListItemText
+                            primary={t("ownerMyProfile", {
+                              defaultValue: "My profile",
+                            })}
+                          />
+                        </MenuItem>
+                      )}
                       <MenuItem
                         component={Link}
                         to="/owner-dashboard"
@@ -1736,7 +1715,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
 
                 {NOTIFICATIONS_CENTER_ENABLED && (
                   <IconButton
-                    onClick={handleNotificationMenuOpen}
+                    onClick={() => openNotifications()}
                     sx={{ ...navIconBtnSx, ml: 0.5 }}
                   >
                     <Badge badgeContent={unreadCount} color="error">
@@ -1758,165 +1737,6 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
           {/* Controls - desktop only (mobile has its own navbar above) */}
         </Toolbar>
       </AppBar>
-
-      {NOTIFICATIONS_CENTER_ENABLED && (
-        <Menu
-          anchorEl={notificationAnchorEl}
-          open={Boolean(notificationAnchorEl)}
-          onClose={handleNotificationMenuClose}
-          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-          transformOrigin={{ vertical: "top", horizontal: "right" }}
-          PaperProps={{
-            sx: {
-              mt: 1.5,
-              minWidth: 320,
-              maxWidth: 380,
-              maxHeight: 400,
-              backgroundColor:
-                theme.palette.mode === "dark"
-                  ? "rgba(15, 23, 42, 0.98)"
-                  : "#fff",
-              backdropFilter:
-                theme.palette.mode === "dark" ? "blur(14px)" : "none",
-              WebkitBackdropFilter:
-                theme.palette.mode === "dark" ? "blur(14px)" : "none",
-              border:
-                theme.palette.mode === "dark"
-                  ? "1px solid rgba(148,163,184,0.18)"
-                  : `1px solid ${theme.palette.divider}`,
-              borderRadius: 2,
-              boxShadow:
-                theme.palette.mode === "dark"
-                  ? "0 18px 48px rgba(0,0,0,0.55)"
-                  : undefined,
-            },
-          }}
-        >
-          <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: "divider" }}>
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                flexWrap: "wrap",
-                gap: 1,
-              }}
-            >
-              <Typography variant="subtitle1" fontWeight={600}>
-                {t("Notifications")}
-              </Typography>
-              <Box sx={{ display: "flex", gap: 0.5 }}>
-                {unreadCount > 0 && (
-                  <Button
-                    size="small"
-                    onClick={() => markAllAsRead()}
-                    sx={{ textTransform: "none" }}
-                  >
-                    {t("Mark all read")}
-                  </Button>
-                )}
-                {notifications.length > 0 && (
-                  <Button
-                    size="small"
-                    onClick={() => clearAll()}
-                    sx={{ textTransform: "none", color: "text.secondary" }}
-                  >
-                    {t("Clear notifications")}
-                  </Button>
-                )}
-              </Box>
-            </Box>
-          </Box>
-          {pushSupported && pushPermission === "default" && (
-            <Box
-              sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: "divider" }}
-            >
-              <Button
-                fullWidth
-                variant="outlined"
-                size="small"
-                disabled={pushSubscribing}
-                onClick={() => requestPushPermission()}
-                sx={{ textTransform: "none" }}
-              >
-                {pushSubscribing
-                  ? t("Enabling...")
-                  : t("Enable system notifications")}
-              </Button>
-            </Box>
-          )}
-          <Box sx={{ maxHeight: 280, overflow: "auto" }}>
-            {notifications.length === 0 ? (
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ p: 2, textAlign: "center" }}
-              >
-                {t("No notifications")}
-              </Typography>
-            ) : (
-              notifications.map((n) => (
-                <ListItemButton
-                  key={n._id}
-                  onClick={() => {
-                    markAsRead(n._id);
-                  }}
-                  sx={{
-                    py: 1.5,
-                    px: 2,
-                    backgroundColor: n.read ? "transparent" : "action.hover",
-                    borderBottom: "1px solid",
-                    borderColor: "divider",
-                  }}
-                >
-                  <Box sx={{ width: "100%" }}>
-                    <Typography
-                      variant="body2"
-                      fontWeight={n.read ? 400 : 600}
-                      sx={{ mb: 0.25 }}
-                    >
-                      {pickNotificationText(n, "title")}
-                    </Typography>
-                    {pickNotificationText(n, "body") && (
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        display="block"
-                      >
-                        {pickNotificationText(n, "body").length > 120
-                          ? `${pickNotificationText(n, "body").slice(0, 120)}...`
-                          : pickNotificationText(n, "body")}
-                      </Typography>
-                    )}
-                    {n.link && (
-                      <Typography
-                        component={Link}
-                        to={n.link}
-                        variant="caption"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          markAsRead(n._id);
-                          handleNotificationMenuClose();
-                        }}
-                        sx={{
-                          display: "inline-block",
-                          mt: 0.5,
-                          color: "primary.main",
-                          textDecoration: "underline",
-                          fontSize: "0.7rem",
-                          "&:hover": { color: "primary.dark" },
-                        }}
-                      >
-                        {t("View")} →
-                      </Typography>
-                    )}
-                  </Box>
-                </ListItemButton>
-              ))
-            )}
-          </Box>
-        </Menu>
-      )}
 
       <Menu
         anchorEl={profileAnchorEl}

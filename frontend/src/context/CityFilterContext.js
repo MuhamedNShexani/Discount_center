@@ -14,6 +14,27 @@ const CityFilterContext = createContext(null);
 export const CITY_ONBOARDING_KEY = "cityOnboardingComplete";
 /** First-visit flow: language step completed → then city step */
 export const LANGUAGE_ONBOARDING_KEY = "languageOnboardingComplete";
+/** City picked in onboarding (step 2) — account step may still be pending */
+export const CITY_STEP_KEY = "cityStepComplete";
+/** Final onboarding step (login, register, or guest) completed */
+export const ACCOUNT_ONBOARDING_KEY = "accountOnboardingComplete";
+
+export function isOnboardingFullyComplete() {
+  if (typeof window === "undefined") return true;
+  try {
+    if (localStorage.getItem(ACCOUNT_ONBOARDING_KEY) === "1") return true;
+    // Legacy users who finished the old 2-step flow (language + city only)
+    if (
+      localStorage.getItem(CITY_ONBOARDING_KEY) === "1" &&
+      localStorage.getItem(CITY_STEP_KEY) !== "1"
+    ) {
+      return true;
+    }
+  } catch {
+    // ignore
+  }
+  return false;
+}
 
 /** Offline / pre-migration fallback — matches former hardcoded list */
 const FALLBACK_CITIES = [
@@ -29,26 +50,52 @@ export const CityFilterProvider = ({ children }) => {
   const [cityRecords, setCityRecords] = useState([]);
   const [citiesLoading, setCitiesLoading] = useState(true);
   const [citiesNonce, setCitiesNonce] = useState(0);
-  const [cityOnboardingDone, setCityOnboardingDone] = useState(() => {
+  const [cityOnboardingDone, setCityOnboardingDone] = useState(
+    isOnboardingFullyComplete,
+  );
+  const [cityStepDone, setCityStepDone] = useState(() => {
     try {
-      return localStorage.getItem(CITY_ONBOARDING_KEY) === "1";
+      return (
+        localStorage.getItem(CITY_STEP_KEY) === "1" ||
+        isOnboardingFullyComplete()
+      );
     } catch {
       return false;
     }
   });
   const { t, i18n } = useTranslation();
 
-  const completeCityOnboarding = useCallback((city) => {
+  const completeCityStep = useCallback((city) => {
     if (!city) return;
     setSelectedCity(city);
     try {
       localStorage.setItem("selectedCity", city);
+      localStorage.setItem(CITY_STEP_KEY, "1");
+    } catch {
+      // ignore
+    }
+    setCityStepDone(true);
+  }, []);
+
+  const completeAccountOnboarding = useCallback(() => {
+    try {
+      localStorage.setItem(ACCOUNT_ONBOARDING_KEY, "1");
       localStorage.setItem(CITY_ONBOARDING_KEY, "1");
     } catch {
       // ignore
     }
     setCityOnboardingDone(true);
+    setCityStepDone(true);
   }, []);
+
+  /** @deprecated Use completeCityStep + completeAccountOnboarding */
+  const completeCityOnboarding = useCallback(
+    (city) => {
+      completeCityStep(city);
+      completeAccountOnboarding();
+    },
+    [completeCityStep, completeAccountOnboarding],
+  );
 
   const refreshCities = useCallback(async () => {
     try {
@@ -110,7 +157,7 @@ export const CityFilterProvider = ({ children }) => {
     const names = cities.map((c) => c.value);
     if (!names.length) return;
 
-    if (!cityOnboardingDone) {
+    if (!cityOnboardingDone && !cityStepDone) {
       setSelectedCity((prev) =>
         names.includes(prev) ? prev : names[0],
       );
@@ -132,7 +179,7 @@ export const CityFilterProvider = ({ children }) => {
       }
       return next;
     });
-  }, [citiesLoading, cities, cityOnboardingDone]);
+  }, [citiesLoading, cities, cityOnboardingDone, cityStepDone]);
 
   return (
     <CityFilterContext.Provider
@@ -144,6 +191,9 @@ export const CityFilterProvider = ({ children }) => {
         citiesNonce,
         refreshCities,
         cityOnboardingDone,
+        cityStepDone,
+        completeCityStep,
+        completeAccountOnboarding,
         completeCityOnboarding,
       }}
     >

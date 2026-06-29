@@ -2,8 +2,6 @@ import React, {
   useState,
   useMemo,
   useCallback,
-  useRef,
-  useEffect,
 } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -29,79 +27,11 @@ import {
   Lock,
 } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
-import { getApiBaseURL } from "../utils/getApiBaseURL";
-import { isEmbeddedWebView } from "../utils/isEmbeddedWebView";
+import { useCityFilter } from "../context/CityFilterContext";
+import GoogleSignInButton from "../components/GoogleSignInButton";
+import { useGoogleOAuthReturn } from "../hooks/useGoogleOAuthReturn";
 
 const BRAND = "var(--brand-primary-blue, #1E6FD9)";
-
-/** GSI `initialize()` may only run once per page load; remounting <LoginPage> must not call it again. */
-let googleIdentityInitialized = false;
-
-function GoogleGLogo({ size = 20 }) {
-  return (
-    <Box
-      component="span"
-      aria-hidden
-      sx={{
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        flexShrink: 0,
-        lineHeight: 0,
-      }}
-    >
-      <svg width={size} height={size} viewBox="0 0 48 48">
-        <path
-          fill="#FFC107"
-          d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.641-.142-3.225-.406-4.771z"
-        />
-        <path
-          fill="#FF3D00"
-          d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"
-        />
-        <path
-          fill="#4CAF50"
-          d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.211 35.091 26.715 36 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"
-        />
-        <path
-          fill="#1976D2"
-          d="M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.087 5.574l.002-.001 6.19 5.238C37.83 39.411 44 34.956 44 24c0-1.641-.142-3.225-.406-4.771z"
-        />
-      </svg>
-    </Box>
-  );
-}
-
-function loadGsiScript() {
-  return new Promise((resolve, reject) => {
-    if (typeof window !== "undefined" && window.google?.accounts?.id) {
-      resolve();
-      return;
-    }
-    const existing = document.querySelector(
-      'script[src="https://accounts.google.com/gsi/client"]',
-    );
-    if (existing) {
-      if (window.google?.accounts?.id) {
-        resolve();
-        return;
-      }
-      const done = () => resolve();
-      existing.addEventListener("load", done);
-      existing.addEventListener("error", () =>
-        reject(new Error("Google script failed to load")),
-      );
-      return;
-    }
-    const script = document.createElement("script");
-    script.src = "https://accounts.google.com/gsi/client";
-    script.async = true;
-    script.defer = true;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Google script failed to load"));
-    document.body.appendChild(script);
-  });
-}
 
 const LoginPage = () => {
   const theme = useTheme();
@@ -109,12 +39,13 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { login, register, loginWithGoogle, completeSessionWithToken } =
-    useAuth();
-  const googleHandlerRef = useRef(async () => {});
+  const { login, register } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
+  const { completeAccountOnboarding } = useCityFilter();
+
+  const fromOnboarding = Boolean(location.state?.fromOnboarding);
 
   const [loginForm, setLoginForm] = useState({
     email: "",
@@ -128,13 +59,30 @@ const LoginPage = () => {
     confirmPassword: "",
   });
 
-  const [activeTab, setActiveTab] = useState("login");
-  const googleRenderRef = useRef(null);
+  const [activeTab, setActiveTab] = useState(() => {
+    const tab = location.state?.onboardingTab;
+    return tab === "register" ? "register" : "login";
+  });
 
-  const useGoogleOAuthRedirect = useMemo(() => {
-    if (import.meta.env.VITE_GOOGLE_OAUTH_REDIRECT === "true") return true;
-    return isEmbeddedWebView();
-  }, []);
+  const finishAuthNavigation = useCallback(() => {
+    if (fromOnboarding) {
+      completeAccountOnboarding();
+    }
+    const from = location.state?.from?.pathname || "/";
+    navigate(from, { replace: true });
+  }, [
+    fromOnboarding,
+    completeAccountOnboarding,
+    location.state,
+    navigate,
+  ]);
+
+  const oauthReturnTo = location.state?.from?.pathname || "/";
+
+  useGoogleOAuthReturn({
+    onSuccess: finishAuthNavigation,
+    onError: (message) => setError(message),
+  });
 
   const fieldSx = useMemo(
     () => ({
@@ -189,8 +137,7 @@ const LoginPage = () => {
         loginForm.password?.trim() || loginForm.password,
       );
       if (result.success) {
-        const from = location.state?.from?.pathname || "/";
-        navigate(from, { replace: true });
+        finishAuthNavigation();
       } else {
         setError(result.message || "Login failed");
       }
@@ -247,8 +194,7 @@ const LoginPage = () => {
         password,
       });
       if (result.success) {
-        const from = location.state?.from?.pathname || "/";
-        navigate(from, { replace: true });
+        finishAuthNavigation();
       } else {
         setError(result.message || "Registration failed");
       }
@@ -264,183 +210,11 @@ const LoginPage = () => {
   };
 
   const goBack = () => {
+    if (fromOnboarding) {
+      completeAccountOnboarding();
+    }
     navigate(location.state?.from?.pathname || "/", { replace: true });
   };
-
-  const handleGoogleCredential = useCallback(
-    async (credential) => {
-      if (!credential) return;
-      setError("");
-      setLoading(true);
-      try {
-        const result = await loginWithGoogle(credential);
-        if (result.success) {
-          const from = location.state?.from?.pathname || "/";
-          navigate(from, { replace: true });
-        } else {
-          setError(
-            result.message ||
-              t("Google sign-in failed", {
-                defaultValue: "Google sign-in failed",
-              }),
-          );
-        }
-      } catch (err) {
-        setError(
-          err?.response?.data?.message ||
-            err?.message ||
-            t("Google sign-in failed", {
-              defaultValue: "Google sign-in failed",
-            }),
-        );
-      } finally {
-        setLoading(false);
-      }
-    },
-    [loginWithGoogle, navigate, location.state, t],
-  );
-
-  googleHandlerRef.current = handleGoogleCredential;
-
-  const googleClientId = (import.meta.env.VITE_GOOGLE_CLIENT_ID || "").trim();
-
-  /** Full-page OAuth return: #google_oauth_token= (preferred) or ?google_oauth_token=; ?google_error= */
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const hashParams = new URLSearchParams(
-      (window.location.hash || "").replace(/^#/, ""),
-    );
-    const oauthErr = params.get("google_error");
-    const oauthTok =
-      params.get("google_oauth_token") || hashParams.get("google_oauth_token");
-
-    const stripOAuthFromUrl = () => {
-      window.history.replaceState({}, document.title, window.location.pathname);
-    };
-
-    if (oauthErr) {
-      try {
-        setError(decodeURIComponent(oauthErr));
-      } catch {
-        setError(oauthErr);
-      }
-      stripOAuthFromUrl();
-      return undefined;
-    }
-
-    if (!oauthTok) return undefined;
-
-    const tokenSnapshot = oauthTok;
-    stripOAuthFromUrl();
-
-    let cancelled = false;
-    (async () => {
-      setLoading(true);
-      setError("");
-      const result = await completeSessionWithToken(tokenSnapshot);
-      if (cancelled) return;
-      if (result.success) {
-        const from = location.state?.from?.pathname || "/";
-        navigate(from, { replace: true });
-      } else {
-        setError(
-          result.message ||
-            t("Google sign-in failed", {
-              defaultValue: "Google sign-in failed",
-            }),
-        );
-      }
-      setLoading(false);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [completeSessionWithToken, navigate, location.state, t]);
-
-  const startGoogleOAuthRedirect = useCallback(() => {
-    const returnTo = location.state?.from?.pathname || "/";
-    const base = getApiBaseURL();
-    const url = `${base}/auth/google/start?returnTo=${encodeURIComponent(returnTo)}`;
-    window.location.assign(url);
-  }, [location.state]);
-
-  /**
-   * Use Google's `renderButton` (iframe) instead of One Tap `prompt()` — One Tap is
-   * often blocked or empty on mobile Safari / in-app browsers; the rendered button works.
-   * In embedded WebViews, use full-page OAuth (`/auth/google/start`) instead.
-   */
-  useEffect(() => {
-    if (!googleClientId || useGoogleOAuthRedirect) return undefined;
-
-    let cancelled = false;
-
-    const renderGoogleButton = async () => {
-      await loadGsiScript();
-      if (cancelled) return;
-      const el = googleRenderRef.current;
-      if (!el || !window.google?.accounts?.id) return;
-
-      el.innerHTML = "";
-      try {
-        if (!googleIdentityInitialized) {
-          window.google.accounts.id.initialize({
-            client_id: googleClientId,
-            callback: (response) => {
-              const c = response?.credential;
-              if (c) void googleHandlerRef.current?.(c);
-            },
-            auto_select: false,
-            cancel_on_tap_outside: true,
-          });
-          googleIdentityInitialized = true;
-        }
-
-        const rectW = el.getBoundingClientRect().width || el.offsetWidth || 0;
-        const vw =
-          typeof window !== "undefined"
-            ? Math.min(window.innerWidth - 64, 480)
-            : 320;
-        const w = Math.max(rectW || vw, 280);
-        window.google.accounts.id.renderButton(el, {
-          theme: "outline",
-          size: "large",
-          width: w,
-          text: "continue_with",
-          shape: "rectangular",
-          logo_alignment: "left",
-          locale: typeof navigator !== "undefined" ? navigator.language : "en",
-        });
-      } catch (e) {
-        console.warn("Google Sign-In renderButton:", e);
-      }
-    };
-
-    let frames = 0;
-    const maxFrames = 45;
-    const tick = () => {
-      if (cancelled) return;
-      if (googleRenderRef.current && window.google?.accounts?.id) {
-        void renderGoogleButton();
-        return;
-      }
-      frames += 1;
-      if (frames < maxFrames) {
-        requestAnimationFrame(tick);
-        return;
-      }
-      void renderGoogleButton();
-    };
-
-    void loadGsiScript().then(() => {
-      requestAnimationFrame(tick);
-    });
-
-    return () => {
-      cancelled = true;
-      if (googleRenderRef.current) googleRenderRef.current.innerHTML = "";
-    };
-  }, [googleClientId, useGoogleOAuthRedirect]);
 
   return (
     <Box
@@ -880,83 +654,12 @@ const LoginPage = () => {
               gap: 2,
             }}
           >
-            {/* {!googleClientId ? (
-              <Alert severity="warning" sx={{ borderRadius: 2 }}>
-                {t("googleEnvMissing")}
-              </Alert>
-            ) : (
-              <Box
-                sx={{
-                  width: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "stretch",
-                  gap: 1,
-                }}
-              >
-                {useGoogleOAuthRedirect && isEmbeddedWebView() && (
-                  <Alert severity="info" sx={{ borderRadius: 2 }}>
-                    {t("googleWebViewRedirectHint", {
-                      defaultValue:
-                        "Google sign-in will continue in this window (full page), then bring you back here.",
-                    })}
-                  </Alert>
-                )}
-                {useGoogleOAuthRedirect ? (
-                  <Button
-                    type="button"
-                    fullWidth
-                    variant="outlined"
-                    size="large"
-                    disabled={loading}
-                    onClick={startGoogleOAuthRedirect}
-                    sx={{
-                      py: 1.25,
-                      borderRadius: "14px",
-                      textTransform: "none",
-                      fontWeight: 700,
-                      fontSize: "1rem",
-                      borderColor: isDark
-                        ? "rgba(255,255,255,0.22)"
-                        : "rgba(0,0,0,0.14)",
-                      color: isDark ? "rgba(255,255,255,0.95)" : "text.primary",
-                      bgcolor: isDark
-                        ? "rgba(255,255,255,0.03)"
-                        : "rgba(255,255,255,0.9)",
-                      gap: 1.25,
-                      "&:hover": {
-                        borderColor: isDark
-                          ? "rgba(255,255,255,0.35)"
-                          : "rgba(0,0,0,0.2)",
-                        bgcolor: isDark
-                          ? "rgba(255,255,255,0.06)"
-                          : "rgba(0,0,0,0.04)",
-                      },
-                    }}
-                  >
-                    <GoogleGLogo size={22} />
-                    {t("Continue with Google")}
-                  </Button>
-                ) : (
-                  <Box
-                    ref={googleRenderRef}
-                    className="gsi-google-button-mount"
-                    sx={{
-                      width: "100%",
-                      minHeight: 48,
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      "& > div": { width: "100% !important" },
-                      "& iframe": {
-                        width: "100% !important",
-                        maxWidth: "100% !important",
-                      },
-                    }}
-                  />
-                )}
-              </Box>
-            )} */}
+            <GoogleSignInButton
+              disabled={loading}
+              returnTo={oauthReturnTo}
+              onSuccess={finishAuthNavigation}
+              onError={(message) => setError(message)}
+            />
             <Box
               sx={{
                 display: "flex",

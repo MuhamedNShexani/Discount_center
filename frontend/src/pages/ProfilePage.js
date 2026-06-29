@@ -81,6 +81,9 @@ import {
   BarChart as BarChartIcon,
   HourglassTop as HourglassTopIcon,
   Feedback as FeedbackIcon,
+  GridView as GridViewIcon,
+  ContactMail as ContactMailIcon,
+  EditOutlined as EditIcon,
 } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
@@ -185,7 +188,41 @@ function ownerProfileFallbackLabel(choice, t) {
   return `${t("Company", { defaultValue: "Company" })} (${tail})`;
 }
 
-const ProfilePage = () => {
+/** Matches ListItemButton + ListItemText icon/label styling across profile sections. */
+function ProfileSectionLabel({ icon: Icon, label, sx }) {
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        flexShrink: 0,
+        minWidth: 0,
+        ...sx,
+      }}
+    >
+      <ListItemIcon>
+        <Icon fontSize="small" />
+      </ListItemIcon>
+      <ListItemText
+        primary={label}
+        sx={{ my: 0, flex: "0 1 auto" }}
+        primaryTypographyProps={{ variant: "body1" }}
+      />
+    </Box>
+  );
+}
+
+const profileSettingsRowSx = {
+  py: 1,
+  px: 2,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  width: "100%",
+  gap: 1,
+};
+
+const ProfilePage = ({ onClose }) => {
   const theme = useTheme();
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
@@ -588,359 +625,486 @@ const ProfilePage = () => {
     }
   };
 
+  const closeThen = useCallback(
+    (fn) => {
+      onClose?.();
+      fn?.();
+    },
+    [onClose],
+  );
+
   const handleBack = useCallback(() => {
     if (pageClosing) return;
     setPageClosing(true);
-    // Webviews can report unstable history stacks on first load.
-    // Always route to home explicitly so close action is deterministic.
     window.setTimeout(() => {
-      navigate("/", { replace: true });
+      onClose?.();
     }, 170);
-  }, [navigate, pageClosing]);
+  }, [onClose, pageClosing]);
+
+  const isDark = theme.palette.mode === "dark";
+
+  const cardSx = {
+    borderRadius: "16px",
+    overflow: "hidden",
+    border: `1px solid ${isDark ? alpha("#fff", 0.07) : alpha("#1e6fd9", 0.09)}`,
+    background: isDark ? alpha("#fff", 0.03) : "#fff",
+    boxShadow: isDark
+      ? `inset 0 1px 0 ${alpha("#fff", 0.05)}, 0 4px 20px rgba(0,0,0,0.22)`
+      : `0 1px 0 ${alpha("#1e6fd9", 0.06)}, 0 4px 16px ${alpha("#1e6fd9", 0.05)}`,
+  };
 
   return (
-    <Box
-      onClick={handleBack}
-      sx={{
-        position: "fixed",
-        inset: 0,
-        width: "100%",
-        height: "100dvh",
-        zIndex: 1200,
-        display: "flex",
-        justifyContent: "flex-end",
-        backgroundColor: "rgba(0,0,0,0.28)",
-      }}
-    >
-      <Paper
-        onClick={(e) => e.stopPropagation()}
-        elevation={0}
+    <>
+      <Box
         sx={{
-          borderRadius: 0,
-          overflow: "auto",
-          border: "none",
-          width: { xs: "100vw", sm: 380 },
+          width: "100%",
           maxWidth: "100%",
           height: "100dvh",
-          background: theme.palette.mode === "dark" ? "#0f1927" : "#ffffff",
-          borderLeft:
-            theme.palette.mode === "dark"
-              ? "1px solid rgba(255,255,255,0.08)"
-              : "1px solid #eef0f4",
+          overflowY: "auto",
+          display: "flex",
+          flexDirection: "column",
+          background: isDark
+            ? `linear-gradient(180deg, #0c1525 0%, #0f1927 60%, #0b1220 100%)`
+            : `linear-gradient(180deg, #eef3ff 0%, #f6f9ff 25%, #fff 55%)`,
+          boxShadow: isDark
+            ? "-32px 0 96px rgba(0,0,0,0.7)"
+            : "-24px 0 64px rgba(30,111,217,0.14)",
+          transform: pageClosing
+            ? "translateX(32px)"
+            : pageEnterActive
+              ? "translateX(0)"
+              : "translateX(24px)",
+          opacity: pageClosing ? 0.55 : pageEnterActive ? 1 : 0.7,
+          transition:
+            "transform 220ms cubic-bezier(0.22,1,0.36,1), opacity 180ms ease",
+          willChange: "transform, opacity",
         }}
       >
+        {/* ── HERO HEADER ── */}
         <Box
           sx={{
-            minHeight: "100%",
-            transform: pageClosing
-              ? "translateX(28px)"
-              : pageEnterActive
-                ? "translateX(0)"
-                : "translateX(24px)",
-            opacity: pageClosing ? 0.78 : pageEnterActive ? 1 : 0.82,
-            transition:
-              "transform 180ms cubic-bezier(0.22, 1, 0.36, 1), opacity 150ms ease",
-            willChange: "transform, opacity",
+            position: "relative",
+            pb: 3,
+            px: 2.5,
+            background: isDark
+              ? `linear-gradient(150deg, ${alpha("#1e6fd9", 0.22)} 0%, ${alpha("#6366f1", 0.1)} 50%, transparent 100%)`
+              : `linear-gradient(150deg, ${alpha("#1e6fd9", 0.12)} 0%, ${alpha("#6366f1", 0.05)} 50%, transparent 100%)`,
+            "&::before": {
+              content: '""',
+              position: "absolute",
+              inset: 0,
+              backgroundImage: isDark
+                ? `radial-gradient(circle at 88% 12%, ${alpha("#6366f1", 0.14)} 0%, transparent 55%)`
+                : `radial-gradient(circle at 88% 12%, ${alpha("#6366f1", 0.07)} 0%, transparent 55%)`,
+              pointerEvents: "none",
+            },
+            "&::after": {
+              content: '""',
+              position: "absolute",
+              bottom: 0,
+              left: 20,
+              right: 20,
+              height: "1px",
+              background: isDark
+                ? `linear-gradient(90deg, transparent, ${alpha("#1e6fd9", 0.45)}, transparent)`
+                : `linear-gradient(90deg, transparent, ${alpha("#1e6fd9", 0.2)}, transparent)`,
+            },
           }}
         >
+          {/* Top bar: title + close */}
           <Box
             sx={{
-              p: 2.5,
-              borderBottom: `1px solid ${theme.palette.divider}`,
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              gap: 1.5,
+              pt: 1.5,
+              pb: 2,
             }}
           >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Box
-                sx={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: "12px",
-                  background: "linear-gradient(135deg,#1e6fd9,#1558b0)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  boxShadow: "0 3px 8px rgba(30,111,217,0.35)",
-                }}
-              >
-                <PersonIcon sx={{ fontSize: 18, color: "white" }} />
-              </Box>
-              <Typography
-                variant="h6"
-                sx={{
-                  fontWeight: 800,
-                  color:
-                    theme.palette.mode === "dark"
-                      ? "rgba(255,255,255,0.95)"
-                      : "#111827",
-                }}
-              >
-                {t("Account", { defaultValue: "Account" })}
-              </Typography>
-            </Box>
+            <Typography
+              variant="subtitle2"
+              fontWeight={700}
+              sx={{ color: "text.secondary", letterSpacing: "0.04em", textTransform: "uppercase", fontSize: "0.72rem" }}
+            >
+              {t("Account", { defaultValue: "Account" })}
+            </Typography>
             <IconButton
-              edge="end"
               onClick={handleBack}
-              size="small"
               disabled={pageClosing}
+              size="small"
               sx={{
-                bgcolor:
-                  theme.palette.mode === "dark"
-                    ? "rgba(255,255,255,0.06)"
-                    : "#f3f4f6",
+                width: 30,
+                height: 30,
+                bgcolor: isDark ? alpha("#fff", 0.08) : alpha("#000", 0.05),
+                transition: "all 0.15s ease",
                 "&:hover": {
-                  bgcolor:
-                    theme.palette.mode === "dark"
-                      ? "rgba(255,255,255,0.1)"
-                      : "#e9ecf0",
+                  bgcolor: isDark ? alpha("#fff", 0.14) : alpha("#000", 0.1),
+                  transform: "scale(1.1)",
                 },
               }}
             >
-              <CloseIcon sx={{ fontSize: 18 }} />
+              <CloseIcon sx={{ fontSize: 15 }} />
             </IconButton>
           </Box>
 
           <Box
             sx={{
-              px: 2,
-              py: 2.5,
-              borderBottom: `1px solid ${theme.palette.divider}`,
-              backgroundColor:
-                theme.palette.mode === "dark"
-                  ? "rgba(255,255,255,0.04)"
-                  : "rgba(0,0,0,0.02)",
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
             }}
           >
-            <Box display="flex" alignItems="center" gap={1.5} flexWrap="wrap">
-              <Avatar
-                sx={{
-                  width: 46,
-                  height: 46,
-                  backgroundColor: theme.palette.primary.main,
-                  fontWeight: 700,
-                }}
-              >
-                {(displayName || "U").charAt(0).toUpperCase()}
-              </Avatar>
-              <Box sx={{ minWidth: 0 }}>
-                <Typography variant="subtitle1" fontWeight={700} noWrap>
-                  {displayName}
-                </Typography>
-                {!!email && (
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    noWrap
-                    sx={{ maxWidth: 260 }}
-                  >
-                    {email}
-                  </Typography>
-                )}
-              </Box>
-            </Box>
-          </Box>
-
-          <List disablePadding>
-            <ListItemButton
-              ref={changeNameButtonRef}
-              onClick={(e) => {
-                // Avoid keeping focus on a background element while a modal sets aria-hidden.
-                e?.currentTarget?.blur?.();
-                if (user) {
-                  setUserNameInput(user?.displayName || user?.username || "");
-                  setUserNameDialogOpen(true);
-                  return;
-                }
-                setGuestNameInput(guestUser?.displayName || "");
-                setGuestNameDialogOpen(true);
+            <Avatar
+              sx={{
+                width: 68,
+                height: 68,
+                fontSize: "1.7rem",
+                fontWeight: 800,
+                flexShrink: 0,
+                background:
+                  "linear-gradient(135deg, #1e6fd9 0%, #6366f1 100%)",
+                boxShadow: `0 8px 32px ${alpha("#1e6fd9", isDark ? 0.55 : 0.35)}, 0 2px 8px rgba(0,0,0,0.15)`,
+                border: `3px solid ${isDark ? alpha("#fff", 0.12) : alpha("#fff", 0.95)}`,
               }}
             >
-              <ListItemIcon>
-                <PersonIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText primary={t("Change Your Account Name")} />
-            </ListItemButton>
+              {(displayName || "U").charAt(0).toUpperCase()}
+            </Avatar>
 
-            {user &&
-              (ownerProfileChoices.length > 0 ||
-                canAccessOwnerDashboard(user)) && <Divider />}
-            {user && ownerProfileChoices.length > 0 && (
-              <ListItemButton
-                component={ownerProfileChoices.length === 1 ? Link : undefined}
-                to={
-                  ownerProfileChoices.length === 1
-                    ? ownerProfileChoices[0].path
-                    : undefined
-                }
-                onClick={
-                  ownerProfileChoices.length > 1
-                    ? (e) => {
-                        e.preventDefault();
-                        e.currentTarget?.blur?.();
-                        setOwnerProfilePickerOpen(true);
-                      }
-                    : undefined
-                }
-              >
-                <ListItemIcon>
-                  <OwnerProfileListIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText
-                  primary={t("ownerMyProfile", {
-                    defaultValue: "My profile",
-                  })}
-                  secondary={t("ownerMyProfileHint", {
-                    defaultValue: "Open your public Profile",
-                  })}
-                />
-              </ListItemButton>
-            )}
-            {user && canAccessOwnerDashboard(user) && (
-              <ListItemButton component={Link} to="/owner-dashboard">
-                <ListItemIcon>
-                  <StorefrontIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText
-                  primary={t("Owner dashboard", {
-                    defaultValue: "Owner dashboard",
-                  })}
-                />
-              </ListItemButton>
-            )}
-
-            {user && canAccessOwnerDataEntryPage(user) && (
-              <>
-                <Divider />
-                <ListItemButton component={Link} to="/owner-data-entry">
-                  <ListItemIcon>
-                    <AddIcon fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={t("Owner Data Entry", {
-                      defaultValue: "Owner Data Entry",
-                    })}
-                  />
-                </ListItemButton>
-              </>
-            )}
-
-            {user && canAccessPendingPage(user) && (
-              <>
-                <Divider />
-                <ListItemButton component={Link} to="/pending">
-                  <ListItemIcon>
-                    <HourglassTopIcon fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={t("Pending reviews", {
-                      defaultValue: "Pending reviews",
-                    })}
-                  />
-                </ListItemButton>
-              </>
-            )}
-
-            {showDataEntryLink && (
-              <>
-                <Divider />
-                <ListItemButton component={Link} to="/admin">
-                  <ListItemIcon>
-                    <AdminPanelSettingsIcon fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText primary={t("Data Entry")} />
-                </ListItemButton>
-                {isAdmin && (
-                  <>
-                    <ListItemButton component={Link} to="/admin/customization">
-                      <ListItemIcon>
-                        <PaletteIcon fontSize="small" />
-                      </ListItemIcon>
-                      <ListItemText primary={t("Customization")} />
-                    </ListItemButton>
-                    <ListItemButton component={Link} to="/admin/users">
-                      <ListItemIcon>
-                        <PeopleIcon fontSize="small" />
-                      </ListItemIcon>
-                      <ListItemText primary={t("Users")} />
-                    </ListItemButton>
-                    <ListItemButton component={Link} to="/admin/visitors">
-                      <ListItemIcon>
-                        <BarChartIcon fontSize="small" />
-                      </ListItemIcon>
-                      <ListItemText primary={t("Visitors report")} />
-                    </ListItemButton>
-                    <ListItemButton component={Link} to="/admin/feedback">
-                      <ListItemIcon>
-                        <FeedbackIcon fontSize="small" />
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={t("User feedback", {
-                          defaultValue: "User feedback",
-                        })}
-                      />
-                    </ListItemButton>
-                    <ListItemButton component={Link} to="/admin/translations">
-                      <ListItemIcon>
-                        <LanguageIcon fontSize="small" />
-                      </ListItemIcon>
-                      <ListItemText primary={t("translationPage.title")} />
-                    </ListItemButton>
-                    <ListItemButton component={Link} to="/admin/dashboard">
-                      <ListItemIcon>
-                        <DashboardIcon fontSize="small" />
-                      </ListItemIcon>
-                      <ListItemText primary={t("Admin Dashboard")} />
-                    </ListItemButton>
-                    <ListItemButton component={Link} to="/admin/cities">
-                      <ListItemIcon>
-                        <LocationOnIcon fontSize="small" />
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={t("City management", {
-                          defaultValue: "City management",
-                        })}
-                      />
-                    </ListItemButton>
-                  </>
-                )}
-              </>
-            )}
-
-            <Divider />
-
-            {profileShortcutItems.length > 0 && (
+            <Box sx={{ flex: 1, minWidth: 0 }}>
               <Box
                 sx={{
-                  px: { xs: 2, sm: 2.5 },
-                  py: { xs: 2, sm: 2.25 },
-                  borderBottom: `1px solid ${theme.palette.divider}`,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.75,
+                  minWidth: 0,
                 }}
               >
                 <Typography
-                  variant="subtitle2"
-                  color="text.secondary"
-                  fontWeight={700}
-                  display="block"
-                  sx={{ mb: 1.25, fontSize: { xs: "0.95rem", sm: "1rem" } }}
+                  variant="h6"
+                  fontWeight={800}
+                  noWrap
+                  sx={{ flex: 1, minWidth: 0, letterSpacing: "-0.02em" }}
                 >
-                  {t("Shortcuts", { defaultValue: "Shortcuts" })}
+                  {displayName}
                 </Typography>
+                <IconButton
+                  ref={changeNameButtonRef}
+                  size="small"
+                  onClick={(e) => {
+                    e?.currentTarget?.blur?.();
+                    if (user) {
+                      setUserNameInput(
+                        user?.displayName || user?.username || "",
+                      );
+                      setUserNameDialogOpen(true);
+                      return;
+                    }
+                    setGuestNameInput(guestUser?.displayName || "");
+                    setGuestNameDialogOpen(true);
+                  }}
+                  sx={{
+                    flexShrink: 0,
+                    width: 28,
+                    height: 28,
+                    bgcolor: isDark
+                      ? alpha("#1e6fd9", 0.2)
+                      : alpha("#1e6fd9", 0.1),
+                    color: "primary.main",
+                    transition: "all 0.15s ease",
+                    "&:hover": {
+                      bgcolor: isDark
+                        ? alpha("#1e6fd9", 0.32)
+                        : alpha("#1e6fd9", 0.2),
+                      transform: "scale(1.1)",
+                    },
+                  }}
+                >
+                  <EditIcon sx={{ fontSize: 13 }} />
+                </IconButton>
+              </Box>
+
+              {!!email && (
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  noWrap
+                  sx={{ mt: 0.3 }}
+                >
+                  {email}
+                </Typography>
+              )}
+
+              {!user && (
+                <Box
+                  sx={{
+                    mt: 0.75,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    px: 1,
+                    py: 0.25,
+                    borderRadius: 2,
+                    border: `1px solid ${isDark ? alpha("#fff", 0.1) : alpha("#1e6fd9", 0.2)}`,
+                    bgcolor: isDark
+                      ? alpha("#fff", 0.05)
+                      : alpha("#1e6fd9", 0.05),
+                  }}
+                >
+                  <Typography
+                    variant="caption"
+                    fontWeight={700}
+                    sx={{
+                      color: isDark ? alpha("#fff", 0.6) : "#1e6fd9",
+                      fontSize: "0.7rem",
+                    }}
+                  >
+                    {t("Guest User")}
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+          </Box>
+        </Box>
+
+        {/* ── SCROLLABLE BODY ── */}
+        <Box
+          sx={{
+            flex: 1,
+            py: 2,
+            display: "flex",
+            flexDirection: "column",
+            gap: 1.25,
+          }}
+        >
+          {/* Owner / Admin section */}
+          {user &&
+            (ownerProfileChoices.length > 0 ||
+              canAccessOwnerDashboard(user) ||
+              canAccessOwnerDataEntryPage(user) ||
+              canAccessPendingPage(user) ||
+              showDataEntryLink) && (
+              <Box sx={{ px: 2 }}>
+                <Box sx={cardSx}>
+                  {user && ownerProfileChoices.length > 0 && (
+                    <ListItemButton
+                      component={
+                        ownerProfileChoices.length === 1 ? Link : undefined
+                      }
+                      to={
+                        ownerProfileChoices.length === 1
+                          ? ownerProfileChoices[0].path
+                          : undefined
+                      }
+                      onClick={
+                        ownerProfileChoices.length > 1
+                          ? (e) => {
+                              e.preventDefault();
+                              e.currentTarget?.blur?.();
+                              setOwnerProfilePickerOpen(true);
+                            }
+                          : () => onClose?.()
+                      }
+                    >
+                      <ListItemIcon>
+                        <OwnerProfileListIcon fontSize="small" />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={t("ownerMyProfile", {
+                          defaultValue: "My profile",
+                        })}
+                        secondary={t("ownerMyProfileHint", {
+                          defaultValue: "Open your public Profile",
+                        })}
+                      />
+                    </ListItemButton>
+                  )}
+                  {user && canAccessOwnerDashboard(user) && (
+                    <>
+                      {user && ownerProfileChoices.length > 0 && (
+                        <Divider sx={{ mx: 2, opacity: 0.4 }} />
+                      )}
+                      <ListItemButton
+                        component={Link}
+                        to="/owner-dashboard"
+                        onClick={() => onClose?.()}
+                      >
+                        <ListItemIcon>
+                          <StorefrontIcon fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={t("Owner dashboard", {
+                            defaultValue: "Owner dashboard",
+                          })}
+                        />
+                      </ListItemButton>
+                    </>
+                  )}
+                  {user && canAccessOwnerDataEntryPage(user) && (
+                    <>
+                      <Divider sx={{ mx: 2, opacity: 0.4 }} />
+                      <ListItemButton
+                        component={Link}
+                        to="/owner-data-entry"
+                        onClick={() => onClose?.()}
+                      >
+                        <ListItemIcon>
+                          <AddIcon fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={t("Owner Data Entry", {
+                            defaultValue: "Owner Data Entry",
+                          })}
+                        />
+                      </ListItemButton>
+                    </>
+                  )}
+                  {user && canAccessPendingPage(user) && (
+                    <>
+                      <Divider sx={{ mx: 2, opacity: 0.4 }} />
+                      <ListItemButton
+                        component={Link}
+                        to="/pending"
+                        onClick={() => onClose?.()}
+                      >
+                        <ListItemIcon>
+                          <HourglassTopIcon fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={t("Pending reviews", {
+                            defaultValue: "Pending reviews",
+                          })}
+                        />
+                      </ListItemButton>
+                    </>
+                  )}
+                  {showDataEntryLink && (
+                    <>
+                      <Divider sx={{ mx: 2, opacity: 0.4 }} />
+                      <ListItemButton
+                        component={Link}
+                        to="/admin"
+                        onClick={() => onClose?.()}
+                      >
+                        <ListItemIcon>
+                          <AdminPanelSettingsIcon fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText primary={t("Data Entry")} />
+                      </ListItemButton>
+                      {isAdmin && (
+                        <>
+                          <Divider sx={{ mx: 2, opacity: 0.4 }} />
+                          <ListItemButton
+                            component={Link}
+                            to="/admin/customization"
+                            onClick={() => onClose?.()}
+                          >
+                            <ListItemIcon>
+                              <PaletteIcon fontSize="small" />
+                            </ListItemIcon>
+                            <ListItemText primary={t("Customization")} />
+                          </ListItemButton>
+                          <Divider sx={{ mx: 2, opacity: 0.4 }} />
+                          <ListItemButton
+                            component={Link}
+                            to="/admin/users"
+                            onClick={() => onClose?.()}
+                          >
+                            <ListItemIcon>
+                              <PeopleIcon fontSize="small" />
+                            </ListItemIcon>
+                            <ListItemText primary={t("Users")} />
+                          </ListItemButton>
+                          <Divider sx={{ mx: 2, opacity: 0.4 }} />
+                          <ListItemButton
+                            component={Link}
+                            to="/admin/visitors"
+                            onClick={() => onClose?.()}
+                          >
+                            <ListItemIcon>
+                              <BarChartIcon fontSize="small" />
+                            </ListItemIcon>
+                            <ListItemText primary={t("Visitors report")} />
+                          </ListItemButton>
+                          <Divider sx={{ mx: 2, opacity: 0.4 }} />
+                          <ListItemButton
+                            component={Link}
+                            to="/admin/feedback"
+                            onClick={() => onClose?.()}
+                          >
+                            <ListItemIcon>
+                              <FeedbackIcon fontSize="small" />
+                            </ListItemIcon>
+                            <ListItemText
+                              primary={t("User feedback", {
+                                defaultValue: "User feedback",
+                              })}
+                            />
+                          </ListItemButton>
+                          <Divider sx={{ mx: 2, opacity: 0.4 }} />
+                          <ListItemButton
+                            component={Link}
+                            to="/admin/translations"
+                            onClick={() => onClose?.()}
+                          >
+                            <ListItemIcon>
+                              <LanguageIcon fontSize="small" />
+                            </ListItemIcon>
+                            <ListItemText
+                              primary={t("translationPage.title")}
+                            />
+                          </ListItemButton>
+                          <Divider sx={{ mx: 2, opacity: 0.4 }} />
+                          <ListItemButton
+                            component={Link}
+                            to="/admin/dashboard"
+                            onClick={() => onClose?.()}
+                          >
+                            <ListItemIcon>
+                              <DashboardIcon fontSize="small" />
+                            </ListItemIcon>
+                            <ListItemText primary={t("Admin Dashboard")} />
+                          </ListItemButton>
+                          <Divider sx={{ mx: 2, opacity: 0.4 }} />
+                          <ListItemButton
+                            component={Link}
+                            to="/admin/cities"
+                            onClick={() => onClose?.()}
+                          >
+                            <ListItemIcon>
+                              <LocationOnIcon fontSize="small" />
+                            </ListItemIcon>
+                            <ListItemText
+                              primary={t("City management", {
+                                defaultValue: "City management",
+                              })}
+                            />
+                          </ListItemButton>
+                        </>
+                      )}
+                    </>
+                  )}
+                </Box>
+              </Box>
+            )}
+
+          {/* Shortcuts */}
+          {profileShortcutItems.length > 0 && (
+            <Box sx={{ px: 2 }}>
+              <Box sx={cardSx}>
+                <Box sx={{ px: 2, pt: 1.5, pb: 0.75 }}>
+                  <ProfileSectionLabel
+                    icon={GridViewIcon}
+                    label={t("Shortcuts", { defaultValue: "Shortcuts" })}
+                  />
+                </Box>
                 <Box
                   sx={{
                     display: "flex",
-                    flexDirection: "row",
-                    flexWrap: "nowrap",
-                    gap: { xs: 1.25, sm: 1.5 },
+                    gap: 1,
                     overflowX: "auto",
-                    py: 0.5,
-                    mx: -0.5,
-                    px: 0.5,
-                    scrollbarWidth: "thin",
-                    WebkitOverflowScrolling: "touch",
-                    "&::-webkit-scrollbar": { height: 8 },
+                    px: 2,
+                    pb: 1.5,
+                    scrollbarWidth: "none",
+                    "&::-webkit-scrollbar": { display: "none" },
                   }}
                 >
                   {profileShortcutItems.map((item) => {
@@ -950,30 +1114,29 @@ const ProfilePage = () => {
                         key={item.id}
                         component={Link}
                         to={item.path}
+                        onClick={() => onClose?.()}
                         clickable
                         variant="outlined"
                         label={t(item.labelKey)}
                         icon={
                           IconComp ? (
-                            <IconComp sx={{ fontSize: 22 }} />
+                            <IconComp sx={{ fontSize: 16 }} />
                           ) : undefined
                         }
                         sx={{
                           flexShrink: 0,
-                          borderRadius: 2.5,
-                          fontWeight: 650,
-                          fontSize: { xs: "0.9rem", sm: "0.95rem" },
-                          minHeight: 44,
-                          height: "auto",
-                          py: 0.75,
-                          px: 0.5,
-                          "& .MuiChip-label": {
-                            px: 0.75,
-                            py: 0.25,
-                          },
-                          "& .MuiChip-icon": {
-                            ml: 1,
-                            mr: -0.25,
+                          borderRadius: 2,
+                          fontWeight: 600,
+                          fontSize: "0.82rem",
+                          height: 34,
+                          borderColor: isDark
+                            ? alpha("#fff", 0.12)
+                            : alpha("#1e6fd9", 0.18),
+                          "&:hover": {
+                            bgcolor: isDark
+                              ? alpha("#1e6fd9", 0.14)
+                              : alpha("#1e6fd9", 0.07),
+                            borderColor: "primary.main",
                           },
                         }}
                       />
@@ -981,234 +1144,302 @@ const ProfilePage = () => {
                   })}
                 </Box>
               </Box>
-            )}
+            </Box>
+          )}
 
-            <Divider />
-            <Box sx={{ px: 2, py: 1.5 }}>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1,
-                  mb: 1.25,
-                }}
-              >
+          {/* Preferences card */}
+          <Box sx={{ px: 2 }}>
+            <Box sx={cardSx}>
+              {/* Appearance */}
+              <Box sx={{ px: 2, pt: 1.5, pb: 1.25 }}>
+                <ProfileSectionLabel
+                  icon={PaletteIcon}
+                  label={t("Appearance", { defaultValue: "Appearance" })}
+                  sx={{ mb: 1 }}
+                />
                 <Box
                   sx={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 2,
                     display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    background:
-                      theme.palette.mode === "dark"
-                        ? `linear-gradient(135deg, ${alpha(theme.palette.primary.light, 0.2)}, ${alpha(theme.palette.secondary.main, 0.15)})`
-                        : `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.12)}, ${alpha(theme.palette.secondary.main, 0.1)})`,
-                    border: "1px solid",
-                    borderColor: alpha(theme.palette.divider, 0.9),
+                    gap: 0.5,
+                    p: 0.5,
+                    borderRadius: 2.5,
+                    border: `1px solid ${isDark ? alpha("#fff", 0.08) : alpha("#000", 0.07)}`,
+                    background: isDark
+                      ? alpha("#fff", 0.03)
+                      : alpha("#f0f4ff", 0.8),
                   }}
                 >
-                  <PaletteIcon sx={{ fontSize: 20, color: "primary.main" }} />
+                  {[
+                    {
+                      value: "light",
+                      Icon: LightModeOutlined,
+                      label: t("Light"),
+                    },
+                    {
+                      value: "dark",
+                      Icon: DarkModeOutlined,
+                      label: t("Dark"),
+                    },
+                    {
+                      value: "system",
+                      Icon: BrightnessAutoRounded,
+                      label: t("System", { defaultValue: "System" }),
+                    },
+                  ].map(({ value, Icon, label }) => (
+                    <Box
+                      key={value}
+                      component="button"
+                      type="button"
+                      onClick={() => setColorMode(value)}
+                      sx={{
+                        flex: 1,
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 0.4,
+                        py: 0.75,
+                        border: "none",
+                        cursor: "pointer",
+                        borderRadius: 2,
+                        transition: "all 0.18s ease",
+                        background:
+                          colorMode === value
+                            ? isDark
+                              ? `linear-gradient(135deg, ${alpha("#1e6fd9", 0.35)}, ${alpha("#6366f1", 0.25)})`
+                              : `linear-gradient(135deg, ${alpha("#1e6fd9", 0.12)}, ${alpha("#6366f1", 0.08)})`
+                            : "transparent",
+                        boxShadow:
+                          colorMode === value
+                            ? `0 2px 10px ${alpha("#1e6fd9", 0.25)}, inset 0 1px 0 ${alpha("#fff", 0.1)}`
+                            : "none",
+                        "&:hover": {
+                          background:
+                            colorMode !== value
+                              ? isDark
+                                ? alpha("#fff", 0.04)
+                                : alpha("#1e6fd9", 0.04)
+                              : undefined,
+                        },
+                      }}
+                    >
+                      <Icon
+                        sx={{
+                          fontSize: 22,
+                          color:
+                            colorMode === value
+                              ? "primary.main"
+                              : "text.secondary",
+                          transition: "color 0.18s ease",
+                        }}
+                      />
+                      <Typography
+                        sx={{
+                          fontSize: "0.68rem",
+                          fontWeight: 700,
+                          color:
+                            colorMode === value
+                              ? "primary.main"
+                              : "text.secondary",
+                          lineHeight: 1,
+                          transition: "color 0.18s ease",
+                        }}
+                      >
+                        {label}
+                      </Typography>
+                    </Box>
+                  ))}
                 </Box>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ fontWeight: 800, letterSpacing: "-0.02em" }}
-                >
-                  {t("Appearance", { defaultValue: "Appearance" })}
-                </Typography>
               </Box>
 
-              <Paper
-                elevation={0}
-                sx={{
-                  p: 0.25,
-                  borderRadius: 3,
-                  border: "1px solid",
-                  borderColor: alpha(theme.palette.divider, 0.85),
-                  background:
-                    theme.palette.mode === "dark"
-                      ? `linear-gradient(160deg, ${alpha("#fff", 0.05)} 0%, ${alpha("#fff", 0.02)} 100%)`
-                      : "linear-gradient(180deg, #ffffff 0%, #f4f6f9 100%)",
-                  boxShadow:
-                    theme.palette.mode === "dark"
-                      ? "0 4px 24px rgba(0,0,0,0.25)"
-                      : "0 2px 12px rgba(15,23,42,0.06)",
-                }}
-              >
-                <ToggleButtonGroup
-                  exclusive
-                  fullWidth
-                  value={colorMode}
-                  onChange={(_, v) => v != null && setColorMode(v)}
+              <Divider sx={{ mx: 2, opacity: 0.5 }} />
+
+              {/* City */}
+              <ListItem sx={profileSettingsRowSx}>
+                <ProfileSectionLabel
+                  icon={LocationOnIcon}
+                  label={t("City")}
+                />
+                <FormControl
+                  size="small"
+                  sx={{ minWidth: 120, maxWidth: "58%", flexShrink: 0 }}
+                >
+                  <Select
+                    value={selectedCity}
+                    onChange={(e) => changeCity(e.target.value)}
+                    sx={{
+                      borderRadius: 2,
+                      "& .MuiOutlinedInput-notchedOutline": {
+                        borderColor: isDark
+                          ? alpha("#fff", 0.12)
+                          : alpha("#1e6fd9", 0.2),
+                      },
+                    }}
+                  >
+                    {cities.map((city) => (
+                      <MenuItem key={city.value} value={city.value}>
+                        {city.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </ListItem>
+
+              <Divider sx={{ mx: 2, opacity: 0.5 }} />
+
+              {/* Language */}
+              <Box sx={{ px: 2, py: 1 }}>
+                <ProfileSectionLabel
+                  icon={LanguageIcon}
+                  label={t("Language")}
+                  sx={{ mb: 1 }}
+                />
+                <Box
                   sx={{
                     display: "flex",
                     gap: 0.75,
-                    "& .MuiToggleButtonGroup-grouped": {
-                      margin: 0,
-                      border: 0,
-                      "&:not(:first-of-type)": { borderLeft: 0 },
-                    },
-                    "& .MuiToggleButton-root": {
-                      flex: 1,
-                      flexDirection: "column",
-                      py: 1,
-                      px: 0.5,
-                      borderRadius: "14px !important",
-                      textTransform: "none",
-                      gap: 0.65,
-                      border: "none",
-                      color: "text.secondary",
-                      transition:
-                        "background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease",
-                      "&:hover": {
-                        bgcolor: alpha(theme.palette.primary.main, 0.06),
-                      },
-                      "&.Mui-selected": {
-                        color: "primary.main",
-                        bgcolor: alpha(theme.palette.primary.main, 0.12),
-                        boxShadow: `0 2px 10px ${alpha(theme.palette.primary.main, 0.22)}`,
-                        "&:hover": {
-                          bgcolor: alpha(theme.palette.primary.main, 0.18),
-                        },
-                      },
-                    },
+                    flexWrap: "wrap",
                   }}
                 >
-                  <ToggleButton value="light" aria-label={t("Light")}>
-                    <LightModeOutlined
+                  {[
+                    { code: "en", flag: "🇺🇸", label: t("English") },
+                    { code: "ar", flag: "🇸🇦", label: t("Arabic") },
+                  ].map(({ code, flag, label }) => (
+                    <Button
+                      key={code}
+                      size="small"
+                      variant={
+                        i18n.language === code ? "contained" : "outlined"
+                      }
+                      onClick={() => i18n.changeLanguage(code)}
                       sx={{
-                        fontSize: 28,
-                        opacity: colorMode === "light" ? 1 : 0.85,
-                      }}
-                    />
-                    <Typography
-                      variant="caption"
-                      fontWeight={800}
-                      sx={{ lineHeight: 1.2, fontSize: "0.72rem" }}
-                    >
-                      {t("Light")}
-                    </Typography>
-                  </ToggleButton>
-                  <ToggleButton value="dark" aria-label={t("Dark")}>
-                    <DarkModeOutlined
-                      sx={{
-                        fontSize: 28,
-                        opacity: colorMode === "dark" ? 1 : 0.85,
-                      }}
-                    />
-                    <Typography
-                      variant="caption"
-                      fontWeight={800}
-                      sx={{ lineHeight: 1.2, fontSize: "0.72rem" }}
-                    >
-                      {t("Dark")}
-                    </Typography>
-                  </ToggleButton>
-                  <ToggleButton
-                    value="system"
-                    aria-label={t("System", { defaultValue: "System" })}
-                  >
-                    <BrightnessAutoRounded
-                      sx={{
-                        fontSize: 28,
-                        opacity: colorMode === "system" ? 1 : 0.85,
-                      }}
-                    />
-                    <Typography
-                      variant="caption"
-                      fontWeight={800}
-                      sx={{ lineHeight: 1.2, fontSize: "0.72rem" }}
-                    >
-                      {t("System", { defaultValue: "System" })}
-                    </Typography>
-                  </ToggleButton>
-                </ToggleButtonGroup>
-              </Paper>
-            </Box>
-            <Box sx={{ px: 2, py: 2 }}>
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{ mb: 1, display: "block" }}
-              >
-                {t("City")}
-              </Typography>
-              <FormControl fullWidth size="small">
-                {/* <InputLabel>{t("City")}</InputLabel> */}
-                <Select
-                  value={selectedCity}
-                  label={t("City")}
-                  onChange={(e) => changeCity(e.target.value)}
-                  startAdornment={
-                    <LocationOnIcon sx={{ mr: 1, fontSize: 18 }} />
-                  }
-                >
-                  {cities.map((city) => (
-                    <MenuItem key={city.value} value={city.value}>
-                      {city.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Box>
-
-            <Box sx={{ px: 2, pb: 2 }}>
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{ mb: 1, display: "block" }}
-              >
-                {t("Language")}
-              </Typography>
-              <Box sx={{ display: "flex", gap: 1 }}>
-                <Button
-                  size="small"
-                  variant={i18n.language === "en" ? "contained" : "outlined"}
-                  onClick={() => i18n.changeLanguage("en")}
-                >
-                  🇺🇸 {t("English")}
-                </Button>
-                <Button
-                  size="small"
-                  variant={i18n.language === "ar" ? "contained" : "outlined"}
-                  onClick={() => i18n.changeLanguage("ar")}
-                >
-                  🇸🇦 {t("Arabic")}
-                </Button>
-                <Button
-                  size="small"
-                  variant={i18n.language === "ku" ? "contained" : "outlined"}
-                  onClick={() => i18n.changeLanguage("ku")}
-                >
-                  <Box
-                    component="span"
-                    sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
-                  >
-                    <img
-                      src={kurdishFlag}
-                      alt="Kurdish"
-                      style={{
-                        width: 16,
-                        height: 12,
-                        objectFit: "cover",
                         borderRadius: 2,
+                        minWidth: 0,
+                        px: 1.5,
+                        fontSize: "0.82rem",
+                        fontWeight: 600,
                       }}
-                    />
-                    {t("Kurdish")}
-                  </Box>
-                </Button>
+                    >
+                      {flag} {label}
+                    </Button>
+                  ))}
+                  <Button
+                    size="small"
+                    variant={
+                      i18n.language === "ku" ? "contained" : "outlined"
+                    }
+                    onClick={() => i18n.changeLanguage("ku")}
+                    sx={{
+                      borderRadius: 2,
+                      minWidth: 0,
+                      px: 1.5,
+                      fontSize: "0.82rem",
+                      fontWeight: 600,
+                    }}
+                  >
+                    <Box
+                      component="span"
+                      sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+                    >
+                      <img
+                        src={kurdishFlag}
+                        alt="Kurdish"
+                        style={{
+                          width: 16,
+                          height: 11,
+                          objectFit: "cover",
+                          borderRadius: 2,
+                        }}
+                      />
+                      {t("Kurdish")}
+                    </Box>
+                  </Button>
+                </Box>
               </Box>
             </Box>
+          </Box>
 
-            <Box sx={{ px: 2, pb: 2 }}>
-              <ListItemButton
-                onClick={openFeedbackDialog}
-                sx={{
-                  borderRadius: 2,
-                  border: `1px solid ${theme.palette.divider}`,
-                }}
-              >
+          {/* Contact Us */}
+          {contactItems.length > 0 && (
+            <Box sx={{ px: 2 }}>
+              <Box sx={cardSx}>
+                <ListItem sx={profileSettingsRowSx}>
+                  <ProfileSectionLabel
+                    icon={ContactMailIcon}
+                    label={t("Contact Us")}
+                  />
+                  <Box
+                    sx={{
+                      display: "flex",
+                      gap: 0.5,
+                      flexShrink: 0,
+                      flexWrap: "wrap",
+                      justifyContent: "flex-end",
+                    }}
+                  >
+                    {contactItems.map((item) => {
+                      const href = normalizeUrl(item.value, item.key);
+                      const btnSx = {
+                        minWidth: 34,
+                        width: 34,
+                        height: 34,
+                        p: 0,
+                        borderRadius: 2,
+                        borderColor: isDark
+                          ? alpha("#fff", 0.1)
+                          : alpha("#000", 0.08),
+                        color: "text.secondary",
+                        flexShrink: 0,
+                        transition: "all 0.15s ease",
+                        "&:hover": {
+                          borderColor: "primary.main",
+                          color: "primary.main",
+                          transform: "translateY(-1px)",
+                          boxShadow: `0 4px 12px ${alpha("#1e6fd9", 0.2)}`,
+                        },
+                      };
+                      if (item.key === "whatsapp" && href) {
+                        return (
+                          <Button
+                            key={item.key}
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              openWhatsAppLink(href);
+                            }}
+                            size="small"
+                            variant="outlined"
+                            sx={btnSx}
+                          >
+                            {item.icon}
+                          </Button>
+                        );
+                      }
+                      return (
+                        <Button
+                          key={item.key}
+                          component="a"
+                          href={href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          size="small"
+                          variant="outlined"
+                          sx={btnSx}
+                        >
+                          {item.icon}
+                        </Button>
+                      );
+                    })}
+                  </Box>
+                </ListItem>
+              </Box>
+            </Box>
+          )}
+
+          {/* Support */}
+          <Box sx={{ px: 2 }}>
+            <Box sx={cardSx}>
+              <ListItemButton onClick={openFeedbackDialog}>
                 <ListItemIcon>
                   <FeedbackIcon fontSize="small" />
                 </ListItemIcon>
@@ -1218,201 +1449,96 @@ const ProfilePage = () => {
                   })}
                 />
               </ListItemButton>
-            </Box>
-
-            <Divider />
-
-            {/* <Box sx={{ px: 2, pb: 2, pt: 0 }}>
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{ mb: 1, display: "block" }}
-            >
-              {t("System Data Language")}
-            </Typography>
-
-            <Box
-              sx={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: 0.5,
-              }}
-            >
-              <Button
-                size="small"
-                variant={
-                  dataLanguage === DATA_LANG_NORMAL ? "contained" : "outlined"
-                }
-                onClick={() => setDataLanguage(DATA_LANG_NORMAL)}
+              <Divider sx={{ mx: 2, opacity: 0.4 }} />
+              <ListItemButton onClick={() => closeThen(() => navigate("/about"))}>
+                <ListItemIcon>
+                  <InfoOutlinedIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText
+                  primary={t("About the app", {
+                    defaultValue: "About the app",
+                  })}
+                />
+              </ListItemButton>
+              <Divider sx={{ mx: 2, opacity: 0.4 }} />
+              <ListItemButton
+                component={Link}
+                to="/privacy-policy"
+                onClick={() => onClose?.()}
               >
-                {t("Normal")}
-              </Button>
-
-              <Button
-                size="small"
-                variant={
-                  dataLanguage === DATA_LANG_EN ? "contained" : "outlined"
-                }
-                onClick={() => setDataLanguage(DATA_LANG_EN)}
-              >
-                {t("English")}
-              </Button>
-              <Button
-                size="small"
-                variant={
-                  dataLanguage === DATA_LANG_AR ? "contained" : "outlined"
-                }
-                onClick={() => setDataLanguage(DATA_LANG_AR)}
-              >
-                {t("Arabic")}
-              </Button>
-              <Button
-                size="small"
-                variant={
-                  dataLanguage === DATA_LANG_KU ? "contained" : "outlined"
-                }
-                onClick={() => setDataLanguage(DATA_LANG_KU)}
-              >
-                <Box
-                  component="span"
-                  sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
-                >
-                  {t("Kurdish")}
-                </Box>
-              </Button>
+                <ListItemIcon>
+                  <PrivacyTipIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary={t("Privacy Policy")} />
+              </ListItemButton>
             </Box>
           </Box>
-          <Divider /> */}
-            <ListItem sx={{ py: 1 }}>
-              <ListItemText primary={t("Contact Us")} />
-            </ListItem>
-            <Box
-              sx={{
-                px: 2,
-                pb: 1.5,
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
-                flexWrap: "nowrap",
-                overflowX: "auto",
-              }}
-            >
-              {contactItems.map((item) => {
-                const href = normalizeUrl(item.value, item.key);
-                if (item.key === "whatsapp" && href) {
-                  return (
-                    <Button
-                      key={item.key}
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        openWhatsAppLink(href);
-                      }}
-                      size="small"
-                      variant="outlined"
-                      sx={{
-                        minWidth: 36,
-                        px: 1,
-                        color: "text.primary",
-                        borderColor: "divider",
-                        flexShrink: 0,
-                      }}
-                    >
-                      {item.icon}
-                    </Button>
-                  );
-                }
-                return (
-                  <Button
-                    key={item.key}
-                    component="a"
-                    href={href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    size="small"
-                    variant="outlined"
+
+          {/* Auth actions */}
+          <Box sx={{ px: 2, pb: 2 }}>
+            <Box sx={cardSx}>
+              {user ? (
+                <>
+                  <ListItemButton
+                    ref={deactivateButtonRef}
+                    onClick={(e) => {
+                      e?.currentTarget?.blur?.();
+                      setDeactivateDialogOpen(true);
+                    }}
                     sx={{
-                      minWidth: 36,
-                      px: 1,
-                      color: "text.primary",
-                      borderColor: "divider",
-                      flexShrink: 0,
+                      color: isDark ? "#fbbf24" : "#d97706",
+                      "&:hover": { bgcolor: alpha("#f59e0b", 0.07) },
                     }}
                   >
-                    {item.icon}
-                  </Button>
-                );
-              })}
-            </Box>
-            <Divider />
-            <ListItemButton
-              onClick={() => navigate("/about")}
-              sx={{ px: 2, py: 1 }}
-            >
-              <ListItemIcon>
-                <InfoOutlinedIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText
-                primary={t("About the app", { defaultValue: "About the app" })}
-              />
-            </ListItemButton>
-            <ListItemButton component={Link} to="/privacy-policy">
-              <ListItemIcon>
-                <PrivacyTipIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText primary={t("Privacy Policy")} />
-            </ListItemButton>
-            <Divider />
-            {user ? (
-              <>
+                    <ListItemIcon>
+                      <BlockIcon
+                        sx={{ color: isDark ? "#fbbf24" : "#d97706" }}
+                        fontSize="small"
+                      />
+                    </ListItemIcon>
+                    <ListItemText primary={t("Deactivate Account")} />
+                  </ListItemButton>
+                  <Divider sx={{ mx: 2, opacity: 0.4 }} />
+                  <ListItemButton
+                    onClick={() => logout()}
+                    sx={{
+                      color: "#ef4444",
+                      "&:hover": { bgcolor: alpha("#ef4444", 0.07) },
+                    }}
+                  >
+                    <ListItemIcon>
+                      <LogoutIcon sx={{ color: "#ef4444" }} fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText primary={t("Logout")} />
+                  </ListItemButton>
+                </>
+              ) : (
                 <ListItemButton
-                  ref={deactivateButtonRef}
-                  onClick={(e) => {
-                    // Avoid keeping focus on a background element while a modal sets aria-hidden.
-                    e?.currentTarget?.blur?.();
-                    setDeactivateDialogOpen(true);
+                  component={Link}
+                  to="/login"
+                  onClick={() => onClose?.()}
+                  sx={{
+                    color: "primary.main",
+                    "&:hover": {
+                      bgcolor: alpha(theme.palette.primary.main, 0.07),
+                    },
                   }}
-                  sx={{ color: theme.palette.secondary.main }}
                 >
                   <ListItemIcon>
-                    <BlockIcon
-                      sx={{ color: theme.palette.secondary.main }}
+                    <LoginIcon
+                      sx={{ color: "primary.main" }}
                       fontSize="small"
                     />
                   </ListItemIcon>
-                  <ListItemText primary={t("Deactivate Account")} />
+                  <ListItemText primary={t("Login")} />
                 </ListItemButton>
-                <ListItemButton
-                  onClick={() => {
-                    logout();
-                  }}
-                  sx={{ color: "#e53e3e" }}
-                >
-                  <ListItemIcon>
-                    <LogoutIcon sx={{ color: "#e53e3e" }} fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText primary={t("Logout")} />
-                </ListItemButton>
-              </>
-            ) : (
-              <ListItemButton
-                component={Link}
-                to="/login"
-                sx={{ color: theme.palette.primary.main }}
-              >
-                <ListItemIcon>
-                  <LoginIcon
-                    sx={{ color: theme.palette.primary.main }}
-                    fontSize="small"
-                  />
-                </ListItemIcon>
-                <ListItemText primary={t("Login")} />
-              </ListItemButton>
-            )}
-          </List>
+              )}
+            </Box>
+          </Box>
         </Box>
-      </Paper>
+      </Box>
 
+      {/* ── DIALOGS ── */}
       <Dialog
         open={feedbackDialogOpen}
         onClose={() => !feedbackSubmitting && setFeedbackDialogOpen(false)}
@@ -1468,16 +1594,16 @@ const ProfilePage = () => {
               defaultValue: "Write your note here...",
             })}
           />
-          {feedbackError ? (
+          {feedbackError && (
             <Alert severity="error" sx={{ mt: 2 }}>
               {feedbackError}
             </Alert>
-          ) : null}
-          {feedbackSuccess ? (
+          )}
+          {feedbackSuccess && (
             <Alert severity="success" sx={{ mt: 2 }}>
               {feedbackSuccess}
             </Alert>
-          ) : null}
+          )}
         </DialogContent>
         <DialogActions>
           <Button
@@ -1526,7 +1652,7 @@ const ProfilePage = () => {
                   <ListItemButton
                     onClick={() => {
                       setOwnerProfilePickerOpen(false);
-                      navigate(choice.path);
+                      closeThen(() => navigate(choice.path));
                     }}
                   >
                     <ListItemIcon>
@@ -1561,9 +1687,7 @@ const ProfilePage = () => {
         maxWidth="xs"
         fullWidth
         TransitionProps={{
-          onExited: () => {
-            changeNameButtonRef.current?.focus?.();
-          },
+          onExited: () => changeNameButtonRef.current?.focus?.(),
         }}
       >
         <DialogContent>
@@ -1599,9 +1723,7 @@ const ProfilePage = () => {
         maxWidth="xs"
         fullWidth
         TransitionProps={{
-          onExited: () => {
-            changeNameButtonRef.current?.focus?.();
-          },
+          onExited: () => changeNameButtonRef.current?.focus?.(),
         }}
       >
         <DialogContent>
@@ -1637,12 +1759,8 @@ const ProfilePage = () => {
         maxWidth="sm"
         fullWidth
         TransitionProps={{
-          onEntered: () => {
-            deactivateCancelButtonRef.current?.focus?.();
-          },
-          onExited: () => {
-            deactivateButtonRef.current?.focus?.();
-          },
+          onEntered: () => deactivateCancelButtonRef.current?.focus?.(),
+          onExited: () => deactivateButtonRef.current?.focus?.(),
         }}
       >
         <DialogContent>
@@ -1681,7 +1799,7 @@ const ProfilePage = () => {
               setDeactivating(false);
               if (result?.success) {
                 setDeactivateDialogOpen(false);
-                navigate("/");
+                closeThen(() => navigate("/"));
               } else {
                 alert(result?.message || t("Deactivation failed"));
               }
@@ -1691,7 +1809,7 @@ const ProfilePage = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </>
   );
 };
 

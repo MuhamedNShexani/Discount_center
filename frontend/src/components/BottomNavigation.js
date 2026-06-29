@@ -5,10 +5,7 @@ import {
   Menu,
   MenuItem,
   Badge,
-  Button,
   Typography,
-  Divider,
-  ListItemButton,
 } from "@mui/material";
 import {
   Home,
@@ -37,12 +34,6 @@ import { useActiveTheme } from "../context/ActiveThemeContext";
 import { useCityFilter } from "../context/CityFilterContext";
 import { useContentRefresh } from "../context/ContentRefreshContext";
 import { useNotifications } from "../context/NotificationContext";
-import {
-  DATA_LANG_AR,
-  DATA_LANG_EN,
-  DATA_LANG_KU,
-  useDataLanguage,
-} from "../context/DataLanguageContext";
 import kurdishFlag from "../styles/kurdish_flag.jpg";
 import {
   MAIN_PAGE_SCROLL_KEY,
@@ -52,6 +43,9 @@ import {
 } from "../utils/mainPageScrollSession";
 import { prefetchSearchPageChunk } from "../utils/prefetchSearchPage";
 import { useDraftCartDrawer } from "../hooks/useDraftCartDrawer";
+import { useNotificationDrawer } from "../hooks/useNotificationDrawer";
+import { useProfileDrawer } from "../hooks/useProfileDrawer";
+import { useVisualViewportKeyboardInset } from "../hooks/useVisualViewportKeyboardInset";
 import { isAndroidPerformanceMode } from "../utils/androidPerformance";
 
 const NAV_PATH_CITY = "__nav_city__";
@@ -59,6 +53,7 @@ const NAV_PATH_LANG = "__nav_language__";
 const NAV_PATH_REFRESH = "__nav_refresh__";
 const NAV_PATH_NOTIFICATIONS = "__nav_notifications__";
 const NAV_PATH_DRAFT_CART = "__nav_draft_cart__";
+const NAV_PATH_PROFILE = "__nav_profile__";
 
 /** Same dark glass as `NavigationBar.js` (`NAV_BAR_GRADIENT_DARK_GLASS`). */
 const NAV_BAR_GRADIENT_DARK_GLASS =
@@ -99,11 +94,12 @@ const BottomNavigationBar = () => {
   const useLayoutAnimations = !reduceMotion && !isAndroidPerfMode;
   const { t, i18n } = useTranslation();
   const location = useLocation();
-  const hideNavigationOnProfile = /^\/profile(\/|$)/.test(location.pathname);
   const navigate = useNavigate();
   const isMobile = useIsMobileLayout();
   const { navConfig } = useActiveTheme();
   const { openDraftCart } = useDraftCartDrawer();
+  const { openNotifications } = useNotificationDrawer();
+  const { openProfile } = useProfileDrawer();
   const { triggerRefresh } = useContentRefresh();
   const handleBottomNavRefresh = useCallback(() => {
     if (location.pathname === "/") {
@@ -113,40 +109,16 @@ const BottomNavigationBar = () => {
     triggerRefresh?.();
   }, [location.pathname, triggerRefresh]);
   const { selectedCity, changeCity, cities } = useCityFilter();
-  const { dataLanguage } = useDataLanguage();
   const {
-    notifications,
     unreadCount,
-    fetchNotifications,
-    markAsRead,
-    markAllAsRead,
-    clearAll,
   } = useNotifications();
   const [cityMenuAnchor, setCityMenuAnchor] = useState(null);
   const [langMenuAnchor, setLangMenuAnchor] = useState(null);
-  const [notifMenuAnchor, setNotifMenuAnchor] = useState(null);
   const lastHomeTapTsRef = useRef(0);
   const lastReelsTapTsRef = useRef(0);
 
-  const pickNotificationText = useMemo(() => {
-    const isAr = dataLanguage === DATA_LANG_AR;
-    const isKu = dataLanguage === DATA_LANG_KU;
-    const isEn = dataLanguage === DATA_LANG_EN;
-    return (n, field) => {
-      if (field === "title") {
-        return (
-          (isAr ? n?.titleAr : isKu ? n?.titleKu : isEn ? n?.titleEn : "") ||
-          n?.title ||
-          ""
-        );
-      }
-      return (
-        (isAr ? n?.bodyAr : isKu ? n?.bodyKu : isEn ? n?.bodyEn : "") ||
-        n?.body ||
-        ""
-      );
-    };
-  }, [dataLanguage]);
+  const isSearchPage = /^\/search(\/|$)/.test(location.pathname);
+  const keyboardInset = useVisualViewportKeyboardInset(isSearchPage);
 
   /** Same route matching as before — drives “active” tab + pill target. */
   const activeValue = useMemo(() => {
@@ -161,7 +133,6 @@ const BottomNavigationBar = () => {
     if (pathname === "/categories") return "/categories";
     if (pathname === "/gifts") return "/gifts";
     if (pathname === "/shopping") return "/shopping";
-    if (pathname === "/profile") return "/profile";
     if (pathname === "/findjob") return "/findjob";
     if (pathname === "/search") return "/search";
 
@@ -208,7 +179,12 @@ const BottomNavigationBar = () => {
         path: NAV_PATH_DRAFT_CART,
         Icon: ShoppingCart,
       },
-      profile: { name: t("Account"), path: "/profile", Icon: User },
+      profile: {
+        kind: "profile",
+        name: t("Account"),
+        path: NAV_PATH_PROFILE,
+        Icon: User,
+      },
       brands: { name: t("Brands"), path: "/brands", Icon: Building2 },
       companies: {
         name: t("Companies"),
@@ -400,10 +376,6 @@ const BottomNavigationBar = () => {
     return null;
   }
 
-  if (hideNavigationOnProfile) {
-    return null;
-  }
-
   return (
     <Box
       sx={{
@@ -414,6 +386,9 @@ const BottomNavigationBar = () => {
         width: "100%",
         zIndex: 1000,
         pointerEvents: "none",
+        transform:
+          keyboardInset > 0 ? `translateY(${keyboardInset}px)` : undefined,
+        willChange: keyboardInset > 0 ? "transform" : undefined,
 
         paddingBottom: "max(1px, env(safe-area-inset-bottom))",
         paddingLeft: "5px",
@@ -543,10 +518,7 @@ const BottomNavigationBar = () => {
                       component="button"
                       type="button"
                       aria-label={item.name}
-                      onClick={(e) => {
-                        setNotifMenuAnchor(e.currentTarget);
-                        fetchNotifications?.();
-                      }}
+                      onClick={() => openNotifications()}
                       whileTap={
                         useLayoutAnimations ? { scale: 0.94 } : undefined
                       }
@@ -577,6 +549,34 @@ const BottomNavigationBar = () => {
                       type="button"
                       aria-label={item.name}
                       onClick={() => openDraftCart()}
+                      whileTap={
+                        useLayoutAnimations ? { scale: 0.94 } : undefined
+                      }
+                      whileHover={
+                        useLayoutAnimations ? { scale: 1.06 } : undefined
+                      }
+                      sx={{
+                        ...tabBtnBaseSx,
+                        color: inactiveIconColor,
+                      }}
+                    >
+                      <Icon
+                        size={NAV_ICON_SIZE}
+                        color="currentColor"
+                        strokeWidth={NAV_ICON_STROKE.idle}
+                      />
+                    </MotionBox>
+                  );
+                }
+
+                if (item.kind === "profile") {
+                  return (
+                    <MotionBox
+                      key={`${item.path}-${idx}`}
+                      component="button"
+                      type="button"
+                      aria-label={item.name}
+                      onClick={() => openProfile()}
                       whileTap={
                         useLayoutAnimations ? { scale: 0.94 } : undefined
                       }
@@ -828,92 +828,6 @@ const BottomNavigationBar = () => {
             {t("Kurdish")}
           </Box>
         </MenuItem>
-      </Menu>
-
-      <Menu
-        anchorEl={notifMenuAnchor}
-        open={Boolean(notifMenuAnchor)}
-        onClose={() => setNotifMenuAnchor(null)}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
-        transformOrigin={{ vertical: "bottom", horizontal: "center" }}
-        PaperProps={{ sx: { mb: 1, minWidth: 280, maxWidth: 360 } }}
-      >
-        <Box sx={{ px: 1.5, py: 1 }}>
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 1,
-            }}
-          >
-            <Typography fontWeight={800}>{t("Notifications")}</Typography>
-            <Badge badgeContent={unreadCount} color="error" />
-          </Box>
-          <Box sx={{ display: "flex", gap: 0.5, mt: 1, flexWrap: "wrap" }}>
-            {unreadCount > 0 && (
-              <Button
-                size="small"
-                onClick={() => markAllAsRead?.()}
-                sx={{ textTransform: "none" }}
-              >
-                {t("Mark all read")}
-              </Button>
-            )}
-            {notifications?.length > 0 && (
-              <Button
-                size="small"
-                onClick={() => clearAll?.()}
-                sx={{ textTransform: "none", color: "text.secondary" }}
-              >
-                {t("Clear")}
-              </Button>
-            )}
-          </Box>
-        </Box>
-        <Divider />
-        {Array.isArray(notifications) && notifications.length > 0 ? (
-          <Box sx={{ maxHeight: 320, overflow: "auto" }}>
-            {notifications.map((n) => (
-              <ListItemButton
-                key={n._id}
-                onClick={() => {
-                  markAsRead?.(n._id);
-                }}
-                sx={{
-                  py: 1.25,
-                  px: 1.5,
-                  backgroundColor: n.read ? "transparent" : "action.hover",
-                }}
-              >
-                <Box sx={{ width: "100%" }}>
-                  <Typography
-                    variant="body2"
-                    fontWeight={n.read ? 500 : 800}
-                    sx={{ mb: 0.25 }}
-                  >
-                    {pickNotificationText(n, "title")}
-                  </Typography>
-                  {!!pickNotificationText(n, "body") && (
-                    <Typography variant="caption" color="text.secondary">
-                      {pickNotificationText(n, "body")}
-                    </Typography>
-                  )}
-                </Box>
-              </ListItemButton>
-            ))}
-          </Box>
-        ) : (
-          <Box sx={{ px: 1.5, py: 2 }}>
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              textAlign="center"
-            >
-              {t("No notifications")}
-            </Typography>
-          </Box>
-        )}
       </Menu>
     </Box>
   );

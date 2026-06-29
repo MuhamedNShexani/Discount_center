@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
+import { useProfileDrawer } from "../hooks/useProfileDrawer";
 import {
   productAPI,
   categoryAPI,
@@ -186,6 +187,7 @@ export default function PendingPage() {
   const { t, i18n } = useTranslation();
   const isRtl = i18n.dir() === "rtl";
   const { user, isAuthenticated } = useAuth();
+  const { openProfile } = useProfileDrawer();
   const [filter, setFilter] = useState("all");
   const [error, setError] = useState("");
   const queryClient = useQueryClient();
@@ -579,8 +581,7 @@ export default function PendingPage() {
     <Box sx={{ py: 4, pt: { xs: 10, sm: 11 } }}>
       <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
         <Button
-          component={Link}
-          to="/profile"
+          onClick={() => openProfile()}
           startIcon={
             <ArrowBackIcon sx={{ transform: isRtl ? "scaleX(-1)" : undefined }} />
           }

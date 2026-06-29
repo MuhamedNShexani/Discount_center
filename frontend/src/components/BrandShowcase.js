@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
 import { resolveMediaUrl } from "../utils/mediaUrl";
 import { useLocalizedContent } from "../hooks/useLocalizedContent";
 
-const BrandShowcase = memo(function BrandShowcase({ brands }) {
+const BrandShowcase = memo(function BrandShowcase({ brands, sx: sxProp }) {
   const theme = useTheme();
   const { t, i18n } = useTranslation();
   const { locName } = useLocalizedContent();
@@ -62,6 +62,7 @@ const BrandShowcase = memo(function BrandShowcase({ brands }) {
           ? "0 4px 20px rgba(0,0,0,0.35)"
           : "0 2px 16px rgba(0,0,0,0.06)",
         my: { xs: 1.5, sm: 2 },
+        ...sxProp,
       }}
     >
       {/* Header */}

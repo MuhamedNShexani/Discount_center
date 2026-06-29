@@ -133,7 +133,6 @@ const StoreShowcase = memo(function StoreShowcase({ stores }) {
           component={Link}
           to="/stores"
           size="small"
-         
           sx={{
             textTransform: "none",
             fontWeight: 600,
@@ -143,7 +142,9 @@ const StoreShowcase = memo(function StoreShowcase({ stores }) {
             py: 0.5,
             borderRadius: 2,
             "&:hover": {
-              background: isDark ? "rgba(255,255,255,0.06)" : "rgba(30,111,217,0.06)",
+              background: isDark
+                ? "rgba(255,255,255,0.06)"
+                : "rgba(30,111,217,0.06)",
             },
           }}
         >

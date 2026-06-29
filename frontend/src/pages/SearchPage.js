@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+} from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Box,
@@ -14,19 +20,20 @@ import {
   Avatar,
   Divider,
   IconButton,
-  Button,
-  useTheme,
 } from "@mui/material";
+import { useTheme, alpha } from "@mui/material/styles";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import SearchIcon from "@mui/icons-material/Search";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import BusinessIcon from "@mui/icons-material/Business";
 import CategoryIcon from "@mui/icons-material/Category";
 import HistoryIcon from "@mui/icons-material/History";
 import ClearIcon from "@mui/icons-material/Clear";
 import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
-import { searchAPI } from "../services/api";
+import { searchAPI, brandAPI } from "../services/api";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 import { useCityFilter } from "../context/CityFilterContext";
@@ -48,6 +55,9 @@ import {
   recordSearchClick,
 } from "../utils/searchAnalyticsTrack";
 import { useDraftCartDrawer } from "../hooks/useDraftCartDrawer";
+import BrandShowcase from "../components/BrandShowcase";
+import ProfileShortcuts from "../components/ProfileShortcuts";
+import { storeMatchesSelectedCity } from "../utils/cityMatch";
 
 /** Opens Shopping draft cart drawer (EN/KU/AR-friendly keywords). */
 function isCartSearchIntent(raw) {
@@ -65,9 +75,15 @@ function isCartSearchIntent(raw) {
   return /سلة|کارت|باسکێت|هەڵگرتن/i.test(q);
 }
 
+const SEARCH_SHOWCASE_SURFACE_SX = {
+  borderRadius: (theme) => theme.spacing(0.5),
+};
+
 const SearchPage = () => {
   const theme = useTheme();
-  const { t } = useTranslation();
+  const isDark = theme.palette.mode === "dark";
+  const { t, i18n } = useTranslation();
+  const isRtl = i18n.dir() === "rtl";
   const { dataLanguage } = useDataLanguage();
   const navigate = useNavigate();
   const { openDraftCart } = useDraftCartDrawer();
@@ -91,6 +107,7 @@ const SearchPage = () => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [productDialogOpen, setProductDialogOpen] = useState(false);
   const searchPageLogIdRef = useRef(null);
+  const [showcaseBrands, setShowcaseBrands] = useState([]);
 
   const userId = user?.id || user?._id || null;
   const deviceId = userId ? null : getDeviceId();
@@ -102,6 +119,30 @@ const SearchPage = () => {
   useEffect(() => {
     refreshRecentSearches();
   }, [refreshRecentSearches]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await brandAPI.getAll();
+        if (cancelled) return;
+        const list = Array.isArray(res?.data) ? res.data : [];
+        setShowcaseBrands(
+          list.filter((b) => storeMatchesSelectedCity(b, selectedCity)),
+        );
+      } catch {
+        if (!cancelled) setShowcaseBrands([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedCity]);
+
+  const brandShowcaseSlice = useMemo(
+    () => showcaseBrands.slice(0, 8),
+    [showcaseBrands],
+  );
   const performSearch = useCallback(
     async (q) => {
       const trimmed = (q || "").trim();
@@ -189,13 +230,7 @@ const SearchPage = () => {
         setLoading(false);
       }
     },
-    [
-      userId,
-      deviceId,
-      refreshRecentSearches,
-      selectedCity,
-      openDraftCart,
-    ],
+    [userId, deviceId, refreshRecentSearches, selectedCity, openDraftCart],
   );
 
   useEffect(() => {
@@ -228,6 +263,14 @@ const SearchPage = () => {
     setSearchParams({ q: trimmed }, { replace: true });
     performSearch(trimmed);
   };
+
+  const handleBack = useCallback(() => {
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+    navigate("/");
+  }, [navigate]);
 
   const handleRecentClick = (term) => {
     setQuery(term);
@@ -369,7 +412,11 @@ const SearchPage = () => {
     searchCategoryTypes.length > 0;
 
   return (
-    <Box sx={{ pt: 5 }}>
+    <Box
+      sx={{
+        pt: { xs: "max(12px, env(safe-area-inset-top))", sm: 5 },
+      }}
+    >
       {/* {bannerAdsWithImages.length > 0 && (
         <Box
           sx={{
@@ -427,13 +474,103 @@ const SearchPage = () => {
       <Paper
         elevation={0}
         sx={{
-          p: 2,
           mb: 2,
-          borderRadius: 3,
-          border: `1px solid ${theme.palette.divider}`,
+          borderRadius: "20px",
+          overflow: "hidden",
+          border: `1px solid ${isDark ? alpha("#fff", 0.08) : alpha("#1e6fd9", 0.1)}`,
+          background: isDark
+            ? `linear-gradient(150deg, ${alpha("#1e6fd9", 0.18)} 0%, ${alpha("#6366f1", 0.08)} 45%, ${alpha("#0f1927", 0.95)} 100%)`
+            : `linear-gradient(150deg, ${alpha("#1e6fd9", 0.1)} 0%, ${alpha("#6366f1", 0.04)} 40%, #fff 100%)`,
+          boxShadow: isDark
+            ? `0 8px 32px rgba(0,0,0,0.35), inset 0 1px 0 ${alpha("#fff", 0.06)}`
+            : `0 4px 24px ${alpha("#1e6fd9", 0.08)}, inset 0 1px 0 ${alpha("#fff", 0.9)}`,
         }}
       >
-        <Box sx={{ display: "flex", gap: 1.5, alignItems: "stretch" }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            px: 1.25,
+            pt: 1.25,
+            pb: 1,
+          }}
+        >
+          <IconButton
+            onClick={handleBack}
+            aria-label={t("Back")}
+            size="small"
+            sx={{
+              width: 38,
+              height: 38,
+              flexShrink: 0,
+              bgcolor: isDark ? alpha("#fff", 0.08) : alpha("#1e6fd9", 0.08),
+              border: `1px solid ${isDark ? alpha("#fff", 0.1) : alpha("#1e6fd9", 0.14)}`,
+              color: isDark ? "rgba(255,255,255,0.9)" : "primary.main",
+              "&:hover": {
+                bgcolor: isDark ? alpha("#fff", 0.14) : alpha("#1e6fd9", 0.14),
+                transform: "scale(1.04)",
+              },
+              transition: "all 0.15s ease",
+            }}
+          >
+            {isRtl ? <ArrowBackIcon /> : <ArrowForwardIcon />}
+          </IconButton>
+
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            {/* <Typography
+              variant="subtitle2"
+              sx={{
+                fontWeight: 800,
+                fontSize: "0.68rem",
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                color: isDark ? alpha("#93c5fd", 0.85) : "primary.main",
+                lineHeight: 1.2,
+              }}
+            >
+              {t("Searching", { defaultValue: "Searching" })}
+            </Typography> */}
+            <Typography
+              variant="h6"
+              noWrap
+              sx={{
+                fontWeight: 800,
+                fontSize: { xs: "1.25rem", sm: "1.35rem" },
+                color: isDark ? alpha("#93c5fd", 0.85) : "primary.main",
+                lineHeight: 1.25,
+              }}
+            >
+              {t("Search")}
+            </Typography>
+          </Box>
+
+          {/* <Box
+            sx={{
+              width: 40,
+              height: 40,
+              borderRadius: "12px",
+              flexShrink: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "linear-gradient(135deg, #1e6fd9 0%, #6366f1 100%)",
+              boxShadow: `0 4px 14px ${alpha("#1e6fd9", 0.4)}`,
+            }}
+          >
+            <SearchIcon sx={{ fontSize: 20, color: "#fff" }} />
+          </Box> */}
+        </Box>
+
+        <Box
+          sx={{
+            display: "flex",
+            gap: 1,
+            alignItems: "center",
+            px: 1.5,
+            pb: 1.5,
+          }}
+        >
           <TextField
             fullWidth
             autoFocus
@@ -447,37 +584,95 @@ const SearchPage = () => {
               }
             }}
             InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon color="action" />
-                </InputAdornment>
-              ),
+              // startAdornment: (
+              //   <InputAdornment position="start">
+              //     <SearchIcon
+              //       sx={{
+              //         fontSize: 20,
+              //         color: isDark
+              //           ? "rgba(255,255,255,0.45)"
+              //           : "action.active",
+              //       }}
+              //     />
+              //   </InputAdornment>
+              // ),
+              endAdornment:
+                (query || "").length > 0 ? (
+                  <InputAdornment position="end">
+                    <IconButton
+                      size="small"
+                      aria-label={t("Clear")}
+                      onClick={() => {
+                        setQuery("");
+                        setSearchParams({}, { replace: true });
+                        setSearched(false);
+                        setResults({
+                          products: [],
+                          stores: [],
+                          brands: [],
+                          companies: [],
+                          categories: [],
+                          categoryTypes: [],
+                        });
+                      }}
+                    >
+                      <ClearIcon fontSize="small" />
+                    </IconButton>
+                  </InputAdornment>
+                ) : null,
             }}
             sx={{
               "& .MuiOutlinedInput-root": {
-                borderRadius: 2,
+                borderRadius: "14px",
+                bgcolor: isDark ? alpha("#fff", 0.06) : "#fff",
+                fontWeight: 500,
+                "& fieldset": {
+                  borderColor: isDark
+                    ? alpha("#fff", 0.1)
+                    : alpha("#1e6fd9", 0.16),
+                },
+                "&:hover fieldset": {
+                  borderColor: isDark
+                    ? alpha("#fff", 0.18)
+                    : alpha("#1e6fd9", 0.32),
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: "primary.main",
+                  borderWidth: 2,
+                },
               },
             }}
           />
-          <Button
-            variant="contained"
+          <IconButton
             onClick={handleSearchClick}
             disabled={loading || (query || "").trim().length < 2}
-            startIcon={
-              loading ? (
-                <CircularProgress size={20} color="inherit" />
-              ) : (
-                <SearchIcon />
-              )
-            }
+            aria-label={t("Search")}
             sx={{
-              minWidth: 60,
-              borderRadius: 2,
-              px: 2,
+              width: 48,
+              height: 48,
+              flexShrink: 0,
+              borderRadius: "14px",
+              bgcolor: "primary.main",
+              color: "#fff",
+              boxShadow: `0 4px 14px ${alpha("#1e6fd9", 0.35)}`,
+              "&:hover": {
+                bgcolor: "primary.dark",
+                transform: "scale(1.04)",
+              },
+              "&.Mui-disabled": {
+                bgcolor: isDark ? alpha("#fff", 0.08) : alpha("#1e6fd9", 0.2),
+                color: isDark ? alpha("#fff", 0.35) : alpha("#1e6fd9", 0.5),
+                boxShadow: "none",
+              },
+              transition: "all 0.15s ease",
             }}
           >
-            {t("Search")}
-          </Button>
+            {loading ? (
+              <CircularProgress size={22} color="inherit" />
+            ) : (
+              <SearchIcon sx={{ fontSize: 22 }} />
+            )}
+          </IconButton>
         </Box>
       </Paper>
 
@@ -495,7 +690,7 @@ const SearchPage = () => {
         <Paper
           elevation={0}
           sx={{
-            borderRadius: 3,
+            borderRadius: 0.5,
             overflow: "hidden",
             border: `1px solid ${theme.palette.divider}`,
           }}
@@ -561,6 +756,19 @@ const SearchPage = () => {
         </Paper>
       )}
 
+      {(query || "").trim().length < 2 && (
+        <>
+          <BrandShowcase
+            brands={brandShowcaseSlice}
+            sx={SEARCH_SHOWCASE_SURFACE_SX}
+          />
+          <ProfileShortcuts
+            excludeIds={["search"]}
+            sx={SEARCH_SHOWCASE_SURFACE_SX}
+          />
+        </>
+      )}
+
       {searched &&
         !loading &&
         !hasResults &&
@@ -578,7 +786,7 @@ const SearchPage = () => {
         <Paper
           elevation={0}
           sx={{
-            borderRadius: 3,
+            borderRadius: 0.5,
             overflow: "hidden",
             border: `1px solid ${theme.palette.divider}`,
           }}
