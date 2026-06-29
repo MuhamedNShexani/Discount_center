@@ -89,6 +89,7 @@ export function NotificationDrawerProvider({ children }) {
         onClose={closeNotifications}
         PaperProps={{
           sx: {
+            borderRadius: 0,
             background: isDark ? "#0f1927" : "#ffffff",
             borderLeft: isDark
               ? "1px solid rgba(255,255,255,0.08)"

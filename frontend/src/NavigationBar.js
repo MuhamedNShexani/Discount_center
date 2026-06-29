@@ -129,6 +129,14 @@ const NAV_BAR_GRADIENT_DARK_GLASS =
 
 const HOME_DOUBLE_TAP_MS = 450;
 
+/** Drop focus ring after tap so nav buttons do not stay highlighted. */
+function blurThen(fn) {
+  return (event) => {
+    event.currentTarget?.blur?.();
+    fn(event);
+  };
+}
+
 const NavigationBar = ({ darkMode, setDarkMode }) => {
   const theme = useTheme();
   const isDarkNav = theme.palette.mode === "dark";
@@ -641,6 +649,11 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
             transition: "all 0.25s ease",
             width: 40,
             height: 40,
+            WebkitTapHighlightColor: "transparent",
+            "&:focus:not(:focus-visible)": {
+              outline: "none",
+              backgroundColor: "rgba(255,255,255,0.1)",
+            },
             "&:hover": {
               backgroundColor: "rgba(255,255,255,0.2)",
               transform: isAndroidPerfMode ? "none" : "scale(1.06)",
@@ -657,6 +670,11 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
             transition: "all 0.3s ease",
             width: 40,
             height: 40,
+            WebkitTapHighlightColor: "transparent",
+            "&:focus:not(:focus-visible)": {
+              outline: "none",
+              backgroundColor: "rgba(255,255,255,0.1)",
+            },
             "&:hover": {
               backgroundColor: "rgba(255,255,255,0.2)",
               transform: isAndroidPerfMode ? "none" : "scale(1.1)",
@@ -750,7 +768,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.9 }}>
                 {NOTIFICATIONS_CENTER_ENABLED && (
                   <IconButton
-                    onClick={() => openNotifications()}
+                    onClick={blurThen(() => openNotifications())}
                     sx={navIconBtnSx}
                   >
                     <Badge badgeContent={unreadCount} color="error">
@@ -802,7 +820,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                 <IconButton component={Link} to="/favourites" sx={navIconBtnSx}>
                   <FavoriteIcon />
                 </IconButton>
-                <IconButton onClick={() => openProfile()} sx={navIconBtnSx}>
+                <IconButton onClick={blurThen(() => openProfile())} sx={navIconBtnSx}>
                   <PersonIcon />
                 </IconButton>
               </Box>
@@ -947,7 +965,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                       return (
                         <IconButton
                           key={key}
-                          onClick={() => openNotifications()}
+                          onClick={blurThen(() => openNotifications())}
                           sx={sxBtn}
                           aria-label={t("Notifications")}
                         >
@@ -961,7 +979,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                       return (
                         <IconButton
                           key={key}
-                          onClick={() => openDraftCart()}
+                          onClick={blurThen(() => openDraftCart())}
                           sx={sxBtn}
                           aria-label={t("Draft cart")}
                         >
@@ -973,7 +991,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                       return (
                         <IconButton
                           key={key}
-                          onClick={() => openProfile()}
+                          onClick={blurThen(() => openProfile())}
                           sx={sxBtn}
                           aria-label={t("Account")}
                         >
@@ -1715,7 +1733,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
 
                 {NOTIFICATIONS_CENTER_ENABLED && (
                   <IconButton
-                    onClick={() => openNotifications()}
+                    onClick={blurThen(() => openNotifications())}
                     sx={{ ...navIconBtnSx, ml: 0.5 }}
                   >
                     <Badge badgeContent={unreadCount} color="error">

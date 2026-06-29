@@ -122,6 +122,26 @@ export const createAppTheme = (
           },
           body: {
             fontFamily: "var(--app-font-family)",
+            WebkitTapHighlightColor: "transparent",
+          },
+          button: {
+            WebkitTapHighlightColor: "transparent",
+          },
+          "button:focus:not(:focus-visible)": {
+            outline: "none",
+          },
+        },
+      },
+      MuiButtonBase: {
+        defaultProps: {
+          disableRipple: false,
+        },
+        styleOverrides: {
+          root: {
+            WebkitTapHighlightColor: "transparent",
+            "&:focus:not(:focus-visible)": {
+              outline: "none",
+            },
           },
         },
       },
@@ -206,9 +226,31 @@ export const createAppTheme = (
         },
       },
       MuiIconButton: {
+        defaultProps: {
+          disableRipple: true,
+          disableFocusRipple: true,
+        },
         styleOverrides: {
           root: {
             transition: "all 220ms ease",
+            WebkitTapHighlightColor: "transparent",
+            "&:focus:not(:focus-visible)": {
+              outline: "none",
+            },
+            "&.Mui-focusVisible": {
+              outline: `2px solid ${primaryMain}`,
+              outlineOffset: 2,
+            },
+          },
+        },
+      },
+      MuiListItemButton: {
+        styleOverrides: {
+          root: {
+            WebkitTapHighlightColor: "transparent",
+            "&:focus:not(:focus-visible)": {
+              backgroundColor: "transparent",
+            },
           },
         },
       },

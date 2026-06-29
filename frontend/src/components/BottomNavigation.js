@@ -66,6 +66,14 @@ const MotionBox = motion(Box);
 const NAV_ICON_SIZE = 26;
 const NAV_ICON_STROKE = { idle: 2, active: 2.4 };
 
+/** Drop focus ring after tap so drawer/nav buttons do not stay highlighted. */
+function blurThen(fn) {
+  return (event) => {
+    event.currentTarget?.blur?.();
+    fn(event);
+  };
+}
+
 function persistMainPageScrollState(y) {
   try {
     const rawState = sessionStorage.getItem(MAIN_PAGE_SCROLL_STATE_KEY);
@@ -366,6 +374,15 @@ const BottomNavigationBar = () => {
     borderRadius: 9999,
     position: "relative",
     zIndex: 1,
+    WebkitTapHighlightColor: "transparent",
+    outline: "none",
+    "&:focus": {
+      outline: "none",
+    },
+    "&:focus:not(:focus-visible)": {
+      outline: "none",
+      backgroundColor: "transparent",
+    },
     "&:focus-visible": {
       outline: "2px solid rgba(251, 146, 60, 0.95)",
       outlineOffset: 2,
@@ -518,7 +535,7 @@ const BottomNavigationBar = () => {
                       component="button"
                       type="button"
                       aria-label={item.name}
-                      onClick={() => openNotifications()}
+                      onClick={blurThen(() => openNotifications())}
                       whileTap={
                         useLayoutAnimations ? { scale: 0.94 } : undefined
                       }
@@ -548,7 +565,7 @@ const BottomNavigationBar = () => {
                       component="button"
                       type="button"
                       aria-label={item.name}
-                      onClick={() => openDraftCart()}
+                      onClick={blurThen(() => openDraftCart())}
                       whileTap={
                         useLayoutAnimations ? { scale: 0.94 } : undefined
                       }
@@ -576,7 +593,7 @@ const BottomNavigationBar = () => {
                       component="button"
                       type="button"
                       aria-label={item.name}
-                      onClick={() => openProfile()}
+                      onClick={blurThen(() => openProfile())}
                       whileTap={
                         useLayoutAnimations ? { scale: 0.94 } : undefined
                       }
