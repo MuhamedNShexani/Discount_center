@@ -126,7 +126,4 @@ app.listen(PORT, "0.0.0.0", () => {
   deleteDeactivatedUsers.run().catch((e) => console.error("[deleteDeactivatedUsers]", e.message));
 });
 
-// Debug message for frontend
-console.log("Compiled successfully!");
-console.log("You can now view frontend in the browser.");
-console.log("Local: http://localhost:3000");
+// Local frontend is a separate process: cd frontend && npm start → http://localhost:5173

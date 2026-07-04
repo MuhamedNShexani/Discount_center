@@ -1,23 +1,27 @@
 import React, { memo } from "react";
-import { Box, Typography, Avatar, Button } from "@mui/material";
+import { Box, Typography, IconButton, Button } from "@mui/material";
 import { Link } from "react-router-dom";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import BusinessIcon from "@mui/icons-material/Business";
-import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
-import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
-import { useTheme } from "@mui/material/styles";
+import VerifiedIcon from "@mui/icons-material/Verified";
+import FavoriteIcon from "@mui/icons-material/Favorite";
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import LocalShippingIcon from "@mui/icons-material/LocalShipping";
+import { alpha, useTheme } from "@mui/material/styles";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import Slider from "react-slick";
 import { useTranslation } from "react-i18next";
 import { resolveMediaUrl } from "../utils/mediaUrl";
 import { useLocalizedContent } from "../hooks/useLocalizedContent";
+import { useUserTracking } from "../hooks/useUserTracking";
 
 const StoreShowcase = memo(function StoreShowcase({ stores }) {
   const theme = useTheme();
   const { t, i18n } = useTranslation();
   const { locName } = useLocalizedContent();
+  const { isStoreFollowed, toggleFollowStore } = useUserTracking();
   const isDark = theme.palette.mode === "dark";
   const isRtl = i18n.dir() === "rtl";
 
@@ -29,22 +33,22 @@ const StoreShowcase = memo(function StoreShowcase({ stores }) {
 
   const slideCount = displayStores.length;
   const clamp = (max) => Math.max(1, Math.min(max, slideCount));
-  const desktopShow = clamp(5);
+  const desktopShow = clamp(4);
 
   const settings = {
     dots: false,
     infinite: slideCount > desktopShow,
     speed: 4500,
     autoplay: slideCount > desktopShow,
-    autoplaySpeed: 800,
+    autoplaySpeed: 900,
     cssEase: "linear",
     slidesToShow: desktopShow,
     slidesToScroll: 1,
     arrows: false,
+    variableWidth: true,
     responsive: [
-      { breakpoint: 1024, settings: { slidesToShow: clamp(4) } },
-      { breakpoint: 600, settings: { slidesToShow: clamp(3) } },
-      { breakpoint: 480, settings: { slidesToShow: clamp(2) } },
+      { breakpoint: 1024, settings: { slidesToShow: clamp(3), variableWidth: true } },
+      { breakpoint: 600, settings: { slidesToShow: clamp(2), variableWidth: true } },
     ],
   };
 
@@ -155,68 +159,157 @@ const StoreShowcase = memo(function StoreShowcase({ stores }) {
       {/* Carousel */}
       <Box sx={{ px: { xs: 1, sm: 1.5 }, py: { xs: 1.5, sm: 2 } }}>
         <Slider {...settings}>
-          {displayStores.map((store) => (
-            <Box
-              key={store._id}
-              component={Link}
-              to={`/stores/${store._id}`}
-              sx={{
-                textAlign: "center",
-                textDecoration: "none",
-                outline: "none",
-                px: 0.5,
-                "&:hover .store-avatar": {
-                  transform: "scale(1.1)",
-                  boxShadow: isVipMode
-                    ? "0 0 16px rgba(245,158,11,0.5)"
-                    : `0 0 16px ${theme.palette.primary.main}40`,
-                },
-              }}
-            >
-              <Avatar
-                src={store.logo ? resolveMediaUrl(store.logo) : undefined}
-                alt={locName(store)}
-                className="store-avatar"
-                sx={{
-                  width: { xs: 64, sm: 72, md: 80 },
-                  height: { xs: 64, sm: 72, md: 80 },
-                  m: "0 auto 6px",
-                  bgcolor: isDark ? "rgba(30,111,217,0.15)" : "#eff6ff",
-                  border: isDark
-                    ? "2px solid rgba(30,111,217,0.3)"
-                    : "2px solid #bfdbfe",
-                  boxShadow: "0 2px 8px rgba(30,111,217,0.1)",
-                  transition: "transform 0.3s ease, box-shadow 0.3s ease",
-                  borderRadius: "16px",
-                }}
-              >
-                {!store.logo && (
-                  <BusinessIcon
+          {displayStores.map((store) => {
+            const followed = isStoreFollowed?.(store._id);
+            return (
+              <Box key={store._id} sx={{ px: 0.6 }}>
+                <Box
+                  component={Link}
+                  to={`/stores/${store._id}`}
+                  sx={{
+                    display: "block",
+                    width: { xs: 168, sm: 190 },
+                    textDecoration: "none",
+                    borderRadius: "18px",
+                    overflow: "hidden",
+                    position: "relative",
+                    bgcolor: isDark ? alpha("#fff", 0.05) : "#fff",
+                    border: `1px solid ${isDark ? alpha("#fff", 0.08) : alpha("#0d111c", 0.08)}`,
+                    boxShadow: isDark
+                      ? "0 4px 16px rgba(0,0,0,0.3)"
+                      : "0 4px 14px rgba(15,23,42,0.08)",
+                    transition: "transform 220ms ease, box-shadow 220ms ease",
+                    "&:hover": {
+                      transform: "translateY(-3px)",
+                      boxShadow: isDark
+                        ? "0 10px 26px rgba(0,0,0,0.4)"
+                        : "0 10px 24px rgba(15,23,42,0.14)",
+                    },
+                  }}
+                >
+                  <Box
                     sx={{
-                      fontSize: { xs: 28, sm: 32 },
-                      color: isDark ? "rgba(30,111,217,0.7)" : "#3b82f6",
+                      position: "relative",
+                      width: "100%",
+                      aspectRatio: "16 / 11",
+                      overflow: "hidden",
+                      background: isDark
+                        ? "linear-gradient(160deg, #1e293b 0%, #0f172a 100%)"
+                        : "linear-gradient(160deg, #dbeafe 0%, #eff6ff 100%)",
                     }}
-                  />
-                )}
-              </Avatar>
-              <Typography
-                variant="caption"
-                sx={{
-                  display: "block",
-                  fontWeight: 600,
-                  fontSize: "0.68rem",
-                  color: isDark ? "rgba(255,255,255,0.6)" : "#6b7280",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  px: 0.5,
-                  lineHeight: 1.3,
-                }}
-              >
-                {locName(store)}
-              </Typography>
-            </Box>
-          ))}
+                  >
+                    {store.logo ? (
+                      <Box
+                        component="img"
+                        src={resolveMediaUrl(store.logo)}
+                        alt={locName(store)}
+                        sx={{
+                          position: "absolute",
+                          inset: 0,
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                      />
+                    ) : (
+                      <Box
+                        sx={{
+                          position: "absolute",
+                          inset: 0,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <BusinessIcon
+                          sx={{
+                            fontSize: 44,
+                            color: isDark ? "rgba(30,111,217,0.7)" : "#3b82f6",
+                          }}
+                        />
+                      </Box>
+                    )}
+
+                    <IconButton
+                      aria-label={t("Follow", { defaultValue: "Follow" })}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleFollowStore?.(store._id);
+                      }}
+                      size="small"
+                      sx={{
+                        position: "absolute",
+                        top: 8,
+                        [isRtl ? "left" : "right"]: 8,
+                        width: 28,
+                        height: 28,
+                        bgcolor: alpha("#fff", 0.92),
+                        "&:hover": { bgcolor: "#fff" },
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
+                      }}
+                    >
+                      {followed ? (
+                        <FavoriteIcon sx={{ fontSize: 16, color: "#EF4444" }} />
+                      ) : (
+                        <FavoriteBorderIcon sx={{ fontSize: 16, color: "#374151" }} />
+                      )}
+                    </IconButton>
+                  </Box>
+
+                  <Box sx={{ p: 1.1 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.4, mb: 0.5 }}>
+                      <Typography
+                        noWrap
+                        sx={{
+                          fontWeight: 800,
+                          fontSize: "0.82rem",
+                          color: isDark ? "rgba(255,255,255,0.95)" : "#111827",
+                          minWidth: 0,
+                        }}
+                      >
+                        {locName(store)}
+                      </Typography>
+                      {store.isVip && (
+                        <VerifiedIcon
+                          sx={{ fontSize: 15, color: "#4A90E2", flexShrink: 0 }}
+                        />
+                      )}
+                    </Box>
+
+                    {store.isHasDelivery && (
+                      <Box
+                        sx={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 0.4,
+                          px: 0.9,
+                          py: 0.25,
+                          borderRadius: "999px",
+                          bgcolor: isDark
+                            ? alpha("#22C55E", 0.18)
+                            : alpha("#22C55E", 0.12),
+                        }}
+                      >
+                        <LocalShippingIcon
+                          sx={{ fontSize: 12, color: "#22C55E" }}
+                        />
+                        <Typography
+                          sx={{
+                            fontSize: "0.65rem",
+                            fontWeight: 700,
+                            color: "#16A34A",
+                          }}
+                        >
+                          {t("Delivery")}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                </Box>
+              </Box>
+            );
+          })}
         </Slider>
       </Box>
     </Box>

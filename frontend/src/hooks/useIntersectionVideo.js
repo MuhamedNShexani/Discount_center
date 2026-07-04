@@ -8,6 +8,7 @@ const useIntersectionVideo = ({
   rootRef,
   itemCount,
   threshold = [0.5, 0.7, 0.9],
+  pinnedIndex = null,
 }) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const sectionRefs = useRef([]);
@@ -30,6 +31,17 @@ const useIntersectionVideo = ({
       setActiveIndex(0);
     }
   }, [activeIndex, itemCount]);
+
+  useEffect(() => {
+    if (
+      pinnedIndex == null ||
+      pinnedIndex < 0 ||
+      pinnedIndex >= itemCount
+    ) {
+      return;
+    }
+    setActiveIndex(pinnedIndex);
+  }, [pinnedIndex, itemCount]);
 
   useEffect(() => {
     if (!rootRef.current || itemCount === 0) return;

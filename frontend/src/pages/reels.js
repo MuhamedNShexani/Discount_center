@@ -77,7 +77,7 @@ const ReelCard = memo(function ReelCard({
     : 72;
   /** Above fixed BottomNavigation (~64px bar + padding + safe area). */
   const progressBottom = isMobile
-    ? "calc(80px + env(safe-area-inset-bottom))"
+    ? "calc(72px + env(safe-area-inset-bottom))"
     : 10;
   const progressRef = useRef(null);
   const isDraggingSeekRef = useRef(false);
@@ -253,6 +253,54 @@ const ReelCard = memo(function ReelCard({
           >
             {locDescription(reel)}
           </Typography>
+        )}
+        {!!ownerProfilePath && (
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1.25 }}>
+            <Button
+              component={Link}
+              to={ownerProfilePath}
+              onClick={(e) => e.stopPropagation()}
+              size="small"
+              variant="contained"
+              sx={{
+                borderRadius: 99,
+                minHeight: 34,
+                px: 1.6,
+                textTransform: "none",
+                fontWeight: 900,
+                color: "#fff",
+                background: "linear-gradient(135deg, #1E6FD9, #4A90E2)",
+                boxShadow: "0 8px 24px rgba(30,111,217,0.35)",
+              }}
+            >
+              {owner?.type === "store" ? "Visit Store" : "Visit Profile"}
+            </Button>
+            {owner?.type === "store" && (
+              <Button
+                component={Link}
+                to={ownerProfilePath}
+                onClick={(e) => e.stopPropagation()}
+                size="small"
+                variant="outlined"
+                sx={{
+                  borderRadius: 99,
+                  minHeight: 34,
+                  px: 1.6,
+                  textTransform: "none",
+                  fontWeight: 900,
+                  color: "#fff",
+                  borderColor: "rgba(255,255,255,0.72)",
+                  backgroundColor: "rgba(0,0,0,0.28)",
+                  "&:hover": {
+                    borderColor: "#fff",
+                    backgroundColor: "rgba(255,255,255,0.12)",
+                  },
+                }}
+              >
+                Shop Products
+              </Button>
+            )}
+          </Box>
         )}
       </MotionBox>
 
@@ -627,13 +675,17 @@ const ReelsPage = () => {
 
     if (!sharedVideoId) return interleaved;
 
-    const sharedIndex = interleaved.findIndex(
-      (reel) => String(reel?._id) === String(sharedVideoId),
-    );
-    if (sharedIndex <= 0) return interleaved;
+    const sharedReel =
+      interleaved.find(
+        (reel) => String(reel?._id) === String(sharedVideoId),
+      ) ||
+      reels.find((reel) => String(reel?._id) === String(sharedVideoId));
 
-    const sharedReel = interleaved[sharedIndex];
-    const rest = interleaved.filter((_, idx) => idx !== sharedIndex);
+    if (!sharedReel) return interleaved;
+
+    const rest = interleaved.filter(
+      (reel) => String(reel?._id) !== String(sharedReel._id),
+    );
     return [sharedReel, ...rest];
   }, [
     mainPageTab,
@@ -643,6 +695,14 @@ const ReelsPage = () => {
     sharedVideoId,
     selectedCity,
   ]);
+
+  const sharedReelPinnedIndex = useMemo(() => {
+    if (!sharedVideoId || displayedReels.length === 0) return null;
+    const idx = displayedReels.findIndex(
+      (reel) => String(reel?._id) === String(sharedVideoId),
+    );
+    return idx >= 0 ? idx : 0;
+  }, [sharedVideoId, displayedReels]);
 
   useEffect(() => {
     if (sharedVideoId) {
@@ -656,7 +716,44 @@ const ReelsPage = () => {
       rootRef: containerRef,
       itemCount: displayedReels.length,
       threshold: observerThreshold,
+      pinnedIndex: sharedVideoId ? sharedReelPinnedIndex : null,
     });
+
+  useEffect(() => {
+    if (!sharedVideoId || loading || displayedReels.length === 0) return;
+
+    setIsPaused(false);
+    const container = containerRef.current;
+    if (container) {
+      container.scrollTop = 0;
+    }
+
+    const playPinned = () => {
+      const idx = sharedReelPinnedIndex ?? 0;
+      const video = videoRefs.current[idx];
+      if (!video) return;
+      video.muted = false;
+      video.currentTime = 0;
+      video.play().catch(() => {});
+    };
+
+    let timeoutId;
+    const raf = window.requestAnimationFrame(() => {
+      playPinned();
+      timeoutId = window.setTimeout(playPinned, 120);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(raf);
+      if (timeoutId) window.clearTimeout(timeoutId);
+    };
+  }, [
+    sharedVideoId,
+    loading,
+    displayedReels.length,
+    sharedReelPinnedIndex,
+    videoRefs,
+  ]);
 
   useEffect(() => {
     // Resume playback for newly active reel by default.

@@ -35,7 +35,6 @@ import {
   CircularProgress,
   IconButton,
   Stack,
-  Chip,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import {
@@ -84,6 +83,8 @@ import {
   GridView as GridViewIcon,
   ContactMail as ContactMailIcon,
   EditOutlined as EditIcon,
+  Notifications as NotificationsIcon,
+  Settings as SettingsIcon,
 } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
@@ -123,6 +124,7 @@ import {
   PROFILE_SHORTCUT_CATALOG,
   normalizeProfileShortcutIds,
 } from "../utils/profileShortcutCatalog";
+import { useNotificationDrawer } from "../hooks/useNotificationDrawer";
 
 const PROFILE_SHORTCUT_ICONS = {
   home: HomeOutlined,
@@ -234,6 +236,7 @@ const ProfilePage = ({ onClose }) => {
   const { dataLanguage, setDataLanguage } = useDataLanguage();
   const { locName } = useLocalizedContent();
   const { colorMode, setColorMode } = useDarkMode();
+  const { openNotifications } = useNotificationDrawer();
 
   const [guestNameDialogOpen, setGuestNameDialogOpen] = useState(false);
   const [ownerProfilePickerOpen, setOwnerProfilePickerOpen] = useState(false);
@@ -644,7 +647,7 @@ const ProfilePage = ({ onClose }) => {
   const isDark = theme.palette.mode === "dark";
 
   const cardSx = {
-    borderRadius: "16px",
+    borderRadius: 0,
     overflow: "hidden",
     border: `1px solid ${isDark ? alpha("#fff", 0.07) : alpha("#1e6fd9", 0.09)}`,
     background: isDark ? alpha("#fff", 0.03) : "#fff",
@@ -652,6 +655,119 @@ const ProfilePage = ({ onClose }) => {
       ? `inset 0 1px 0 ${alpha("#fff", 0.05)}, 0 4px 20px rgba(0,0,0,0.22)`
       : `0 1px 0 ${alpha("#1e6fd9", 0.06)}, 0 4px 16px ${alpha("#1e6fd9", 0.05)}`,
   };
+
+  const hubCardSx = {
+    minHeight: 86,
+    p: 1.25,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 1,
+    textDecoration: "none",
+    border: `1px solid ${isDark ? alpha("#fff", 0.09) : alpha("#1e6fd9", 0.1)}`,
+    borderRadius: 0,
+    background: isDark
+      ? alpha("#fff", 0.045)
+      : `linear-gradient(135deg, ${alpha("#f8fafc", 0.98)}, ${alpha("#eef5ff", 0.78)})`,
+    color: "text.primary",
+    transition: "transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease",
+    "&:hover": {
+      transform: "translateY(-2px)",
+      borderColor: "primary.main",
+      boxShadow: `0 8px 22px ${alpha("#1e6fd9", isDark ? 0.18 : 0.12)}`,
+    },
+  };
+
+  const scrollToPreferences = () => {
+    document
+      .getElementById("profile-preferences-section")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const profileHubGroups = [
+    {
+      title: t("Discover", { defaultValue: "Discover" }),
+      items: profileShortcutItems.map((item) => ({
+        key: item.id,
+        label: t(item.labelKey),
+        path: item.path,
+        Icon: PROFILE_SHORTCUT_ICONS[item.id] || GridViewIcon,
+      })),
+    },
+    {
+      title: t("Personal", { defaultValue: "Personal" }),
+      items: [
+        {
+          key: "my-profile",
+          label: t("My Profile", { defaultValue: "My Profile" }),
+          Icon: PersonIcon,
+          onClick: () => {
+            if (user) {
+              setUserNameInput(user?.displayName || user?.username || "");
+              setUserNameDialogOpen(true);
+            } else {
+              setGuestNameInput(guestUser?.displayName || "");
+              setGuestNameDialogOpen(true);
+            }
+          },
+        },
+        {
+          key: "notifications",
+          label: t("Notifications"),
+          Icon: NotificationsIcon,
+          onClick: () => closeThen(() => openNotifications()),
+        },
+        {
+          key: "language",
+          label: t("Language"),
+          Icon: LanguageIcon,
+          onClick: scrollToPreferences,
+        },
+        {
+          key: "city",
+          label: t("Change City", { defaultValue: "Change City" }),
+          Icon: LocationOnIcon,
+          onClick: scrollToPreferences,
+        },
+        {
+          key: "theme",
+          label: t("Theme", { defaultValue: "Theme" }),
+          Icon: PaletteIcon,
+          onClick: scrollToPreferences,
+        },
+        {
+          key: "settings",
+          label: t("Settings", { defaultValue: "Settings" }),
+          Icon: SettingsIcon,
+          onClick: scrollToPreferences,
+        },
+      ],
+    },
+    {
+      title: t("Support", { defaultValue: "Support" }),
+      items: [
+        {
+          key: "feedback",
+          label: t("Help", { defaultValue: "Help" }),
+          Icon: FeedbackIcon,
+          onClick: openFeedbackDialog,
+        },
+        {
+          key: "about",
+          label: t("About the app", { defaultValue: "About the app" }),
+          path: "/about",
+          Icon: InfoOutlinedIcon,
+        },
+        {
+          key: "privacy",
+          label: t("Privacy Policy"),
+          path: "/privacy-policy",
+          Icon: PrivacyTipIcon,
+        },
+      ],
+    },
+  ].filter((group) => group.items.length > 0);
 
   return (
     <>
@@ -842,7 +958,7 @@ const ProfilePage = ({ onClose }) => {
                     alignItems: "center",
                     px: 1,
                     py: 0.25,
-                    borderRadius: 2,
+                    borderRadius: 0,
                     border: `1px solid ${isDark ? alpha("#fff", 0.1) : alpha("#1e6fd9", 0.2)}`,
                     bgcolor: isDark
                       ? alpha("#fff", 0.05)
@@ -1086,69 +1202,107 @@ const ProfilePage = ({ onClose }) => {
               </Box>
             )}
 
-          {/* Shortcuts */}
-          {profileShortcutItems.length > 0 && (
-            <Box sx={{ px: 2 }}>
-              <Box sx={cardSx}>
-                <Box sx={{ px: 2, pt: 1.5, pb: 0.75 }}>
-                  <ProfileSectionLabel
-                    icon={GridViewIcon}
-                    label={t("Shortcuts", { defaultValue: "Shortcuts" })}
-                  />
-                </Box>
-                <Box
-                  sx={{
-                    display: "flex",
-                    gap: 1,
-                    overflowX: "auto",
-                    px: 2,
-                    pb: 1.5,
-                    scrollbarWidth: "none",
-                    "&::-webkit-scrollbar": { display: "none" },
-                  }}
-                >
-                  {profileShortcutItems.map((item) => {
-                    const IconComp = PROFILE_SHORTCUT_ICONS[item.id];
-                    return (
-                      <Chip
-                        key={item.id}
-                        component={Link}
-                        to={item.path}
-                        onClick={() => onClose?.()}
-                        clickable
-                        variant="outlined"
-                        label={t(item.labelKey)}
-                        icon={
-                          IconComp ? (
-                            <IconComp sx={{ fontSize: 16 }} />
-                          ) : undefined
+          {/* Profile navigation hub */}
+          <Box sx={{ px: 2 }}>
+            <Box sx={{ ...cardSx, p: 1.5 }}>
+              <ProfileSectionLabel
+                icon={GridViewIcon}
+                label={t("Navigation Hub", { defaultValue: "Navigation Hub" })}
+                sx={{ mb: 1.25 }}
+              />
+              <Stack spacing={1.75}>
+                {profileHubGroups.map((group) => (
+                  <Box key={group.title}>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        display: "block",
+                        mb: 0.75,
+                        fontWeight: 800,
+                        color: "text.secondary",
+                        letterSpacing: "0.04em",
+                      }}
+                    >
+                      {group.title}
+                    </Typography>
+                    <Box
+                      sx={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                        gap: 1,
+                      }}
+                    >
+                      {group.items.map(({ key, label, path, Icon, onClick }) => {
+                        const content = (
+                          <>
+                            <Box
+                              sx={{
+                                width: 34,
+                                height: 34,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                borderRadius: 0,
+                                bgcolor: isDark
+                                  ? alpha("#1e6fd9", 0.18)
+                                  : alpha("#1e6fd9", 0.09),
+                                color: "primary.main",
+                              }}
+                            >
+                              <Icon sx={{ fontSize: 19 }} />
+                            </Box>
+                            <Typography
+                              sx={{
+                                fontSize: "0.78rem",
+                                fontWeight: 800,
+                                lineHeight: 1.25,
+                              }}
+                            >
+                              {label}
+                            </Typography>
+                          </>
+                        );
+
+                        if (path) {
+                          return (
+                            <Box
+                              key={key}
+                              component={Link}
+                              to={path}
+                              onClick={() => onClose?.()}
+                              sx={hubCardSx}
+                            >
+                              {content}
+                            </Box>
+                          );
                         }
-                        sx={{
-                          flexShrink: 0,
-                          borderRadius: 2,
-                          fontWeight: 600,
-                          fontSize: "0.82rem",
-                          height: 34,
-                          borderColor: isDark
-                            ? alpha("#fff", 0.12)
-                            : alpha("#1e6fd9", 0.18),
-                          "&:hover": {
-                            bgcolor: isDark
-                              ? alpha("#1e6fd9", 0.14)
-                              : alpha("#1e6fd9", 0.07),
-                            borderColor: "primary.main",
-                          },
-                        }}
-                      />
-                    );
-                  })}
-                </Box>
-              </Box>
+
+                        return (
+                          <Box
+                            key={key}
+                            component="button"
+                            type="button"
+                            onClick={onClick}
+                            sx={{
+                              ...hubCardSx,
+                              cursor: "pointer",
+                              textAlign: "start",
+                              fontFamily: "inherit",
+                            }}
+                          >
+                            {content}
+                          </Box>
+                        );
+                      })}
+                    </Box>
+                  </Box>
+                ))}
+              </Stack>
             </Box>
-          )}
+          </Box>
 
           {/* Preferences card */}
-          <Box sx={{ px: 2 }}>
+          <Box id="profile-preferences-section" sx={{ px: 2, scrollMarginTop: 12 }}>
             <Box sx={cardSx}>
               {/* Appearance */}
               <Box sx={{ px: 2, pt: 1.5, pb: 1.25 }}>
@@ -1162,7 +1316,7 @@ const ProfilePage = ({ onClose }) => {
                     display: "flex",
                     gap: 0.5,
                     p: 0.5,
-                    borderRadius: 2.5,
+                    borderRadius: 0,
                     border: `1px solid ${isDark ? alpha("#fff", 0.08) : alpha("#000", 0.07)}`,
                     background: isDark
                       ? alpha("#fff", 0.03)
@@ -1201,7 +1355,7 @@ const ProfilePage = ({ onClose }) => {
                         py: 0.75,
                         border: "none",
                         cursor: "pointer",
-                        borderRadius: 2,
+                        borderRadius: 0,
                         transition: "all 0.18s ease",
                         background:
                           colorMode === value
@@ -1268,7 +1422,7 @@ const ProfilePage = ({ onClose }) => {
                     value={selectedCity}
                     onChange={(e) => changeCity(e.target.value)}
                     sx={{
-                      borderRadius: 2,
+                      borderRadius: 0,
                       "& .MuiOutlinedInput-notchedOutline": {
                         borderColor: isDark
                           ? alpha("#fff", 0.12)
@@ -1313,7 +1467,7 @@ const ProfilePage = ({ onClose }) => {
                       }
                       onClick={() => i18n.changeLanguage(code)}
                       sx={{
-                        borderRadius: 2,
+                        borderRadius: 0,
                         minWidth: 0,
                         px: 1.5,
                         fontSize: "0.82rem",
@@ -1330,7 +1484,7 @@ const ProfilePage = ({ onClose }) => {
                     }
                     onClick={() => i18n.changeLanguage("ku")}
                     sx={{
-                      borderRadius: 2,
+                      borderRadius: 0,
                       minWidth: 0,
                       px: 1.5,
                       fontSize: "0.82rem",
@@ -1348,7 +1502,7 @@ const ProfilePage = ({ onClose }) => {
                           width: 16,
                           height: 11,
                           objectFit: "cover",
-                          borderRadius: 2,
+                          borderRadius: 0,
                         }}
                       />
                       {t("Kurdish")}
@@ -1384,7 +1538,7 @@ const ProfilePage = ({ onClose }) => {
                         width: 34,
                         height: 34,
                         p: 0,
-                        borderRadius: 2,
+                        borderRadius: 0,
                         borderColor: isDark
                           ? alpha("#fff", 0.1)
                           : alpha("#000", 0.08),

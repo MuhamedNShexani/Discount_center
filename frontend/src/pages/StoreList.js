@@ -20,6 +20,10 @@ import {
   Paper,
   alpha,
   CardContent,
+  Tabs,
+  Tab,
+  ToggleButton,
+  ToggleButtonGroup,
 } from "@mui/material";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { storeAPI, adAPI, storeTypeAPI } from "../services/api";
@@ -27,6 +31,8 @@ import BannerCarousel from "../components/BannerCarousel";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import SearchIcon from "@mui/icons-material/Search";
+import ViewListIcon from "@mui/icons-material/ViewList";
+import GridViewIcon from "@mui/icons-material/GridView";
 import Loader from "../components/Loader";
 import { getSyncErrorHint } from "../utils/apiError";
 import { useTranslation } from "react-i18next";
@@ -235,6 +241,8 @@ const StoreList = () => {
   const [error, setError] = useState("");
   const [bannerAds, setBannerAds] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeStoreTab, setActiveStoreTab] = useState("all");
+  const [viewMode, setViewMode] = useState("grid");
 
   const storeTypeParam = searchParams.get("type");
   const [selectedTypeId, setSelectedTypeId] = useState(storeTypeParam || "all");
@@ -310,8 +318,31 @@ const StoreList = () => {
       });
     }
 
-    return list;
-  }, [stores, selectedTypeId, selectedCity, searchQuery]);
+    const sorted = [...list];
+    if (activeStoreTab === "popular") {
+      sorted.sort((a, b) => {
+        const bScore = (b.isVip ? 100000 : 0) + (Number(b.followerCount) || 0);
+        const aScore = (a.isVip ? 100000 : 0) + (Number(a.followerCount) || 0);
+        return bScore - aScore;
+      });
+    } else if (activeStoreTab === "new") {
+      sorted.sort(
+        (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
+      );
+    } else if (activeStoreTab === "nearby") {
+      sorted.sort((a, b) => {
+        const aHasLocation = Boolean(
+          a.locationInfo?.googleMaps || a.locationInfo?.appleMaps || a.locationInfo?.waze,
+        );
+        const bHasLocation = Boolean(
+          b.locationInfo?.googleMaps || b.locationInfo?.appleMaps || b.locationInfo?.waze,
+        );
+        return Number(bHasLocation) - Number(aHasLocation);
+      });
+    }
+
+    return sorted;
+  }, [stores, selectedTypeId, selectedCity, searchQuery, activeStoreTab]);
 
   const handleTypeSelect = (id) => {
     setSelectedTypeId(id);
@@ -429,7 +460,7 @@ const StoreList = () => {
           py: { xs: 2.5, md: 5 },
           pb: { xs: 10, md: 6 },
           minHeight: "100vh",
-          bgcolor: isDark ? "rgba(13,17,28,1)" : "rgba(248,249,252,1)",
+          bgcolor: "background.default",
         }}
       >
         <Container
@@ -598,7 +629,7 @@ const StoreList = () => {
         py: { xs: 2.5, md: 5 },
         pb: { xs: 10, md: 6 },
         minHeight: "100vh",
-        bgcolor: isDark ? "rgba(13,17,28,1)" : "rgba(248,249,252,1)",
+        bgcolor: "background.default",
       }}
     >
       <Container
@@ -720,6 +751,66 @@ const StoreList = () => {
           />
         </Box>
 
+        <Paper
+          elevation={0}
+          sx={{
+            mb: 2,
+            p: 0.75,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 1,
+            borderRadius: 3,
+            bgcolor: isDark ? alpha("#fff", 0.04) : "#fff",
+            border: `1px solid ${isDark ? alpha("#fff", 0.08) : alpha("#000", 0.06)}`,
+          }}
+        >
+          <Tabs
+            value={activeStoreTab}
+            onChange={(_, value) => setActiveStoreTab(value)}
+            variant="scrollable"
+            scrollButtons="auto"
+            sx={{
+              minHeight: 38,
+              flex: 1,
+              "& .MuiTab-root": {
+                minHeight: 38,
+                textTransform: "none",
+                fontWeight: 800,
+                borderRadius: 2,
+              },
+            }}
+          >
+            <Tab value="all" label={t("All")} />
+            <Tab value="nearby" label={t("Nearby", { defaultValue: "Nearby" })} />
+            <Tab value="popular" label={t("Popular", { defaultValue: "Popular" })} />
+            <Tab value="new" label={t("New", { defaultValue: "New" })} />
+          </Tabs>
+
+          <ToggleButtonGroup
+            exclusive
+            size="small"
+            value={viewMode}
+            onChange={(_, value) => value && setViewMode(value)}
+            sx={{
+              flexShrink: 0,
+              "& .MuiToggleButton-root": {
+                width: 36,
+                height: 36,
+                p: 0,
+                borderRadius: "10px !important",
+              },
+            }}
+          >
+            <ToggleButton value="grid" aria-label={t("Grid view", { defaultValue: "Grid view" })}>
+              <GridViewIcon fontSize="small" />
+            </ToggleButton>
+            <ToggleButton value="list" aria-label={t("List view", { defaultValue: "List view" })}>
+              <ViewListIcon fontSize="small" />
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Paper>
+
         {/* Store types — same chip + scroll styling as MainPage `FilterChips` */}
         <Box sx={{ mb: 3 }}>
           <Box sx={{ position: "relative", pb: 0.25 }}>
@@ -792,12 +883,15 @@ const StoreList = () => {
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: {
-              xs: "repeat(2, 1fr)",
-              sm: "repeat(3, 1fr)",
-              md: "repeat(4, 1fr)",
-              lg: "repeat(5, 1fr)",
-            },
+            gridTemplateColumns:
+              viewMode === "list"
+                ? "1fr"
+                : {
+                    xs: "repeat(2, 1fr)",
+                    sm: "repeat(3, 1fr)",
+                    md: "repeat(4, 1fr)",
+                    lg: "repeat(5, 1fr)",
+                  },
             gap: { xs: 1.2, sm: 1.5, md: 2 },
           }}
         >

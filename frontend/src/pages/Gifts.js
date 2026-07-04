@@ -9,7 +9,6 @@ import {
   Alert,
   Paper,
   Chip,
-  useTheme,
   Tabs,
   Tab,
   Dialog,
@@ -19,6 +18,7 @@ import {
   Button,
   Skeleton,
 } from "@mui/material";
+import { useTheme, alpha } from "@mui/material/styles";
 import { Store, Business } from "@mui/icons-material";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
@@ -42,6 +42,24 @@ import {
 
 const Gifts = () => {
   const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
+  const skeletonBase = isDark ? alpha("#fff", 0.08) : alpha("#0d111c", 0.07);
+  const skeletonHighlight = isDark
+    ? alpha("#fff", 0.12)
+    : alpha("#0d111c", 0.1);
+  const skeletonCardSx = {
+    borderRadius: 3,
+    overflow: "hidden",
+    bgcolor: isDark ? alpha("#fff", 0.03) : "background.paper",
+    border: `1px solid ${isDark ? alpha("#fff", 0.08) : alpha("#1e6fd9", 0.08)}`,
+    boxShadow: isDark
+      ? "0 4px 20px rgba(0,0,0,0.35)"
+      : "0 4px 16px rgba(30,111,217,0.06)",
+  };
+  const skeletonSx = (tone = "base") => ({
+    bgcolor: tone === "highlight" ? skeletonHighlight : skeletonBase,
+  });
+
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const { t } = useTranslation();
@@ -534,41 +552,100 @@ const Gifts = () => {
 
   if (loading) {
     return (
-      <Box sx={{ py: { xs: 5, md: 10 }, px: { xs: 0.5, sm: 1.5, md: 3 } }}>
+      <Box
+        sx={{
+          py: { xs: 5, md: 10 },
+          px: { xs: 0.5, sm: 1.5, md: 3 },
+          minHeight: "100vh",
+          bgcolor: "background.default",
+        }}
+      >
         <Skeleton
           variant="rounded"
+          animation="wave"
           sx={{
             width: "100%",
             height: { xs: "160px", sm: "220px", md: "280px" },
             mt: 2,
             mb: 2,
             borderRadius: 3,
+            ...skeletonSx("highlight"),
+            boxShadow: isDark
+              ? "0 8px 32px rgba(0,0,0,0.4)"
+              : "0 8px 32px rgba(30,111,217,0.15)",
           }}
         />
         <Box sx={{ mb: 2, display: "flex", justifyContent: "center" }}>
-          <Skeleton variant="rounded" width={260} height={42} />
+          <Skeleton
+            variant="rounded"
+            animation="wave"
+            width={260}
+            height={42}
+            sx={{ borderRadius: 2, ...skeletonSx() }}
+          />
         </Box>
         <Box sx={{ mb: 2, display: "flex", gap: 1, flexWrap: "wrap" }}>
-          {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} variant="rounded" width={110} height={38} />
+          {[110, 96, 118, 104].map((w, i) => (
+            <Skeleton
+              key={i}
+              variant="rounded"
+              animation="wave"
+              width={w}
+              height={38}
+              sx={{ borderRadius: "19px", ...skeletonSx() }}
+            />
           ))}
         </Box>
         <Grid container spacing={2}>
           {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
             <Grid size={{ xs: 6, sm: 4, md: 3 }} key={i}>
-              <Card sx={{ borderRadius: 3, overflow: "hidden" }}>
+              <Card sx={skeletonCardSx}>
                 <Skeleton
                   variant="rectangular"
-                  sx={{ height: { xs: 130, sm: 160 } }}
+                  animation="wave"
+                  sx={{
+                    height: { xs: 130, sm: 160 },
+                    ...skeletonSx("highlight"),
+                  }}
                 />
                 <CardContent sx={{ p: { xs: 1, sm: 1.5 } }}>
-                  <Skeleton variant="text" width="85%" height={24} />
-                  <Skeleton variant="text" width="65%" height={20} />
+                  <Skeleton
+                    variant="text"
+                    animation="wave"
+                    width="85%"
+                    height={24}
+                    sx={skeletonSx()}
+                  />
+                  <Skeleton
+                    variant="text"
+                    animation="wave"
+                    width="65%"
+                    height={20}
+                    sx={skeletonSx()}
+                  />
                   <Box sx={{ display: "flex", gap: 0.5, mt: 0.5, mb: 1 }}>
-                    <Skeleton variant="rounded" width={56} height={20} />
-                    <Skeleton variant="rounded" width={70} height={20} />
+                    <Skeleton
+                      variant="rounded"
+                      animation="wave"
+                      width={56}
+                      height={20}
+                      sx={{ borderRadius: 1, ...skeletonSx() }}
+                    />
+                    <Skeleton
+                      variant="rounded"
+                      animation="wave"
+                      width={70}
+                      height={20}
+                      sx={{ borderRadius: 1, ...skeletonSx() }}
+                    />
                   </Box>
-                  <Skeleton variant="rounded" width="62%" height={28} />
+                  <Skeleton
+                    variant="rounded"
+                    animation="wave"
+                    width="62%"
+                    height={28}
+                    sx={{ borderRadius: 1.5, ...skeletonSx("highlight") }}
+                  />
                 </CardContent>
               </Card>
             </Grid>

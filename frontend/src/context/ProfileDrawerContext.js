@@ -8,9 +8,9 @@ import React, {
   Suspense,
   lazy,
 } from "react";
-import { Box, Drawer, useTheme } from "@mui/material";
+import { Drawer, useTheme } from "@mui/material";
 import { Navigate } from "react-router-dom";
-import Loader from "../components/Loader";
+import ProfilePageSkeleton from "../components/ProfilePageSkeleton";
 
 const ProfilePage = lazy(() => import("../pages/ProfilePage"));
 
@@ -49,21 +49,7 @@ export function ProfileDrawerProvider({ children }) {
         }}
       >
         {open ? (
-          <Suspense
-            fallback={
-              <Box
-                sx={{
-                  width: { xs: "100vw", sm: 390 },
-                  height: "100dvh",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Loader />
-              </Box>
-            }
-          >
+          <Suspense fallback={<ProfilePageSkeleton />}>
             <ProfilePage onClose={closeProfile} />
           </Suspense>
         ) : null}

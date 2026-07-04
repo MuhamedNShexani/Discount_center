@@ -112,17 +112,31 @@ export const createAppTheme = (
             "--brand-secondary-blue": BRAND.secondaryBlue,
             "--brand-accent-orange": BRAND.accentOrange,
             "--brand-light-orange": BRAND.lightOrange,
-            "--brand-bg": BRAND.background,
-            "--brand-surface": BRAND.surface,
-            "--brand-text-primary": BRAND.textPrimary,
-            "--brand-text-secondary": BRAND.textSecondary,
+            "--brand-bg": darkMode ? "#0F172A" : BRAND.background,
+            "--brand-surface": darkMode ? "#111827" : BRAND.surface,
+            "--brand-text-primary": darkMode ? "#F9FAFB" : BRAND.textPrimary,
+            "--brand-text-secondary": darkMode ? "#CBD5E1" : BRAND.textSecondary,
+            ...(darkMode
+              ? {
+                  "--color-bg": "#0F172A",
+                  "--color-surface": "#111827",
+                }
+              : {}),
             "--brand-radius": "12px",
             "--brand-transition": "all 240ms ease",
             "--app-font-family": typographyFontFamily,
           },
+          html: {
+            backgroundColor: darkMode ? "#0F172A" : BRAND.background,
+          },
           body: {
             fontFamily: "var(--app-font-family)",
             WebkitTapHighlightColor: "transparent",
+            backgroundColor: darkMode ? "#0F172A" : BRAND.background,
+          },
+          "#root": {
+            backgroundColor: darkMode ? "#0F172A" : BRAND.background,
+            minHeight: "100%",
           },
           button: {
             WebkitTapHighlightColor: "transparent",

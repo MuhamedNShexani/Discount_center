@@ -117,9 +117,7 @@ const BottomNavigationBar = () => {
     triggerRefresh?.();
   }, [location.pathname, triggerRefresh]);
   const { selectedCity, changeCity, cities } = useCityFilter();
-  const {
-    unreadCount,
-  } = useNotifications();
+  const { unreadCount } = useNotifications();
   const [cityMenuAnchor, setCityMenuAnchor] = useState(null);
   const [langMenuAnchor, setLangMenuAnchor] = useState(null);
   const lastHomeTapTsRef = useRef(0);
@@ -136,7 +134,9 @@ const BottomNavigationBar = () => {
     }
 
     if (pathname === "/") return "/";
-    if (pathname === "/reels") return "/reels";
+    if (pathname === "/reels" || pathname.startsWith("/reels/")) {
+      return "/reels";
+    }
     if (pathname === "/favourites") return "/favourites";
     if (pathname === "/categories") return "/categories";
     if (pathname === "/gifts") return "/gifts";
@@ -246,13 +246,15 @@ const BottomNavigationBar = () => {
             ]
           : [
               actionMap.home,
-              actionMap.categories,
+            actionMap.search,
               actionMap.reels,
               actionMap.stores,
-              actionMap.gifts,
+            actionMap.profile,
             ],
     [template, actionMap, navConfig],
   );
+
+  const isTemplate3 = template === "template3";
 
   /** Snappier spring so the active pill tracks tab switches quickly. */
   const pillTransition = useMemo(
@@ -282,7 +284,11 @@ const BottomNavigationBar = () => {
         return;
       }
 
-      if (item.path === "/reels" && location.pathname === "/reels") {
+      if (
+        item.path === "/reels" &&
+        (location.pathname === "/reels" ||
+          location.pathname.startsWith("/reels/"))
+      ) {
         const now = Date.now();
         const isDoubleTap = now - lastReelsTapTsRef.current <= 450;
         lastReelsTapTsRef.current = now;
@@ -313,6 +319,9 @@ const BottomNavigationBar = () => {
    * Shell chrome in `sx` only — surface colors live on inline `style` so RTL (ar/ku) does not
    * transform gradients (same pattern as `NavigationBar` AppBar + theme MuiAppBar note).
    */
+  const bottomNavSafeAreaPb = "env(safe-area-inset-bottom, 0px)";
+  const bottomNavShellBg = isDark ? "#0b1220" : "#ffffff";
+
   const glassNavSx = useMemo(
     () => ({
       display: "flex",
@@ -320,39 +329,44 @@ const BottomNavigationBar = () => {
       maxWidth: "100%",
       minHeight: 64,
       maxHeight: "none",
-      borderRadius: "25px 25px 25px 25px",
+      borderRadius: 0,
       alignItems: "stretch",
       overflow: "hidden",
       position: "relative",
       boxSizing: "border-box",
+      paddingBottom: bottomNavSafeAreaPb,
       ...(isDark
         ? {
             backdropFilter: "blur(22px) saturate(170%)",
             WebkitBackdropFilter: "blur(22px) saturate(170%)",
-            border: "1px solid rgba(255,255,255,0.12)",
+            borderTop: "1px solid rgba(255,255,255,0.12)",
+            borderLeft: "none",
+            borderRight: "none",
             borderBottom: "none",
             boxShadow: isAndroidPerfMode
-              ? "0 2px 10px rgba(0,0,0,0.35)"
-              : "0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.12)",
+              ? "0 -2px 10px rgba(0,0,0,0.35)"
+              : "0 -12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.12)",
           }
         : {
             backdropFilter: "blur(24px) saturate(180%)",
             WebkitBackdropFilter: "blur(24px) saturate(180%)",
-            border: "1px solid",
-            borderColor: "rgba(229,231,235,0.6)",
+            borderTop: "1px solid rgba(229,231,235,0.6)",
+            borderLeft: "none",
+            borderRight: "none",
+            borderBottom: "none",
             boxShadow: isAndroidPerfMode
-              ? "0 2px 10px rgba(0,0,0,0.08)"
-              : "0 8px 30px rgba(0,0,0,0.12)",
+              ? "0 -2px 10px rgba(0,0,0,0.08)"
+              : "0 -8px 30px rgba(0,0,0,0.12)",
           }),
     }),
-    [isDark, isAndroidPerfMode],
+    [isDark, isAndroidPerfMode, bottomNavSafeAreaPb],
   );
 
   const bottomNavSurfaceStyle = useMemo(
     () =>
       isDark
         ? { background: NAV_BAR_GRADIENT_DARK_GLASS }
-        : { backgroundColor: "rgba(255,255,255,0.85)" },
+        : { backgroundColor: "rgba(255,255,255,0.98)" },
     [isDark],
   );
 
@@ -389,7 +403,7 @@ const BottomNavigationBar = () => {
     },
   };
 
-  if (!isMobile) {
+  if (!isMobile || isSearchPage) {
     return null;
   }
 
@@ -399,18 +413,15 @@ const BottomNavigationBar = () => {
         position: "fixed",
         left: 0,
         right: 0,
-        bottom: 8,
+        bottom: 0,
         width: "100%",
         zIndex: 1000,
         pointerEvents: "none",
         transform:
           keyboardInset > 0 ? `translateY(${keyboardInset}px)` : undefined,
         willChange: keyboardInset > 0 ? "transform" : undefined,
-
-        paddingBottom: "max(1px, env(safe-area-inset-bottom))",
-        paddingLeft: "5px",
-        paddingRight: "5px",
         boxSizing: "border-box",
+        bgcolor: bottomNavShellBg,
       }}
     >
       <Box
@@ -448,8 +459,8 @@ const BottomNavigationBar = () => {
                 width: "100%",
                 minWidth: 0,
                 alignItems: "stretch",
-                gap: { xs: 1.5, sm: 2 },
-                px: { xs: 2, sm: 3 },
+                gap: isTemplate3 ? { xs: 0.25, sm: 0.75 } : { xs: 1.5, sm: 2 },
+                px: isTemplate3 ? { xs: 0.5, sm: 1.5 } : { xs: 2, sm: 3 },
                 py: { xs: 1, sm: 1.125 },
                 boxSizing: "border-box",
               }}
@@ -471,6 +482,75 @@ const BottomNavigationBar = () => {
                   isRouteTab &&
                   activeValue !== false &&
                   activeValue === item.path;
+
+                if (isTemplate3 && isRouteTab) {
+                  return (
+                    <MotionBox
+                      key={item.path}
+                      component="button"
+                      type="button"
+                      aria-current={routeActive ? "page" : undefined}
+                      aria-label={item.name}
+                      onPointerEnter={
+                        item.path === "/search"
+                          ? () => prefetchSearchPageChunk()
+                          : undefined
+                      }
+                      onClick={() => handleRouteNavigate(item)}
+                      whileTap={
+                        useLayoutAnimations ? { scale: 0.94 } : undefined
+                      }
+                      sx={{
+                        ...tabBtnBaseSx,
+                        flex: "1 1 0%",
+                        borderRadius: "14px",
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: 0.35,
+                          width: "100%",
+                          py: 0.7,
+                          px: 0.5,
+                          borderRadius: "14px",
+                          background: routeActive
+                            ? "linear-gradient(135deg, #1E6FD9 0%, #4A90E2 100%)"
+                            : "transparent",
+                          boxShadow: routeActive
+                            ? "0 6px 16px rgba(30,111,217,0.4)"
+                            : "none",
+                          transition: "background 200ms ease, box-shadow 200ms ease",
+                        }}
+                      >
+                        <Icon
+                          size={22}
+                          color={routeActive ? "#ffffff" : inactiveIconColor}
+                          strokeWidth={
+                            routeActive
+                              ? NAV_ICON_STROKE.active
+                              : NAV_ICON_STROKE.idle
+                          }
+                        />
+                        <Typography
+                          component="span"
+                          sx={{
+                            fontSize: "0.66rem",
+                            fontWeight: routeActive ? 800 : 600,
+                            lineHeight: 1.2,
+                            color: routeActive ? "#ffffff" : inactiveIconColor,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {item.name || item.path}
+                        </Typography>
+                      </Box>
+                    </MotionBox>
+                  );
+                }
 
                 if (item.kind === "city") {
                   return (

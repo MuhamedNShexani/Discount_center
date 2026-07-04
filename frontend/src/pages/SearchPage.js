@@ -20,6 +20,7 @@ import {
   Avatar,
   Divider,
   IconButton,
+  Chip,
 } from "@mui/material";
 import { useTheme, alpha } from "@mui/material/styles";
 import "slick-carousel/slick/slick.css";
@@ -57,7 +58,7 @@ import {
 import { useDraftCartDrawer } from "../hooks/useDraftCartDrawer";
 import BrandShowcase from "../components/BrandShowcase";
 import ProfileShortcuts from "../components/ProfileShortcuts";
-import { storeMatchesSelectedCity } from "../utils/cityMatch";
+import { isRtlLanguage } from "../utils/isRtlLanguage";
 
 /** Opens Shopping draft cart drawer (EN/KU/AR-friendly keywords). */
 function isCartSearchIntent(raw) {
@@ -83,7 +84,7 @@ const SearchPage = () => {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const { t, i18n } = useTranslation();
-  const isRtl = i18n.dir() === "rtl";
+  const isRtl = isRtlLanguage(i18n.language);
   const { dataLanguage } = useDataLanguage();
   const navigate = useNavigate();
   const { openDraftCart } = useDraftCartDrawer();
@@ -142,6 +143,17 @@ const SearchPage = () => {
   const brandShowcaseSlice = useMemo(
     () => showcaseBrands.slice(0, 8),
     [showcaseBrands],
+  );
+  const suggestedSearches = useMemo(
+    () => [
+      t("Restaurants", { defaultValue: "Restaurants" }),
+      t("Fashion", { defaultValue: "Fashion" }),
+      t("Electronics", { defaultValue: "Electronics" }),
+      t("Nearby stores", { defaultValue: "Nearby stores" }),
+      t("Gifts", { defaultValue: "Gifts" }),
+      t("Shopping", { defaultValue: "Shopping" }),
+    ],
+    [t],
   );
   const performSearch = useCallback(
     async (q) => {
@@ -514,7 +526,7 @@ const SearchPage = () => {
               transition: "all 0.15s ease",
             }}
           >
-            {isRtl ? <ArrowBackIcon /> : <ArrowForwardIcon />}
+            {isRtl ? <ArrowForwardIcon /> : <ArrowBackIcon />}
           </IconButton>
 
           <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -758,6 +770,44 @@ const SearchPage = () => {
 
       {(query || "").trim().length < 2 && (
         <>
+          <Paper
+            elevation={0}
+            sx={{
+              mt: recentSearches.length > 0 ? 1.5 : 0,
+              mb: 1.5,
+              p: 1.5,
+              borderRadius: 0.5,
+              border: `1px solid ${theme.palette.divider}`,
+              bgcolor: isDark ? alpha("#fff", 0.04) : "#fff",
+            }}
+          >
+            <Box display="flex" alignItems="center" gap={1} sx={{ mb: 1 }}>
+              <SearchIcon fontSize="small" color="primary" />
+              <Typography variant="subtitle2" fontWeight={800}>
+                {t("Trending searches", { defaultValue: "Trending searches" })}
+              </Typography>
+            </Box>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
+              {suggestedSearches.map((term) => (
+                <Chip
+                  key={term}
+                  clickable
+                  label={term}
+                  onClick={() => handleRecentClick(term)}
+                  sx={{
+                    fontWeight: 700,
+                    borderRadius: 99,
+                    bgcolor: isDark ? alpha("#fff", 0.07) : alpha("#1e6fd9", 0.07),
+                    "&:hover": {
+                      bgcolor: isDark
+                        ? alpha("#1e6fd9", 0.18)
+                        : alpha("#1e6fd9", 0.12),
+                    },
+                  }}
+                />
+              ))}
+            </Box>
+          </Paper>
           <BrandShowcase
             brands={brandShowcaseSlice}
             sx={SEARCH_SHOWCASE_SURFACE_SX}

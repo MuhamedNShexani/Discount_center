@@ -474,7 +474,7 @@ const BrandCompanyList = ({ variant }) => {
         sx={{
           py: { xs: 3, md: 6 },
           minHeight: "100vh",
-          bgcolor: isDark ? "rgba(13,17,28,1)" : "rgba(248,249,252,1)",
+          bgcolor: "background.default",
         }}
       >
         <Container maxWidth="lg" sx={{ px: { xs: 1.5, sm: 2 } }}>
@@ -537,7 +537,7 @@ const BrandCompanyList = ({ variant }) => {
         py: { xs: 2.5, md: 5 },
         pb: { xs: 10, md: 6 },
         minHeight: "100vh",
-        bgcolor: isDark ? "rgba(13,17,28,1)" : "rgba(248,249,252,1)",
+        bgcolor: "background.default",
       }}
     >
       <Container

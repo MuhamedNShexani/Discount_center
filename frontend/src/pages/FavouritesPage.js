@@ -250,7 +250,7 @@ const FavouritesPage = () => {
         overflowX: "hidden",
         boxSizing: "border-box",
         minHeight: "100vh",
-        backgroundColor: isDark ? "rgba(13,17,28,1)" : "rgba(248,249,252,1)",
+        bgcolor: "background.default",
       }}
     >
       <Button

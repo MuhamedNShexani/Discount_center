@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState } from "react";
 import {
   Box,
   Chip,
@@ -6,18 +6,30 @@ import {
   InputAdornment,
   IconButton,
   Tooltip,
-  alpha,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Typography,
+  Switch,
+  FormControlLabel,
+  Badge,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import MyLocationIcon from "@mui/icons-material/MyLocation";
 import CategoryIcon from "@mui/icons-material/Category";
 import ClearIcon from "@mui/icons-material/Clear";
+import TuneIcon from "@mui/icons-material/Tune";
 import ViewStreamIcon from "@mui/icons-material/ViewStream";
 import GridViewIcon from "@mui/icons-material/GridView";
 import { useTheme } from "@mui/material/styles";
 import { useTranslation } from "react-i18next";
 import { useLocalizedContent } from "../hooks/useLocalizedContent";
+import StoreTypeCarousel from "./StoreTypeCarousel";
+
+const DEFAULT_MAX_PRICE = 1000000;
 
 const FilterChips = ({
   search,
@@ -25,6 +37,7 @@ const FilterChips = ({
   storeTypes,
   selectedStoreTypeId,
   onStoreTypeSelect,
+  storeTypeCounts,
   visibleCategories,
   selectedCategory,
   onCategorySelect,
@@ -35,66 +48,48 @@ const FilterChips = ({
   geoLoading,
   productLayout = "row",
   onLayoutChange,
+  priceRange,
+  onPriceRangeChange,
+  showOnlyDiscount,
+  onToggleShowOnlyDiscount,
 }) => {
   const theme = useTheme();
   const { t } = useTranslation();
   const { locName } = useLocalizedContent();
   const isDark = theme.palette.mode === "dark";
-  const accent = theme.palette.primary.main;
-  const primaryOnSurface =
-    theme.palette.primary.dark ||
-    (theme.palette.mode === "light" ? "#1565c0" : accent);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [draftMin, setDraftMin] = useState("");
+  const [draftMax, setDraftMax] = useState("");
 
-  const storeTypeScrollRef = useRef(null);
-      const [showScrollLeft, setShowScrollLeft] = useState(false);
-      const [showScrollRight, setShowScrollRight] = useState(false);
+  const hasCustomFilters =
+    (Array.isArray(priceRange) &&
+      (Number(priceRange[0]) > 0 ||
+        Number(priceRange[1]) < DEFAULT_MAX_PRICE)) ||
+    showOnlyDiscount === false;
 
-  const updateStoreTypeScrollHints = useCallback(() => {
-    const el = storeTypeScrollRef.current;
-    if (!el) {
-      setShowScrollLeft(false);
-      setShowScrollRight(false);
-      return;
-    }
-    const { scrollLeft, scrollWidth, clientWidth } = el;
-    if (scrollWidth <= clientWidth + 2) {
-      setShowScrollLeft(false);
-      setShowScrollRight(false);
-      return;
-    }
-    const max = scrollWidth - clientWidth;
-    setShowScrollLeft(scrollLeft > 8);
-    setShowScrollRight(scrollLeft < max - 8);
-  }, []);
+  const openFilterDialog = () => {
+    setDraftMin(priceRange?.[0] ? String(priceRange[0]) : "");
+    setDraftMax(
+      priceRange?.[1] && priceRange[1] !== DEFAULT_MAX_PRICE
+        ? String(priceRange[1])
+        : "",
+    );
+    setFilterOpen(true);
+  };
 
-  const scrollStoreTypesBy = useCallback((direction) => {
-    const el = storeTypeScrollRef.current;
-    if (!el) return;
-    const step = Math.min(280, el.clientWidth * 0.72);
-    el.scrollBy({ left: direction * step, behavior: "smooth" });
-  }, []);
+  const applyFilterDialog = () => {
+    const min = Math.max(0, Number(draftMin) || 0);
+    const max = draftMax ? Math.max(min, Number(draftMax) || DEFAULT_MAX_PRICE) : DEFAULT_MAX_PRICE;
+    onPriceRangeChange?.([min, max]);
+    setFilterOpen(false);
+  };
 
-  useEffect(() => {
-    updateStoreTypeScrollHints();
-    const el = storeTypeScrollRef.current;
-    if (!el) {
-      const retry = window.setTimeout(updateStoreTypeScrollHints, 350);
-      return () => window.clearTimeout(retry);
-    }
-    let ro;
-    if (typeof ResizeObserver !== "undefined") {
-      ro = new ResizeObserver(() => updateStoreTypeScrollHints());
-      ro.observe(el);
-    }
-    const onWin = () => updateStoreTypeScrollHints();
-    window.addEventListener("resize", onWin);
-    const t = window.setTimeout(updateStoreTypeScrollHints, 150);
-    return () => {
-      window.clearTimeout(t);
-      window.removeEventListener("resize", onWin);
-      ro?.disconnect();
-    };
-  }, [updateStoreTypeScrollHints, storeTypes]);
+  const resetFilterDialog = () => {
+    setDraftMin("");
+    setDraftMax("");
+    onPriceRangeChange?.([0, DEFAULT_MAX_PRICE]);
+    onToggleShowOnlyDiscount?.(true);
+  };
 
   const activePillSx = {
     background:
@@ -120,11 +115,6 @@ const FilterChips = ({
     },
     "&.MuiChip-root": { height: 34 },
   };
-
-  const storeTypeChipSx = (active) => ({
-    ...(active ? activePillSx : inactivePillSx),
-    flexShrink: 0,
-  });
 
   const sortActiveSx = {
     background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
@@ -194,18 +184,42 @@ const FilterChips = ({
               />
             </InputAdornment>
           ),
-          endAdornment: search ? (
+          endAdornment: (
             <InputAdornment position="end">
+              {search ? (
+                <IconButton
+                  size="small"
+                  onClick={() => onSearchChange("")}
+                  edge="end"
+                  sx={{ p: 0.5, mr: 0.25 }}
+                >
+                  <ClearIcon sx={{ fontSize: 16 }} />
+                </IconButton>
+              ) : null}
               <IconButton
                 size="small"
-                onClick={() => onSearchChange("")}
+                onClick={openFilterDialog}
                 edge="end"
-                sx={{ p: 0.5 }}
+                aria-label={t("Filters", { defaultValue: "Filters" })}
+                sx={{
+                  p: 0.6,
+                  color: hasCustomFilters
+                    ? "var(--brand-primary-blue, #1E6FD9)"
+                    : isDark
+                      ? "rgba(255,255,255,0.6)"
+                      : "text.secondary",
+                }}
               >
-                <ClearIcon sx={{ fontSize: 16 }} />
+                <Badge
+                  variant="dot"
+                  color="primary"
+                  invisible={!hasCustomFilters}
+                >
+                  <TuneIcon sx={{ fontSize: 19 }} />
+                </Badge>
               </IconButton>
             </InputAdornment>
-          ) : null,
+          ),
         }}
         sx={{
           mb: 1.25,
@@ -230,175 +244,13 @@ const FilterChips = ({
         }}
       />
 
-      {/* Store type chips row — scroll hint, visible scrollbar, fades, arrows */}
-      <Box sx={{ mb: 0 }}>
-        {/* <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 0.75,
-            pb: 0.6,
-            color: "text.secondary",
-          }}
-        >
-          <SwapHorizIcon sx={{ fontSize: 18, opacity: 0.9, flexShrink: 0 }} />
-          <Typography variant="caption" sx={{ fontWeight: 600, lineHeight: 1.35 }}>
-            {t("Scroll for more store types")}
-          </Typography>
-        </Box> */}
-
-        <Box sx={{ position: "relative", pb: 0.25 }}>
-          {/* {showScrollLeft && (
-            <Box
-              aria-hidden
-              sx={{
-                pointerEvents: "none",
-                position: "absolute",
-                left: 0,
-                top: 0,
-                bottom: 10,
-                width: 40,
-                zIndex: 1,
-                background: isDark
-                  ? `linear-gradient(90deg, ${alpha("#0d111c", 0.98)} 0%, transparent 100%)`
-                  : `linear-gradient(90deg, ${alpha("#f9fafb", 0.98)} 0%, transparent 100%)`,
-              }}
-            />
-          )}
-          {showScrollRight && (
-            <Box
-              aria-hidden
-              sx={{
-                pointerEvents: "none",
-                position: "absolute",
-                right: 0,
-                top: 0,
-                bottom: 10,
-                width: 40,
-                zIndex: 1,
-                background: isDark
-                  ? `linear-gradient(270deg, ${alpha("#0d111c", 0.98)} 0%, transparent 100%)`
-                  : `linear-gradient(270deg, ${alpha("#f9fafb", 0.98)} 0%, transparent 100%)`,
-              }}
-            />
-          )}
-
-          {showScrollLeft && (
-            <IconButton
-              size="small"
-              onClick={() => scrollStoreTypesBy(-1)}
-              aria-label={t("Scroll left")}
-              sx={{
-                position: "absolute",
-                left: 2,
-                top: "50%",
-                transform: "translateY(-50%)",
-                zIndex: 2,
-                bgcolor: isDark ? alpha("#fff", 0.1) : alpha("#fff", 0.95),
-                boxShadow: 1,
-                "&:hover": {
-                  bgcolor: isDark ? alpha("#fff", 0.18) : "#fff",
-                },
-              }}
-            >
-              <ChevronLeftIcon fontSize="small" />
-            </IconButton>
-          )}
-          {showScrollRight && (
-            <IconButton
-              size="small"
-              onClick={() => scrollStoreTypesBy(1)}
-              aria-label={t("Scroll right")}
-              sx={{
-                position: "absolute",
-                right: 2,
-                top: "50%",
-                transform: "translateY(-50%)",
-                zIndex: 2,
-                bgcolor: isDark ? alpha("#fff", 0.1) : alpha("#fff", 0.95),
-                boxShadow: 1,
-                "&:hover": {
-                  bgcolor: isDark ? alpha("#fff", 0.18) : "#fff",
-                },
-              }}
-            >
-              <ChevronRightIcon fontSize="small" />
-            </IconButton>
-          )} */}
-
-          <Box
-            ref={storeTypeScrollRef}
-            onScroll={updateStoreTypeScrollHints}
-            sx={{
-              display: "flex",
-              gap: 0.8,
-              overflowX: "auto",
-              overflowY: "hidden",
-              alignItems: "center",
-              px: { xs: 0.25, sm: 0.5 },
-              pb: 1,
-              scrollBehavior: "smooth",
-              scrollbarWidth: "auto",
-              scrollbarGutter: "stable",
-              scrollbarColor: isDark
-                ? `${alpha(accent, 0.55)} ${alpha("#fff", 0.08)}`
-                : `${alpha(primaryOnSurface, 0.45)} ${alpha("#000", 0.08)}`,
-              "&::-webkit-scrollbar": { height: 10 },
-              "&::-webkit-scrollbar-track": {
-                borderRadius: 5,
-                marginLeft: 1,
-                marginRight: 1,
-                backgroundColor: isDark
-                  ? alpha("#fff", 0.07)
-                  : alpha("#000", 0.06),
-              },
-              "&::-webkit-scrollbar-thumb": {
-                borderRadius: 5,
-                border: `2px solid ${
-                  isDark ? alpha("#0d111c", 1) : alpha("#f9fafb", 1)
-                }`,
-                backgroundColor: isDark
-                  ? alpha(accent, 0.55)
-                  : alpha(primaryOnSurface, 0.45),
-              },
-            }}
-          >
-            <Chip
-              label={t("All")}
-              icon={
-                <Box
-                  component="span"
-                  sx={{ fontSize: "0.9rem", ml: "4px !important" }}
-                >
-                  🏪
-                </Box>
-              }
-              onClick={() => onStoreTypeSelect("all")}
-              sx={storeTypeChipSx(selectedStoreTypeId === "all")}
-            />
-            {storeTypes.map((type) => (
-              <Chip
-                key={type._id}
-                label={locName(type) || t(type.name)}
-                icon={
-                  type.icon ? (
-                    <Box
-                      component="span"
-                      sx={{ fontSize: "0.9rem", ml: "4px !important" }}
-                    >
-                      {type.icon}
-                    </Box>
-                  ) : undefined
-                }
-                onClick={() => onStoreTypeSelect(type._id)}
-                sx={storeTypeChipSx(
-                  String(selectedStoreTypeId) === String(type._id),
-                )}
-              />
-            ))}
-          </Box>
-        </Box>
-      </Box>
+      {/* Store type browser — Facebook Marketplace–style category cards */}
+      <StoreTypeCarousel
+        storeTypes={storeTypes}
+        selectedStoreTypeId={selectedStoreTypeId}
+        onStoreTypeSelect={onStoreTypeSelect}
+        storeTypeCounts={storeTypeCounts}
+      />
 
       {/* Sort row: Newest + Near Me on the left, layout toggle on the right */}
       <Box
@@ -497,6 +349,75 @@ const FilterChips = ({
           ))}
         </Box>
       )}
+
+      <Dialog
+        open={filterOpen}
+        onClose={() => setFilterOpen(false)}
+        fullWidth
+        maxWidth="xs"
+        PaperProps={{ sx: { borderRadius: "18px" } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800 }}>
+          {t("Filters", { defaultValue: "Filters" })}
+        </DialogTitle>
+        <DialogContent>
+          <Typography
+            variant="subtitle2"
+            sx={{ fontWeight: 700, mb: 1, mt: 0.5 }}
+          >
+            {t("Price Range", { defaultValue: "Price Range" })}
+          </Typography>
+          <Box sx={{ display: "flex", gap: 1.25, mb: 2 }}>
+            <TextField
+              type="number"
+              size="small"
+              fullWidth
+              label={t("Min Price")}
+              value={draftMin}
+              onChange={(e) => setDraftMin(e.target.value)}
+            />
+            <TextField
+              type="number"
+              size="small"
+              fullWidth
+              label={t("Max Price")}
+              value={draftMax}
+              onChange={(e) => setDraftMax(e.target.value)}
+            />
+          </Box>
+
+          <FormControlLabel
+            control={
+              <Switch
+                checked={showOnlyDiscount !== false}
+                onChange={(e) => onToggleShowOnlyDiscount?.(e.target.checked)}
+              />
+            }
+            label={t("Show only discounted products", {
+              defaultValue: "Show only discounted products",
+            })}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button onClick={resetFilterDialog} sx={{ textTransform: "none" }}>
+            {t("Reset", { defaultValue: "Reset" })}
+          </Button>
+          <Box sx={{ flex: 1 }} />
+          <Button
+            onClick={() => setFilterOpen(false)}
+            sx={{ textTransform: "none" }}
+          >
+            {t("Cancel")}
+          </Button>
+          <Button
+            variant="contained"
+            onClick={applyFilterDialog}
+            sx={{ textTransform: "none", fontWeight: 700 }}
+          >
+            {t("Apply", { defaultValue: "Apply" })}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

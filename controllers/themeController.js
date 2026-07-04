@@ -51,14 +51,20 @@ const DEFAULT_NAV_CONFIG = {
   },
   bottomSlots: {
     bottomleft1: "home",
-    bottomleft2: "categories",
+    bottomleft2: "search",
     center: "reels",
-    bottomright1: "favourites",
+    bottomright1: "stores",
     bottomright2: "profile",
   },
 };
 
-const ALLOWED_NAV_TEMPLATES = ["template1", "template2", "custom", "custom2"];
+const ALLOWED_NAV_TEMPLATES = [
+  "template1",
+  "template2",
+  "template3",
+  "custom",
+  "custom2",
+];
 const ALLOWED_NAV_ACTIONS = [
   "", // empty slot
   "none",

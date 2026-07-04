@@ -49,7 +49,9 @@ import ProductDetailDialog from "../components/ProductDetailDialog";
 import CompanyShowcase from "../components/CompanyShowcase";
 import StoreShowcase from "../components/StoreShowcase";
 import GiftShowcase from "../components/GiftShowcase";
+import SpecialOffersBanner from "../components/SpecialOffersBanner";
 import FindJobShowcase from "../components/FindJobShowcase";
+import HomeReelsSection from "../components/reels/HomeReelsSection";
 import BannerCarousel from "../components/BannerCarousel";
 import FilterChips from "../components/FilterChips";
 import StoreGroupSection from "../components/StoreGroupSection";
@@ -1025,6 +1027,18 @@ const MainPage = () => {
     return storeTypes.filter((st) => ids.has(String(getID(st._id))));
   }, [storeTypes, finalFilteredStoresForStoreTypeChips]);
 
+  /** Store counts per type — display-only data for the redesigned Store Type cards; does not affect filtering. */
+  const storeTypeCounts = useMemo(() => {
+    const counts = {};
+    finalFilteredStoresForStoreTypeChips.forEach((store) => {
+      const typeId = getID(store.storeTypeId);
+      if (!typeId) return;
+      const key = String(typeId);
+      counts[key] = (counts[key] || 0) + 1;
+    });
+    return counts;
+  }, [finalFilteredStoresForStoreTypeChips]);
+
   /** Products for category chips when a store type is selected (ignore category; respect city + store type). */
   const filteredProductsForCategoryChips = useMemo(() => {
     if (selectedStoreTypeId === "all") return [];
@@ -1401,6 +1415,18 @@ const MainPage = () => {
       return byNewest;
     });
   }, [finalFilteredStores, sortByNewestDiscount, sortByNearMe, userCoords]);
+
+  /** Fixed "Featured Stores" preview row on Home — VIP/most-followed first, capped for a compact carousel. */
+  const featuredStoresForHome = useMemo(() => {
+    return [...sortedFilteredStores]
+      .sort((a, b) => {
+        if (Boolean(b?.isVip) !== Boolean(a?.isVip)) {
+          return Boolean(b?.isVip) - Boolean(a?.isVip);
+        }
+        return (Number(b?.followerCount) || 0) - (Number(a?.followerCount) || 0);
+      })
+      .slice(0, 12);
+  }, [sortedFilteredStores]);
 
   const showcaseEligibleGifts = useMemo(() => {
     return (gifts || []).filter((g) => {
@@ -2247,6 +2273,7 @@ const MainPage = () => {
           storeTypes={visibleStoreTypes}
           selectedStoreTypeId={selectedStoreTypeId}
           onStoreTypeSelect={handleStoreTypeChange}
+          storeTypeCounts={storeTypeCounts}
           visibleCategories={visibleCategories}
           selectedCategory={selectedCategory}
           onCategorySelect={handleCategoryChange}
@@ -2273,6 +2300,10 @@ const MainPage = () => {
           onClearAll={clearAllFilters}
           productLayout={productLayout}
           onLayoutChange={setProductLayout}
+          priceRange={priceRange}
+          onPriceRangeChange={setPriceRange}
+          showOnlyDiscount={showOnlyDiscount}
+          onToggleShowOnlyDiscount={setShowOnlyDiscount}
         />
         {/* legacy filter content ? hidden, kept for price-range state wiring */}
         <Box sx={{ display: "none" }}>
@@ -2767,6 +2798,19 @@ const MainPage = () => {
           <>
             {!isMobile || mobileDeferredSectionsReady ? (
               <>
+                <Box sx={{ mb: { xs: 1.5, sm: 2 } }}>
+                  <HomeReelsSection />
+                </Box>
+                {featuredStoresForHome.length > 0 && (
+                  <Box sx={{ mb: { xs: 1.5, sm: 2 } }}>
+                    <StoreShowcase stores={featuredStoresForHome} />
+                  </Box>
+                )}
+                {showcaseEligibleGifts.length > 0 && (
+                  <Box sx={{ mb: { xs: 1.5, sm: 2 } }}>
+                    <SpecialOffersBanner count={showcaseEligibleGifts.length} />
+                  </Box>
+                )}
                 <FlashDealsSection
                   products={topViewedProducts}
                   onProductOpen={handleProductClick}
@@ -2848,22 +2892,18 @@ const MainPage = () => {
                 );
               }}
               components={{
-                ...(hasMoreStores
-                  ? {
-                      Footer: () => (
-                        <Box
-                          ref={loadMoreSentinelRef}
-                          sx={{
-                            width: "100%",
-                            minHeight: 24,
-                            mt: 3,
-                            mb: 2,
-                          }}
-                          aria-hidden
-                        />
-                      ),
-                    }
-                  : {}),
+                Footer: () => (
+                  <Box
+                    ref={hasMoreStores ? loadMoreSentinelRef : undefined}
+                    sx={{
+                      width: "100%",
+                      minHeight: 24,
+                      mt: 3,
+                      mb: { xs: 4, sm: 3 },
+                    }}
+                    aria-hidden
+                  />
+                ),
               }}
             />
           </>
