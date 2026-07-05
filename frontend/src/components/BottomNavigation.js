@@ -47,6 +47,13 @@ import { useNotificationDrawer } from "../hooks/useNotificationDrawer";
 import { useProfileDrawer } from "../hooks/useProfileDrawer";
 import { useVisualViewportKeyboardInset } from "../hooks/useVisualViewportKeyboardInset";
 import { isAndroidPerformanceMode } from "../utils/androidPerformance";
+import {
+  getBottomNavActiveTabStyle,
+  getBottomNavBorderTop,
+  getBottomNavInactiveIconColor,
+  getNavShellBackground,
+  resolveBottomNavSurfaceStyle,
+} from "../utils/navPageThemes";
 
 const NAV_PATH_CITY = "__nav_city__";
 const NAV_PATH_LANG = "__nav_language__";
@@ -320,7 +327,11 @@ const BottomNavigationBar = () => {
    * transform gradients (same pattern as `NavigationBar` AppBar + theme MuiAppBar note).
    */
   const bottomNavSafeAreaPb = "env(safe-area-inset-bottom, 0px)";
-  const bottomNavShellBg = isDark ? "#0b1220" : "#ffffff";
+  const bottomNavShellBg = getNavShellBackground(
+    location.pathname,
+    isDark,
+    isDark ? "#0b1220" : "#ffffff",
+  );
 
   const glassNavSx = useMemo(
     () => ({
@@ -339,7 +350,7 @@ const BottomNavigationBar = () => {
         ? {
             backdropFilter: "blur(22px) saturate(170%)",
             WebkitBackdropFilter: "blur(22px) saturate(170%)",
-            borderTop: "1px solid rgba(255,255,255,0.12)",
+            borderTop: getBottomNavBorderTop(location.pathname, true),
             borderLeft: "none",
             borderRight: "none",
             borderBottom: "none",
@@ -350,7 +361,7 @@ const BottomNavigationBar = () => {
         : {
             backdropFilter: "blur(24px) saturate(180%)",
             WebkitBackdropFilter: "blur(24px) saturate(180%)",
-            borderTop: "1px solid rgba(229,231,235,0.6)",
+            borderTop: getBottomNavBorderTop(location.pathname, false),
             borderLeft: "none",
             borderRight: "none",
             borderBottom: "none",
@@ -359,18 +370,22 @@ const BottomNavigationBar = () => {
               : "0 -8px 30px rgba(0,0,0,0.12)",
           }),
     }),
-    [isDark, isAndroidPerfMode, bottomNavSafeAreaPb],
+    [isDark, isAndroidPerfMode, bottomNavSafeAreaPb, location.pathname],
   );
 
   const bottomNavSurfaceStyle = useMemo(
     () =>
-      isDark
-        ? { background: NAV_BAR_GRADIENT_DARK_GLASS }
-        : { backgroundColor: "rgba(255,255,255,0.98)" },
-    [isDark],
+      resolveBottomNavSurfaceStyle(location.pathname, isDark, {
+        darkDefault: NAV_BAR_GRADIENT_DARK_GLASS,
+        lightDefault: "rgba(255,255,255,0.98)",
+      }),
+    [isDark, location.pathname],
   );
 
-  const inactiveIconColor = isDark ? "#a1a1aa" : "#71717a";
+  const inactiveIconColor = getBottomNavInactiveIconColor(
+    isDark,
+    location.pathname,
+  );
 
   /** Equal columns + clip: stops active label/pill painting over neighbor icons. */
   const tabBtnBaseSx = {
@@ -482,6 +497,11 @@ const BottomNavigationBar = () => {
                   isRouteTab &&
                   activeValue !== false &&
                   activeValue === item.path;
+                const activeTabStyle = getBottomNavActiveTabStyle(item.path, {
+                  compact: isTemplate3 || isAndroidPerfMode,
+                  isDark,
+                  pathname: location.pathname,
+                });
 
                 if (isTemplate3 && isRouteTab) {
                   return (
@@ -518,10 +538,10 @@ const BottomNavigationBar = () => {
                           px: 0.5,
                           borderRadius: "14px",
                           background: routeActive
-                            ? "linear-gradient(135deg, #1E6FD9 0%, #4A90E2 100%)"
+                            ? activeTabStyle.background
                             : "transparent",
                           boxShadow: routeActive
-                            ? "0 6px 16px rgba(30,111,217,0.4)"
+                            ? activeTabStyle.boxShadow
                             : "none",
                           transition: "background 200ms ease, box-shadow 200ms ease",
                         }}
@@ -781,11 +801,8 @@ const BottomNavigationBar = () => {
                             inset: 0,
                             zIndex: 0,
                             borderRadius: 9999,
-                            background:
-                              "linear-gradient(90deg, #f97316 0%, #ef4444 100%)",
-                            boxShadow: isAndroidPerfMode
-                              ? "0 2px 8px rgba(249,115,22,0.35)"
-                              : "0 10px 28px rgba(249,115,22,0.45)",
+                            background: activeTabStyle.background,
+                            boxShadow: activeTabStyle.boxShadow,
                             willChange: "transform",
                             pointerEvents: "none",
                           }}

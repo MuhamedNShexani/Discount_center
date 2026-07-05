@@ -20,8 +20,8 @@ import {
 } from "@mui/material";
 import { useTheme, alpha } from "@mui/material/styles";
 import { Store, Business } from "@mui/icons-material";
-import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
+import CardGiftcardIcon from "@mui/icons-material/CardGiftcard";
 import { giftAPI, storeAPI, brandAPI, adAPI } from "../services/api";
 import BannerCarousel from "../components/BannerCarousel";
 import { useTranslation } from "react-i18next";
@@ -40,6 +40,14 @@ import {
   expiryGiftCardBg,
 } from "../utils/expiryDate";
 
+/** Matches `SpecialOffersBanner` on MainPage */
+const GIFT_ACCENT = "#a855f7";
+const GIFT_ACCENT_DEEP = "#7c3aed";
+const GIFT_GRADIENT_ICON = "linear-gradient(135deg, #a855f7 0%, #ec4899 100%)";
+const GIFT_GRADIENT_BTN = "linear-gradient(135deg, #a855f7 0%, #7c3aed 100%)";
+const GIFT_GRADIENT_BTN_HOVER =
+  "linear-gradient(135deg, #9333ea 0%, #6d28d9 100%)";
+
 const Gifts = () => {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
@@ -51,10 +59,10 @@ const Gifts = () => {
     borderRadius: 3,
     overflow: "hidden",
     bgcolor: isDark ? alpha("#fff", 0.03) : "background.paper",
-    border: `1px solid ${isDark ? alpha("#fff", 0.08) : alpha("#1e6fd9", 0.08)}`,
+    border: `1px solid ${isDark ? alpha("#fff", 0.08) : alpha(GIFT_ACCENT, 0.18)}`,
     boxShadow: isDark
       ? "0 4px 20px rgba(0,0,0,0.35)"
-      : "0 4px 16px rgba(30,111,217,0.06)",
+      : "0 4px 16px rgba(168,85,247,0.12)",
   };
   const skeletonSx = (tone = "base") => ({
     bgcolor: tone === "highlight" ? skeletonHighlight : skeletonBase,
@@ -259,17 +267,15 @@ const Gifts = () => {
           borderRadius: 2,
           overflow: "hidden",
           cursor: "pointer",
-          background:
-            theme.palette.mode === "dark"
-              ? "linear-gradient(135deg, #4A90E2 0%, #1E6FD9 100%)"
-              : "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
+          background: isDark
+            ? "linear-gradient(120deg, #3b2350 0%, #1e1533 100%)"
+            : "linear-gradient(120deg, #f3e8ff 0%, #ede9fe 100%)",
           border: `1px solid ${
-            theme.palette.mode === "dark" ? "#4a5568" : "#e2e8f0"
+            isDark ? alpha(GIFT_ACCENT, 0.28) : alpha(GIFT_ACCENT, 0.18)
           }`,
-          boxShadow:
-            theme.palette.mode === "dark"
-              ? "0 4px 16px rgba(0,0,0,0.3)"
-              : "0 4px 16px rgba(0,0,0,0.1)",
+          boxShadow: isDark
+            ? "0 4px 18px rgba(168,85,247,0.18)"
+            : "0 4px 16px rgba(168,85,247,0.12)",
           transition: "all 0.3s ease",
           "&:hover": {
             transform: "translateY(-2px)",
@@ -435,7 +441,7 @@ const Gifts = () => {
                     sx={{
                       fontSize: { xs: 12, sm: 16, md: 16 },
                       mr: 1,
-                      color: "var(--brand-light-orange)",
+                      color: GIFT_ACCENT,
                       flexShrink: 0,
                     }}
                   />
@@ -479,22 +485,20 @@ const Gifts = () => {
                         px: 1,
                         py: 0.5,
                         borderRadius: 1,
-                        backgroundColor:
-                          theme.palette.mode === "dark"
-                            ? "rgba(255, 122, 26, 0.1)"
-                            : "rgba(255, 122, 26, 0.05)",
+                        backgroundColor: isDark
+                          ? alpha(GIFT_ACCENT, 0.15)
+                          : alpha(GIFT_ACCENT, 0.08),
                         border: `1px solid ${
-                          theme.palette.mode === "dark"
-                            ? "rgba(255, 122, 26, 0.2)"
-                            : "rgba(255, 122, 26, 0.1)"
+                          isDark
+                            ? alpha(GIFT_ACCENT, 0.28)
+                            : alpha(GIFT_ACCENT, 0.16)
                         }`,
                         "&:hover": {
                           textDecoration: "underline",
-                          color: "var(--brand-light-orange)",
-                          backgroundColor:
-                            theme.palette.mode === "dark"
-                              ? "rgba(255, 122, 26, 0.2)"
-                              : "rgba(255, 122, 26, 0.1)",
+                          color: GIFT_ACCENT_DEEP,
+                          backgroundColor: isDark
+                            ? alpha(GIFT_ACCENT, 0.24)
+                            : alpha(GIFT_ACCENT, 0.14),
                         },
                       }}
                     >
@@ -525,7 +529,7 @@ const Gifts = () => {
                   sx={{
                     fontSize: 16,
                     mr: 1,
-                    color: "var(--brand-light-orange)",
+                    color: GIFT_ACCENT,
                     flexShrink: 0,
                   }}
                 />
@@ -572,7 +576,7 @@ const Gifts = () => {
             ...skeletonSx("highlight"),
             boxShadow: isDark
               ? "0 8px 32px rgba(0,0,0,0.4)"
-              : "0 8px 32px rgba(30,111,217,0.15)",
+              : "0 8px 32px rgba(168,85,247,0.15)",
           }}
         />
         <Box sx={{ mb: 2, display: "flex", justifyContent: "center" }}>
@@ -688,41 +692,57 @@ const Gifts = () => {
           }}
         />
       </Box>
-      {/* Header */}
-      {/* <Box display="flex" alignItems="center" mb={4}>
-        <CardGiftcard
+
+      {/* Header — matches MainPage Special Offers banner accent */}
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 1.5,
+          mb: 3,
+          mt: { xs: 2, md: 3 },
+        }}
+      >
+        <Box
           sx={{
-            fontSize: { xs: 32, sm: 36, md: 40 },
-            mr: { xs: 1, sm: 2 },
-            color: "var(--brand-light-orange)",
+            width: 48,
+            height: 48,
+            borderRadius: 2.5,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+            background: GIFT_GRADIENT_ICON,
+            boxShadow: "0 4px 12px rgba(168,85,247,0.4)",
           }}
-        />
+        >
+          <CardGiftcardIcon sx={{ color: "#fff", fontSize: "1.5rem" }} />
+        </Box>
         <Box>
           <Typography
-            variant="h4"
-            component="h1"
-            gutterBottom
+            variant="h5"
             sx={{
-              color: theme.palette.mode === "dark" ? "#FFA94D" : "#FF7A1A",
-              fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" },
+              fontWeight: 900,
+              letterSpacing: "-0.02em",
+              color: isDark ? "#fff" : "#1f0a3d",
+              lineHeight: 1.2,
             }}
           >
             {t("Gifts")}
           </Typography>
           <Typography
-            variant="body1"
+            variant="body2"
             sx={{
-              color: theme.palette.text.secondary,
-              fontSize: { xs: "0.875rem", sm: "1rem" },
+              color: isDark ? alpha("#fff", 0.65) : alpha("#1f0a3d", 0.65),
+              fontSize: { xs: "0.8rem", sm: "0.875rem" },
             }}
           >
-            {t("Discover amazing gifts from stores and brands")}
+            {t("Special Offers & Discounts", {
+              defaultValue: "Special Offers & Discounts",
+            })}
           </Typography>
         </Box>
-      </Box> */}
-
-      {/* Filters */}
-      {/* {renderFilters()} */}
+      </Box>
 
       {/* Tabs */}
       <Paper
@@ -730,14 +750,11 @@ const Gifts = () => {
         sx={{
           mb: 4,
           borderRadius: 2,
-          backgroundColor:
-            theme.palette.mode === "dark"
-              ? "rgba(255,255,255,0.05)"
-              : "rgba(255, 122, 26, 0.05)",
+          backgroundColor: isDark
+            ? alpha(GIFT_ACCENT, 0.08)
+            : alpha(GIFT_ACCENT, 0.06),
           border: `1px solid ${
-            theme.palette.mode === "dark"
-              ? "rgba(255,255,255,0.1)"
-              : "rgba(255, 122, 26, 0.1)"
+            isDark ? alpha(GIFT_ACCENT, 0.22) : alpha(GIFT_ACCENT, 0.14)
           }`,
         }}
       >
@@ -747,10 +764,24 @@ const Gifts = () => {
           variant="scrollable"
           scrollButtons="auto"
           sx={{
+            "& .MuiTabs-indicator": {
+              background: GIFT_GRADIENT_BTN,
+              height: 3,
+              borderRadius: 2,
+            },
             "& .MuiTab-root": {
               textTransform: "none",
               width: { xs: "125px", sm: "100px", md: "100%" },
               fontSize: { xs: "0.875rem", sm: "1rem" },
+              fontWeight: 600,
+              color: isDark ? alpha("#fff", 0.65) : alpha("#1f0a3d", 0.65),
+            },
+            "& .MuiTab-root.Mui-selected": {
+              color: isDark ? GIFT_ACCENT : GIFT_ACCENT_DEEP,
+              fontWeight: 800,
+            },
+            "& .MuiTab-root .MuiSvgIcon-root": {
+              color: "inherit",
             },
           }}
         >
@@ -907,7 +938,7 @@ const Gifts = () => {
       >
         <DialogTitle>
           <Box display="flex" alignItems="center" gap={1}>
-            <ShoppingCartIcon color="primary" />
+            <CardGiftcardIcon sx={{ color: GIFT_ACCENT }} />
             <Typography variant="h6" component="span">
               {t("Gift Information")}
             </Typography>
@@ -936,28 +967,33 @@ const Gifts = () => {
               )}
               <Box display="flex" flexDirection="column" gap={1}>
                 <Typography
-                  variant="h6"
-                  color="primary"
-                  align="center"
+                  variant="h8"
+                  align="right"
+                  textAlign="right"
+                  justifyContent="right"
                   gutterBottom
+                  sx={{ color: isDark ? "#fff" : "#000", fontWeight: 800 }}
                 >
                   {locDescription(selectedGift)}
                 </Typography>
 
                 {selectedGift.brandId && (
-                  <Box display="flex" alignItems="center" gap={1}>
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    gap={1}
+                    sx={{ cursor: "pointer" }}
+                    onClick={() => {
+                      navigate(`/brands/${selectedGift.brandId._id}?tab=gifts`);
+                    }}
+                  >
                     <Business fontSize="small" color="action" />
                     <Typography
                       variant="body2"
                       color="text.secondary"
-                      sx={{ cursor: "pointer" }}
-                      onClick={() => {
-                        navigate(
-                          `/brands/${selectedGift.brandId._id}?tab=gifts`,
-                        );
-                      }}
+                      component="span"
                     >
-                      {t("Brand")}: {locName(selectedGift.brandId)}
+                      {locName(selectedGift.brandId)}
                     </Typography>
                   </Box>
                 )}
@@ -965,12 +1001,6 @@ const Gifts = () => {
                 {Array.isArray(selectedGift.storeId) &&
                   selectedGift.storeId.length > 0 && (
                     <Box sx={{ mt: 1 }}>
-                      <Box display="flex" alignItems="center" gap={1}>
-                        <Store fontSize="small" color="action" />
-                        <Typography variant="body2" color="text.secondary">
-                          {t("Stores")}:
-                        </Typography>
-                      </Box>
                       <Box
                         sx={{
                           display: "flex",
@@ -1032,7 +1062,13 @@ const Gifts = () => {
           <Button
             onClick={() => setDialogOpen(false)}
             variant="contained"
-            color="primary"
+            sx={{
+              textTransform: "none",
+              fontWeight: 700,
+              background: GIFT_GRADIENT_BTN,
+              boxShadow: "0 4px 12px rgba(124,58,237,0.4)",
+              "&:hover": { background: GIFT_GRADIENT_BTN_HOVER },
+            }}
           >
             {t("Close")}
           </Button>

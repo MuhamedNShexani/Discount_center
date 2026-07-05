@@ -20,10 +20,6 @@ import {
   Paper,
   alpha,
   CardContent,
-  Tabs,
-  Tab,
-  ToggleButton,
-  ToggleButtonGroup,
 } from "@mui/material";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { storeAPI, adAPI, storeTypeAPI } from "../services/api";
@@ -31,8 +27,6 @@ import BannerCarousel from "../components/BannerCarousel";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import SearchIcon from "@mui/icons-material/Search";
-import ViewListIcon from "@mui/icons-material/ViewList";
-import GridViewIcon from "@mui/icons-material/GridView";
 import Loader from "../components/Loader";
 import { getSyncErrorHint } from "../utils/apiError";
 import { useTranslation } from "react-i18next";
@@ -41,6 +35,15 @@ import { resolveMediaUrl } from "../utils/mediaUrl";
 import { useLocalizedContent } from "../hooks/useLocalizedContent";
 import { storeMatchesSelectedCity } from "../utils/cityMatch";
 import { getAllLocalizedFieldValues } from "../utils/localize";
+
+/** Matches Stores list page — light blue accent */
+const STORE_ACCENT = "#38bdf8";
+const STORE_ACCENT_DEEP = "#0284c7";
+const STORE_GRADIENT_ICON = "linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%)";
+const STORE_GRADIENT_BTN = "linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)";
+const STORE_GRADIENT_BTN_HOVER =
+  "linear-gradient(135deg, #0284c7 0%, #0369a1 100%)";
+
 function getID(id) {
   if (typeof id === "string") return id;
   if (id && typeof id === "object") {
@@ -75,17 +78,19 @@ const StoreCard = ({ store, index, isDark, onClick, locName, t }) => {
             : "#ffffff",
           border: isDark
             ? "1px solid rgba(255,255,255,0.07)"
-            : "1px solid #eef0f4",
+            : `1px solid ${alpha(STORE_ACCENT, 0.18)}`,
           boxShadow: isDark
             ? "0 4px 16px rgba(0,0,0,0.3)"
-            : "0 2px 12px rgba(0,0,0,0.05)",
+            : "0 2px 12px rgba(14,165,233,0.08)",
           transition: "all 0.25s cubic-bezier(0.4,0,0.2,1)",
           "&:hover": {
             transform: "translateY(-3px)",
             boxShadow: isDark
               ? "0 8px 28px rgba(0,0,0,0.45)"
-              : "0 8px 24px rgba(245,158,11,0.16)",
-            borderColor: isDark ? "rgba(245,158,11,0.3)" : "#fde68a",
+              : "0 8px 24px rgba(14,165,233,0.16)",
+            borderColor: isDark
+              ? alpha(STORE_ACCENT, 0.35)
+              : alpha(STORE_ACCENT, 0.4),
           },
           "&:active": { transform: "translateY(0)" },
         }}
@@ -241,8 +246,6 @@ const StoreList = () => {
   const [error, setError] = useState("");
   const [bannerAds, setBannerAds] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeStoreTab, setActiveStoreTab] = useState("all");
-  const [viewMode, setViewMode] = useState("grid");
 
   const storeTypeParam = searchParams.get("type");
   const [selectedTypeId, setSelectedTypeId] = useState(storeTypeParam || "all");
@@ -261,7 +264,10 @@ const StoreList = () => {
       setError(
         err.response?.data?.message ||
           err.response?.data?.msg ||
-          getSyncErrorHint(err, t("Network error. Please check your connection.")),
+          getSyncErrorHint(
+            err,
+            t("Network error. Please check your connection."),
+          ),
       );
     } finally {
       setLoading(false);
@@ -318,31 +324,8 @@ const StoreList = () => {
       });
     }
 
-    const sorted = [...list];
-    if (activeStoreTab === "popular") {
-      sorted.sort((a, b) => {
-        const bScore = (b.isVip ? 100000 : 0) + (Number(b.followerCount) || 0);
-        const aScore = (a.isVip ? 100000 : 0) + (Number(a.followerCount) || 0);
-        return bScore - aScore;
-      });
-    } else if (activeStoreTab === "new") {
-      sorted.sort(
-        (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
-      );
-    } else if (activeStoreTab === "nearby") {
-      sorted.sort((a, b) => {
-        const aHasLocation = Boolean(
-          a.locationInfo?.googleMaps || a.locationInfo?.appleMaps || a.locationInfo?.waze,
-        );
-        const bHasLocation = Boolean(
-          b.locationInfo?.googleMaps || b.locationInfo?.appleMaps || b.locationInfo?.waze,
-        );
-        return Number(bHasLocation) - Number(aHasLocation);
-      });
-    }
-
-    return sorted;
-  }, [stores, selectedTypeId, selectedCity, searchQuery, activeStoreTab]);
+    return list;
+  }, [stores, selectedTypeId, selectedCity, searchQuery]);
 
   const handleTypeSelect = (id) => {
     setSelectedTypeId(id);
@@ -369,11 +352,10 @@ const StoreList = () => {
 
   const handleStoreClick = (store) => navigate(`/stores/${store._id}`);
 
-  const accent = theme.palette.primary.main;
-  const primaryOnSurface =
-    theme.palette.primary.dark ||
-    (theme.palette.mode === "light" ? "#1565c0" : accent);
-
+  const skeletonBase = isDark ? alpha("#fff", 0.08) : alpha("#0d111c", 0.07);
+  const skeletonHighlight = isDark
+    ? alpha("#fff", 0.12)
+    : alpha("#0d111c", 0.1);
   const storeTypeScrollRef = useRef(null);
   const [, setShowScrollLeft] = useState(false);
   const [, setShowScrollRight] = useState(false);
@@ -417,16 +399,15 @@ const StoreList = () => {
     };
   }, [updateStoreTypeScrollHints, storeTypes, loading]);
 
-  /** Match MainPage `FilterChips` store-type pill styles */
+  /** Store-type filter chips */
   const mainPageStyleActivePillSx = {
-    background:
-      "linear-gradient(135deg, var(--brand-primary-blue, #1E6FD9) 0%, #4A90E2 100%)",
+    background: STORE_GRADIENT_BTN,
     color: "white",
     fontWeight: 700,
     border: "none",
-    boxShadow: "0 2px 8px rgba(30,111,217,0.35)",
+    boxShadow: "0 2px 8px rgba(14,165,233,0.35)",
     "&:hover": {
-      background: "linear-gradient(135deg, #1660c2 0%, #3a7fd2 100%)",
+      background: STORE_GRADIENT_BTN_HOVER,
     },
     "&.MuiChip-root": { height: 34 },
   };
@@ -447,11 +428,6 @@ const StoreList = () => {
     ...(active ? mainPageStyleActivePillSx : mainPageStyleInactivePillSx),
     flexShrink: 0,
   });
-
-  const skeletonBase = isDark ? alpha("#fff", 0.08) : alpha("#0d111c", 0.07);
-  const skeletonHighlight = isDark
-    ? alpha("#fff", 0.12)
-    : alpha("#0d111c", 0.1);
 
   if (loading) {
     return (
@@ -479,7 +455,7 @@ const StoreList = () => {
                 bgcolor: skeletonBase,
                 boxShadow: isDark
                   ? "0 8px 32px rgba(0,0,0,0.4)"
-                  : "0 8px 32px rgba(30,111,217,0.15)",
+                  : "0 8px 32px rgba(14,165,233,0.15)",
               }}
             />
           </Box>
@@ -511,9 +487,13 @@ const StoreList = () => {
                 <Skeleton
                   variant="rounded"
                   animation="wave"
-                  width={{ xs: "70%", sm: 180 }}
                   height={28}
-                  sx={{ mb: 1, borderRadius: 1, bgcolor: skeletonBase }}
+                  sx={{
+                    mb: 1,
+                    borderRadius: 1,
+                    bgcolor: skeletonBase,
+                    width: { xs: "70%", sm: 180 },
+                  }}
                 />
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
                   <Skeleton
@@ -646,7 +626,7 @@ const StoreList = () => {
           }}
         />
 
-        {/* Page header */}
+        {/* Header — matches Gifts / Find Job page chrome */}
         <Box
           sx={{
             mb: 2.5,
@@ -655,6 +635,7 @@ const StoreList = () => {
             alignItems: { xs: "stretch", sm: "flex-start" },
             justifyContent: "space-between",
             gap: 2,
+            mt: { xs: 2, md: 3 },
           }}
         >
           <Box sx={{ display: "flex", gap: 1.5, alignItems: "center" }}>
@@ -663,14 +644,12 @@ const StoreList = () => {
                 width: 48,
                 height: 48,
                 borderRadius: 2.5,
-                background: isDark
-                  ? `linear-gradient(135deg, ${alpha(accent, 0.85)}, ${alpha("#4a90e2", 0.75)})`
-                  : `linear-gradient(135deg, ${accent}, ${alpha(accent, 0.75)})`,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 flexShrink: 0,
-                boxShadow: `0 8px 24px ${alpha(accent, 0.35)}`,
+                background: STORE_GRADIENT_ICON,
+                boxShadow: "0 4px 12px rgba(14,165,233,0.4)",
               }}
             >
               <StorefrontIcon sx={{ color: "#fff", fontSize: "1.5rem" }} />
@@ -681,15 +660,25 @@ const StoreList = () => {
                 sx={{
                   fontWeight: 900,
                   letterSpacing: "-0.02em",
-                  color: "text.primary",
+                  color: isDark ? "#fff" : "#0c4a6e",
                   lineHeight: 1.2,
                 }}
               >
                 {t("Stores")}
               </Typography>
-              <Box
-                sx={{ display: "flex", flexWrap: "wrap", gap: 0.75, mt: 0.75 }}
+              <Typography
+                variant="body2"
+                sx={{
+                  color: isDark ? alpha("#fff", 0.65) : alpha("#0c4a6e", 0.65),
+                  fontSize: { xs: "0.8rem", sm: "0.875rem" },
+                  mb: 0.75,
+                }}
               >
+                {t("Discover local shops", {
+                  defaultValue: "Discover local shops",
+                })}
+              </Typography>
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
                 <Chip
                   size="small"
                   label={`${filteredStores.length} ${t("Stores")}`}
@@ -697,13 +686,13 @@ const StoreList = () => {
                     fontWeight: 700,
                     ...(isDark
                       ? {
-                          bgcolor: alpha(accent, 0.22),
+                          bgcolor: alpha(STORE_ACCENT, 0.22),
                           color: alpha("#fff", 0.95),
                         }
                       : {
-                          bgcolor: alpha(primaryOnSurface, 0.1),
-                          color: primaryOnSurface,
-                          border: `1px solid ${alpha(primaryOnSurface, 0.35)}`,
+                          bgcolor: alpha(STORE_ACCENT, 0.1),
+                          color: STORE_ACCENT_DEEP,
+                          border: `1px solid ${alpha(STORE_ACCENT, 0.35)}`,
                         }),
                   }}
                 />
@@ -716,10 +705,10 @@ const StoreList = () => {
                   variant="outlined"
                   sx={{
                     fontWeight: 600,
-                    color: isDark ? alpha("#fff", 0.9) : "text.primary",
+                    color: isDark ? alpha("#fff", 0.9) : STORE_ACCENT_DEEP,
                     borderColor: isDark
-                      ? alpha(accent, 0.4)
-                      : alpha(theme.palette.text.primary, 0.22),
+                      ? alpha(STORE_ACCENT, 0.4)
+                      : alpha(STORE_ACCENT, 0.35),
                   }}
                 />
               </Box>
@@ -746,74 +735,38 @@ const StoreList = () => {
               "& .MuiOutlinedInput-root": {
                 borderRadius: 3,
                 bgcolor: isDark ? alpha("#fff", 0.04) : "#fff",
+                "& fieldset": {
+                  borderColor: isDark
+                    ? "rgba(255,255,255,0.12)"
+                    : alpha(STORE_ACCENT, 0.2),
+                },
+                "&:hover fieldset": {
+                  borderColor: STORE_ACCENT,
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: STORE_ACCENT_DEEP,
+                  borderWidth: 1.5,
+                },
               },
             }}
           />
         </Box>
 
+        {/* Store types */}
         <Paper
           elevation={0}
           sx={{
-            mb: 2,
-            p: 0.75,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 1,
-            borderRadius: 3,
-            bgcolor: isDark ? alpha("#fff", 0.04) : "#fff",
-            border: `1px solid ${isDark ? alpha("#fff", 0.08) : alpha("#000", 0.06)}`,
+            mb: 3,
+            borderRadius: 2,
+            backgroundColor: isDark
+              ? alpha(STORE_ACCENT, 0.08)
+              : alpha(STORE_ACCENT, 0.06),
+            border: `1px solid ${
+              isDark ? alpha(STORE_ACCENT, 0.22) : alpha(STORE_ACCENT, 0.14)
+            }`,
           }}
         >
-          <Tabs
-            value={activeStoreTab}
-            onChange={(_, value) => setActiveStoreTab(value)}
-            variant="scrollable"
-            scrollButtons="auto"
-            sx={{
-              minHeight: 38,
-              flex: 1,
-              "& .MuiTab-root": {
-                minHeight: 38,
-                textTransform: "none",
-                fontWeight: 800,
-                borderRadius: 2,
-              },
-            }}
-          >
-            <Tab value="all" label={t("All")} />
-            <Tab value="nearby" label={t("Nearby", { defaultValue: "Nearby" })} />
-            <Tab value="popular" label={t("Popular", { defaultValue: "Popular" })} />
-            <Tab value="new" label={t("New", { defaultValue: "New" })} />
-          </Tabs>
-
-          <ToggleButtonGroup
-            exclusive
-            size="small"
-            value={viewMode}
-            onChange={(_, value) => value && setViewMode(value)}
-            sx={{
-              flexShrink: 0,
-              "& .MuiToggleButton-root": {
-                width: 36,
-                height: 36,
-                p: 0,
-                borderRadius: "10px !important",
-              },
-            }}
-          >
-            <ToggleButton value="grid" aria-label={t("Grid view", { defaultValue: "Grid view" })}>
-              <GridViewIcon fontSize="small" />
-            </ToggleButton>
-            <ToggleButton value="list" aria-label={t("List view", { defaultValue: "List view" })}>
-              <ViewListIcon fontSize="small" />
-            </ToggleButton>
-          </ToggleButtonGroup>
-        </Paper>
-
-        {/* Store types — same chip + scroll styling as MainPage `FilterChips` */}
-        <Box sx={{ mb: 3 }}>
-          <Box sx={{ position: "relative", pb: 0.25 }}>
+          <Box sx={{ position: "relative", pb: 0.25, pt: 1 }}>
             <Box
               ref={storeTypeScrollRef}
               onScroll={updateStoreTypeScrollHints}
@@ -829,8 +782,8 @@ const StoreList = () => {
                 scrollbarWidth: "auto",
                 scrollbarGutter: "stable",
                 scrollbarColor: isDark
-                  ? `${alpha(accent, 0.55)} ${alpha("#fff", 0.08)}`
-                  : `${alpha(primaryOnSurface, 0.45)} ${alpha("#000", 0.08)}`,
+                  ? `${alpha(STORE_ACCENT, 0.55)} ${alpha("#fff", 0.08)}`
+                  : `${alpha(STORE_ACCENT_DEEP, 0.45)} ${alpha("#000", 0.08)}`,
                 "&::-webkit-scrollbar": { height: 10 },
                 "&::-webkit-scrollbar-track": {
                   borderRadius: 5,
@@ -846,8 +799,8 @@ const StoreList = () => {
                     isDark ? alpha("#0d111c", 1) : alpha("#f9fafb", 1)
                   }`,
                   backgroundColor: isDark
-                    ? alpha(accent, 0.55)
-                    : alpha(primaryOnSurface, 0.45),
+                    ? alpha(STORE_ACCENT, 0.55)
+                    : alpha(STORE_ACCENT_DEEP, 0.45),
                 },
               }}
             >
@@ -877,21 +830,18 @@ const StoreList = () => {
               })}
             </Box>
           </Box>
-        </Box>
+        </Paper>
 
         {/* Grid — same as BrandCompanyList */}
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns:
-              viewMode === "list"
-                ? "1fr"
-                : {
-                    xs: "repeat(2, 1fr)",
-                    sm: "repeat(3, 1fr)",
-                    md: "repeat(4, 1fr)",
-                    lg: "repeat(5, 1fr)",
-                  },
+            gridTemplateColumns: {
+              xs: "repeat(2, 1fr)",
+              sm: "repeat(3, 1fr)",
+              md: "repeat(4, 1fr)",
+              lg: "repeat(5, 1fr)",
+            },
             gap: { xs: 1.2, sm: 1.5, md: 2 },
           }}
         >
@@ -921,15 +871,18 @@ const StoreList = () => {
               px: 3,
               textAlign: "center",
               borderRadius: 4,
-              border: "1px dashed",
-              borderColor: alpha(accent, 0.25),
-              bgcolor: isDark ? alpha("#1a2235", 0.5) : alpha(accent, 0.04),
+              border: `1px dashed ${alpha(STORE_ACCENT, 0.35)}`,
+              bgcolor: isDark
+                ? alpha(STORE_ACCENT, 0.06)
+                : alpha(STORE_ACCENT, 0.04),
             }}
           >
             <StorefrontIcon
               sx={{
                 fontSize: 72,
-                color: alpha(theme.palette.text.secondary, 0.45),
+                color: isDark
+                  ? alpha(STORE_ACCENT, 0.45)
+                  : alpha(STORE_ACCENT, 0.35),
                 mb: 2,
               }}
             />

@@ -50,6 +50,9 @@ import {
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import { useLocalizedContent } from "../hooks/useLocalizedContent";
 import ProductDetailDialog from "../components/ProductDetailDialog";
+import CategoryBrowseCard, {
+  CATEGORY_BROWSE_GRID_SX,
+} from "../components/CategoryBrowseCard";
 import ApiConnectionErrorPanel from "../components/ApiConnectionErrorPanel";
 import { resolveConnectionFailure } from "../utils/apiError";
 import { productStoreMatchesCity } from "../utils/cityMatch";
@@ -727,20 +730,16 @@ const ProductCategory = () => {
               </Box>
 
               {loading ? (
-                <Box
-                  sx={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(2, 1fr)",
-                    gap: 1,
-                    px: 1,
-                  }}
-                >
+                <Box sx={{ ...CATEGORY_BROWSE_GRID_SX, px: 1 }}>
                   {[1, 2, 3, 4, 5, 6].map((i) => (
                     <Skeleton
                       key={i}
                       variant="rounded"
-                      height={110}
-                      sx={{ borderRadius: 3 }}
+                      sx={{
+                        width: "100%",
+                        aspectRatio: "4 / 3",
+                        borderRadius: "16px",
+                      }}
                     />
                   ))}
                 </Box>
@@ -760,75 +759,15 @@ const ProductCategory = () => {
                   </Typography>
                 </Box>
               ) : (
-                <Box
-                  sx={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(2, 1fr)",
-                    gap: 1,
-                    px: 1,
-                  }}
-                >
+                <Box sx={{ ...CATEGORY_BROWSE_GRID_SX, px: 1 }}>
                   {categories.map((category) => (
-                    <Box
+                    <CategoryBrowseCard
                       key={category._id}
+                      label={locName(category)}
+                      image={category.image}
+                      icon={category.icon}
                       onClick={() => handleCategoryChange(category)}
-                      sx={{
-                        borderRadius: 3,
-                        overflow: "hidden",
-                        backgroundColor: cardBg,
-                        boxShadow: isDark
-                          ? "0 2px 8px rgba(0,0,0,0.35)"
-                          : "0 2px 8px rgba(0,0,0,0.07)",
-                        border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)"}`,
-                        cursor: "pointer",
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        p: 1.5,
-                        gap: 0.75,
-                        transition: "all 0.18s ease",
-                        "&:active": { transform: "scale(0.97)", opacity: 0.85 },
-                      }}
-                    >
-                      <Avatar
-                        src={
-                          category.image
-                            ? resolveMediaUrl(category.image)
-                            : undefined
-                        }
-                        sx={{
-                          width: 58,
-                          height: 58,
-                          background:
-                            "linear-gradient(135deg, var(--color-primary,#1E6FD9) 0%, var(--brand-accent-orange,#ff8c00) 100%)",
-                          color: "white",
-                          fontSize: "1.6rem",
-                          boxShadow: "0 3px 10px rgba(30,111,217,0.25)",
-                        }}
-                      >
-                        {!category.image &&
-                          (category.icon ||
-                            (locName(category) || "").charAt(0))}
-                      </Avatar>
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          fontWeight: 700,
-                          fontSize: "0.78rem",
-                          textAlign: "center",
-                          color: isDark
-                            ? "rgba(255,255,255,0.88)"
-                            : "rgba(0,0,0,0.8)",
-                          lineHeight: 1.3,
-                          display: "-webkit-box",
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: "vertical",
-                          overflow: "hidden",
-                        }}
-                      >
-                        {locName(category)}
-                      </Typography>
-                    </Box>
+                    />
                   ))}
                 </Box>
               )}
@@ -1797,20 +1736,16 @@ const ProductCategory = () => {
               <Skeleton variant="circular" width={20} height={20} />
               <Skeleton variant="text" width={100} height={22} />
             </Box>
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: "repeat(2, 1fr)",
-                gap: 1,
-                px: 1,
-              }}
-            >
+            <Box sx={{ ...CATEGORY_BROWSE_GRID_SX, px: 1 }}>
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <Skeleton
                   key={i}
                   variant="rounded"
-                  height={110}
-                  sx={{ borderRadius: 3 }}
+                  sx={{
+                    width: "100%",
+                    aspectRatio: "4 / 3",
+                    borderRadius: "16px",
+                  }}
                 />
               ))}
             </Box>

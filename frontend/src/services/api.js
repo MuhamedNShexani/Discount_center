@@ -94,6 +94,16 @@ export const cityAPI = {
 // StoreType API calls
 export const storeTypeAPI = {
   getAll: () => api.get("/store-types"),
+  create: (data) => api.post("/store-types", data),
+  update: (id, data) => api.put(`/store-types/${id}`, data),
+  delete: (id) => api.delete(`/store-types/${id}`),
+  uploadPicture: (id, file) => {
+    const formData = new FormData();
+    formData.append("image", file);
+    return api.post(`/store-types/${id}/picture`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
 };
 
 // BrandType API calls

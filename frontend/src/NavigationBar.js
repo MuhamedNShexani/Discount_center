@@ -115,6 +115,11 @@ import {
   openWhatsAppLink,
 } from "./utils/openWhatsAppLink";
 import { isAndroidPerformanceMode } from "./utils/androidPerformance";
+import {
+  getNavBarBackground,
+  getNavMenuItemSelectedBg,
+  getNavRouteIconActiveSx,
+} from "./utils/navPageThemes";
 
 // Enable notification center (bell + menu)
 const NOTIFICATIONS_CENTER_ENABLED = true;
@@ -160,6 +165,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
   const isSmUp = !useIsMobileLayout();
   const { triggerRefresh } = useContentRefresh();
   const { navConfig } = useActiveTheme();
+  const navTemplate = navConfig?.template || "template1";
   const { openDraftCart } = useDraftCartDrawer();
   const { openNotifications } = useNotificationDrawer();
   const { openProfile, isOpen: isProfileOpen } = useProfileDrawer();
@@ -170,7 +176,17 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
   /** Search has its own input chrome — hide top bar on mobile. */
   const hideMobileNavOnSearch =
     !isSmUp && /^\/search(\/|$)/.test(location.pathname);
-  const hideMobileNavChrome = hideMobileNavOnReels || hideMobileNavOnSearch;
+  /** Store-type browse pages ship their own sticky header. */
+  const hideMobileNavOnStoreTypes =
+    !isSmUp && /^\/store-types(\/|$)/.test(location.pathname);
+  /** Privacy policy is a focused reading page — hide top bar on mobile. */
+  const hideMobileNavOnPrivacyPolicy =
+    !isSmUp && /^\/privacy-policy(\/|$)/.test(location.pathname);
+  const hideMobileNavChrome =
+    hideMobileNavOnReels ||
+    hideMobileNavOnSearch ||
+    hideMobileNavOnStoreTypes ||
+    hideMobileNavOnPrivacyPolicy;
   /** Toolbar refresh: scroll home to top + clear saved scroll, then bump refreshKey (all routes). */
   const handleNavRefresh = useCallback(() => {
     if (location.pathname === "/") {
@@ -670,10 +686,10 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
 
   useEffect(() => {
     if (isSmUp) return;
-    if (!/^\/reels(\/|$)/.test(location.pathname)) {
+    if (!hideMobileNavChrome) {
       setShowMobileNavbar(true);
     }
-  }, [isSmUp, location.pathname]);
+  }, [isSmUp, hideMobileNavChrome]);
 
   useEffect(() => {
     if (isSmUp) {
@@ -681,7 +697,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
       return undefined;
     }
 
-    if (/^\/reels(\/|$)/.test(location.pathname)) {
+    if (hideMobileNavChrome) {
       return undefined;
     }
 
@@ -714,13 +730,17 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [isSmUp, location.pathname]);
+  }, [isSmUp, hideMobileNavChrome]);
 
   const navAppBarStyle = useMemo(
     () => ({
-      background: isDarkNav ? NAV_BAR_GRADIENT_DARK_GLASS : NAV_BAR_GRADIENT,
+      background: getNavBarBackground(
+        location.pathname,
+        isDarkNav,
+        isDarkNav ? NAV_BAR_GRADIENT_DARK_GLASS : NAV_BAR_GRADIENT,
+      ),
     }),
-    [isDarkNav],
+    [isDarkNav, location.pathname],
   );
 
   const navIconBtnSx = useMemo(
@@ -844,7 +864,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
           }}
         >
           {/* Mobile navbar templates */}
-          {!isSmUp && (navConfig?.template || "template1") === "template1" && (
+          {!isSmUp && (navTemplate === "template1" || navTemplate === "template3") && (
             <Box
               sx={{
                 display: "flex",
@@ -957,7 +977,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
             </Box>
           )}
 
-          {!isSmUp && (navConfig?.template || "template1") === "template2" && (
+          {!isSmUp && navTemplate === "template2" && (
             <Box
               sx={{
                 display: "flex",
@@ -1011,9 +1031,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
             </Box>
           )}
 
-          {!isSmUp &&
-            ((navConfig?.template || "template1") === "custom" ||
-              (navConfig?.template || "template1") === "custom2") && (
+          {!isSmUp && (navTemplate === "custom" || navTemplate === "custom2") && (
               <Box
                 sx={{
                   display: "flex",
@@ -1026,7 +1044,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                 {(() => {
                   const top = navConfig?.topSlots || {};
                   const sxBtn = navIconBtnSx;
-                  const tpl = navConfig?.template || "template1";
+                  const tpl = navTemplate;
 
                   const map = {
                     home: { to: "/", icon: <HomeIcon /> },
@@ -1137,7 +1155,10 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                         key={key}
                         component={Link}
                         to={cfg.to}
-                        sx={sxBtn}
+                        sx={{
+                          ...sxBtn,
+                          ...getNavRouteIconActiveSx(location.pathname, cfg.to),
+                        }}
                         onClick={
                           cfg.to === "/gifts" ? markGiftsSeen : undefined
                         }
@@ -1163,15 +1184,16 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                           <Avatar
                             src={`${import.meta.env.BASE_URL}logo512.png`}
                             alt={NAV_BRAND_TITLE}
-                            variant="square"
+                            variant="rounded"
                             sx={{
                               width: 44,
                               height: 44,
                               flexShrink: 0,
-                              borderRadius: 0,
+                              borderRadius: 2.5,
                               bgcolor: "rgba(255,255,255,0.12)",
                               "& img": {
                                 objectFit: "cover",
+                                borderRadius: "inherit",
                               },
                               ...(isDarkNav
                                 ? {
@@ -1972,10 +1994,11 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                       borderRadius: 3,
                       mb: 0.4,
                       "&.Mui-selected": {
-                        bgcolor:
-                          theme.palette.mode === "dark"
-                            ? "rgba(30,111,217,0.22)"
-                            : "rgba(30,111,217,0.1)",
+                        bgcolor: getNavMenuItemSelectedBg(
+                          location.pathname,
+                          to,
+                          theme.palette.mode === "dark",
+                        ),
                       },
                     }}
                   >

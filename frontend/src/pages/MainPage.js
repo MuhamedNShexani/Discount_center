@@ -54,6 +54,7 @@ import FindJobShowcase from "../components/FindJobShowcase";
 import HomeReelsSection from "../components/reels/HomeReelsSection";
 import BannerCarousel from "../components/BannerCarousel";
 import FilterChips from "../components/FilterChips";
+import StoreTypesBrowseSection from "../components/StoreTypesBrowseSection";
 import StoreGroupSection from "../components/StoreGroupSection";
 import FlashDealsSection from "../components/FlashDealsSection";
 import { Virtuoso } from "react-virtuoso";
@@ -166,6 +167,52 @@ function productCategoryIdString(product, getID) {
   return s;
 }
 
+function productHasActiveDiscount(product, isDiscountValid) {
+  const hasPriceDiscount =
+    product.previousPrice &&
+    product.newPrice &&
+    product.previousPrice > product.newPrice;
+  const isDiscounted = product.isDiscount || hasPriceDiscount;
+  return isDiscounted && isDiscountValid(product);
+}
+
+function groupProductsByStoreId(products, getID) {
+  const map = new Map();
+  for (const product of products) {
+    const sid = getID(product.storeId);
+    if (sid == null || sid === "") continue;
+    const key = String(sid);
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(product);
+  }
+  return map;
+}
+
+/** Prefer discounted products per store; fall back to undiscounted when a store has none. */
+function mergeProductsByStoreWithDiscountFallback(
+  discountedByStore,
+  baseByStore,
+) {
+  const merged = new Map();
+  const storeIds = new Set([
+    ...discountedByStore.keys(),
+    ...baseByStore.keys(),
+  ]);
+  for (const storeId of storeIds) {
+    const discounted = discountedByStore.get(storeId) ?? [];
+    const base = baseByStore.get(storeId) ?? [];
+    const products = discounted.length > 0 ? discounted : base;
+    if (products.length > 0) merged.set(storeId, products);
+  }
+  return merged;
+}
+
+function flattenProductsByStore(map) {
+  const out = [];
+  for (const products of map.values()) out.push(...products);
+  return out;
+}
+
 const MainPage = () => {
   const theme = useTheme();
   const isMobile = useIsMobileLayout();
@@ -201,7 +248,6 @@ const MainPage = () => {
   );
   const [selectedStoreTypeId, setSelectedStoreTypeId] = useState("all");
   const [priceRange, setPriceRange] = useState([0, 1000000]);
-  const [showOnlyDiscount, setShowOnlyDiscount] = useState(true); // Default to showing only discounted products
   const [allCategories, setAllCategories] = useState(
     () => mainPageBootstrapPayload?.allCategories ?? [],
   );
@@ -816,7 +862,6 @@ const MainPage = () => {
     setSelectedCategoryType(null);
     setSelectedStoreTypeId("all");
     setPriceRange([0, 1000000]);
-    setShowOnlyDiscount(true);
     setStoresPage(1);
   };
 
@@ -961,14 +1006,36 @@ const MainPage = () => {
     return getID(store?.storeTypeId ?? product?.storeTypeId);
   };
 
-  /**
-   * Products used only to decide which store-type chips to show.
-   * Ignores store type, category, and category-type so the full store-type row stays
-   * visible after the user picks a category (changing category must not hide other types).
-   */
-  const filteredProductsForStoreTypeChips = useMemo(() => {
-    return allProducts.filter((product) => {
+  const matchesMainPageProductFilters = useCallback(
+    (product, { requireDiscount = false, forStoreTypeChips = false } = {}) => {
       if (!storeIdsInCity.has(String(getID(product.storeId)))) return false;
+
+      if (!forStoreTypeChips) {
+        if (
+          selectedStoreTypeId !== "all" &&
+          String(effectiveProductStoreTypeId(product)) !==
+            String(selectedStoreTypeId)
+        ) {
+          return false;
+        }
+
+        if (selectedCategory) {
+          const want = String(getID(selectedCategory._id));
+          const have = productCategoryIdString(product, getID);
+          if (want === UNCATEGORIZED_CATEGORY_ID) {
+            if (have != null) return false;
+          } else if (have !== want) {
+            return false;
+          }
+        }
+
+        if (
+          selectedCategoryType &&
+          getID(product.categoryTypeId) !== getID(selectedCategoryType._id)
+        ) {
+          return false;
+        }
+      }
 
       if (
         product.newPrice < priceRange[0] ||
@@ -977,25 +1044,99 @@ const MainPage = () => {
         return false;
       }
 
-      const hasPriceDiscount =
-        product.previousPrice &&
-        product.newPrice &&
-        product.previousPrice > product.newPrice;
-
-      if (showOnlyDiscount) {
-        const isDiscounted = product.isDiscount || hasPriceDiscount;
-        if (!isDiscounted || !isDiscountValid(product)) {
-          return false;
-        }
+      if (
+        requireDiscount &&
+        !productHasActiveDiscount(product, isDiscountValid)
+      ) {
+        return false;
       }
 
       if (product.expireDate && !isExpiryStillValid(product.expireDate)) {
         return false;
       }
 
+      if (!forStoreTypeChips && normalizedSearch) {
+        const parentStore =
+          storeById[String(getID(product.storeId))] || product.storeId;
+        const productNameMatch = String(locName(product) || product.name || "")
+          .toLowerCase()
+          .includes(normalizedSearch);
+        const storeNameMatch = String(
+          locName(parentStore) || parentStore?.name || "",
+        )
+          .toLowerCase()
+          .includes(normalizedSearch);
+
+        if (!productNameMatch && !storeNameMatch) {
+          return false;
+        }
+      }
+
       return true;
-    });
-  }, [allProducts, storeIdsInCity, priceRange, showOnlyDiscount]);
+    },
+    [
+      storeIdsInCity,
+      storeById,
+      selectedStoreTypeId,
+      selectedCategory,
+      selectedCategoryType,
+      priceRange,
+      normalizedSearch,
+      locName,
+      getID,
+    ],
+  );
+
+  const productsByStoreId = useMemo(() => {
+    const discounted = allProducts.filter((product) =>
+      matchesMainPageProductFilters(product, { requireDiscount: true }),
+    );
+    const base = allProducts.filter((product) =>
+      matchesMainPageProductFilters(product, { requireDiscount: false }),
+    );
+    return mergeProductsByStoreWithDiscountFallback(
+      groupProductsByStoreId(discounted, getID),
+      groupProductsByStoreId(base, getID),
+    );
+  }, [allProducts, matchesMainPageProductFilters, getID]);
+
+  const filteredProducts = useMemo(
+    () => flattenProductsByStore(productsByStoreId),
+    [productsByStoreId],
+  );
+
+  const discountedOnlyProducts = useMemo(
+    () =>
+      allProducts.filter((product) =>
+        matchesMainPageProductFilters(product, { requireDiscount: true }),
+      ),
+    [allProducts, matchesMainPageProductFilters],
+  );
+
+  /**
+   * Products used only to decide which store-type chips to show.
+   * Ignores category and category-type; per-store discount fallback keeps types visible.
+   */
+  const filteredProductsForStoreTypeChips = useMemo(() => {
+    const discounted = allProducts.filter((product) =>
+      matchesMainPageProductFilters(product, {
+        requireDiscount: true,
+        forStoreTypeChips: true,
+      }),
+    );
+    const base = allProducts.filter((product) =>
+      matchesMainPageProductFilters(product, {
+        requireDiscount: false,
+        forStoreTypeChips: true,
+      }),
+    );
+    return flattenProductsByStore(
+      mergeProductsByStoreWithDiscountFallback(
+        groupProductsByStoreId(discounted, getID),
+        groupProductsByStoreId(base, getID),
+      ),
+    );
+  }, [allProducts, matchesMainPageProductFilters, getID]);
 
   const finalFilteredStoresForStoreTypeChips = useMemo(() => {
     const storeIdsWithProducts = new Set(
@@ -1027,71 +1168,59 @@ const MainPage = () => {
     return storeTypes.filter((st) => ids.has(String(getID(st._id))));
   }, [storeTypes, finalFilteredStoresForStoreTypeChips]);
 
-  /** Store counts per type — display-only data for the redesigned Store Type cards; does not affect filtering. */
-  const storeTypeCounts = useMemo(() => {
-    const counts = {};
-    finalFilteredStoresForStoreTypeChips.forEach((store) => {
-      const typeId = getID(store.storeTypeId);
-      if (!typeId) return;
-      const key = String(typeId);
-      counts[key] = (counts[key] || 0) + 1;
-    });
-    return counts;
-  }, [finalFilteredStoresForStoreTypeChips]);
-
   /** Products for category chips when a store type is selected (ignore category; respect city + store type). */
   const filteredProductsForCategoryChips = useMemo(() => {
     if (selectedStoreTypeId === "all") return [];
-    return allProducts.filter((product) => {
-      if (!storeIdsInCity.has(String(getID(product.storeId)))) return false;
-
+    const matchCategoryChipProduct = (product, requireDiscount) => {
       if (
+        !storeIdsInCity.has(String(getID(product.storeId))) ||
         String(effectiveProductStoreTypeId(product)) !==
-        String(selectedStoreTypeId)
+          String(selectedStoreTypeId)
       ) {
         return false;
       }
-
       if (
         selectedCategoryType &&
         getID(product.categoryTypeId) !== getID(selectedCategoryType._id)
       ) {
         return false;
       }
-
       if (
         product.newPrice < priceRange[0] ||
         product.newPrice > priceRange[1]
       ) {
         return false;
       }
-
-      const hasPriceDiscount =
-        product.previousPrice &&
-        product.newPrice &&
-        product.previousPrice > product.newPrice;
-
-      if (showOnlyDiscount) {
-        const isDiscounted = product.isDiscount || hasPriceDiscount;
-        if (!isDiscounted || !isDiscountValid(product)) {
-          return false;
-        }
+      if (
+        requireDiscount &&
+        !productHasActiveDiscount(product, isDiscountValid)
+      ) {
+        return false;
       }
-
       if (product.expireDate && !isExpiryStillValid(product.expireDate)) {
         return false;
       }
-
       return true;
-    });
+    };
+    const discounted = allProducts.filter((product) =>
+      matchCategoryChipProduct(product, true),
+    );
+    const base = allProducts.filter((product) =>
+      matchCategoryChipProduct(product, false),
+    );
+    return flattenProductsByStore(
+      mergeProductsByStoreWithDiscountFallback(
+        groupProductsByStoreId(discounted, getID),
+        groupProductsByStoreId(base, getID),
+      ),
+    );
   }, [
     allProducts,
     storeIdsInCity,
-    storeById,
     selectedStoreTypeId,
     selectedCategoryType,
     priceRange,
-    showOnlyDiscount,
+    getID,
   ]);
 
   const visibleCategories = useMemo(() => {
@@ -1147,101 +1276,6 @@ const MainPage = () => {
       setSelectedCategoryType(null);
     }
   }, [visibleStoreTypes, selectedStoreTypeId]);
-
-  // 1. Memoize the filtered products list
-  const filteredProducts = useMemo(() => {
-    return allProducts.filter((product) => {
-      // Same city universe as filter chips: discounted products in selected city only
-      if (!storeIdsInCity.has(String(getID(product.storeId)))) return false;
-
-      // Filter by Store Type (product or parent store)
-      if (
-        selectedStoreTypeId !== "all" &&
-        String(effectiveProductStoreTypeId(product)) !==
-          String(selectedStoreTypeId)
-      ) {
-        return false;
-      }
-
-      // Filter by Category (including "Uncategorized" for products with no categoryId)
-      if (selectedCategory) {
-        const want = String(getID(selectedCategory._id));
-        const have = productCategoryIdString(product, getID);
-        if (want === UNCATEGORIZED_CATEGORY_ID) {
-          if (have != null) return false;
-        } else if (have !== want) {
-          return false;
-        }
-      }
-
-      // Filter by Category Type
-      if (
-        selectedCategoryType &&
-        getID(product.categoryTypeId) !== getID(selectedCategoryType._id)
-      ) {
-        return false;
-      }
-
-      // Filter by Price
-      if (
-        product.newPrice < priceRange[0] ||
-        product.newPrice > priceRange[1]
-      ) {
-        return false;
-      }
-
-      // Filter by Discount
-      const hasPriceDiscount =
-        product.previousPrice &&
-        product.newPrice &&
-        product.previousPrice > product.newPrice;
-
-      // For discount filter, only show products that are discounted AND not expired
-      if (showOnlyDiscount) {
-        const isDiscounted = product.isDiscount || hasPriceDiscount;
-        if (!isDiscounted || !isDiscountValid(product)) {
-          return false;
-        }
-      }
-
-      if (product.expireDate && !isExpiryStillValid(product.expireDate)) {
-        return false;
-      }
-
-      // Filter by Search:
-      // - direct product-name match, OR
-      // - parent store-name match (so searching a store still shows its products)
-      if (normalizedSearch) {
-        const parentStore =
-          storeById[String(getID(product.storeId))] || product.storeId;
-        const productNameMatch = String(locName(product) || product.name || "")
-          .toLowerCase()
-          .includes(normalizedSearch);
-        const storeNameMatch = String(
-          locName(parentStore) || parentStore?.name || "",
-        )
-          .toLowerCase()
-          .includes(normalizedSearch);
-
-        if (!productNameMatch && !storeNameMatch) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-  }, [
-    allProducts,
-    storeById,
-    storeIdsInCity,
-    selectedStoreTypeId,
-    selectedCategory,
-    selectedCategoryType,
-    normalizedSearch,
-    priceRange,
-    showOnlyDiscount,
-    locName,
-  ]);
 
   const mainPageSearchAnalyticsKey = useMemo(
     () =>
@@ -1332,33 +1366,13 @@ const MainPage = () => {
     getID,
   ]);
 
-  const productsByStoreId = useMemo(() => {
-    const map = new Map();
-    for (const p of filteredProducts) {
-      const sid = getID(p.storeId);
-      if (sid == null || sid === "") continue;
-      const key = String(sid);
-      if (!map.has(key)) map.set(key, []);
-      map.get(key).push(p);
-    }
-    return map;
-  }, [filteredProducts, getID]);
-
-  // 2. Memoize the final list of stores to display
+  // Stores to display — derived from per-store product groups (discount-first, city-safe fallback).
   const finalFilteredStores = useMemo(() => {
-    // Get unique store IDs from the already filtered products
-    const storeIdsWithFilteredProducts = new Set(
-      filteredProducts.map((p) => String(getID(p.storeId))),
-    );
-
-    // Filter the stores themselves
     return stores.filter((store) => {
       const storeID = getID(store._id);
 
-      // Store must have products that passed the filters
-      const hasMatchingProducts = storeIdsWithFilteredProducts.has(
-        String(storeID),
-      );
+      const hasMatchingProducts =
+        (productsByStoreId.get(String(storeID)) ?? []).length > 0;
 
       // Or the store name itself matches the search
       const storeNameMatch =
@@ -1378,11 +1392,12 @@ const MainPage = () => {
       );
     });
   }, [
-    filteredProducts,
+    productsByStoreId,
     stores,
     normalizedSearch,
     selectedStoreTypeId,
     selectedCity,
+    getID,
   ]);
 
   const sortedFilteredStores = useMemo(() => {
@@ -1423,7 +1438,9 @@ const MainPage = () => {
         if (Boolean(b?.isVip) !== Boolean(a?.isVip)) {
           return Boolean(b?.isVip) - Boolean(a?.isVip);
         }
-        return (Number(b?.followerCount) || 0) - (Number(a?.followerCount) || 0);
+        return (
+          (Number(b?.followerCount) || 0) - (Number(a?.followerCount) || 0)
+        );
       })
       .slice(0, 12);
   }, [sortedFilteredStores]);
@@ -1460,7 +1477,7 @@ const MainPage = () => {
       return Number.isFinite(count) ? count : 0;
     };
 
-    return [...filteredProducts]
+    return [...discountedOnlyProducts]
       .filter((product) => {
         const productStoreId = String(getID(product?.storeId));
         const st = storeById[productStoreId];
@@ -1472,7 +1489,7 @@ const MainPage = () => {
       .sort((a, b) => getViews(b) - getViews(a))
       .slice(0, 15);
   }, [
-    filteredProducts,
+    discountedOnlyProducts,
     selectedCityCanonical,
     storeCityById,
     storeById,
@@ -1480,8 +1497,8 @@ const MainPage = () => {
   ]);
 
   const filterFollowedStoreProducts = useCallback(
-    (store, rawProducts, storeNameMatch) =>
-      rawProducts.filter((product) => {
+    (store, rawProducts, storeNameMatch) => {
+      const matches = (product, requireDiscount) => {
         if (
           selectedStoreTypeId !== "all" &&
           String(getID(store.storeTypeId ?? product.storeTypeId)) !==
@@ -1508,15 +1525,11 @@ const MainPage = () => {
         if (price < priceRange[0] || price > priceRange[1]) {
           return false;
         }
-        const hasPriceDiscount =
-          product.previousPrice &&
-          product.newPrice &&
-          product.previousPrice > product.newPrice;
-        if (showOnlyDiscount) {
-          const isDiscounted = product.isDiscount || hasPriceDiscount;
-          if (!isDiscounted || !isDiscountValid(product)) {
-            return false;
-          }
+        if (
+          requireDiscount &&
+          !productHasActiveDiscount(product, isDiscountValid)
+        ) {
+          return false;
         }
         if (
           normalizedSearch &&
@@ -1529,13 +1542,19 @@ const MainPage = () => {
           return false;
         }
         return true;
-      }),
+      };
+
+      const discounted = rawProducts.filter((product) =>
+        matches(product, true),
+      );
+      const base = rawProducts.filter((product) => matches(product, false));
+      return discounted.length > 0 ? discounted : base;
+    },
     [
       selectedStoreTypeId,
       selectedCategory,
       selectedCategoryType,
       priceRange,
-      showOnlyDiscount,
       normalizedSearch,
       getID,
     ],
@@ -1591,6 +1610,8 @@ const MainPage = () => {
     selectedCity,
   ]);
 
+  const HOME_REELS_AFTER_STORE_COUNT = 14;
+
   const mainFeedItems = useMemo(() => {
     const items = [];
     displayedStores.forEach((store, index) => {
@@ -1599,6 +1620,12 @@ const MainPage = () => {
         key: `s-${getID(store._id)}`,
         store,
       });
+      if (index + 1 === HOME_REELS_AFTER_STORE_COUNT) {
+        items.push({
+          type: "reels",
+          key: "home-reels",
+        });
+      }
       if ((index + 1) % 8 === 0) {
         const blockIndex = (index + 1) / 8 - 1;
         items.push({
@@ -2273,8 +2300,7 @@ const MainPage = () => {
           storeTypes={visibleStoreTypes}
           selectedStoreTypeId={selectedStoreTypeId}
           onStoreTypeSelect={handleStoreTypeChange}
-          storeTypeCounts={storeTypeCounts}
-          visibleCategories={visibleCategories}
+          allCategories={allCategories}
           selectedCategory={selectedCategory}
           onCategorySelect={handleCategoryChange}
           sortByNewest={sortByNewestDiscount}
@@ -2302,9 +2328,8 @@ const MainPage = () => {
           onLayoutChange={setProductLayout}
           priceRange={priceRange}
           onPriceRangeChange={setPriceRange}
-          showOnlyDiscount={showOnlyDiscount}
-          onToggleShowOnlyDiscount={setShowOnlyDiscount}
         />
+        <StoreTypesBrowseSection storeTypes={storeTypes} />
         {/* legacy filter content ? hidden, kept for price-range state wiring */}
         <Box sx={{ display: "none" }}>
           {/* Search and Basic Filters */}
@@ -2798,9 +2823,6 @@ const MainPage = () => {
           <>
             {!isMobile || mobileDeferredSectionsReady ? (
               <>
-                <Box sx={{ mb: { xs: 1.5, sm: 2 } }}>
-                  <HomeReelsSection />
-                </Box>
                 {featuredStoresForHome.length > 0 && (
                   <Box sx={{ mb: { xs: 1.5, sm: 2 } }}>
                     <StoreShowcase stores={featuredStoresForHome} />
@@ -2854,6 +2876,13 @@ const MainPage = () => {
               data={mainFeedItems}
               computeItemKey={(_, item) => item.key}
               itemContent={(_, item) => {
+                if (item.type === "reels") {
+                  return (
+                    <Box sx={{ mb: { xs: 1.5, sm: 2 } }}>
+                      <HomeReelsSection />
+                    </Box>
+                  );
+                }
                 if (item.type === "showcase") {
                   const showcase = renderRotatingShowcase(item.blockIndex);
                   // Virtuoso requires every row to have non-zero size; showcases return null when empty.

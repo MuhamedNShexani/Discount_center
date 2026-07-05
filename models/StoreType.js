@@ -8,6 +8,7 @@ const storeTypeSchema = new mongoose.Schema(
     nameAr: { type: String, required: false, trim: true },
     nameKu: { type: String, required: false, trim: true },
     icon: { type: String, required: false, trim: true }, // optional emoji or icon text
+    picture: { type: String, required: false, trim: true }, // optional category image URL
   },
   { timestamps: true }
 );

@@ -30,6 +30,7 @@ const BrandList = lazy(() => import("./pages/BrandList"));
 const CompanyList = lazy(() => import("./pages/CompanyList"));
 const BrandProfile = lazy(() => import("./pages/BrandProfile"));
 const ProductCategory = lazy(() => import("./pages/ProductCategory"));
+const StoreTypeBrowsePage = lazy(() => import("./pages/StoreTypeBrowsePage"));
 const DataEntryForm = lazy(() => import("./pages/DataEntryForm"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 const StoreProfile = lazy(() => import("./pages/StoreProfile"));
@@ -142,6 +143,7 @@ function AppContent() {
   const isSearchPage =
     location.pathname === "/search" || location.pathname.startsWith("/search/");
   const isHomePage = location.pathname === "/";
+  const isStoreTypesPage = /^\/store-types(\/|$)/.test(location.pathname);
   const { effectiveTheme, activeFontKey } = useActiveTheme();
 
   /** Shown on every cold load (browser tab or WebView) — no one-time skip. */
@@ -323,9 +325,11 @@ function AppContent() {
                       py:
                         isReelsPage || isDataEntryPage
                           ? 0
-                          : isSearchPage && isMobile
-                            ? 1
-                            : 3,
+                          : isStoreTypesPage && isMobile
+                            ? 0
+                            : isSearchPage && isMobile
+                              ? 1
+                              : 3,
                       pb: isMobile
                         ? isSearchPage
                           ? "env(safe-area-inset-bottom, 0px)"
@@ -375,6 +379,18 @@ function AppContent() {
                           <Route
                             path="/categories"
                             element={<ProductCategory />}
+                          />
+                          <Route
+                            path="/store-types"
+                            element={<StoreTypeBrowsePage />}
+                          />
+                          <Route
+                            path="/store-types/:storeTypeId"
+                            element={<StoreTypeBrowsePage />}
+                          />
+                          <Route
+                            path="/store-types/:storeTypeId/category/:categoryId"
+                            element={<StoreTypeBrowsePage />}
                           />
                           <Route path="/brands" element={<BrandList />} />
                           <Route

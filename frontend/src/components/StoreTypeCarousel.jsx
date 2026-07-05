@@ -9,6 +9,7 @@ import React, {
 import { Box, IconButton } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import StorefrontRoundedIcon from "@mui/icons-material/StorefrontRounded";
@@ -16,6 +17,33 @@ import { isRtlLanguage } from "../utils/isRtlLanguage";
 import { useLocalizedContent } from "../hooks/useLocalizedContent";
 import SectionHeader from "./SectionHeader";
 import StoreTypeCard, { getStoreTypeAccentColor } from "./StoreTypeCard";
+
+const SCROLL_EDGE_EPSILON = 6;
+
+/** Horizontal overflow edges — handles LTR and `dir=rtl` (incl. Firefox negative scrollLeft). */
+function readHorizontalScrollEdges(el) {
+  const { scrollLeft, scrollWidth, clientWidth } = el;
+  const max = Math.max(0, scrollWidth - clientWidth);
+  if (max <= SCROLL_EDGE_EPSILON) {
+    return { hasOverflow: false, atStart: true, atEnd: true };
+  }
+
+  // Firefox RTL: scrollLeft is 0 at inline-start, negative toward inline-end.
+  if (scrollLeft < 0) {
+    return {
+      hasOverflow: true,
+      atStart: scrollLeft >= -SCROLL_EDGE_EPSILON,
+      atEnd: scrollLeft <= -(max - SCROLL_EDGE_EPSILON),
+    };
+  }
+
+  // LTR and Chromium RTL: scrollLeft grows from 0 at inline-start.
+  return {
+    hasOverflow: true,
+    atStart: scrollLeft <= SCROLL_EDGE_EPSILON,
+    atEnd: scrollLeft >= max - SCROLL_EDGE_EPSILON,
+  };
+}
 
 /**
  * Facebook Marketplace–style store type browser.
@@ -27,30 +55,32 @@ const StoreTypeCarousel = memo(function StoreTypeCarousel({
   selectedStoreTypeId,
   onStoreTypeSelect,
   storeTypeCounts,
+  browseMode = false,
+  seeAllTo = "/stores",
 }) {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   const isRtl = isRtlLanguage(i18n.language);
   const { locName } = useLocalizedContent();
 
   const scrollRef = useRef(null);
-  const dragState = useRef({ active: false, moved: false, startX: 0, scrollLeft: 0 });
-  const [showLeftFade, setShowLeftFade] = useState(false);
-  const [showRightFade, setShowRightFade] = useState(false);
+  const dragState = useRef({
+    active: false,
+    moved: false,
+    startX: 0,
+    scrollLeft: 0,
+  });
+  const [showStartFade, setShowStartFade] = useState(false);
+  const [showEndFade, setShowEndFade] = useState(false);
 
   const updateScrollHints = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
-    const { scrollLeft, scrollWidth, clientWidth } = el;
-    if (scrollWidth <= clientWidth + 2) {
-      setShowLeftFade(false);
-      setShowRightFade(false);
-      return;
-    }
-    const max = scrollWidth - clientWidth;
-    setShowLeftFade(scrollLeft > 6);
-    setShowRightFade(scrollLeft < max - 6);
+    const { hasOverflow, atStart, atEnd } = readHorizontalScrollEdges(el);
+    setShowStartFade(hasOverflow && !atStart);
+    setShowEndFade(hasOverflow && !atEnd);
   }, []);
 
   useEffect(() => {
@@ -70,18 +100,15 @@ const StoreTypeCarousel = memo(function StoreTypeCarousel({
       window.removeEventListener("resize", onWin);
       ro?.disconnect();
     };
-  }, [updateScrollHints, storeTypes]);
+  }, [updateScrollHints, storeTypes, isRtl]);
 
-  const scrollByStep = useCallback(
-    (direction) => {
-      const el = scrollRef.current;
-      if (!el) return;
-      const cardWidth = el.querySelector('[role="button"]')?.offsetWidth || 116;
-      const step = (cardWidth + 10) * 3 * direction;
-      el.scrollBy({ left: isRtl ? -step : step, behavior: "smooth" });
-    },
-    [isRtl],
-  );
+  const scrollByStep = useCallback((direction) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const cardWidth = el.querySelector('[role="button"]')?.offsetWidth || 116;
+    const step = (cardWidth + 10) * 3 * direction;
+    el.scrollBy({ left: step, behavior: "smooth" });
+  }, []);
 
   const onPointerDown = (e) => {
     const el = scrollRef.current;
@@ -132,18 +159,42 @@ const StoreTypeCarousel = memo(function StoreTypeCarousel({
   }, [storeTypeCounts]);
 
   const cards = useMemo(
-    () => [
-      { _id: "all", label: t("All"), icon: "", count: totalCount, isAll: true },
-      ...storeTypes.map((type) => ({
-        _id: type._id,
-        label: locName(type) || t(type.name),
-        icon: type.icon || "",
-        count: storeTypeCounts?.[String(type._id)],
-        badge: type.badge,
-        accentColor: getStoreTypeAccentColor(type._id),
-      })),
-    ],
-    [storeTypes, storeTypeCounts, totalCount, locName, t],
+    () =>
+      browseMode
+        ? storeTypes.map((type) => ({
+            _id: type._id,
+            label: locName(type) || t(type.name),
+            icon: type.icon || "",
+            picture: type.picture || "",
+            badge: type.badge,
+            accentColor: getStoreTypeAccentColor(type._id),
+          }))
+        : [
+            {
+              _id: "all",
+              label: t("All"),
+              icon: "",
+              count: totalCount,
+              isAll: true,
+            },
+            ...storeTypes.map((type) => ({
+              _id: type._id,
+              label: locName(type) || t(type.name),
+              icon: type.icon || "",
+              picture: type.picture || "",
+              count: storeTypeCounts?.[String(type._id)],
+              badge: type.badge,
+              accentColor: getStoreTypeAccentColor(type._id),
+            })),
+          ],
+    [storeTypes, storeTypeCounts, totalCount, locName, t, browseMode],
+  );
+
+  const handleBrowseSelect = useCallback(
+    (storeTypeId) => {
+      navigate(`/store-types/${encodeURIComponent(String(storeTypeId))}`);
+    },
+    [navigate],
   );
 
   return (
@@ -151,18 +202,18 @@ const StoreTypeCarousel = memo(function StoreTypeCarousel({
       <SectionHeader
         icon={StorefrontRoundedIcon}
         title={t("Store Types", { defaultValue: "Store Types" })}
-        seeAllTo="/stores"
+        seeAllTo={seeAllTo}
         action={t("See All", { defaultValue: "See All" })}
       />
 
       <Box sx={{ position: "relative" }}>
-        {showLeftFade && (
+        {showStartFade && (
           <Box
             aria-hidden
             sx={{
               pointerEvents: "none",
               position: "absolute",
-              [isRtl ? "right" : "left"]: 0,
+              insetInlineStart: 0,
               top: 0,
               bottom: 0,
               width: 32,
@@ -173,13 +224,13 @@ const StoreTypeCarousel = memo(function StoreTypeCarousel({
             }}
           />
         )}
-        {showRightFade && (
+        {showEndFade && (
           <Box
             aria-hidden
             sx={{
               pointerEvents: "none",
               position: "absolute",
-              [isRtl ? "left" : "right"]: 0,
+              insetInlineEnd: 0,
               top: 0,
               bottom: 0,
               width: 32,
@@ -191,7 +242,7 @@ const StoreTypeCarousel = memo(function StoreTypeCarousel({
           />
         )}
 
-        {showLeftFade && (
+        {showStartFade && (
           <IconButton
             aria-label={t("Scroll left")}
             onClick={() => scrollByStep(-1)}
@@ -199,7 +250,7 @@ const StoreTypeCarousel = memo(function StoreTypeCarousel({
             sx={{
               display: { xs: "none", md: "flex" },
               position: "absolute",
-              left: 0,
+              insetInlineStart: 0,
               top: "50%",
               transform: "translateY(-50%)",
               zIndex: 3,
@@ -212,7 +263,7 @@ const StoreTypeCarousel = memo(function StoreTypeCarousel({
             {isRtl ? <ChevronRightIcon /> : <ChevronLeftIcon />}
           </IconButton>
         )}
-        {showRightFade && (
+        {showEndFade && (
           <IconButton
             aria-label={t("Scroll right")}
             onClick={() => scrollByStep(1)}
@@ -220,7 +271,7 @@ const StoreTypeCarousel = memo(function StoreTypeCarousel({
             sx={{
               display: { xs: "none", md: "flex" },
               position: "absolute",
-              right: 0,
+              insetInlineEnd: 0,
               top: "50%",
               transform: "translateY(-50%)",
               zIndex: 3,
@@ -236,6 +287,7 @@ const StoreTypeCarousel = memo(function StoreTypeCarousel({
 
         <Box
           ref={scrollRef}
+          dir={isRtl ? "rtl" : "ltr"}
           onScroll={updateScrollHints}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
@@ -246,14 +298,15 @@ const StoreTypeCarousel = memo(function StoreTypeCarousel({
           aria-label={t("Store Types", { defaultValue: "Store Types" })}
           sx={{
             display: "flex",
-            gap: 1,
+            flexDirection: "row",
+            gap: 1.1,
             overflowX: "auto",
             overflowY: "hidden",
             scrollSnapType: "x mandatory",
             scrollBehavior: "smooth",
             WebkitOverflowScrolling: "touch",
-            px: { xs: 0.25, sm: 0.5 },
-            py: 0.5,
+            px: { xs: 0, sm: 0.25 },
+            py: 0.75,
             cursor: { md: "grab" },
             scrollbarWidth: "none",
             msOverflowStyle: "none",
@@ -261,19 +314,26 @@ const StoreTypeCarousel = memo(function StoreTypeCarousel({
           }}
         >
           {cards.map((card) => (
-            <StoreTypeCard
-              key={card._id}
-              icon={card.icon}
-              label={card.label}
-              count={card.count}
-              badge={card.badge}
-              isAll={card.isAll}
-              accentColor={card.accentColor}
-              selected={String(selectedStoreTypeId) === String(card._id)}
-              onSelect={suppressClickIfDragged(() =>
-                onStoreTypeSelect(card._id),
-              )}
-            />
+            <Box key={card._id} dir="ltr" sx={{ flex: "0 0 auto" }}>
+              <StoreTypeCard
+                icon={card.icon}
+                picture={card.picture}
+                label={card.label}
+                count={card.count}
+                badge={card.badge}
+                isAll={card.isAll}
+                accentColor={card.accentColor}
+                selected={
+                  !browseMode &&
+                  String(selectedStoreTypeId) === String(card._id)
+                }
+                onSelect={suppressClickIfDragged(() =>
+                  browseMode
+                    ? handleBrowseSelect(card._id)
+                    : onStoreTypeSelect(card._id),
+                )}
+              />
+            </Box>
           ))}
         </Box>
       </Box>

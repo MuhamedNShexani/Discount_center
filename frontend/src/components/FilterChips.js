@@ -12,9 +12,11 @@ import {
   DialogActions,
   Button,
   Typography,
-  Switch,
-  FormControlLabel,
   Badge,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
@@ -27,9 +29,15 @@ import GridViewIcon from "@mui/icons-material/GridView";
 import { useTheme } from "@mui/material/styles";
 import { useTranslation } from "react-i18next";
 import { useLocalizedContent } from "../hooks/useLocalizedContent";
-import StoreTypeCarousel from "./StoreTypeCarousel";
 
 const DEFAULT_MAX_PRICE = 1000000;
+
+const getCategoryStoreTypeId = (category) => {
+  const st = category?.storeTypeId;
+  if (!st) return "";
+  if (typeof st === "object" && st._id != null) return String(st._id);
+  return String(st);
+};
 
 const FilterChips = ({
   search,
@@ -37,8 +45,7 @@ const FilterChips = ({
   storeTypes,
   selectedStoreTypeId,
   onStoreTypeSelect,
-  storeTypeCounts,
-  visibleCategories,
+  allCategories = [],
   selectedCategory,
   onCategorySelect,
   sortByNewest,
@@ -50,8 +57,6 @@ const FilterChips = ({
   onLayoutChange,
   priceRange,
   onPriceRangeChange,
-  showOnlyDiscount,
-  onToggleShowOnlyDiscount,
 }) => {
   const theme = useTheme();
   const { t } = useTranslation();
@@ -60,12 +65,21 @@ const FilterChips = ({
   const [filterOpen, setFilterOpen] = useState(false);
   const [draftMin, setDraftMin] = useState("");
   const [draftMax, setDraftMax] = useState("");
+  const [draftStoreTypeId, setDraftStoreTypeId] = useState("all");
+  const [draftCategory, setDraftCategory] = useState(null);
+
+  const draftCategories = React.useMemo(() => {
+    if (draftStoreTypeId === "all") return allCategories;
+    return allCategories.filter(
+      (cat) => getCategoryStoreTypeId(cat) === String(draftStoreTypeId),
+    );
+  }, [allCategories, draftStoreTypeId]);
 
   const hasCustomFilters =
+    selectedStoreTypeId !== "all" ||
+    Boolean(selectedCategory) ||
     (Array.isArray(priceRange) &&
-      (Number(priceRange[0]) > 0 ||
-        Number(priceRange[1]) < DEFAULT_MAX_PRICE)) ||
-    showOnlyDiscount === false;
+      (Number(priceRange[0]) > 0 || Number(priceRange[1]) < DEFAULT_MAX_PRICE));
 
   const openFilterDialog = () => {
     setDraftMin(priceRange?.[0] ? String(priceRange[0]) : "");
@@ -74,21 +88,36 @@ const FilterChips = ({
         ? String(priceRange[1])
         : "",
     );
+    setDraftStoreTypeId(selectedStoreTypeId || "all");
+    setDraftCategory(selectedCategory || null);
     setFilterOpen(true);
   };
 
   const applyFilterDialog = () => {
     const min = Math.max(0, Number(draftMin) || 0);
-    const max = draftMax ? Math.max(min, Number(draftMax) || DEFAULT_MAX_PRICE) : DEFAULT_MAX_PRICE;
+    const max = draftMax
+      ? Math.max(min, Number(draftMax) || DEFAULT_MAX_PRICE)
+      : DEFAULT_MAX_PRICE;
     onPriceRangeChange?.([min, max]);
+    onStoreTypeSelect?.(draftStoreTypeId || "all");
+    onCategorySelect?.(draftCategory);
     setFilterOpen(false);
   };
 
   const resetFilterDialog = () => {
     setDraftMin("");
     setDraftMax("");
+    setDraftStoreTypeId("all");
+    setDraftCategory(null);
     onPriceRangeChange?.([0, DEFAULT_MAX_PRICE]);
-    onToggleShowOnlyDiscount?.(true);
+    onStoreTypeSelect?.("all");
+    onCategorySelect?.(null);
+    setFilterOpen(false);
+  };
+
+  const handleDraftStoreType = (storeTypeId) => {
+    setDraftStoreTypeId(storeTypeId);
+    setDraftCategory(null);
   };
 
   const activePillSx = {
@@ -244,14 +273,6 @@ const FilterChips = ({
         }}
       />
 
-      {/* Store type browser — Facebook Marketplace–style category cards */}
-      <StoreTypeCarousel
-        storeTypes={storeTypes}
-        selectedStoreTypeId={selectedStoreTypeId}
-        onStoreTypeSelect={onStoreTypeSelect}
-        storeTypeCounts={storeTypeCounts}
-      />
-
       {/* Sort row: Newest + Near Me on the left, layout toggle on the right */}
       <Box
         sx={{
@@ -315,41 +336,6 @@ const FilterChips = ({
         </Box>
       </Box>
 
-      {/* Category chips — when a store type is selected (always show "All" so filters can reset) */}
-      {selectedStoreTypeId !== "all" && (
-        <Box
-          sx={{
-            display: "flex",
-            gap: 0.8,
-            overflowX: "auto",
-            overflowY: "hidden",
-            scrollbarWidth: "none",
-            "&::-webkit-scrollbar": { display: "none" },
-            mt: 1,
-            pb: 0.5,
-          }}
-        >
-          <Chip
-            icon={<CategoryIcon sx={{ fontSize: "0.9rem !important" }} />}
-            label={t("all")}
-            onClick={() => onCategorySelect(null)}
-            sx={selectedCategory === null ? activePillSx : inactivePillSx}
-          />
-          {(visibleCategories || []).map((cat) => (
-            <Chip
-              key={String(cat._id)}
-              label={locName(cat) || t(cat.name)}
-              onClick={() => onCategorySelect(cat)}
-              sx={
-                selectedCategory?._id === cat._id
-                  ? activePillSx
-                  : inactivePillSx
-              }
-            />
-          ))}
-        </Box>
-      )}
-
       <Dialog
         open={filterOpen}
         onClose={() => setFilterOpen(false)}
@@ -361,6 +347,63 @@ const FilterChips = ({
           {t("Filters", { defaultValue: "Filters" })}
         </DialogTitle>
         <DialogContent>
+          <FormControl fullWidth size="small" sx={{ mb: 2, mt: 1 }}>
+            <InputLabel id="filter-store-type-label">
+              {t("Store Type", { defaultValue: "Store Type" })}
+            </InputLabel>
+            <Select
+              labelId="filter-store-type-label"
+              label={t("Store Type", { defaultValue: "Store Type" })}
+              value={draftStoreTypeId}
+              onChange={(e) => handleDraftStoreType(e.target.value)}
+            >
+              <MenuItem value="all">{t("All")}</MenuItem>
+              {(storeTypes || []).map((type) => (
+                <MenuItem key={String(type._id)} value={String(type._id)}>
+                  {type.icon ? `${type.icon} ` : ""}
+                  {locName(type) || t(type.name)}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          {draftStoreTypeId !== "all" && (
+            <>
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  fontWeight: 700,
+                  mb: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.75,
+                }}
+              >
+                <CategoryIcon sx={{ fontSize: 18 }} />
+                {t("Category")}
+              </Typography>
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75, mb: 2 }}>
+                <Chip
+                  label={t("all")}
+                  onClick={() => setDraftCategory(null)}
+                  sx={draftCategory === null ? activePillSx : inactivePillSx}
+                />
+                {draftCategories.map((cat) => (
+                  <Chip
+                    key={String(cat._id)}
+                    label={locName(cat) || t(cat.name)}
+                    onClick={() => setDraftCategory(cat)}
+                    sx={
+                      draftCategory?._id === cat._id
+                        ? activePillSx
+                        : inactivePillSx
+                    }
+                  />
+                ))}
+              </Box>
+            </>
+          )}
+
           <Typography
             variant="subtitle2"
             sx={{ fontWeight: 700, mb: 1, mt: 0.5 }}
@@ -385,18 +428,6 @@ const FilterChips = ({
               onChange={(e) => setDraftMax(e.target.value)}
             />
           </Box>
-
-          <FormControlLabel
-            control={
-              <Switch
-                checked={showOnlyDiscount !== false}
-                onChange={(e) => onToggleShowOnlyDiscount?.(e.target.checked)}
-              />
-            }
-            label={t("Show only discounted products", {
-              defaultValue: "Show only discounted products",
-            })}
-          />
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2.5 }}>
           <Button onClick={resetFilterDialog} sx={{ textTransform: "none" }}>

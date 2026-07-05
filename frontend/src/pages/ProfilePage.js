@@ -83,8 +83,6 @@ import {
   GridView as GridViewIcon,
   ContactMail as ContactMailIcon,
   EditOutlined as EditIcon,
-  Notifications as NotificationsIcon,
-  Settings as SettingsIcon,
 } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
@@ -124,7 +122,6 @@ import {
   PROFILE_SHORTCUT_CATALOG,
   normalizeProfileShortcutIds,
 } from "../utils/profileShortcutCatalog";
-import { useNotificationDrawer } from "../hooks/useNotificationDrawer";
 
 const PROFILE_SHORTCUT_ICONS = {
   home: HomeOutlined,
@@ -236,7 +233,6 @@ const ProfilePage = ({ onClose }) => {
   const { dataLanguage, setDataLanguage } = useDataLanguage();
   const { locName } = useLocalizedContent();
   const { colorMode, setColorMode } = useDarkMode();
-  const { openNotifications } = useNotificationDrawer();
 
   const [guestNameDialogOpen, setGuestNameDialogOpen] = useState(false);
   const [ownerProfilePickerOpen, setOwnerProfilePickerOpen] = useState(false);
@@ -248,6 +244,9 @@ const ProfilePage = ({ onClose }) => {
   const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false);
   const [deactivating, setDeactivating] = useState(false);
   const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
+  const [languageDialogOpen, setLanguageDialogOpen] = useState(false);
+  const [cityDialogOpen, setCityDialogOpen] = useState(false);
+  const [themeDialogOpen, setThemeDialogOpen] = useState(false);
   const [feedbackType, setFeedbackType] = useState("suggestion");
   const [feedbackNote, setFeedbackNote] = useState("");
   const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
@@ -671,18 +670,13 @@ const ProfilePage = ({ onClose }) => {
       ? alpha("#fff", 0.045)
       : `linear-gradient(135deg, ${alpha("#f8fafc", 0.98)}, ${alpha("#eef5ff", 0.78)})`,
     color: "text.primary",
-    transition: "transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease",
+    transition:
+      "transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease",
     "&:hover": {
       transform: "translateY(-2px)",
       borderColor: "primary.main",
       boxShadow: `0 8px 22px ${alpha("#1e6fd9", isDark ? 0.18 : 0.12)}`,
     },
-  };
-
-  const scrollToPreferences = () => {
-    document
-      .getElementById("profile-preferences-section")
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   const profileHubGroups = [
@@ -713,34 +707,22 @@ const ProfilePage = ({ onClose }) => {
           },
         },
         {
-          key: "notifications",
-          label: t("Notifications"),
-          Icon: NotificationsIcon,
-          onClick: () => closeThen(() => openNotifications()),
-        },
-        {
           key: "language",
           label: t("Language"),
           Icon: LanguageIcon,
-          onClick: scrollToPreferences,
+          onClick: () => setLanguageDialogOpen(true),
         },
         {
           key: "city",
           label: t("Change City", { defaultValue: "Change City" }),
           Icon: LocationOnIcon,
-          onClick: scrollToPreferences,
+          onClick: () => setCityDialogOpen(true),
         },
         {
           key: "theme",
           label: t("Theme", { defaultValue: "Theme" }),
           Icon: PaletteIcon,
-          onClick: scrollToPreferences,
-        },
-        {
-          key: "settings",
-          label: t("Settings", { defaultValue: "Settings" }),
-          Icon: SettingsIcon,
-          onClick: scrollToPreferences,
+          onClick: () => setThemeDialogOpen(true),
         },
       ],
     },
@@ -840,7 +822,12 @@ const ProfilePage = ({ onClose }) => {
             <Typography
               variant="subtitle2"
               fontWeight={700}
-              sx={{ color: "text.secondary", letterSpacing: "0.04em", textTransform: "uppercase", fontSize: "0.72rem" }}
+              sx={{
+                color: "text.secondary",
+                letterSpacing: "0.04em",
+                textTransform: "uppercase",
+                fontSize: "0.72rem",
+              }}
             >
               {t("Account", { defaultValue: "Account" })}
             </Typography>
@@ -877,8 +864,7 @@ const ProfilePage = ({ onClose }) => {
                 fontSize: "1.7rem",
                 fontWeight: 800,
                 flexShrink: 0,
-                background:
-                  "linear-gradient(135deg, #1e6fd9 0%, #6366f1 100%)",
+                background: "linear-gradient(135deg, #1e6fd9 0%, #6366f1 100%)",
                 boxShadow: `0 8px 32px ${alpha("#1e6fd9", isDark ? 0.55 : 0.35)}, 0 2px 8px rgba(0,0,0,0.15)`,
                 border: `3px solid ${isDark ? alpha("#fff", 0.12) : alpha("#fff", 0.95)}`,
               }}
@@ -1232,284 +1218,74 @@ const ProfilePage = ({ onClose }) => {
                         gap: 1,
                       }}
                     >
-                      {group.items.map(({ key, label, path, Icon, onClick }) => {
-                        const content = (
-                          <>
-                            <Box
-                              sx={{
-                                width: 34,
-                                height: 34,
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                borderRadius: 0,
-                                bgcolor: isDark
-                                  ? alpha("#1e6fd9", 0.18)
-                                  : alpha("#1e6fd9", 0.09),
-                                color: "primary.main",
-                              }}
-                            >
-                              <Icon sx={{ fontSize: 19 }} />
-                            </Box>
-                            <Typography
-                              sx={{
-                                fontSize: "0.78rem",
-                                fontWeight: 800,
-                                lineHeight: 1.25,
-                              }}
-                            >
-                              {label}
-                            </Typography>
-                          </>
-                        );
+                      {group.items.map(
+                        ({ key, label, path, Icon, onClick }) => {
+                          const content = (
+                            <>
+                              <Box
+                                sx={{
+                                  width: 34,
+                                  height: 34,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  borderRadius: 0,
+                                  bgcolor: isDark
+                                    ? alpha("#1e6fd9", 0.18)
+                                    : alpha("#1e6fd9", 0.09),
+                                  color: "primary.main",
+                                }}
+                              >
+                                <Icon sx={{ fontSize: 19 }} />
+                              </Box>
+                              <Typography
+                                sx={{
+                                  fontSize: "0.78rem",
+                                  fontWeight: 800,
+                                  lineHeight: 1.25,
+                                }}
+                              >
+                                {label}
+                              </Typography>
+                            </>
+                          );
 
-                        if (path) {
+                          if (path) {
+                            return (
+                              <Box
+                                key={key}
+                                component={Link}
+                                to={path}
+                                onClick={() => onClose?.()}
+                                sx={hubCardSx}
+                              >
+                                {content}
+                              </Box>
+                            );
+                          }
+
                           return (
                             <Box
                               key={key}
-                              component={Link}
-                              to={path}
-                              onClick={() => onClose?.()}
-                              sx={hubCardSx}
+                              component="button"
+                              type="button"
+                              onClick={onClick}
+                              sx={{
+                                ...hubCardSx,
+                                cursor: "pointer",
+                                textAlign: "start",
+                                fontFamily: "inherit",
+                              }}
                             >
                               {content}
                             </Box>
                           );
-                        }
-
-                        return (
-                          <Box
-                            key={key}
-                            component="button"
-                            type="button"
-                            onClick={onClick}
-                            sx={{
-                              ...hubCardSx,
-                              cursor: "pointer",
-                              textAlign: "start",
-                              fontFamily: "inherit",
-                            }}
-                          >
-                            {content}
-                          </Box>
-                        );
-                      })}
+                        },
+                      )}
                     </Box>
                   </Box>
                 ))}
               </Stack>
-            </Box>
-          </Box>
-
-          {/* Preferences card */}
-          <Box id="profile-preferences-section" sx={{ px: 2, scrollMarginTop: 12 }}>
-            <Box sx={cardSx}>
-              {/* Appearance */}
-              <Box sx={{ px: 2, pt: 1.5, pb: 1.25 }}>
-                <ProfileSectionLabel
-                  icon={PaletteIcon}
-                  label={t("Appearance", { defaultValue: "Appearance" })}
-                  sx={{ mb: 1 }}
-                />
-                <Box
-                  sx={{
-                    display: "flex",
-                    gap: 0.5,
-                    p: 0.5,
-                    borderRadius: 0,
-                    border: `1px solid ${isDark ? alpha("#fff", 0.08) : alpha("#000", 0.07)}`,
-                    background: isDark
-                      ? alpha("#fff", 0.03)
-                      : alpha("#f0f4ff", 0.8),
-                  }}
-                >
-                  {[
-                    {
-                      value: "light",
-                      Icon: LightModeOutlined,
-                      label: t("Light"),
-                    },
-                    {
-                      value: "dark",
-                      Icon: DarkModeOutlined,
-                      label: t("Dark"),
-                    },
-                    {
-                      value: "system",
-                      Icon: BrightnessAutoRounded,
-                      label: t("System", { defaultValue: "System" }),
-                    },
-                  ].map(({ value, Icon, label }) => (
-                    <Box
-                      key={value}
-                      component="button"
-                      type="button"
-                      onClick={() => setColorMode(value)}
-                      sx={{
-                        flex: 1,
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 0.4,
-                        py: 0.75,
-                        border: "none",
-                        cursor: "pointer",
-                        borderRadius: 0,
-                        transition: "all 0.18s ease",
-                        background:
-                          colorMode === value
-                            ? isDark
-                              ? `linear-gradient(135deg, ${alpha("#1e6fd9", 0.35)}, ${alpha("#6366f1", 0.25)})`
-                              : `linear-gradient(135deg, ${alpha("#1e6fd9", 0.12)}, ${alpha("#6366f1", 0.08)})`
-                            : "transparent",
-                        boxShadow:
-                          colorMode === value
-                            ? `0 2px 10px ${alpha("#1e6fd9", 0.25)}, inset 0 1px 0 ${alpha("#fff", 0.1)}`
-                            : "none",
-                        "&:hover": {
-                          background:
-                            colorMode !== value
-                              ? isDark
-                                ? alpha("#fff", 0.04)
-                                : alpha("#1e6fd9", 0.04)
-                              : undefined,
-                        },
-                      }}
-                    >
-                      <Icon
-                        sx={{
-                          fontSize: 22,
-                          color:
-                            colorMode === value
-                              ? "primary.main"
-                              : "text.secondary",
-                          transition: "color 0.18s ease",
-                        }}
-                      />
-                      <Typography
-                        sx={{
-                          fontSize: "0.68rem",
-                          fontWeight: 700,
-                          color:
-                            colorMode === value
-                              ? "primary.main"
-                              : "text.secondary",
-                          lineHeight: 1,
-                          transition: "color 0.18s ease",
-                        }}
-                      >
-                        {label}
-                      </Typography>
-                    </Box>
-                  ))}
-                </Box>
-              </Box>
-
-              <Divider sx={{ mx: 2, opacity: 0.5 }} />
-
-              {/* City */}
-              <ListItem sx={profileSettingsRowSx}>
-                <ProfileSectionLabel
-                  icon={LocationOnIcon}
-                  label={t("City")}
-                />
-                <FormControl
-                  size="small"
-                  sx={{ minWidth: 120, maxWidth: "58%", flexShrink: 0 }}
-                >
-                  <Select
-                    value={selectedCity}
-                    onChange={(e) => changeCity(e.target.value)}
-                    sx={{
-                      borderRadius: 0,
-                      "& .MuiOutlinedInput-notchedOutline": {
-                        borderColor: isDark
-                          ? alpha("#fff", 0.12)
-                          : alpha("#1e6fd9", 0.2),
-                      },
-                    }}
-                  >
-                    {cities.map((city) => (
-                      <MenuItem key={city.value} value={city.value}>
-                        {city.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </ListItem>
-
-              <Divider sx={{ mx: 2, opacity: 0.5 }} />
-
-              {/* Language */}
-              <Box sx={{ px: 2, py: 1 }}>
-                <ProfileSectionLabel
-                  icon={LanguageIcon}
-                  label={t("Language")}
-                  sx={{ mb: 1 }}
-                />
-                <Box
-                  sx={{
-                    display: "flex",
-                    gap: 0.75,
-                    flexWrap: "wrap",
-                  }}
-                >
-                  {[
-                    { code: "en", flag: "🇺🇸", label: t("English") },
-                    { code: "ar", flag: "🇸🇦", label: t("Arabic") },
-                  ].map(({ code, flag, label }) => (
-                    <Button
-                      key={code}
-                      size="small"
-                      variant={
-                        i18n.language === code ? "contained" : "outlined"
-                      }
-                      onClick={() => i18n.changeLanguage(code)}
-                      sx={{
-                        borderRadius: 0,
-                        minWidth: 0,
-                        px: 1.5,
-                        fontSize: "0.82rem",
-                        fontWeight: 600,
-                      }}
-                    >
-                      {flag} {label}
-                    </Button>
-                  ))}
-                  <Button
-                    size="small"
-                    variant={
-                      i18n.language === "ku" ? "contained" : "outlined"
-                    }
-                    onClick={() => i18n.changeLanguage("ku")}
-                    sx={{
-                      borderRadius: 0,
-                      minWidth: 0,
-                      px: 1.5,
-                      fontSize: "0.82rem",
-                      fontWeight: 600,
-                    }}
-                  >
-                    <Box
-                      component="span"
-                      sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
-                    >
-                      <img
-                        src={kurdishFlag}
-                        alt="Kurdish"
-                        style={{
-                          width: 16,
-                          height: 11,
-                          objectFit: "cover",
-                          borderRadius: 0,
-                        }}
-                      />
-                      {t("Kurdish")}
-                    </Box>
-                  </Button>
-                </Box>
-              </Box>
             </Box>
           </Box>
 
@@ -1590,44 +1366,6 @@ const ProfilePage = ({ onClose }) => {
             </Box>
           )}
 
-          {/* Support */}
-          <Box sx={{ px: 2 }}>
-            <Box sx={cardSx}>
-              <ListItemButton onClick={openFeedbackDialog}>
-                <ListItemIcon>
-                  <FeedbackIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText
-                  primary={t("Suggestion / Report a problem", {
-                    defaultValue: "Suggestion / Report a problem",
-                  })}
-                />
-              </ListItemButton>
-              <Divider sx={{ mx: 2, opacity: 0.4 }} />
-              <ListItemButton onClick={() => closeThen(() => navigate("/about"))}>
-                <ListItemIcon>
-                  <InfoOutlinedIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText
-                  primary={t("About the app", {
-                    defaultValue: "About the app",
-                  })}
-                />
-              </ListItemButton>
-              <Divider sx={{ mx: 2, opacity: 0.4 }} />
-              <ListItemButton
-                component={Link}
-                to="/privacy-policy"
-                onClick={() => onClose?.()}
-              >
-                <ListItemIcon>
-                  <PrivacyTipIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText primary={t("Privacy Policy")} />
-              </ListItemButton>
-            </Box>
-          </Box>
-
           {/* Auth actions */}
           <Box sx={{ px: 2, pb: 2 }}>
             <Box sx={cardSx}>
@@ -1693,6 +1431,210 @@ const ProfilePage = ({ onClose }) => {
       </Box>
 
       {/* ── DIALOGS ── */}
+      <Dialog
+        open={languageDialogOpen}
+        onClose={() => setLanguageDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>{t("Language")}</DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+            {[
+              { code: "en", flag: "🇺🇸", label: t("English") },
+              { code: "ar", flag: "🇸🇦", label: t("Arabic") },
+            ].map(({ code, flag, label }) => (
+              <Button
+                key={code}
+                fullWidth
+                variant={i18n.language === code ? "contained" : "outlined"}
+                onClick={() => {
+                  i18n.changeLanguage(code);
+                  setLanguageDialogOpen(false);
+                }}
+                sx={{
+                  justifyContent: "flex-start",
+                  textTransform: "none",
+                  fontWeight: 600,
+                  py: 1.1,
+                }}
+              >
+                {flag} {label}
+              </Button>
+            ))}
+            <Button
+              fullWidth
+              variant={i18n.language === "ku" ? "contained" : "outlined"}
+              onClick={() => {
+                i18n.changeLanguage("ku");
+                setLanguageDialogOpen(false);
+              }}
+              sx={{
+                justifyContent: "flex-start",
+                textTransform: "none",
+                fontWeight: 600,
+                py: 1.1,
+              }}
+            >
+              <Box
+                component="span"
+                sx={{ display: "flex", alignItems: "center", gap: 1 }}
+              >
+                <Box
+                  component="img"
+                  src={kurdishFlag}
+                  alt="Kurdish"
+                  sx={{
+                    width: 18,
+                    height: 12,
+                    objectFit: "cover",
+                    borderRadius: 0.5,
+                  }}
+                />
+                {t("Kurdish")}
+              </Box>
+            </Button>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setLanguageDialogOpen(false)}>
+            {t("Close")}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={cityDialogOpen}
+        onClose={() => setCityDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>
+          {t("Change City", { defaultValue: "Change City" })}
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          <FormControl fullWidth sx={{ mt: 1 }}>
+            <InputLabel>{t("City")}</InputLabel>
+            <Select
+              label={t("City")}
+              value={selectedCity}
+              onChange={(e) => changeCity(e.target.value)}
+            >
+              {cities.map((city) => (
+                <MenuItem key={city.value} value={city.value}>
+                  {city.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCityDialogOpen(false)}>
+            {t("Done", { defaultValue: "Done" })}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={themeDialogOpen}
+        onClose={() => setThemeDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>{t("Theme", { defaultValue: "Theme" })}</DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mb: 1.5, mt: 0.5 }}
+          >
+            {t("Appearance", { defaultValue: "Appearance" })}
+          </Typography>
+          <Box
+            sx={{
+              display: "flex",
+              gap: 0.5,
+              p: 0.5,
+              borderRadius: 1,
+              border: `1px solid ${isDark ? alpha("#fff", 0.08) : alpha("#000", 0.07)}`,
+              background: isDark ? alpha("#fff", 0.03) : alpha("#f0f4ff", 0.8),
+            }}
+          >
+            {[
+              { value: "light", Icon: LightModeOutlined, label: t("Light") },
+              { value: "dark", Icon: DarkModeOutlined, label: t("Dark") },
+              {
+                value: "system",
+                Icon: BrightnessAutoRounded,
+                label: t("System", { defaultValue: "System" }),
+              },
+            ].map(({ value, Icon, label }) => (
+              <Box
+                key={value}
+                component="button"
+                type="button"
+                onClick={() => setColorMode(value)}
+                sx={{
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 0.4,
+                  py: 1,
+                  border: "none",
+                  cursor: "pointer",
+                  borderRadius: 1,
+                  transition: "all 0.18s ease",
+                  background:
+                    colorMode === value
+                      ? isDark
+                        ? `linear-gradient(135deg, ${alpha("#1e6fd9", 0.35)}, ${alpha("#6366f1", 0.25)})`
+                        : `linear-gradient(135deg, ${alpha("#1e6fd9", 0.12)}, ${alpha("#6366f1", 0.08)})`
+                      : "transparent",
+                  boxShadow:
+                    colorMode === value
+                      ? `0 2px 10px ${alpha("#1e6fd9", 0.25)}, inset 0 1px 0 ${alpha("#fff", 0.1)}`
+                      : "none",
+                  "&:hover": {
+                    background:
+                      colorMode !== value
+                        ? isDark
+                          ? alpha("#fff", 0.04)
+                          : alpha("#1e6fd9", 0.04)
+                        : undefined,
+                  },
+                }}
+              >
+                <Icon
+                  sx={{
+                    fontSize: 22,
+                    color:
+                      colorMode === value ? "primary.main" : "text.secondary",
+                  }}
+                />
+                <Typography
+                  sx={{
+                    fontSize: "0.68rem",
+                    fontWeight: 700,
+                    color:
+                      colorMode === value ? "primary.main" : "text.secondary",
+                    lineHeight: 1,
+                  }}
+                >
+                  {label}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setThemeDialogOpen(false)}>
+            {t("Done", { defaultValue: "Done" })}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Dialog
         open={feedbackDialogOpen}
         onClose={() => !feedbackSubmitting && setFeedbackDialogOpen(false)}

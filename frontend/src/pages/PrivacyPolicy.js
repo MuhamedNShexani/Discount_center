@@ -20,7 +20,7 @@ const PrivacyPolicy = () => {
         dir="ltr"
         sx={{
           minHeight: "60vh",
-          py: 4,
+          py: 1,
           direction: "ltr",
           textAlign: "left",
         }}

@@ -402,6 +402,7 @@ const DataEntryForm = () => {
   const EMPTY_TYPE_ADD_FORM = {
     name: "",
     icon: "",
+    picture: "",
     nameEn: "",
     nameAr: "",
     nameKu: "",
@@ -644,6 +645,9 @@ const DataEntryForm = () => {
   const [bulkUploadLoading, setBulkUploadLoading] = useState(false);
   const [selectedEditImage, setSelectedEditImage] = useState(null);
   const [selectedStoreLogo, setSelectedStoreLogo] = useState(null);
+  const [selectedStoreTypePicture, setSelectedStoreTypePicture] = useState(null);
+  const [selectedStoreTypeEditPicture, setSelectedStoreTypeEditPicture] =
+    useState(null);
   const [selectedGiftImage, setSelectedGiftImage] = useState(null);
   const [selectedEditGiftImage, setSelectedEditGiftImage] = useState(null);
 
@@ -1456,6 +1460,16 @@ const DataEntryForm = () => {
       return data.url;
     } catch (error) {
       console.error("Error uploading logo:", error);
+      throw error;
+    }
+  };
+
+  const uploadStoreTypePicture = async (storeTypeId, file) => {
+    try {
+      const res = await storeTypeAPI.uploadPicture(storeTypeId, file);
+      return res.data?.url || res.data?.storeType?.picture || "";
+    } catch (error) {
+      console.error("Error uploading store type picture:", error);
       throw error;
     }
   };
@@ -3408,20 +3422,24 @@ const DataEntryForm = () => {
         });
         fetchCategories();
       } else if (editDialog.type === "storeType") {
-        // Save store type edit via API
-        await fetch(`${API_URL}/api/store-types/${editForm._id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: (editForm.name || "").trim(),
-            icon: editForm.icon || "",
-            nameEn: editForm.nameEn?.trim() || "",
-            nameAr: editForm.nameAr?.trim() || "",
-            nameKu: editForm.nameKu?.trim() || "",
-          }),
+        let pictureUrl = editForm.picture || "";
+        if (selectedStoreTypeEditPicture) {
+          pictureUrl = await uploadStoreTypePicture(
+            editForm._id,
+            selectedStoreTypeEditPicture,
+          );
+        }
+        await storeTypeAPI.update(editForm._id, {
+          name: (editForm.name || "").trim(),
+          icon: editForm.icon || "",
+          picture: pictureUrl,
+          nameEn: editForm.nameEn?.trim() || "",
+          nameAr: editForm.nameAr?.trim() || "",
+          nameKu: editForm.nameKu?.trim() || "",
         });
         const res = await storeTypeAPI.getAll();
         setStoreTypes(res.data || []);
+        setSelectedStoreTypeEditPicture(null);
         setMessage({
           type: "success",
           text: t("Store Type updated successfully!"),
@@ -4729,6 +4747,7 @@ const DataEntryForm = () => {
                   startIcon={<AddIcon />}
                   onClick={() => {
                     setStoreTypeAddForm({ ...EMPTY_TYPE_ADD_FORM });
+                    setSelectedStoreTypePicture(null);
                     setAddDialog({ open: true, type: "storeType" });
                   }}
                   sx={{ flexShrink: 0 }}
@@ -4743,6 +4762,7 @@ const DataEntryForm = () => {
                     <TableRow>
                       <TableCell>{t("No.")}</TableCell>
                       <TableCell>{t("Name")}</TableCell>
+                      <TableCell>{t("Picture")}</TableCell>
                       <TableCell>{t("Icon")}</TableCell>
                       <TableCell>{t("Actions")}</TableCell>
                     </TableRow>
@@ -4752,15 +4772,66 @@ const DataEntryForm = () => {
                       <TableRow key={st._id}>
                         <TableCell>{idx + 1}</TableCell>
                         <TableCell>{st.name}</TableCell>
+                        <TableCell>
+                          {st.picture ? (
+                            <img
+                              src={`${API_URL}${st.picture}`}
+                              alt={st.name}
+                              width={60}
+                              height={60}
+                              style={{ objectFit: "cover", borderRadius: 8 }}
+                            />
+                          ) : (
+                            <Chip label={t("No Image")} size="small" />
+                          )}
+                        </TableCell>
                         <TableCell style={{ fontSize: 18 }}>
                           {st.icon || "🏪"}
                         </TableCell>
                         <TableCell>
+                          <input
+                            id={`store-type-picture-${st._id}`}
+                            type="file"
+                            accept="image/*"
+                            style={{ display: "none" }}
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              try {
+                                await uploadStoreTypePicture(st._id, file);
+                                const res = await storeTypeAPI.getAll();
+                                setStoreTypes(res.data || []);
+                                setMessage({
+                                  type: "success",
+                                  text: t("Image uploaded"),
+                                });
+                              } catch (err) {
+                                setMessage({
+                                  type: "error",
+                                  text: err.message || t("Upload failed"),
+                                });
+                              } finally {
+                                e.target.value = "";
+                              }
+                            }}
+                          />
+                          <label htmlFor={`store-type-picture-${st._id}`}>
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              component="span"
+                              startIcon={<CloudUploadIcon />}
+                              sx={{ mr: 1, mb: { xs: 0.5, sm: 0 } }}
+                            >
+                              {t("Upload Image")}
+                            </Button>
+                          </label>
                           <Button
                             size="small"
                             variant="outlined"
                             sx={{ mr: 1 }}
                             onClick={() => {
+                              setSelectedStoreTypeEditPicture(null);
                               setEditDialog({
                                 open: true,
                                 type: "storeType",
@@ -4770,6 +4841,7 @@ const DataEntryForm = () => {
                                 _id: st._id,
                                 name: st.name,
                                 icon: st.icon || "",
+                                picture: st.picture || "",
                                 nameEn: st.nameEn || "",
                                 nameAr: st.nameAr || "",
                                 nameKu: st.nameKu || "",
@@ -8952,20 +9024,25 @@ const DataEntryForm = () => {
                 const name = storeTypeAddForm.name?.trim();
                 if (!name) return;
                 try {
-                  await fetch(`${API_URL}/api/store-types`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      name,
-                      icon: storeTypeAddForm.icon || "",
-                      nameEn: storeTypeAddForm.nameEn?.trim() || "",
-                      nameAr: storeTypeAddForm.nameAr?.trim() || "",
-                      nameKu: storeTypeAddForm.nameKu?.trim() || "",
-                    }),
+                  const createRes = await storeTypeAPI.create({
+                    name,
+                    icon: storeTypeAddForm.icon || "",
+                    nameEn: storeTypeAddForm.nameEn?.trim() || "",
+                    nameAr: storeTypeAddForm.nameAr?.trim() || "",
+                    nameKu: storeTypeAddForm.nameKu?.trim() || "",
                   });
+                  const createdId =
+                    createRes.data?._id || createRes.data?.id || null;
+                  if (selectedStoreTypePicture && createdId) {
+                    await uploadStoreTypePicture(
+                      createdId,
+                      selectedStoreTypePicture,
+                    );
+                  }
                   const res = await storeTypeAPI.getAll();
                   setStoreTypes(res.data || []);
                   setStoreTypeAddForm({ ...EMPTY_TYPE_ADD_FORM });
+                  setSelectedStoreTypePicture(null);
                   setAddDialog({ open: false, type: "" });
                 } catch (e) {}
               }}
@@ -9010,6 +9087,42 @@ const DataEntryForm = () => {
                   setStoreTypeAddForm((p) => ({ ...p, icon: e.target.value }))
                 }
               />
+              <input
+                accept="image/*"
+                style={{ display: "none" }}
+                id="dialog-store-type-picture-file"
+                type="file"
+                onChange={(e) =>
+                  setSelectedStoreTypePicture(e.target.files?.[0] || null)
+                }
+              />
+              <label htmlFor="dialog-store-type-picture-file">
+                <Button
+                  variant="outlined"
+                  component="span"
+                  fullWidth
+                  sx={{ mt: 2 }}
+                  startIcon={<CloudUploadIcon />}
+                >
+                  {selectedStoreTypePicture
+                    ? selectedStoreTypePicture.name
+                    : t("Upload Picture")}
+                </Button>
+              </label>
+              {selectedStoreTypePicture && (
+                <Box sx={{ mt: 1.5, textAlign: "center" }}>
+                  <img
+                    src={URL.createObjectURL(selectedStoreTypePicture)}
+                    alt={t("Preview")}
+                    style={{
+                      maxWidth: 120,
+                      maxHeight: 120,
+                      objectFit: "cover",
+                      borderRadius: 12,
+                    }}
+                  />
+                </Box>
+              )}
               <Box sx={{ mt: 2, textAlign: "right" }}>
                 <Button
                   type="submit"
@@ -12654,19 +12767,24 @@ const DataEntryForm = () => {
               onSubmit={async (e) => {
                 e.preventDefault();
                 try {
-                  await fetch(`${API_URL}/api/store-types/${editForm._id}`, {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      name: editForm.name,
-                      icon: editForm.icon || "",
-                      nameEn: editForm.nameEn?.trim() || "",
-                      nameAr: editForm.nameAr?.trim() || "",
-                      nameKu: editForm.nameKu?.trim() || "",
-                    }),
+                  let pictureUrl = editForm.picture || "";
+                  if (selectedStoreTypeEditPicture) {
+                    pictureUrl = await uploadStoreTypePicture(
+                      editForm._id,
+                      selectedStoreTypeEditPicture,
+                    );
+                  }
+                  await storeTypeAPI.update(editForm._id, {
+                    name: editForm.name,
+                    icon: editForm.icon || "",
+                    picture: pictureUrl,
+                    nameEn: editForm.nameEn?.trim() || "",
+                    nameAr: editForm.nameAr?.trim() || "",
+                    nameKu: editForm.nameKu?.trim() || "",
                   });
                   const res = await storeTypeAPI.getAll();
                   setStoreTypes(res.data || []);
+                  setSelectedStoreTypeEditPicture(null);
                   setEditDialog({ open: false, type: "", data: null });
                 } catch (e) {}
               }}
@@ -12709,6 +12827,56 @@ const DataEntryForm = () => {
                   setEditForm({ ...editForm, icon: e.target.value })
                 }
               />
+              {editForm.picture ? (
+                <Box sx={{ mt: 2, textAlign: "center" }}>
+                  <img
+                    src={`${API_URL}${editForm.picture}`}
+                    alt={editForm.name || t("Picture")}
+                    style={{
+                      maxWidth: 120,
+                      maxHeight: 120,
+                      objectFit: "cover",
+                      borderRadius: 12,
+                    }}
+                  />
+                </Box>
+              ) : null}
+              <input
+                accept="image/*"
+                style={{ display: "none" }}
+                id="edit-store-type-picture-file"
+                type="file"
+                onChange={(e) =>
+                  setSelectedStoreTypeEditPicture(e.target.files?.[0] || null)
+                }
+              />
+              <label htmlFor="edit-store-type-picture-file">
+                <Button
+                  variant="outlined"
+                  component="span"
+                  fullWidth
+                  sx={{ mt: 2 }}
+                  startIcon={<CloudUploadIcon />}
+                >
+                  {selectedStoreTypeEditPicture
+                    ? selectedStoreTypeEditPicture.name
+                    : t("Upload Picture")}
+                </Button>
+              </label>
+              {selectedStoreTypeEditPicture && (
+                <Box sx={{ mt: 1.5, textAlign: "center" }}>
+                  <img
+                    src={URL.createObjectURL(selectedStoreTypeEditPicture)}
+                    alt={t("Preview")}
+                    style={{
+                      maxWidth: 120,
+                      maxHeight: 120,
+                      objectFit: "cover",
+                      borderRadius: 12,
+                    }}
+                  />
+                </Box>
+              )}
             </Box>
           ) : editDialog.type === "brandType" ? (
             <Box
