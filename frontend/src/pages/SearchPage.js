@@ -37,6 +37,7 @@ import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
 import { searchAPI, brandAPI } from "../services/api";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
+import { useActiveTheme } from "../context/ActiveThemeContext";
 import { useCityFilter } from "../context/CityFilterContext";
 import { getLocalizedField } from "../utils/localize";
 import { useDataLanguage } from "../context/DataLanguageContext";
@@ -99,6 +100,7 @@ const SearchPage = () => {
   const navigate = useNavigate();
   const { openDraftCart } = useDraftCartDrawer();
   const { user } = useAuth();
+  const { trendingSearches } = useActiveTheme();
   const { selectedCity } = useCityFilter();
   const [searchParams, setSearchParams] = useSearchParams();
   const qParam = searchParams.get("q") || "";
@@ -156,15 +158,8 @@ const SearchPage = () => {
     [showcaseBrands],
   );
   const suggestedSearches = useMemo(
-    () => [
-      t("Restaurants", { defaultValue: "Restaurants" }),
-      t("Fashion", { defaultValue: "Fashion" }),
-      t("Electronics", { defaultValue: "Electronics" }),
-      t("Nearby stores", { defaultValue: "Nearby stores" }),
-      t("Gifts", { defaultValue: "Gifts" }),
-      t("Shopping", { defaultValue: "Shopping" }),
-    ],
-    [t],
+    () => trendingSearches,
+    [trendingSearches],
   );
   const performSearch = useCallback(
     async (q) => {

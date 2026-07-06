@@ -238,12 +238,19 @@ export const adAPI = {
 // Theme API calls
 export const themeAPI = {
   get: () => api.get("/theme"),
-  update: ({ activeTheme, activeFontKey, navConfig, profileShortcuts } = {}) =>
+  update: ({
+    activeTheme,
+    activeFontKey,
+    navConfig,
+    profileShortcuts,
+    trendingSearches,
+  } = {}) =>
     api.put("/theme", {
       activeTheme,
       activeFontKey,
       navConfig,
       profileShortcuts,
+      trendingSearches,
     }),
 };
 

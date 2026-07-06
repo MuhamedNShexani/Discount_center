@@ -41,6 +41,7 @@ const isSafeFontKey = (value) =>
 
 const DEFAULT_NAV_CONFIG = {
   template: "template1",
+  bottomNavLabelMode: "activeOnly",
   topSlots: {
     topleft1: "",
     topleft2: "",
@@ -106,6 +107,17 @@ const DEFAULT_PROFILE_SHORTCUTS = [
   "reels",
 ];
 
+const DEFAULT_TRENDING_SEARCHES = [
+  "Restaurants",
+  "Fashion",
+  "Electronics",
+  "Nearby stores",
+  "Gifts",
+  "Shopping",
+];
+
+const MAX_TRENDING_SEARCHES = 12;
+
 const ALLOWED_PROFILE_SHORTCUT_IDS = new Set([
   "home",
   "search",
@@ -134,6 +146,22 @@ const sanitizeProfileShortcuts = (input) => {
   return out.length > 0 ? out : [...DEFAULT_PROFILE_SHORTCUTS];
 };
 
+const sanitizeTrendingSearches = (input) => {
+  if (!Array.isArray(input)) return [...DEFAULT_TRENDING_SEARCHES];
+  const seen = new Set();
+  const out = [];
+  for (const raw of input) {
+    const term = String(raw || "").trim();
+    if (!term || term.length > 80) continue;
+    const key = term.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(term);
+    if (out.length >= MAX_TRENDING_SEARCHES) break;
+  }
+  return out.length > 0 ? out : [...DEFAULT_TRENDING_SEARCHES];
+};
+
 const sanitizeNavConfig = (input) => {
   if (!input || typeof input !== "object") return null;
   const template = String(input.template || "").trim();
@@ -149,6 +177,8 @@ const sanitizeNavConfig = (input) => {
 
   return {
     template: safeTemplate,
+    bottomNavLabelMode:
+      input.bottomNavLabelMode === "always" ? "always" : "activeOnly",
     topSlots: {
       topleft1: sanitizeSlot(top.topleft1),
       topleft2: sanitizeSlot(top.topleft2),
@@ -184,6 +214,7 @@ const getTheme = async (req, res) => {
         activeFontKey: "default",
         navConfig: DEFAULT_NAV_CONFIG,
         profileShortcuts: [...DEFAULT_PROFILE_SHORTCUTS],
+        trendingSearches: [...DEFAULT_TRENDING_SEARCHES],
         contactWhatsAppNumber: DEFAULT_CONTACT,
         contactInfo: { ...EMPTY_CONTACT_INFO, whatsapp: DEFAULT_CONTACT },
       });
@@ -191,11 +222,15 @@ const getTheme = async (req, res) => {
     }
     const activeTheme = settings.activeTheme || "default";
     const activeFontKey = settings.activeFontKey || "default";
-    const navConfig = settings.navConfig || DEFAULT_NAV_CONFIG;
+    const navConfig =
+      sanitizeNavConfig(settings.navConfig) || DEFAULT_NAV_CONFIG;
     const profileShortcuts = sanitizeProfileShortcuts(
       settings.profileShortcuts,
     );
-    res.json({ activeTheme, activeFontKey, navConfig, profileShortcuts });
+    const trendingSearches = sanitizeTrendingSearches(
+      settings.trendingSearches,
+    );
+    res.json({ activeTheme, activeFontKey, navConfig, profileShortcuts, trendingSearches });
   } catch (err) {
     console.error("Get theme error:", err.message);
     res.json({
@@ -203,6 +238,7 @@ const getTheme = async (req, res) => {
       activeFontKey: "default",
       navConfig: DEFAULT_NAV_CONFIG,
       profileShortcuts: [...DEFAULT_PROFILE_SHORTCUTS],
+      trendingSearches: [...DEFAULT_TRENDING_SEARCHES],
     });
   }
 };
@@ -249,6 +285,12 @@ const updateTheme = async (req, res) => {
         ? undefined
         : sanitizeProfileShortcuts(profileShortcutsRaw);
 
+    const trendingSearchesRaw = req.body?.trendingSearches;
+    const trendingSearches =
+      trendingSearchesRaw === undefined
+        ? undefined
+        : sanitizeTrendingSearches(trendingSearchesRaw);
+
     let settings = await Settings.findOne();
     if (!settings) {
       settings = await Settings.create({
@@ -259,6 +301,10 @@ const updateTheme = async (req, res) => {
           profileShortcuts !== undefined
             ? profileShortcuts
             : [...DEFAULT_PROFILE_SHORTCUTS],
+        trendingSearches:
+          trendingSearches !== undefined
+            ? trendingSearches
+            : [...DEFAULT_TRENDING_SEARCHES],
         contactWhatsAppNumber: DEFAULT_CONTACT,
         contactInfo: { ...EMPTY_CONTACT_INFO, whatsapp: DEFAULT_CONTACT },
       });
@@ -273,6 +319,9 @@ const updateTheme = async (req, res) => {
       if (profileShortcuts !== undefined) {
         settings.profileShortcuts = profileShortcuts;
       }
+      if (trendingSearches !== undefined) {
+        settings.trendingSearches = trendingSearches;
+      }
       await settings.save();
     }
 
@@ -282,6 +331,7 @@ const updateTheme = async (req, res) => {
       activeFontKey: settings.activeFontKey || "default",
       navConfig: settings.navConfig || DEFAULT_NAV_CONFIG,
       profileShortcuts: sanitizeProfileShortcuts(settings.profileShortcuts),
+      trendingSearches: sanitizeTrendingSearches(settings.trendingSearches),
     });
   } catch (err) {
     console.error("Update theme error:", err.message);

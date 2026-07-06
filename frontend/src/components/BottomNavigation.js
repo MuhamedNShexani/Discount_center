@@ -159,6 +159,7 @@ const BottomNavigationBar = () => {
   }, [location.pathname]);
 
   const template = navConfig?.template || "template1";
+  const showAllLabels = navConfig?.bottomNavLabelMode === "always";
 
   const actionMap = useMemo(
     () => ({
@@ -508,27 +509,66 @@ const BottomNavigationBar = () => {
                   pathname: location.pathname,
                 });
 
-                if (isTemplate3 && isRouteTab) {
+                if (showAllLabels) {
+                  const logoActive =
+                    item.kind === "logo" &&
+                    activeValue !== false &&
+                    activeValue === "/";
+                  const isActive = routeActive || logoActive;
+                  const tabKey = item.kind ? `${item.path}-${idx}` : item.path;
+
+                  const handleAlwaysLabelClick = (event) => {
+                    if (item.kind === "city") {
+                      setCityMenuAnchor(event.currentTarget);
+                      return;
+                    }
+                    if (item.kind === "language") {
+                      setLangMenuAnchor(event.currentTarget);
+                      return;
+                    }
+                    if (item.kind === "notifications") {
+                      blurThen(() => openNotifications())(event);
+                      return;
+                    }
+                    if (item.kind === "draftCart") {
+                      blurThen(() => openDraftCart())(event);
+                      return;
+                    }
+                    if (item.kind === "profile") {
+                      blurThen(() => openProfile())(event);
+                      return;
+                    }
+                    if (item.kind === "refresh") {
+                      handleBottomNavRefresh();
+                      return;
+                    }
+                    if (item.kind === "logo") {
+                      handleRouteNavigate({ path: "/" });
+                      return;
+                    }
+                    handleRouteNavigate(item);
+                  };
+
                   return (
                     <MotionBox
-                      key={item.path}
+                      key={tabKey}
                       component="button"
                       type="button"
-                      aria-current={routeActive ? "page" : undefined}
+                      aria-current={isActive ? "page" : undefined}
                       aria-label={item.name}
                       onPointerEnter={
                         item.path === "/search"
                           ? () => prefetchSearchPageChunk()
                           : undefined
                       }
-                      onClick={() => handleRouteNavigate(item)}
+                      onClick={handleAlwaysLabelClick}
                       whileTap={
                         useLayoutAnimations ? { scale: 0.94 } : undefined
                       }
                       sx={{
                         ...tabBtnBaseSx,
                         flex: "1 1 0%",
-                        borderRadius: "14px",
+                        borderRadius: isTemplate3 ? "14px" : 9999,
                       }}
                     >
                       <Box
@@ -541,33 +581,65 @@ const BottomNavigationBar = () => {
                           width: "100%",
                           py: 0.7,
                           px: 0.5,
-                          borderRadius: "14px",
-                          background: routeActive
+                          borderRadius: isTemplate3 ? "14px" : 9999,
+                          background: isActive
                             ? activeTabStyle.background
                             : "transparent",
-                          boxShadow: routeActive
-                            ? activeTabStyle.boxShadow
-                            : "none",
-                          transition: "background 200ms ease, box-shadow 200ms ease",
+                          boxShadow: isActive ? activeTabStyle.boxShadow : "none",
+                          transition:
+                            "background 200ms ease, box-shadow 200ms ease",
                         }}
                       >
-                        <Icon
-                          size={22}
-                          color={routeActive ? "#ffffff" : inactiveIconColor}
-                          strokeWidth={
-                            routeActive
-                              ? NAV_ICON_STROKE.active
-                              : NAV_ICON_STROKE.idle
-                          }
-                        />
+                        {item.kind === "logo" ? (
+                          <Box
+                            component="img"
+                            src={`${import.meta.env.BASE_URL}logo512.png`}
+                            alt={item.name}
+                            sx={{
+                              width: 22,
+                              height: 22,
+                              borderRadius: 1.1,
+                              objectFit: "cover",
+                              border: isActive
+                                ? "2px solid #ffffff"
+                                : "2px solid transparent",
+                              boxSizing: "border-box",
+                            }}
+                          />
+                        ) : item.kind === "notifications" ? (
+                          <Badge badgeContent={unreadCount} color="error">
+                            <Icon
+                              size={22}
+                              color={isActive ? "#ffffff" : inactiveIconColor}
+                              strokeWidth={
+                                isActive
+                                  ? NAV_ICON_STROKE.active
+                                  : NAV_ICON_STROKE.idle
+                              }
+                            />
+                          </Badge>
+                        ) : (
+                          <Icon
+                            size={22}
+                            color={isActive ? "#ffffff" : inactiveIconColor}
+                            strokeWidth={
+                              isActive
+                                ? NAV_ICON_STROKE.active
+                                : NAV_ICON_STROKE.idle
+                            }
+                          />
+                        )}
                         <Typography
                           component="span"
                           sx={{
                             fontSize: "0.66rem",
-                            fontWeight: routeActive ? 800 : 600,
+                            fontWeight: isActive ? 800 : 600,
                             lineHeight: 1.2,
-                            color: routeActive ? "#ffffff" : inactiveIconColor,
+                            color: isActive ? "#ffffff" : inactiveIconColor,
                             whiteSpace: "nowrap",
+                            maxWidth: "100%",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
                           }}
                         >
                           {item.name || item.path}

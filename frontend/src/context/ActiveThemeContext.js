@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { themeAPI } from "../services/api";
 import { normalizeProfileShortcutIds } from "../utils/profileShortcutCatalog";
+import { normalizeTrendingSearches } from "../utils/trendingSearches";
 
 const ActiveThemeContext = createContext(null);
 
@@ -10,6 +11,7 @@ const DEFAULT_FONT_KEY = "default";
 const THEME_CACHE_KEY = "activeThemeCache.v1";
 const DEFAULT_NAV_CONFIG = {
   template: "template1",
+  bottomNavLabelMode: "activeOnly",
   topSlots: {
     topleft1: "",
     topleft2: "",
@@ -54,6 +56,9 @@ export const ActiveThemeProvider = ({ children }) => {
   const [profileShortcuts, setProfileShortcuts] = useState(() =>
     normalizeProfileShortcutIds(cached?.profileShortcuts),
   );
+  const [trendingSearches, setTrendingSearches] = useState(() =>
+    normalizeTrendingSearches(cached?.trendingSearches),
+  );
   const [userThemeOverride, setUserThemeOverride] = useState("");
   const [loadingTheme, setLoadingTheme] = useState(true);
   const lastFetchAtRef = useRef(0);
@@ -92,10 +97,14 @@ export const ActiveThemeProvider = ({ children }) => {
       const nextProfileShortcuts = normalizeProfileShortcutIds(
         res?.data?.profileShortcuts,
       );
+      const nextTrendingSearches = normalizeTrendingSearches(
+        res?.data?.trendingSearches,
+      );
       setActiveTheme(next);
       setActiveFontKey(nextFontKey);
       setNavConfig(nextNavConfig);
       setProfileShortcuts(nextProfileShortcuts);
+      setTrendingSearches(nextTrendingSearches);
       try {
         localStorage.setItem(
           THEME_CACHE_KEY,
@@ -104,6 +113,7 @@ export const ActiveThemeProvider = ({ children }) => {
             activeFontKey: nextFontKey,
             navConfig: nextNavConfig,
             profileShortcuts: nextProfileShortcuts,
+            trendingSearches: nextTrendingSearches,
             cachedAt: Date.now(),
           }),
         );
@@ -156,6 +166,7 @@ export const ActiveThemeProvider = ({ children }) => {
       activeFontKey,
       navConfig,
       profileShortcuts,
+      trendingSearches,
       userThemeOverride,
       effectiveTheme: getEffectiveTheme(activeTheme, userThemeOverride),
       setUserThemeOverride: (t) => {
@@ -186,6 +197,7 @@ export const ActiveThemeProvider = ({ children }) => {
       activeFontKey,
       navConfig,
       profileShortcuts,
+      trendingSearches,
       applyToHtml,
       fetchTheme,
       getEffectiveTheme,

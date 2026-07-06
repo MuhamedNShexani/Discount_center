@@ -15,6 +15,12 @@ const settingsSchema = new mongoose.Schema(
     },
     navConfig: {
       template: { type: String, default: "template1", trim: true },
+      /** activeOnly | always — bottom bar label visibility for all templates */
+      bottomNavLabelMode: {
+        type: String,
+        default: "activeOnly",
+        trim: true,
+      },
       topSlots: {
         topleft1: { type: String, default: "", trim: true },
         topleft2: { type: String, default: "", trim: true },
@@ -33,6 +39,11 @@ const settingsSchema = new mongoose.Schema(
     },
     /** Ordered app page ids shown as shortcuts on Profile (admin via theme API). */
     profileShortcuts: {
+      type: [String],
+      default: undefined,
+    },
+    /** Suggested search chips on the Search page (admin via theme API). */
+    trendingSearches: {
       type: [String],
       default: undefined,
     },

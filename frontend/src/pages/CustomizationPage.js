@@ -17,9 +17,13 @@ import {
   Checkbox,
   FormControlLabel,
   FormGroup,
+  TextField,
+  IconButton,
 } from "@mui/material";
 import PaletteIcon from "@mui/icons-material/Palette";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
+import AddIcon from "@mui/icons-material/Add";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { useTranslation } from "react-i18next";
 import { useActiveTheme } from "../context/ActiveThemeContext";
 import { themeAPI } from "../services/api";
@@ -28,6 +32,11 @@ import {
   DEFAULT_PROFILE_SHORTCUT_IDS,
   normalizeProfileShortcutIds,
 } from "../utils/profileShortcutCatalog";
+import {
+  DEFAULT_TRENDING_SEARCHES,
+  MAX_TRENDING_SEARCHES,
+  normalizeTrendingSearches,
+} from "../utils/trendingSearches";
 
 const THEME_OPTIONS = [
   { id: "default", label: "Default Theme" },
@@ -105,7 +114,7 @@ const CustomizationPage = () => {
   const { t } = useTranslation();
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
-  const { activeTheme, activeFontKey, navConfig, profileShortcuts, fetchTheme } =
+  const { activeTheme, activeFontKey, navConfig, profileShortcuts, trendingSearches, fetchTheme } =
     useActiveTheme();
   const [selectedTheme, setSelectedTheme] = useState(activeTheme);
   const [selectedFont, setSelectedFont] = useState(activeFontKey || "default");
@@ -113,12 +122,16 @@ const CustomizationPage = () => {
   const [selectedProfileShortcuts, setSelectedProfileShortcuts] = useState(() =>
     normalizeProfileShortcutIds(profileShortcuts),
   );
+  const [selectedTrendingSearches, setSelectedTrendingSearches] = useState(() =>
+    normalizeTrendingSearches(trendingSearches),
+  );
   const [isDirty, setIsDirty] = useState(false);
   const lastServerSnapshotRef = useRef({
     activeTheme,
     activeFontKey: activeFontKey || "default",
     navConfig: navConfig || {},
     profileShortcuts: normalizeProfileShortcutIds(profileShortcuts),
+    trendingSearches: normalizeTrendingSearches(trendingSearches),
   });
   const [fontOptions, setFontOptions] = useState(FALLBACK_FONT_OPTIONS);
   const [saveToastOpen, setSaveToastOpen] = useState(false);
@@ -132,6 +145,7 @@ const CustomizationPage = () => {
       activeFontKey: activeFontKey || "default",
       navConfig: navConfig || {},
       profileShortcuts: normalizeProfileShortcutIds(profileShortcuts),
+      trendingSearches: normalizeTrendingSearches(trendingSearches),
     };
 
     // If user is actively editing, don't overwrite their changes due to polling.
@@ -142,7 +156,8 @@ const CustomizationPage = () => {
     setSelectedFont(nextSnapshot.activeFontKey);
     setSelectedNav(nextSnapshot.navConfig);
     setSelectedProfileShortcuts(nextSnapshot.profileShortcuts);
-  }, [activeTheme, activeFontKey, navConfig, profileShortcuts, isDirty]);
+    setSelectedTrendingSearches(nextSnapshot.trendingSearches);
+  }, [activeTheme, activeFontKey, navConfig, profileShortcuts, trendingSearches, isDirty]);
 
   useEffect(() => {
     let mounted = true;
@@ -419,6 +434,62 @@ const CustomizationPage = () => {
                       {opt.label}
                     </MenuItem>
                   ))}
+                </Select>
+              </FormControl>
+
+              <Box sx={{ height: 14 }} />
+
+              <Typography
+                sx={{
+                  fontWeight: 800,
+                  mb: 1,
+                  color: isDark ? "rgba(255,255,255,0.85)" : "#111827",
+                }}
+              >
+                {t("Bottom navigation labels", {
+                  defaultValue: "Bottom navigation labels",
+                })}
+              </Typography>
+              <FormControl
+                fullWidth
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 3,
+                    backgroundColor: isDark
+                      ? "rgba(255,255,255,0.05)"
+                      : "rgba(0,0,0,0.025)",
+                    "& fieldset": {
+                      borderColor: isDark
+                        ? "rgba(255,255,255,0.12)"
+                        : "rgba(0,0,0,0.12)",
+                    },
+                  },
+                }}
+              >
+                <InputLabel>
+                  {t("Label style", { defaultValue: "Label style" })}
+                </InputLabel>
+                <Select
+                  value={selectedNav?.bottomNavLabelMode || "activeOnly"}
+                  label={t("Label style", { defaultValue: "Label style" })}
+                  onChange={(e) => {
+                    setIsDirty(true);
+                    setSelectedNav((prev) => ({
+                      ...(prev || {}),
+                      bottomNavLabelMode: e.target.value,
+                    }));
+                  }}
+                >
+                  <MenuItem value="activeOnly">
+                    {t("Active tab only (icons elsewhere)", {
+                      defaultValue: "Active tab only (icons elsewhere)",
+                    })}
+                  </MenuItem>
+                  <MenuItem value="always">
+                    {t("Always show labels under icons", {
+                      defaultValue: "Always show labels under icons",
+                    })}
+                  </MenuItem>
                 </Select>
               </FormControl>
 
@@ -790,6 +861,99 @@ const CustomizationPage = () => {
                 ))}
               </FormGroup>
 
+              <Divider
+                sx={{
+                  my: 2.5,
+                  borderColor: isDark
+                    ? "rgba(255,255,255,0.08)"
+                    : "rgba(0,0,0,0.08)",
+                }}
+              />
+
+              <Typography
+                sx={{
+                  fontWeight: 800,
+                  mb: 0.5,
+                  color: isDark ? "rgba(255,255,255,0.85)" : "#111827",
+                }}
+              >
+                {t("Trending searches", { defaultValue: "Trending searches" })}
+              </Typography>
+              <Typography
+                sx={{
+                  mb: 1.5,
+                  color: isDark ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.5)",
+                  fontSize: "0.88rem",
+                }}
+              >
+                {t(
+                  "Suggested search chips shown on the Search page when the query is empty.",
+                  {
+                    defaultValue:
+                      "Suggested search chips shown on the Search page when the query is empty.",
+                  },
+                )}
+              </Typography>
+              {selectedTrendingSearches.map((term, idx) => (
+                <Box
+                  key={`trending-${idx}`}
+                  sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}
+                >
+                  <TextField
+                    fullWidth
+                    size="small"
+                    value={term}
+                    placeholder={t("Search term", { defaultValue: "Search term" })}
+                    onChange={(e) => {
+                      setIsDirty(true);
+                      setSelectedTrendingSearches((prev) => {
+                        const next = [...prev];
+                        next[idx] = e.target.value;
+                        return next;
+                      });
+                    }}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: 2.5,
+                        backgroundColor: isDark
+                          ? "rgba(255,255,255,0.05)"
+                          : "rgba(0,0,0,0.025)",
+                      },
+                    }}
+                  />
+                  <IconButton
+                    size="small"
+                    aria-label={t("Remove")}
+                    disabled={selectedTrendingSearches.length <= 1}
+                    onClick={() => {
+                      setIsDirty(true);
+                      setSelectedTrendingSearches((prev) =>
+                        prev.filter((_, i) => i !== idx),
+                      );
+                    }}
+                    sx={{
+                      color: isDark
+                        ? "rgba(255,255,255,0.55)"
+                        : "rgba(0,0,0,0.45)",
+                    }}
+                  >
+                    <DeleteOutlineIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+              ))}
+              <Button
+                startIcon={<AddIcon />}
+                size="small"
+                disabled={selectedTrendingSearches.length >= MAX_TRENDING_SEARCHES}
+                onClick={() => {
+                  setIsDirty(true);
+                  setSelectedTrendingSearches((prev) => [...prev, ""]);
+                }}
+                sx={{ textTransform: "none", fontWeight: 700, mb: 1 }}
+              >
+                {t("Add search term", { defaultValue: "Add search term" })}
+              </Button>
+
               <Box
                 sx={{
                   mt: 2,
@@ -855,6 +1019,9 @@ const CustomizationPage = () => {
                     profileShortcuts: normalizeProfileShortcutIds(
                       selectedProfileShortcuts,
                     ),
+                    trendingSearches: normalizeTrendingSearches(
+                      selectedTrendingSearches,
+                    ),
                   });
                   await fetchTheme();
                   setSaveOk(true);
@@ -884,6 +1051,7 @@ const CustomizationPage = () => {
                 setSelectedTheme("default");
                 setSelectedFont("default");
                 setSelectedProfileShortcuts([...DEFAULT_PROFILE_SHORTCUT_IDS]);
+                setSelectedTrendingSearches([...DEFAULT_TRENDING_SEARCHES]);
               }}
               sx={{
                 textTransform: "none",
