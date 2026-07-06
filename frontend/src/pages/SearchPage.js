@@ -57,7 +57,6 @@ import {
 } from "../utils/searchAnalyticsTrack";
 import { useDraftCartDrawer } from "../hooks/useDraftCartDrawer";
 import BrandShowcase from "../components/BrandShowcase";
-import ProfileShortcuts from "../components/ProfileShortcuts";
 import { isRtlLanguage } from "../utils/isRtlLanguage";
 
 /** Opens Shopping draft cart drawer (EN/KU/AR-friendly keywords). */
@@ -74,6 +73,17 @@ function isCartSearchIntent(raw) {
     return true;
   }
   return /سلة|کارت|باسکێت|هەڵگرتن/i.test(q);
+}
+
+function resolveStoreTypeId(entity) {
+  const value = entity?.storeTypeId;
+  if (value == null || value === "") return null;
+  if (typeof value === "object" && value._id != null) return String(value._id);
+  return String(value);
+}
+
+function storeTypeCategoryPath(storeTypeId, categoryId) {
+  return `/store-types/${encodeURIComponent(String(storeTypeId))}/category/${encodeURIComponent(String(categoryId))}`;
 }
 
 const SEARCH_SHOWCASE_SURFACE_SX = {
@@ -102,6 +112,7 @@ const SearchPage = () => {
     companies: [],
     categories: [],
     categoryTypes: [],
+    storeTypes: [],
   });
   const [searched, setSearched] = useState(false);
   const [recentSearches, setRecentSearches] = useState([]);
@@ -167,6 +178,7 @@ const SearchPage = () => {
           companies: [],
           categories: [],
           categoryTypes: [],
+          storeTypes: [],
         });
         setSearched(trimmed.length > 0);
         return;
@@ -180,6 +192,7 @@ const SearchPage = () => {
           companies: [],
           categories: [],
           categoryTypes: [],
+          storeTypes: [],
         });
         openDraftCart();
         setSearched(true);
@@ -202,6 +215,7 @@ const SearchPage = () => {
           companies: data.companies || [],
           categories: data.categories || [],
           categoryTypes: data.categoryTypes || [],
+          storeTypes: data.storeTypes || [],
         });
         const totalResults =
           visibleProducts.length +
@@ -209,7 +223,8 @@ const SearchPage = () => {
           (data.brands || []).length +
           (data.companies || []).length +
           (data.categories || []).length +
-          (data.categoryTypes || []).length;
+          (data.categoryTypes || []).length +
+          (data.storeTypes || []).length;
         void logSearchEvent({
           searchText: trimmed,
           resultCount: totalResults,
@@ -237,6 +252,7 @@ const SearchPage = () => {
           companies: [],
           categories: [],
           categoryTypes: [],
+          storeTypes: [],
         });
       } finally {
         setLoading(false);
@@ -256,6 +272,7 @@ const SearchPage = () => {
         companies: [],
         categories: [],
         categoryTypes: [],
+        storeTypes: [],
       });
       setSearched(false);
     }
@@ -339,9 +356,9 @@ const SearchPage = () => {
         "category",
       );
     }
-    navigate("/categories", {
-      state: { category: { _id: cat._id, name: cat.name } },
-    });
+    const stId = resolveStoreTypeId(cat);
+    if (!cat?._id || !stId) return;
+    navigate(storeTypeCategoryPath(stId, cat._id));
   };
 
   const handleCategoryTypeClick = (hit) => {
@@ -352,12 +369,24 @@ const SearchPage = () => {
         "categoryType",
       );
     }
-    navigate("/categories", {
-      state: {
-        category: hit.category,
-        categoryType: hit.type,
-      },
+    const stId = resolveStoreTypeId(hit.category);
+    if (!hit?.category?._id || !stId) return;
+    navigate(storeTypeCategoryPath(stId, hit.category._id), {
+      state: { categoryType: hit.type },
     });
+  };
+
+  const handleStoreTypeClick = (storeType) => {
+    if (searchPageLogIdRef.current && storeType?._id) {
+      recordSearchClick(
+        searchPageLogIdRef.current,
+        String(storeType._id),
+        "storeType",
+      );
+    }
+    navigate(
+      `/store-types/${encodeURIComponent(String(storeType._id))}`,
+    );
   };
 
   // const bannerAdsWithImages = useMemo(
@@ -414,6 +443,9 @@ const SearchPage = () => {
   const searchCategoryTypes = Array.isArray(results.categoryTypes)
     ? results.categoryTypes
     : [];
+  const searchStoreTypes = Array.isArray(results.storeTypes)
+    ? results.storeTypes
+    : [];
 
   const hasResults =
     searchProducts.length > 0 ||
@@ -421,7 +453,8 @@ const SearchPage = () => {
     searchBrands.length > 0 ||
     searchCompanies.length > 0 ||
     searchCategories.length > 0 ||
-    searchCategoryTypes.length > 0;
+    searchCategoryTypes.length > 0 ||
+    searchStoreTypes.length > 0;
 
   return (
     <Box
@@ -625,6 +658,7 @@ const SearchPage = () => {
                           companies: [],
                           categories: [],
                           categoryTypes: [],
+                          storeTypes: [],
                         });
                       }}
                     >
@@ -812,10 +846,6 @@ const SearchPage = () => {
             brands={brandShowcaseSlice}
             sx={SEARCH_SHOWCASE_SURFACE_SX}
           />
-          <ProfileShortcuts
-            excludeIds={["search"]}
-            sx={SEARCH_SHOWCASE_SURFACE_SX}
-          />
         </>
       )}
 
@@ -841,6 +871,75 @@ const SearchPage = () => {
             border: `1px solid ${theme.palette.divider}`,
           }}
         >
+          {searchStoreTypes.length > 0 && (
+            <>
+              <Box
+                sx={{
+                  px: 2,
+                  py: 1.5,
+                  bgcolor: "action.hover",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                }}
+              >
+                <StorefrontIcon fontSize="small" color="primary" />
+                <Typography variant="subtitle2" fontWeight={600}>
+                  {t("Store Types")}
+                </Typography>
+              </Box>
+              <List disablePadding>
+                {searchStoreTypes.map((storeType) => (
+                  <ListItemButton
+                    key={storeType._id}
+                    onClick={() => handleStoreTypeClick(storeType)}
+                    sx={{
+                      py: 1.5,
+                      "&:hover": { bgcolor: "action.hover" },
+                    }}
+                  >
+                    <ListItemAvatar>
+                      <Avatar
+                        variant="rounded"
+                        sx={{
+                          width: 48,
+                          height: 48,
+                          bgcolor: "grey.200",
+                        }}
+                      >
+                        {storeType.picture ? (
+                          <img
+                            src={resolveMediaUrl(storeType.picture)}
+                            alt=""
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                            }}
+                          />
+                        ) : storeType.icon ? (
+                          <Typography component="span" sx={{ fontSize: 22 }}>
+                            {storeType.icon}
+                          </Typography>
+                        ) : (
+                          <StorefrontIcon sx={{ color: "grey.600" }} />
+                        )}
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={
+                        getLocalizedField(storeType, "name", dataLanguage) ||
+                        storeType.name
+                      }
+                      primaryTypographyProps={{ fontWeight: 500 }}
+                    />
+                  </ListItemButton>
+                ))}
+              </List>
+              <Divider />
+            </>
+          )}
+
           {searchCategories.length > 0 && (
             <>
               <Box

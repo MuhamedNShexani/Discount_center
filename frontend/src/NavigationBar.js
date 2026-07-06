@@ -116,6 +116,8 @@ import {
 } from "./utils/openWhatsAppLink";
 import { isAndroidPerformanceMode } from "./utils/androidPerformance";
 import {
+  DEFAULT_NAV_BAR_GRADIENT_DARK_GLASS,
+  DEFAULT_NAV_BAR_GRADIENT_LIGHT,
   getNavBarBackground,
   getNavMenuItemSelectedBg,
   getNavRouteIconActiveSx,
@@ -132,10 +134,8 @@ const NAV_BRAND_TITLE_FONT_FAMILY =
   '"Brush Script MT", "Brush Script", "Segoe Script", cursive';
 
 /** Original solid brand bar (light mode). RTL-safe via inline style on AppBar. */
-const NAV_BAR_GRADIENT =
-  "linear-gradient(120deg, var(--color-primary) 0%, var(--color-secondary) 56%, var(--color-secondary) 100%)";
-const NAV_BAR_GRADIENT_DARK_GLASS =
-  "linear-gradient(118deg, rgba(7,11,20,0.78) 0%, rgba(15,23,42,0.7) 42%, rgba(23,37,84,0.62) 78%, rgba(37,99,235,0.45) 100%)";
+const NAV_BAR_GRADIENT = DEFAULT_NAV_BAR_GRADIENT_LIGHT;
+const NAV_BAR_GRADIENT_DARK_GLASS = DEFAULT_NAV_BAR_GRADIENT_DARK_GLASS;
 
 const HOME_DOUBLE_TAP_MS = 450;
 
@@ -863,8 +863,162 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
               : {}),
           }}
         >
-          {/* Mobile navbar templates */}
-          {!isSmUp && (navTemplate === "template1" || navTemplate === "template3") && (
+          {/* Mobile navbar — Template 1: logo + notifications | label | city */}
+          {!isSmUp && navTemplate === "template1" && (
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                width: "100%",
+                justifyContent: "space-between",
+                gap: 0.5,
+              }}
+            >
+              <Box
+                sx={{
+                  flex: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "flex-start",
+                  gap: 0.25,
+                  minWidth: 0,
+                }}
+              >
+                <Box
+                  component={Link}
+                  to="/"
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    flexShrink: 0,
+                    textDecoration: "none",
+                  }}
+                >
+                  <Avatar
+                    src={`${import.meta.env.BASE_URL}logo512.png`}
+                    alt={NAV_BRAND_TITLE}
+                    variant="rounded"
+                    sx={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 2.25,
+                      bgcolor: "rgba(255,255,255,0.12)",
+                      "& img": {
+                        objectFit: "cover",
+                        borderRadius: "inherit",
+                      },
+                      ...(isDarkNav
+                        ? { border: "2px solid rgba(255,255,255,0.28)" }
+                        : { border: "2px solid rgba(255,255,255,0.3)" }),
+                    }}
+                  />
+                </Box>
+                {NOTIFICATIONS_CENTER_ENABLED && (
+                  <IconButton
+                    onClick={blurThen(() => openNotifications())}
+                    sx={navIconBtnSx}
+                    aria-label={t("Notifications")}
+                  >
+                    <Badge badgeContent={unreadCount} color="error">
+                      <NotificationsIcon />
+                    </Badge>
+                  </IconButton>
+                )}
+              </Box>
+
+              <Typography
+                className="nav-brand-title"
+                component={Link}
+                to="/"
+                sx={{
+                  flex: 1,
+                  textAlign: "center",
+                  textDecoration: "none",
+                  ...navBrandTitleSx,
+                  "&:hover": { transform: "scale(1.05)" },
+                }}
+              >
+                {NAV_BRAND_TITLE}
+              </Typography>
+
+              <Box
+                sx={{
+                  flex: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "flex-end",
+                  minWidth: 0,
+                }}
+              >
+                <Box
+                  onClick={blurThen((e) =>
+                    setMobileNavCityAnchor(e.currentTarget),
+                  )}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 0.25,
+                    cursor: "pointer",
+                    minWidth: 0,
+                    maxWidth: { xs: 110, sm: 140 },
+                    py: 0.4,
+                    borderRadius: "999px",
+                    WebkitTapHighlightColor: "transparent",
+                    "&:focus:not(:focus-visible)": { outline: "none" },
+                  }}
+                  aria-label={t("City")}
+                >
+                  <LocationOnIcon
+                    sx={{
+                      fontSize: 18,
+                      color: navIconBtnSx?.color || "text.secondary",
+                    }}
+                  />
+                  <Typography
+                    noWrap
+                    sx={{
+                      fontWeight: 700,
+                      fontSize: "0.82rem",
+                      color: navIconBtnSx?.color || "text.primary",
+                    }}
+                  >
+                    {cities.find((c) => c.value === selectedCity)?.label ||
+                      selectedCity}
+                  </Typography>
+                  <KeyboardArrowDownIcon
+                    sx={{
+                      fontSize: 18,
+                      color: navIconBtnSx?.color || "text.secondary",
+                    }}
+                  />
+                </Box>
+              </Box>
+
+              <Menu
+                anchorEl={mobileNavCityAnchor}
+                open={Boolean(mobileNavCityAnchor)}
+                onClose={() => setMobileNavCityAnchor(null)}
+                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                transformOrigin={{ vertical: "top", horizontal: "right" }}
+                PaperProps={{ sx: { mt: 1, minWidth: 200, maxHeight: 320 } }}
+              >
+                {cities.map((city) => (
+                  <MenuItem
+                    key={city.value}
+                    selected={selectedCity === city.value}
+                    onClick={() => {
+                      changeCity(city.value);
+                      setMobileNavCityAnchor(null);
+                    }}
+                  >
+                    {city.label}
+                  </MenuItem>
+                ))}
+              </Menu>
+            </Box>
+          )}
+
+          {!isSmUp && navTemplate === "template3" && (
             <Box
               sx={{
                 display: "flex",
@@ -1031,7 +1185,10 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
             </Box>
           )}
 
-          {!isSmUp && (navTemplate === "custom" || navTemplate === "custom2") && (
+          {!isSmUp &&
+            (navTemplate === "custom" ||
+              navTemplate === "custom2" ||
+              navTemplate === "custom3") && (
               <Box
                 sx={{
                   display: "flex",
@@ -1070,6 +1227,40 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                     }
                     if (action === "label")
                       return <Box key={key} sx={{ width: 40, height: 40 }} />;
+                    if (action === "logo") {
+                      return (
+                        <Box
+                          key={key}
+                          component={Link}
+                          to="/"
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            flexShrink: 0,
+                            textDecoration: "none",
+                          }}
+                        >
+                          <Avatar
+                            src={`${import.meta.env.BASE_URL}logo512.png`}
+                            alt={NAV_BRAND_TITLE}
+                            variant="rounded"
+                            sx={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: 2.25,
+                              bgcolor: "rgba(255,255,255,0.12)",
+                              "& img": {
+                                objectFit: "cover",
+                                borderRadius: "inherit",
+                              },
+                              ...(isDarkNav
+                                ? { border: "2px solid rgba(255,255,255,0.28)" }
+                                : { border: "2px solid rgba(255,255,255,0.3)" }),
+                            }}
+                          />
+                        </Box>
+                      );
+                    }
                     if (action === "refresh") {
                       return (
                         <IconButton
@@ -1167,6 +1358,84 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                       </IconButton>
                     );
                   };
+
+                  if (tpl === "custom3") {
+                    return (
+                      <>
+                        <Box
+                          sx={{
+                            flex: 1,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            minWidth: 0,
+                          }}
+                        >
+                          <Box
+                            component={Link}
+                            to="/"
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              flexShrink: 0,
+                              textDecoration: "none",
+                              transform: "translateX(-10px)",
+                            }}
+                          >
+                            <Avatar
+                              src={`${import.meta.env.BASE_URL}logo512.png`}
+                              alt={NAV_BRAND_TITLE}
+                              variant="rounded"
+                              sx={{
+                                width: 44,
+                                height: 44,
+                                borderRadius: 2.5,
+                                bgcolor: "rgba(255,255,255,0.12)",
+                                "& img": {
+                                  objectFit: "cover",
+                                  borderRadius: "inherit",
+                                },
+                                ...(isDarkNav
+                                  ? {
+                                      border: "2px solid rgba(255,255,255,0.28)",
+                                    }
+                                  : {
+                                      border: "2px solid rgba(255,255,255,0.3)",
+                                    }),
+                              }}
+                            />
+                          </Box>
+                        </Box>
+                        <Typography
+                          className="nav-brand-title"
+                          component={Link}
+                          to="/"
+                          sx={{
+                            flex: 1,
+                            textAlign: "center",
+                            textDecoration: "none",
+                            ...navBrandTitleSx,
+                            "&:hover": { transform: "scale(1.05)" },
+                          }}
+                        >
+                          {NAV_BRAND_TITLE}
+                        </Typography>
+                        <Box
+                          sx={{
+                            flex: 1,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "flex-end",
+                            gap: 0.9,
+                            minWidth: 0,
+                          }}
+                        >
+                          {renderAction(top.topright1, "custom3-tr1")}
+                          {renderAction(top.topright2, "custom3-tr2")}
+                        </Box>
+                      </>
+                    );
+                  }
 
                   if (tpl === "custom2") {
                     return (

@@ -1,5 +1,16 @@
 /** Page-specific nav chrome — matches Gifts / FindJob showcase accents */
 
+/** Default home chrome — same brand bar as top `NavigationBar` (RTL-safe via inline style). */
+export const DEFAULT_NAV_BAR_GRADIENT_LIGHT =
+  "linear-gradient(120deg, var(--color-primary) 0%, var(--color-secondary) 56%, var(--color-secondary) 100%)";
+
+/** Dark glass for top/bottom nav default routes. */
+export const DEFAULT_NAV_BAR_GRADIENT_DARK_GLASS =
+  "linear-gradient(118deg, rgba(7,11,20,0.78) 0%, rgba(15,23,42,0.7) 42%, rgba(23,37,84,0.62) 78%, rgba(37,99,235,0.45) 100%)";
+
+export const DEFAULT_BOTTOM_NAV_ORANGE_ACTIVE =
+  "linear-gradient(90deg, #f97316 0%, #ef4444 100%)";
+
 const GIFT_NAV_GRADIENT_LIGHT =
   "linear-gradient(120deg, #a855f7 0%, #7c3aed 56%, #9333ea 100%)";
 const GIFT_NAV_GRADIENT_DARK =
@@ -186,12 +197,12 @@ export function getBottomNavActiveTabStyle(
   }
   if (compact) {
     return {
-      background: "linear-gradient(135deg, #1E6FD9 0%, #4A90E2 100%)",
-      boxShadow: "0 6px 16px rgba(30,111,217,0.4)",
+      background: DEFAULT_BOTTOM_NAV_ORANGE_ACTIVE,
+      boxShadow: "0 6px 16px rgba(249,115,22,0.4)",
     };
   }
   return {
-    background: "linear-gradient(90deg, #f97316 0%, #ef4444 100%)",
+    background: DEFAULT_BOTTOM_NAV_ORANGE_ACTIVE,
     boxShadow: "0 10px 28px rgba(249,115,22,0.45)",
   };
 }

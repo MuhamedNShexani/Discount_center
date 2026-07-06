@@ -284,6 +284,22 @@ export const jobAPI = {
     }),
 };
 
+// Partner apps (store-wide special discounts)
+export const appAPI = {
+  getAll: () => api.get("/apps"),
+  getByStore: (storeId) => api.get(`/apps/store/${storeId}`),
+  getShowcaseStores: () => api.get("/apps/showcase-stores"),
+  getById: (id) => api.get(`/apps/${id}`),
+  create: (data) => api.post("/apps", data),
+  update: (id, data) => api.put(`/apps/${id}`, data),
+  delete: (id) => api.delete(`/apps/${id}`),
+  uploadLogo: (formData) =>
+    api.post("/apps/upload-logo", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+      timeout: 120000,
+    }),
+};
+
 // User API calls (work with auth token OR deviceId for anonymous users)
 export const userAPI = {
   getByDevice: (deviceId) => api.get(`/users/device/${deviceId}`),

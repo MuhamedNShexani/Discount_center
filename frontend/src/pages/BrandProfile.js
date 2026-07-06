@@ -1,4 +1,4 @@
-﻿import React, {
+import React, {
   useState,
   useEffect,
   useRef,
@@ -946,6 +946,8 @@ const BrandProfile = () => {
                 flex: 1,
                 display: "flex",
                 flexDirection: "column",
+                alignItems: "center",
+                textAlign: "center",
                 gap: 0.4,
               }}
             >
@@ -956,11 +958,13 @@ const BrandProfile = () => {
                     color: "var(--brand-primary-blue, #1E6FD9)",
                     fontWeight: 600,
                     display: "block",
+                    width: "100%",
                     whiteSpace: "nowrap",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     fontSize: "0.68rem",
                     lineHeight: 1.2,
+                    textAlign: "center",
                   }}
                 >
                   {locName(product.storeId)}
@@ -978,12 +982,14 @@ const BrandProfile = () => {
                   WebkitBoxOrient: "vertical",
                   overflow: "hidden",
                   minHeight: "2.7em",
+                  width: "100%",
+                  textAlign: "center",
                 }}
               >
                 {locName(product)}
               </Typography>
               {showPriceBlock && (
-                <Box sx={{ mt: "auto", pt: 0.5 }}>
+                <Box sx={{ mt: "auto", pt: 0.5, width: "100%", textAlign: "center" }}>
                   {hasPreviousPrice && (
                     <Typography
                       variant="caption"
@@ -993,6 +999,7 @@ const BrandProfile = () => {
                         color: isDark ? "rgba(255,255,255,0.35)" : "#9ca3af",
                         fontSize: "0.7rem",
                         lineHeight: 1,
+                        textAlign: "center",
                       }}
                     >
                       {formatPrice(prevNum)}
@@ -1006,6 +1013,7 @@ const BrandProfile = () => {
                         fontSize: { xs: "0.9rem", sm: "0.95rem" },
                         color: "var(--color-secondary, #1E6FD9)",
                         lineHeight: 1.2,
+                        textAlign: "center",
                       }}
                     >
                       {formatPrice(newNum)}
@@ -1019,6 +1027,7 @@ const BrandProfile = () => {
                         fontSize: { xs: "0.9rem", sm: "0.95rem" },
                         color: "var(--color-secondary, #1E6FD9)",
                         lineHeight: 1.2,
+                        textAlign: "center",
                       }}
                     >
                       {formatPrice(prevNum)}

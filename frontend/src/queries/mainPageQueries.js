@@ -8,6 +8,7 @@ import {
   companyAPI,
   giftAPI,
   jobAPI,
+  appAPI,
 } from "../services/api";
 import {
   buildMainPagePayload,
@@ -41,13 +42,19 @@ export async function fetchMainPagePrimary() {
 
 /** Secondary bundle: below-the-fold / showcase-heavy lists (smaller JSON). */
 export async function fetchMainPageSecondary() {
-  const [brandsResponse, companiesResponse, giftsResponse, jobsResponse] =
-    await Promise.all([
-      brandAPI.getAll(),
-      companyAPI.getAll().catch(() => ({ data: [] })),
-      giftAPI.getAll().catch(() => ({ data: { data: [] } })),
-      jobAPI.getAll().catch(() => ({ data: [] })),
-    ]);
+  const [
+    brandsResponse,
+    companiesResponse,
+    giftsResponse,
+    jobsResponse,
+    showcaseResponse,
+  ] = await Promise.all([
+    brandAPI.getAll(),
+    companyAPI.getAll().catch(() => ({ data: [] })),
+    giftAPI.getAll().catch(() => ({ data: { data: [] } })),
+    jobAPI.getAll().catch(() => ({ data: [] })),
+    appAPI.getShowcaseStores().catch(() => ({ data: { data: [] } })),
+  ]);
 
   const giftsData = Array.isArray(giftsResponse.data?.data)
     ? giftsResponse.data.data
@@ -55,12 +62,18 @@ export async function fetchMainPageSecondary() {
       ? giftsResponse.data
       : [];
   const jobsData = Array.isArray(jobsResponse.data) ? jobsResponse.data : [];
+  const showcaseDiscountStores = Array.isArray(showcaseResponse.data?.data)
+    ? showcaseResponse.data.data
+    : Array.isArray(showcaseResponse.data)
+      ? showcaseResponse.data
+      : [];
 
   return {
     brandsData: brandsResponse.data || [],
     companiesData: companiesResponse.data || [],
     giftsData,
     jobsData,
+    showcaseDiscountStores,
   };
 }
 
@@ -76,6 +89,7 @@ const emptySecondary = {
   companiesData: [],
   giftsData: [],
   jobsData: [],
+  showcaseDiscountStores: [],
 };
 
 /**
@@ -131,6 +145,7 @@ export async function fetchMainPageFullBundle({
     companiesData: secondary.companiesData,
     giftsData: secondary.giftsData,
     jobsData: secondary.jobsData,
+    showcaseDiscountStores: secondary.showcaseDiscountStores,
   });
 
   writeMainPageCache(refreshKey, fullPayload);

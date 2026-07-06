@@ -95,6 +95,12 @@ import {
   ProfileDrawerProvider,
   ProfileRouteRedirect,
 } from "./context/ProfileDrawerContext";
+import {
+  StoreWideDiscountDrawerProvider,
+  StoreWideDiscountRouteRedirect,
+} from "./context/StoreWideDiscountDrawerContext";
+import { FindJobDrawerProvider } from "./context/FindJobDrawerContext";
+import { GiftsDrawerProvider } from "./context/GiftsDrawerContext";
 import { DarkModeProvider, useDarkMode } from "./context/DarkModeContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { appVisitAPI } from "./services/api";
@@ -275,6 +281,9 @@ function AppContent() {
         <DraftCartDrawerProvider>
           <NotificationDrawerProvider>
             <ProfileDrawerProvider>
+              <StoreWideDiscountDrawerProvider>
+              <FindJobDrawerProvider>
+              <GiftsDrawerProvider>
               <CssBaseline />
               {!splashFinished ? (
                 <SplashScreen
@@ -563,6 +572,10 @@ function AppContent() {
                             }
                           />
                           <Route path="/findjob" element={<FindJob />} />
+                          <Route
+                            path="/store-wide-discounts"
+                            element={<StoreWideDiscountRouteRedirect />}
+                          />
                           <Route path="/shopping" element={<ShoppingPage />} />
                           <Route path="/about" element={<AboutPage />} />
                           <Route
@@ -577,6 +590,9 @@ function AppContent() {
                   {false && <NotificationEnableBanner />}
                 </Box>
               </Box>
+              </GiftsDrawerProvider>
+              </FindJobDrawerProvider>
+              </StoreWideDiscountDrawerProvider>
             </ProfileDrawerProvider>
           </NotificationDrawerProvider>
         </DraftCartDrawerProvider>

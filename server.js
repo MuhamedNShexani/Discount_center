@@ -108,6 +108,7 @@ app.use("/api/search", require("./routes/search"));
 app.use("/api/search-analytics", require("./routes/searchAnalytics"));
 app.use("/api/videos", require("./routes/video"));
 app.use("/api/jobs", require("./routes/job"));
+app.use("/api/apps", require("./routes/app"));
 app.use("/api/translations", require("./routes/translation"));
 app.use("/api/ai", require("./routes/ai"));
 app.use("/api/owner-dashboard", require("./routes/ownerDashboard"));

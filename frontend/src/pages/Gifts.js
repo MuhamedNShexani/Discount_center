@@ -17,11 +17,13 @@ import {
   DialogActions,
   Button,
   Skeleton,
+  IconButton,
 } from "@mui/material";
 import { useTheme, alpha } from "@mui/material/styles";
 import { Store, Business } from "@mui/icons-material";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import CardGiftcardIcon from "@mui/icons-material/CardGiftcard";
+import CloseIcon from "@mui/icons-material/Close";
 import { giftAPI, storeAPI, brandAPI, adAPI } from "../services/api";
 import BannerCarousel from "../components/BannerCarousel";
 import { useTranslation } from "react-i18next";
@@ -48,7 +50,7 @@ const GIFT_GRADIENT_BTN = "linear-gradient(135deg, #a855f7 0%, #7c3aed 100%)";
 const GIFT_GRADIENT_BTN_HOVER =
   "linear-gradient(135deg, #9333ea 0%, #6d28d9 100%)";
 
-const Gifts = () => {
+const Gifts = ({ embedded = false, onClose } = {}) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const skeletonBase = isDark ? alpha("#fff", 0.08) : alpha("#0d111c", 0.07);
@@ -680,18 +682,35 @@ const Gifts = () => {
     : [];
 
   return (
-    <Box sx={{ py: { xs: 5, md: 10 }, px: { xs: 0.5, sm: 1.5, md: 3 } }}>
-      {/* Ads banner — same as MainPage `BannerCarousel` */}
-      <Box sx={{ mt: { xs: 2, md: 5 } }}>
-        <BannerCarousel
-          banners={bannerAdsWithImages}
-          onBannerClick={(ad) => {
-            if (ad.brandId) navigate(`/brands/${ad.brandId}`);
-            else if (ad.storeId) navigate(`/stores/${ad.storeId}`);
-            else if (ad.giftId) navigate(`/gifts/${ad.giftId}`);
-          }}
-        />
-      </Box>
+    <Box
+      sx={
+        embedded
+          ? {
+              width: { xs: "100vw", sm: 420 },
+              maxWidth: "100%",
+              height: "100dvh",
+              overflow: "auto",
+              bgcolor: "background.default",
+              boxSizing: "border-box",
+              px: 2,
+              pt: 2.5,
+              pb: 3,
+            }
+          : { py: { xs: 5, md: 10 }, px: { xs: 0.5, sm: 1.5, md: 3 } }
+      }
+    >
+      {!embedded && (
+        <Box sx={{ mt: { xs: 2, md: 5 } }}>
+          <BannerCarousel
+            banners={bannerAdsWithImages}
+            onBannerClick={(ad) => {
+              if (ad.brandId) navigate(`/brands/${ad.brandId}`);
+              else if (ad.storeId) navigate(`/stores/${ad.storeId}`);
+              else if (ad.giftId) navigate(`/gifts/${ad.giftId}`);
+            }}
+          />
+        </Box>
+      )}
 
       {/* Header — matches MainPage Special Offers banner accent */}
       <Box
@@ -700,14 +719,14 @@ const Gifts = () => {
           alignItems: "center",
           gap: 1.5,
           mb: 3,
-          mt: { xs: 2, md: 3 },
+          mt: embedded ? 0 : { xs: 2, md: 3 },
         }}
       >
         <Box
           sx={{
-            width: 48,
-            height: 48,
-            borderRadius: 2.5,
+            width: embedded ? 36 : 48,
+            height: embedded ? 36 : 48,
+            borderRadius: embedded ? "12px" : 2.5,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -716,11 +735,13 @@ const Gifts = () => {
             boxShadow: "0 4px 12px rgba(168,85,247,0.4)",
           }}
         >
-          <CardGiftcardIcon sx={{ color: "#fff", fontSize: "1.5rem" }} />
+          <CardGiftcardIcon
+            sx={{ color: "#fff", fontSize: embedded ? "1.1rem" : "1.5rem" }}
+          />
         </Box>
-        <Box>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography
-            variant="h5"
+            variant={embedded ? "h6" : "h5"}
             sx={{
               fontWeight: 900,
               letterSpacing: "-0.02em",
@@ -734,7 +755,7 @@ const Gifts = () => {
             variant="body2"
             sx={{
               color: isDark ? alpha("#fff", 0.65) : alpha("#1f0a3d", 0.65),
-              fontSize: { xs: "0.8rem", sm: "0.875rem" },
+              fontSize: embedded ? "0.75rem" : { xs: "0.8rem", sm: "0.875rem" },
             }}
           >
             {t("Special Offers & Discounts", {
@@ -742,6 +763,21 @@ const Gifts = () => {
             })}
           </Typography>
         </Box>
+        {embedded ? (
+          <IconButton
+            onClick={onClose}
+            size="small"
+            aria-label={t("Close")}
+            sx={{
+              bgcolor: isDark ? "rgba(255,255,255,0.06)" : "#f3f4f6",
+              "&:hover": {
+                bgcolor: isDark ? "rgba(255,255,255,0.1)" : "#e9ecf0",
+              },
+            }}
+          >
+            <CloseIcon sx={{ fontSize: 18 }} />
+          </IconButton>
+        ) : null}
       </Box>
 
       {/* Tabs */}

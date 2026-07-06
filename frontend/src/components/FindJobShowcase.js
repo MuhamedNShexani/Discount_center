@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -8,9 +8,6 @@ import {
   CardMedia,
   Chip,
 } from "@mui/material";
-import { Link } from "react-router-dom";
-import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
-import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import WorkOutlineIcon from "@mui/icons-material/WorkOutline";
 import BusinessIcon from "@mui/icons-material/Business";
 import StorefrontIcon from "@mui/icons-material/Storefront";
@@ -21,6 +18,7 @@ import Slider from "react-slick";
 import { useTranslation } from "react-i18next";
 import { resolveMediaUrl } from "../utils/mediaUrl";
 import { useLocalizedContent } from "../hooks/useLocalizedContent";
+import { useFindJobDrawer } from "../hooks/useFindJobDrawer";
 
 const genderLabel = (t, g) => {
   const v = String(g || "any").toLowerCase();
@@ -31,10 +29,14 @@ const genderLabel = (t, g) => {
 
 const FindJobShowcase = memo(function FindJobShowcase({ jobs }) {
   const theme = useTheme();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { locName, locTitle } = useLocalizedContent();
+  const { openFindJobs } = useFindJobDrawer();
   const isDark = theme.palette.mode === "dark";
-  const isRtl = i18n.dir() === "rtl";
+
+  const handleOpenDrawer = useCallback(() => {
+    openFindJobs();
+  }, [openFindJobs]);
 
   const displayJobs = Array.isArray(jobs) ? jobs.slice(-5) : [];
   if (displayJobs.length === 0) return null;
@@ -125,8 +127,7 @@ const FindJobShowcase = memo(function FindJobShowcase({ jobs }) {
         </Box>
 
         <Button
-          component={Link}
-          to="/findjob"
+          onClick={handleOpenDrawer}
           size="small"
           sx={{
             textTransform: "none",
@@ -161,15 +162,14 @@ const FindJobShowcase = memo(function FindJobShowcase({ jobs }) {
             return (
               <Box key={job._id} sx={{ px: 0.5 }}>
                 <Card
-                  component={Link}
-                  to="/findjob"
+                  onClick={handleOpenDrawer}
                   sx={{
                     display: "flex",
                     height: { xs: 140, sm: 200, md: 220 },
                     width: "100%",
                     borderRadius: "14px",
                     overflow: "hidden",
-                    textDecoration: "none",
+                    cursor: "pointer",
                     position: "relative",
                     border: isDark
                       ? "1px solid rgba(52,211,153,0.15)"

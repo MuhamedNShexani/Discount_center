@@ -272,6 +272,8 @@ const ProductCard = memo(function ProductCard({
           flex: 1,
           display: "flex",
           flexDirection: "column",
+          alignItems: "center",
+          textAlign: "center",
           gap: 0.4,
         }}
       >
@@ -284,11 +286,13 @@ const ProductCard = memo(function ProductCard({
                 : "var(--brand-primary-blue, #1E6FD9)",
               fontWeight: 600,
               display: "block",
+              width: "100%",
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
               fontSize: "0.68rem",
               lineHeight: 1.2,
+              textAlign: "center",
             }}
           >
             {storeName}
@@ -307,12 +311,14 @@ const ProductCard = memo(function ProductCard({
             overflow: "hidden",
             color: isDark ? "rgba(255,255,255,0.92)" : "#111827",
             minHeight: "2.7em",
+            width: "100%",
+            textAlign: "center",
           }}
         >
           {locName(product)}
         </Typography>
 
-        <Box sx={{ mt: "auto", pt: 0.5 }}>
+        <Box sx={{ mt: "auto", pt: 0.5, width: "100%", textAlign: "center" }}>
           {hasPreviousPrice && (
             <Typography
               variant="caption"
@@ -322,6 +328,7 @@ const ProductCard = memo(function ProductCard({
                 color: isDark ? "rgba(255,255,255,0.35)" : "#9ca3af",
                 fontSize: "0.7rem",
                 lineHeight: 1,
+                textAlign: "center",
               }}
             >
               {formatPrice(product.previousPrice)}
@@ -334,6 +341,7 @@ const ProductCard = memo(function ProductCard({
               fontSize: compact ? "0.9rem" : { xs: "0.95rem", sm: "1rem" },
               color: "var(--color-secondary, #1E6FD9)",
               lineHeight: 1.2,
+              textAlign: "center",
             }}
           >
             {formatPrice(product.newPrice)}

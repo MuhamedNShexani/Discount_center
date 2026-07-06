@@ -406,8 +406,15 @@ const StoreList = () => {
     fontWeight: 700,
     border: "none",
     boxShadow: "0 2px 8px rgba(14,165,233,0.35)",
+    flexShrink: 0,
+    maxWidth: "100%",
     "&:hover": {
       background: STORE_GRADIENT_BTN_HOVER,
+    },
+    "& .MuiChip-label": {
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
     },
     "&.MuiChip-root": { height: 34 },
   };
@@ -417,9 +424,16 @@ const StoreList = () => {
     color: isDark ? "rgba(255,255,255,0.85)" : "#374151",
     border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid #e5e7eb",
     fontWeight: 500,
+    flexShrink: 0,
+    maxWidth: "100%",
     "&:hover": {
       background: isDark ? "rgba(255,255,255,0.12)" : "#e9ecf0",
       border: isDark ? "1px solid rgba(255,255,255,0.2)" : "1px solid #d1d5db",
+    },
+    "& .MuiChip-label": {
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
     },
     "&.MuiChip-root": { height: 34 },
   };
@@ -758,6 +772,7 @@ const StoreList = () => {
           sx={{
             mb: 3,
             borderRadius: 2,
+            overflow: "hidden",
             backgroundColor: isDark
               ? alpha(STORE_ACCENT, 0.08)
               : alpha(STORE_ACCENT, 0.06),
@@ -766,38 +781,33 @@ const StoreList = () => {
             }`,
           }}
         >
-          <Box sx={{ position: "relative", pb: 0.25, pt: 1 }}>
+          <Box sx={{ position: "relative", py: 1, px: { xs: 0.75, sm: 1 } }}>
             <Box
               ref={storeTypeScrollRef}
               onScroll={updateStoreTypeScrollHints}
               sx={{
                 display: "flex",
-                gap: 0.8,
+                gap: 0.75,
                 overflowX: "auto",
                 overflowY: "hidden",
                 alignItems: "center",
-                px: { xs: 0.25, sm: 0.5 },
-                pb: 1,
+                width: "100%",
+                maxWidth: "100%",
+                boxSizing: "border-box",
+                pb: 0.75,
                 scrollBehavior: "smooth",
-                scrollbarWidth: "auto",
-                scrollbarGutter: "stable",
+                WebkitOverflowScrolling: "touch",
+                scrollbarWidth: "thin",
                 scrollbarColor: isDark
-                  ? `${alpha(STORE_ACCENT, 0.55)} ${alpha("#fff", 0.08)}`
-                  : `${alpha(STORE_ACCENT_DEEP, 0.45)} ${alpha("#000", 0.08)}`,
-                "&::-webkit-scrollbar": { height: 10 },
+                  ? `${alpha(STORE_ACCENT, 0.55)} transparent`
+                  : `${alpha(STORE_ACCENT_DEEP, 0.45)} transparent`,
+                "&::-webkit-scrollbar": { height: 6 },
                 "&::-webkit-scrollbar-track": {
-                  borderRadius: 5,
-                  marginLeft: 1,
-                  marginRight: 1,
-                  backgroundColor: isDark
-                    ? alpha("#fff", 0.07)
-                    : alpha("#000", 0.06),
+                  borderRadius: 3,
+                  backgroundColor: "transparent",
                 },
                 "&::-webkit-scrollbar-thumb": {
-                  borderRadius: 5,
-                  border: `2px solid ${
-                    isDark ? alpha("#0d111c", 1) : alpha("#f9fafb", 1)
-                  }`,
+                  borderRadius: 3,
                   backgroundColor: isDark
                     ? alpha(STORE_ACCENT, 0.55)
                     : alpha(STORE_ACCENT_DEEP, 0.45),

@@ -23,7 +23,15 @@ const getStoreTypes = async (req, res) => {
 // @desc    Create store type
 const createStoreType = async (req, res) => {
   try {
-    const { name, icon, picture, nameEn, nameAr, nameKu } = req.body;
+    const {
+      name,
+      icon,
+      picture,
+      nameEn,
+      nameAr,
+      nameKu,
+      showOnCategoriesList,
+    } = req.body;
     if (!name) return res.status(400).json({ msg: "Name is required" });
     const exists = await StoreType.findOne({ name });
     if (exists)
@@ -35,6 +43,9 @@ const createStoreType = async (req, res) => {
       nameEn,
       nameAr,
       nameKu,
+      ...(showOnCategoriesList !== undefined
+        ? { showOnCategoriesList: Boolean(showOnCategoriesList) }
+        : {}),
     });
     res.status(201).json(st);
   } catch (err) {
@@ -46,18 +57,30 @@ const createStoreType = async (req, res) => {
 // @desc    Update store type
 const updateStoreType = async (req, res) => {
   try {
-    const { name, icon, picture, nameEn, nameAr, nameKu } = req.body;
+    const {
+      name,
+      icon,
+      picture,
+      nameEn,
+      nameAr,
+      nameKu,
+      showOnCategoriesList,
+    } = req.body;
+    const update = {};
+    if (name !== undefined) update.name = name;
+    if (icon !== undefined) update.icon = icon;
+    if (picture !== undefined) update.picture = picture;
+    if (nameEn !== undefined) update.nameEn = nameEn;
+    if (nameAr !== undefined) update.nameAr = nameAr;
+    if (nameKu !== undefined) update.nameKu = nameKu;
+    if (showOnCategoriesList !== undefined) {
+      update.showOnCategoriesList = Boolean(showOnCategoriesList);
+    }
+
     const st = await StoreType.findByIdAndUpdate(
       req.params.id,
-      {
-        ...(name !== undefined ? { name } : {}),
-        ...(icon !== undefined ? { icon } : {}),
-        ...(picture !== undefined ? { picture } : {}),
-        ...(nameEn !== undefined ? { nameEn } : {}),
-        ...(nameAr !== undefined ? { nameAr } : {}),
-        ...(nameKu !== undefined ? { nameKu } : {}),
-      },
-      { new: true }
+      { $set: update },
+      { new: true, runValidators: true }
     );
     if (!st) return res.status(404).json({ msg: "Not found" });
     res.json(st);

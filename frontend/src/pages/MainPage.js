@@ -25,7 +25,7 @@ import {
   Skeleton,
 } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
-import { productAPI } from "../services/api";
+import { productAPI, storeTypeAPI, appAPI } from "../services/api";
 import {
   fetchMainPageFullBundle,
   mainPageQueryKeys,
@@ -51,6 +51,7 @@ import StoreShowcase from "../components/StoreShowcase";
 import GiftShowcase from "../components/GiftShowcase";
 import SpecialOffersBanner from "../components/SpecialOffersBanner";
 import FindJobShowcase from "../components/FindJobShowcase";
+import AllProductsDiscountShowcase from "../components/AllProductsDiscountShowcase";
 import HomeReelsSection from "../components/reels/HomeReelsSection";
 import BannerCarousel from "../components/BannerCarousel";
 import FilterChips from "../components/FilterChips";
@@ -261,6 +262,9 @@ const MainPage = () => {
     () => mainPageBootstrapPayload?.gifts ?? [],
   );
   const [jobs, setJobs] = useState(() => mainPageBootstrapPayload?.jobs ?? []);
+  const [showcaseDiscountStores, setShowcaseDiscountStores] = useState(
+    () => mainPageBootstrapPayload?.showcaseDiscountStores ?? [],
+  );
 
   // Notification dialog state
   const [loginNotificationOpen, setLoginNotificationOpen] = useState(false);
@@ -543,6 +547,7 @@ const MainPage = () => {
     setCompanies(payload.companies || []);
     setGifts(payload.gifts);
     setJobs(payload.jobs);
+    setShowcaseDiscountStores(payload.showcaseDiscountStores || []);
     setProductsByStore(payload.productsByStore);
     setLikeCounts(payload.likeCounts);
     setLikeStates(payload.likeStates);
@@ -649,6 +654,60 @@ const MainPage = () => {
       skipInitialSilentRefreshRef.current = true;
     }
   }, [refreshKey, applyMainPagePayload, mainPageBootstrapPayload, queryClient]);
+
+  /** Store-type visibility flags must stay fresh (browse carousel); main bundle cache can be stale. */
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await storeTypeAPI.getAll();
+        if (cancelled) return;
+        const nextStoreTypes = res.data || [];
+        setStoreTypes(nextStoreTypes);
+        const cached = readMainPageCache(refreshKey);
+        if (cached) {
+          writeMainPageCache(refreshKey, {
+            ...cached,
+            storeTypes: nextStoreTypes,
+          });
+        }
+      } catch {
+        /* keep cached / bundled store types */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshKey]);
+
+  /** Store-wide discount offers (per-app %) must stay fresh for rotating showcase chips. */
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await appAPI.getShowcaseStores();
+        if (cancelled) return;
+        const nextShowcase = Array.isArray(res.data?.data)
+          ? res.data.data
+          : Array.isArray(res.data)
+            ? res.data
+            : [];
+        setShowcaseDiscountStores(nextShowcase);
+        const cached = readMainPageCache(refreshKey);
+        if (cached) {
+          writeMainPageCache(refreshKey, {
+            ...cached,
+            showcaseDiscountStores: nextShowcase,
+          });
+        }
+      } catch {
+        /* keep cached showcase entries */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshKey]);
 
   useEffect(() => {
     const cached = readMainPageCache(refreshKey);
@@ -1431,20 +1490,6 @@ const MainPage = () => {
     });
   }, [finalFilteredStores, sortByNewestDiscount, sortByNearMe, userCoords]);
 
-  /** Fixed "Featured Stores" preview row on Home — VIP/most-followed first, capped for a compact carousel. */
-  const featuredStoresForHome = useMemo(() => {
-    return [...sortedFilteredStores]
-      .sort((a, b) => {
-        if (Boolean(b?.isVip) !== Boolean(a?.isVip)) {
-          return Boolean(b?.isVip) - Boolean(a?.isVip);
-        }
-        return (
-          (Number(b?.followerCount) || 0) - (Number(a?.followerCount) || 0)
-        );
-      })
-      .slice(0, 12);
-  }, [sortedFilteredStores]);
-
   const showcaseEligibleGifts = useMemo(() => {
     return (gifts || []).filter((g) => {
       if (!g?.expireDate) return true;
@@ -1461,6 +1506,14 @@ const MainPage = () => {
       return toCanonicalCity(jobCity) === selectedCityCanonical;
     });
   }, [jobs, selectedCityCanonical]);
+
+  const showcaseEligibleAllDiscountStores = useMemo(() => {
+    return (showcaseDiscountStores || []).filter((entry) => {
+      const store = entry?.store;
+      if (!store) return false;
+      return storeMatchesSelectedCity(store, selectedCity);
+    });
+  }, [showcaseDiscountStores, selectedCity]);
 
   const storeCityById = useMemo(() => {
     const map = {};
@@ -2823,11 +2876,6 @@ const MainPage = () => {
           <>
             {!isMobile || mobileDeferredSectionsReady ? (
               <>
-                {featuredStoresForHome.length > 0 && (
-                  <Box sx={{ mb: { xs: 1.5, sm: 2 } }}>
-                    <StoreShowcase stores={featuredStoresForHome} />
-                  </Box>
-                )}
                 {showcaseEligibleGifts.length > 0 && (
                   <Box sx={{ mb: { xs: 1.5, sm: 2 } }}>
                     <SpecialOffersBanner count={showcaseEligibleGifts.length} />
@@ -2845,6 +2893,11 @@ const MainPage = () => {
                   getID={getID}
                 />
                 <FindJobShowcase jobs={showcaseEligibleJobs} />
+                {showcaseEligibleAllDiscountStores.length > 0 && (
+                  <AllProductsDiscountShowcase
+                    items={showcaseEligibleAllDiscountStores}
+                  />
+                )}
               </>
             ) : (
               <Box

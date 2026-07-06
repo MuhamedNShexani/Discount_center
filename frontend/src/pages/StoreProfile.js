@@ -79,6 +79,7 @@ import {
   getOwnerAnalyticsSessionId,
 } from "../utils/ownerAnalyticsTrack";
 import StoreTabs from "../components/store/StoreTabs";
+import StoreDiscountBanners from "../components/store/StoreDiscountBanners";
 import ProductsTab from "../components/store/ProductsTab";
 import StoreHeader from "../components/store/StoreHeader";
 import StoreProductCard from "../components/store/ProductCard";
@@ -152,6 +153,7 @@ const StoreProfile = () => {
     gifts,
     reels,
     jobs,
+    appDiscounts,
     loading,
     error,
     loadInitial,
@@ -1504,6 +1506,8 @@ const StoreProfile = () => {
       {/* Enhanced Products Section with Tabs */}
       <Box sx={{ mb: 4 }}>
         {store && <StoreBranchesShowcase store={store} />}
+
+        <StoreDiscountBanners store={store} appDiscounts={appDiscounts} />
 
         {/* <Box sx={{ mb: 4, textAlign: "center" }}>
           <Typography

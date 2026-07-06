@@ -62,6 +62,7 @@ import {
   adminAPI,
   videoAPI,
   jobAPI,
+  appAPI,
 } from "../services/api";
 import * as XLSX from "xlsx";
 import {
@@ -89,10 +90,15 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import VideoLibraryIcon from "@mui/icons-material/VideoLibrary";
 import WorkOutlineIcon from "@mui/icons-material/WorkOutline";
+import PhoneAndroidIcon from "@mui/icons-material/PhoneAndroid";
 import TranslateIcon from "@mui/icons-material/Translate";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 import { useAppSettings } from "../context/AppSettingsContext";
+import DataEntryAppsTab from "../components/admin/DataEntryAppsTab";
+import DataEntryEntityAutocomplete, {
+  dataEntryEntityLabel,
+} from "../components/DataEntryEntityAutocomplete";
 import {
   isAdminEmail,
   canUseDataEntryNotifications,
@@ -112,59 +118,6 @@ function getStoreTypeIdFromStore(store) {
   if (st && typeof st === "object" && st._id) return String(st._id);
   if (st) return String(st);
   return "";
-}
-
-function dataEntryEntityLabel(entity) {
-  if (!entity) return "";
-  return (
-    entity.nameEn ||
-    entity.name ||
-    entity.nameAr ||
-    entity.nameKu ||
-    (entity._id != null ? String(entity._id) : "")
-  );
-}
-
-function DataEntryEntityAutocomplete({
-  label,
-  options = [],
-  valueId,
-  onChangeId,
-  disabled = false,
-  required = false,
-  placeholder,
-  textFieldProps = {},
-  sx,
-}) {
-  const idStr =
-    valueId !== undefined && valueId !== null && valueId !== ""
-      ? String(valueId)
-      : "";
-  const selected =
-    idStr !== ""
-      ? options.find((o) => String(o._id) === idStr) ?? null
-      : null;
-  return (
-    <Autocomplete
-      sx={sx}
-      options={options}
-      value={selected}
-      onChange={(_, v) => onChangeId(v ? String(v._id) : "")}
-      getOptionLabel={(o) => dataEntryEntityLabel(o)}
-      isOptionEqualToValue={(o, v) => String(o._id) === String(v._id)}
-      disabled={disabled}
-      renderInput={(params) => (
-        <TextField
-          {...params}
-          label={label}
-          required={required}
-          placeholder={placeholder}
-          {...textFieldProps}
-        />
-      )}
-      ListboxProps={{ style: { maxHeight: 280 } }}
-    />
-  );
 }
 
 function DataEntryEntityIdsAutocomplete({
@@ -263,11 +216,12 @@ const LIST_TAB = {
   REELS: 5,
   ADS: 6,
   JOBS: 7,
-  CATEGORIES: 8,
-  STORE_TYPES: 9,
-  BRAND_TYPES: 10,
-  SETTINGS: 11,
-  NOTIFICATIONS: 12,
+  APPS: 8,
+  CATEGORIES: 9,
+  STORE_TYPES: 10,
+  BRAND_TYPES: 11,
+  SETTINGS: 12,
+  NOTIFICATIONS: 13,
 };
 
 /** Horizontal scroll for action + filter rows inside each data-list tab */
@@ -406,6 +360,7 @@ const DataEntryForm = () => {
     nameEn: "",
     nameAr: "",
     nameKu: "",
+    showOnCategoriesList: true,
   };
   const [storeTypeAddForm, setStoreTypeAddForm] = useState(() => ({
     ...EMPTY_TYPE_ADD_FORM,
@@ -504,6 +459,9 @@ const DataEntryForm = () => {
     isHasDelivery: false,
     deliveryAllCities: false,
     deliveryCities: [],
+    hasAllProductsDiscount: false,
+    allProductsDiscountPercent: "",
+    allProductsDiscountExpireDate: "",
   });
 
   // Product form state
@@ -1061,7 +1019,7 @@ const DataEntryForm = () => {
     const managing =
       activeListTab >= LIST_TAB.STORES && activeListTab <= LIST_TAB.REELS;
     const service =
-      activeListTab >= LIST_TAB.ADS && activeListTab <= LIST_TAB.JOBS;
+      activeListTab >= LIST_TAB.ADS && activeListTab <= LIST_TAB.APPS;
     const mainSystem =
       activeListTab >= LIST_TAB.CATEGORIES &&
       activeListTab <= LIST_TAB.BRAND_TYPES;
@@ -1076,7 +1034,7 @@ const DataEntryForm = () => {
     if (activeListTab >= LIST_TAB.STORES && activeListTab <= LIST_TAB.REELS) {
       return "managing";
     }
-    if (activeListTab >= LIST_TAB.ADS && activeListTab <= LIST_TAB.JOBS) {
+    if (activeListTab >= LIST_TAB.ADS && activeListTab <= LIST_TAB.APPS) {
       return "service";
     }
     if (
@@ -2319,6 +2277,13 @@ const DataEntryForm = () => {
           appleMaps: storeForm.appleMaps || "",
           waze: storeForm.waze || "",
         },
+        hasAllProductsDiscount: !!storeForm.hasAllProductsDiscount,
+        allProductsDiscountPercent: storeForm.hasAllProductsDiscount
+          ? Number(storeForm.allProductsDiscountPercent)
+          : null,
+        allProductsDiscountExpireDate: storeForm.hasAllProductsDiscount
+          ? normalizeExpiryInputForApi(storeForm.allProductsDiscountExpireDate)
+          : null,
       };
 
       await storeAPI.create(storeData);
@@ -3125,6 +3090,14 @@ const DataEntryForm = () => {
         deliveryCities: Array.isArray(data.deliveryCities)
           ? data.deliveryCities
           : [],
+        hasAllProductsDiscount: !!data.hasAllProductsDiscount,
+        allProductsDiscountPercent:
+          data.allProductsDiscountPercent != null
+            ? String(data.allProductsDiscountPercent)
+            : "",
+        allProductsDiscountExpireDate: data.allProductsDiscountExpireDate
+          ? toDatetimeLocalValue(data.allProductsDiscountExpireDate)
+          : "",
       });
     } else if (type === "category") {
       const rawStoreTypeId =
@@ -3370,6 +3343,13 @@ const DataEntryForm = () => {
             appleMaps: editForm.appleMaps || "",
             waze: editForm.waze || "",
           },
+          hasAllProductsDiscount: !!editForm.hasAllProductsDiscount,
+          allProductsDiscountPercent: editForm.hasAllProductsDiscount
+            ? Number(editForm.allProductsDiscountPercent)
+            : null,
+          allProductsDiscountExpireDate: editForm.hasAllProductsDiscount
+            ? normalizeExpiryInputForApi(editForm.allProductsDiscountExpireDate)
+            : null,
         };
         await storeAPI.update(editDialog.data._id, {
           ...storeUpdateData,
@@ -3436,6 +3416,7 @@ const DataEntryForm = () => {
           nameEn: editForm.nameEn?.trim() || "",
           nameAr: editForm.nameAr?.trim() || "",
           nameKu: editForm.nameKu?.trim() || "",
+          showOnCategoriesList: Boolean(editForm.showOnCategoriesList),
         });
         const res = await storeTypeAPI.getAll();
         setStoreTypes(res.data || []);
@@ -4294,6 +4275,13 @@ const DataEntryForm = () => {
                 icon={<WorkOutlineIcon />}
                 iconPosition="start"
               />,
+              <Tab
+                key="apps"
+                value={LIST_TAB.APPS}
+                label={t("Apps")}
+                icon={<PhoneAndroidIcon />}
+                iconPosition="start"
+              />,
             ]}
             {dataListVisibleGroup === "mainSystem" && [
               <Tab
@@ -4764,6 +4752,7 @@ const DataEntryForm = () => {
                       <TableCell>{t("Name")}</TableCell>
                       <TableCell>{t("Picture")}</TableCell>
                       <TableCell>{t("Icon")}</TableCell>
+                      <TableCell>{t("Show on categories list")}</TableCell>
                       <TableCell>{t("Actions")}</TableCell>
                     </TableRow>
                   </TableHead>
@@ -4787,6 +4776,21 @@ const DataEntryForm = () => {
                         </TableCell>
                         <TableCell style={{ fontSize: 18 }}>
                           {st.icon || "🏪"}
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={
+                              st.showOnCategoriesList !== false
+                                ? t("Visible")
+                                : t("Hidden")
+                            }
+                            size="small"
+                            color={
+                              st.showOnCategoriesList !== false
+                                ? "success"
+                                : "default"
+                            }
+                          />
                         </TableCell>
                         <TableCell>
                           <input
@@ -4845,6 +4849,8 @@ const DataEntryForm = () => {
                                 nameEn: st.nameEn || "",
                                 nameAr: st.nameAr || "",
                                 nameKu: st.nameKu || "",
+                                showOnCategoriesList:
+                                  st.showOnCategoriesList !== false,
                               });
                             }}
                           >
@@ -8383,6 +8389,13 @@ const DataEntryForm = () => {
             </Box>
           )}
 
+          {activeListTab === LIST_TAB.APPS && (
+            <DataEntryAppsTab
+              stores={stores}
+              toolbarSx={DATA_LIST_TAB_TOOLBAR_SCROLL_SX}
+            />
+          )}
+
           {/* Reels List Panel */}
           {activeListTab === LIST_TAB.REELS && (
             <Box>
@@ -8932,6 +8945,49 @@ const DataEntryForm = () => {
                     )}
                   </>
                 )}
+                <Grid xs={12}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        name="hasAllProductsDiscount"
+                        checked={!!storeForm.hasAllProductsDiscount}
+                        onChange={(e) =>
+                          setStoreForm({
+                            ...storeForm,
+                            hasAllProductsDiscount: e.target.checked,
+                          })
+                        }
+                      />
+                    }
+                    label={t("All products discount")}
+                  />
+                </Grid>
+                {storeForm.hasAllProductsDiscount && (
+                  <>
+                    <Grid xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        type="number"
+                        label={t("Discount %")}
+                        name="allProductsDiscountPercent"
+                        value={storeForm.allProductsDiscountPercent}
+                        onChange={handleStoreFormChange}
+                        inputProps={{ min: 0, max: 100 }}
+                      />
+                    </Grid>
+                    <Grid xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label={t("Discount expires (optional)")}
+                        name="allProductsDiscountExpireDate"
+                        type="datetime-local"
+                        value={storeForm.allProductsDiscountExpireDate}
+                        onChange={handleStoreFormChange}
+                        InputLabelProps={{ shrink: true }}
+                      />
+                    </Grid>
+                  </>
+                )}
                 <Grid xs={12} sm={6}>
                   <TextField
                     fullWidth
@@ -9030,6 +9086,8 @@ const DataEntryForm = () => {
                     nameEn: storeTypeAddForm.nameEn?.trim() || "",
                     nameAr: storeTypeAddForm.nameAr?.trim() || "",
                     nameKu: storeTypeAddForm.nameKu?.trim() || "",
+                    showOnCategoriesList:
+                      storeTypeAddForm.showOnCategoriesList !== false,
                   });
                   const createdId =
                     createRes.data?._id || createRes.data?.id || null;
@@ -9086,6 +9144,20 @@ const DataEntryForm = () => {
                 onChange={(e) =>
                   setStoreTypeAddForm((p) => ({ ...p, icon: e.target.value }))
                 }
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={storeTypeAddForm.showOnCategoriesList !== false}
+                    onChange={(e) =>
+                      setStoreTypeAddForm((p) => ({
+                        ...p,
+                        showOnCategoriesList: e.target.checked,
+                      }))
+                    }
+                  />
+                }
+                label={t("Show on categories list")}
               />
               <input
                 accept="image/*"
@@ -12059,6 +12131,49 @@ const DataEntryForm = () => {
                     InputLabelProps={{ shrink: true }}
                   />
                 </Grid>
+                <Grid xs={12}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        name="hasAllProductsDiscount"
+                        checked={!!editForm.hasAllProductsDiscount}
+                        onChange={(e) =>
+                          setEditForm({
+                            ...editForm,
+                            hasAllProductsDiscount: e.target.checked,
+                          })
+                        }
+                      />
+                    }
+                    label={t("All products discount")}
+                  />
+                </Grid>
+                {editForm.hasAllProductsDiscount && (
+                  <>
+                    <Grid xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        type="number"
+                        label={t("Discount %")}
+                        name="allProductsDiscountPercent"
+                        value={editForm.allProductsDiscountPercent || ""}
+                        onChange={handleEditFormChange}
+                        inputProps={{ min: 0, max: 100 }}
+                      />
+                    </Grid>
+                    <Grid xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label={t("Discount expires (optional)")}
+                        name="allProductsDiscountExpireDate"
+                        type="datetime-local"
+                        value={editForm.allProductsDiscountExpireDate || ""}
+                        onChange={handleEditFormChange}
+                        InputLabelProps={{ shrink: true }}
+                      />
+                    </Grid>
+                  </>
+                )}
                 <Grid xs={12} sm={6}>
                   <FormControl fullWidth>
                     <InputLabel>{t("Status All")}</InputLabel>
@@ -12781,6 +12896,7 @@ const DataEntryForm = () => {
                     nameEn: editForm.nameEn?.trim() || "",
                     nameAr: editForm.nameAr?.trim() || "",
                     nameKu: editForm.nameKu?.trim() || "",
+                    showOnCategoriesList: Boolean(editForm.showOnCategoriesList),
                   });
                   const res = await storeTypeAPI.getAll();
                   setStoreTypes(res.data || []);
@@ -12826,6 +12942,20 @@ const DataEntryForm = () => {
                 onChange={(e) =>
                   setEditForm({ ...editForm, icon: e.target.value })
                 }
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={editForm.showOnCategoriesList !== false}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        showOnCategoriesList: e.target.checked,
+                      }))
+                    }
+                  />
+                }
+                label={t("Show on categories list")}
               />
               {editForm.picture ? (
                 <Box sx={{ mt: 2, textAlign: "center" }}>

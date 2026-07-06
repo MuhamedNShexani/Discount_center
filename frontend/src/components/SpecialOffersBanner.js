@@ -1,29 +1,41 @@
-import React, { memo } from "react";
+import React, { memo, useCallback } from "react";
 import { Box, Typography, Button } from "@mui/material";
-import { Link } from "react-router-dom";
 import { alpha, useTheme } from "@mui/material/styles";
 import CardGiftcardIcon from "@mui/icons-material/CardGiftcard";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import { useTranslation } from "react-i18next";
 import { isRtlLanguage } from "../utils/isRtlLanguage";
+import { useGiftsDrawer } from "../hooks/useGiftsDrawer";
 
-/** Compact promo banner — links to /gifts, count is informational only. */
+/** Compact promo banner — opens gifts drawer, count is informational only. */
 const SpecialOffersBanner = memo(function SpecialOffersBanner({ count }) {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const { t, i18n } = useTranslation();
   const isRtl = isRtlLanguage(i18n.language);
+  const { openGifts } = useGiftsDrawer();
+
+  const handleOpen = useCallback(() => {
+    openGifts();
+  }, [openGifts]);
 
   return (
     <Box
-      component={Link}
-      to="/gifts"
+      onClick={handleOpen}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleOpen();
+        }
+      }}
       sx={{
         display: "flex",
         alignItems: "center",
         gap: 1.25,
-        textDecoration: "none",
+        cursor: "pointer",
         p: { xs: 1.5, sm: 1.75 },
         borderRadius: "18px",
         background: isDark
@@ -92,6 +104,10 @@ const SpecialOffersBanner = memo(function SpecialOffersBanner({ count }) {
       <Button
         variant="contained"
         size="small"
+        onClick={(e) => {
+          e.stopPropagation();
+          handleOpen();
+        }}
         sx={{
           flexShrink: 0,
           textTransform: "none",

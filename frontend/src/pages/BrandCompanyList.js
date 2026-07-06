@@ -2,8 +2,6 @@ import React, {
   useState,
   useEffect,
   useMemo,
-  useCallback,
-  useRef,
 } from "react";
 import {
   Box,
@@ -13,7 +11,6 @@ import {
   useTheme,
   Container,
   Chip,
-  IconButton,
   Skeleton,
   TextField,
   InputAdornment,
@@ -28,8 +25,6 @@ import BannerCarousel from "../components/BannerCarousel";
 import BusinessIcon from "@mui/icons-material/Business";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import SearchIcon from "@mui/icons-material/Search";
-import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import Loader from "../components/Loader";
 import { useTranslation } from "react-i18next";
 import { resolveMediaUrl } from "../utils/mediaUrl";
@@ -251,35 +246,6 @@ const BrandCompanyList = ({ variant }) => {
     theme.palette.primary.dark ||
     (theme.palette.mode === "light" ? "#1565c0" : accent);
 
-  const brandTypeScrollRef = useRef(null);
-  const [showScrollLeft, setShowScrollLeft] = useState(false);
-  const [showScrollRight, setShowScrollRight] = useState(false);
-
-  const updateBrandTypeScrollHints = useCallback(() => {
-    const el = brandTypeScrollRef.current;
-    if (!el) {
-      setShowScrollLeft(false);
-      setShowScrollRight(false);
-      return;
-    }
-    const { scrollLeft, scrollWidth, clientWidth } = el;
-    if (scrollWidth <= clientWidth + 2) {
-      setShowScrollLeft(false);
-      setShowScrollRight(false);
-      return;
-    }
-    const max = scrollWidth - clientWidth;
-    setShowScrollLeft(scrollLeft > 8);
-    setShowScrollRight(scrollLeft < max - 8);
-  }, []);
-
-  const scrollBrandTypesBy = useCallback((direction) => {
-    const el = brandTypeScrollRef.current;
-    if (!el) return;
-    const step = Math.min(280, el.clientWidth * 0.72);
-    el.scrollBy({ left: direction * step, behavior: "smooth" });
-  }, []);
-
   const fetchBrands = async () => {
     try {
       setLoading(true);
@@ -326,28 +292,6 @@ const BrandCompanyList = ({ variant }) => {
     fetchAds();
     fetchBrandTypes();
   }, [variant]);
-
-  useEffect(() => {
-    updateBrandTypeScrollHints();
-    const el = brandTypeScrollRef.current;
-    if (!el) {
-      const retry = window.setTimeout(updateBrandTypeScrollHints, 350);
-      return () => window.clearTimeout(retry);
-    }
-    let ro;
-    if (typeof ResizeObserver !== "undefined") {
-      ro = new ResizeObserver(() => updateBrandTypeScrollHints());
-      ro.observe(el);
-    }
-    const onWin = () => updateBrandTypeScrollHints();
-    window.addEventListener("resize", onWin);
-    const timer = window.setTimeout(updateBrandTypeScrollHints, 150);
-    return () => {
-      window.clearTimeout(timer);
-      window.removeEventListener("resize", onWin);
-      ro?.disconnect();
-    };
-  }, [updateBrandTypeScrollHints, brandTypes, loading]);
 
   const bannerAdsWithImages = useMemo(
     () =>
@@ -423,7 +367,7 @@ const BrandCompanyList = ({ variant }) => {
     })),
   ];
 
-  /** Match MainPage `FilterChips` store-type pill styles */
+  /** Brand/company type filter chips */
   const mainPageStyleActivePillSx = {
     background:
       "linear-gradient(135deg, var(--brand-primary-blue, #1E6FD9) 0%, #4A90E2 100%)",
@@ -431,8 +375,15 @@ const BrandCompanyList = ({ variant }) => {
     fontWeight: 700,
     border: "none",
     boxShadow: "0 2px 8px rgba(30,111,217,0.35)",
+    flexShrink: 0,
+    maxWidth: "100%",
     "&:hover": {
       background: "linear-gradient(135deg, #1660c2 0%, #3a7fd2 100%)",
+    },
+    "& .MuiChip-label": {
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
     },
     "&.MuiChip-root": { height: 34 },
   };
@@ -442,9 +393,16 @@ const BrandCompanyList = ({ variant }) => {
     color: isDark ? "rgba(255,255,255,0.85)" : "#374151",
     border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid #e5e7eb",
     fontWeight: 500,
+    flexShrink: 0,
+    maxWidth: "100%",
     "&:hover": {
       background: isDark ? "rgba(255,255,255,0.12)" : "#e9ecf0",
       border: isDark ? "1px solid rgba(255,255,255,0.2)" : "1px solid #d1d5db",
+    },
+    "& .MuiChip-label": {
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
     },
     "&.MuiChip-root": { height: 34 },
   };
@@ -472,9 +430,8 @@ const BrandCompanyList = ({ variant }) => {
     return (
       <Box
         sx={{
-          py: { xs: 3, md: 6 },
-          minHeight: "100vh",
-          bgcolor: "background.default",
+          pt: { xs: "100px", sm: "113px", md: "113px" },
+          pb: { xs: 2, sm: 4 },
         }}
       >
         <Container maxWidth="lg" sx={{ px: { xs: 1.5, sm: 2 } }}>
@@ -534,16 +491,11 @@ const BrandCompanyList = ({ variant }) => {
   return (
     <Box
       sx={{
-        py: { xs: 2.5, md: 5 },
-        pb: { xs: 10, md: 6 },
-        minHeight: "100vh",
-        bgcolor: "background.default",
+        pt: { xs: "100px", sm: "113px", md: "113px" },
+        pb: { xs: 2, sm: 4 },
       }}
     >
-      <Container
-        maxWidth="lg"
-        sx={{ px: { xs: 1.5, sm: 2 }, mt: { xs: 4, md: 5 } }}
-      >
+      <Container maxWidth="lg" sx={{ px: { xs: 1.5, sm: 2 } }}>
         {/* Ads banner — same as MainPage `BannerCarousel` */}
         <BannerCarousel
           banners={bannerAdsWithImages}
@@ -643,118 +595,46 @@ const BrandCompanyList = ({ variant }) => {
           />
         </Box>
 
-        {/* Brand types — same chip + scroll styling as MainPage `FilterChips` */}
-        <Box sx={{ mb: 3 }}>
-          <Box sx={{ position: "relative", pb: 0.25 }}>
-            {showScrollLeft && (
-              <Box
-                aria-hidden
-                sx={{
-                  pointerEvents: "none",
-                  position: "absolute",
-                  left: 0,
-                  top: 0,
-                  bottom: 10,
-                  width: 40,
-                  zIndex: 1,
-                  background: isDark
-                    ? `linear-gradient(90deg, ${alpha("#0d111c", 0.98)} 0%, transparent 100%)`
-                    : `linear-gradient(90deg, ${alpha("#f9fafb", 0.98)} 0%, transparent 100%)`,
-                }}
-              />
-            )}
-            {showScrollRight && (
-              <Box
-                aria-hidden
-                sx={{
-                  pointerEvents: "none",
-                  position: "absolute",
-                  right: 0,
-                  top: 0,
-                  bottom: 10,
-                  width: 40,
-                  zIndex: 1,
-                  background: isDark
-                    ? `linear-gradient(270deg, ${alpha("#0d111c", 0.98)} 0%, transparent 100%)`
-                    : `linear-gradient(270deg, ${alpha("#f9fafb", 0.98)} 0%, transparent 100%)`,
-                }}
-              />
-            )}
-
-            {showScrollLeft && (
-              <IconButton
-                size="small"
-                onClick={() => scrollBrandTypesBy(-1)}
-                aria-label={t("Scroll left")}
-                sx={{
-                  position: "absolute",
-                  left: 2,
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  zIndex: 2,
-                  bgcolor: isDark ? alpha("#fff", 0.1) : alpha("#fff", 0.95),
-                  boxShadow: 1,
-                  "&:hover": {
-                    bgcolor: isDark ? alpha("#fff", 0.18) : "#fff",
-                  },
-                }}
-              >
-                <ChevronLeftIcon fontSize="small" />
-              </IconButton>
-            )}
-            {showScrollRight && (
-              <IconButton
-                size="small"
-                onClick={() => scrollBrandTypesBy(1)}
-                aria-label={t("Scroll right")}
-                sx={{
-                  position: "absolute",
-                  right: 2,
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  zIndex: 2,
-                  bgcolor: isDark ? alpha("#fff", 0.1) : alpha("#fff", 0.95),
-                  boxShadow: 1,
-                  "&:hover": {
-                    bgcolor: isDark ? alpha("#fff", 0.18) : "#fff",
-                  },
-                }}
-              >
-                <ChevronRightIcon fontSize="small" />
-              </IconButton>
-            )}
-
+        {/* Brand / company types */}
+        <Paper
+          elevation={0}
+          sx={{
+            mb: 3,
+            borderRadius: 2,
+            overflow: "hidden",
+            backgroundColor: isDark
+              ? alpha(accent, 0.08)
+              : alpha(primaryOnSurface, 0.06),
+            border: `1px solid ${
+              isDark ? alpha(accent, 0.22) : alpha(primaryOnSurface, 0.14)
+            }`,
+          }}
+        >
+          <Box sx={{ position: "relative", py: 1, px: { xs: 0.75, sm: 1 } }}>
             <Box
-              ref={brandTypeScrollRef}
-              onScroll={updateBrandTypeScrollHints}
               sx={{
                 display: "flex",
-                gap: 0.8,
+                gap: 0.75,
                 overflowX: "auto",
                 overflowY: "hidden",
                 alignItems: "center",
-                px: { xs: 0.25, sm: 0.5 },
-                pb: 1,
+                width: "100%",
+                maxWidth: "100%",
+                boxSizing: "border-box",
+                pb: 0.75,
                 scrollBehavior: "smooth",
-                scrollbarWidth: "auto",
-                scrollbarGutter: "stable",
+                WebkitOverflowScrolling: "touch",
+                scrollbarWidth: "thin",
                 scrollbarColor: isDark
-                  ? `${alpha(accent, 0.55)} ${alpha("#fff", 0.08)}`
-                  : `${alpha(primaryOnSurface, 0.45)} ${alpha("#000", 0.08)}`,
-                "&::-webkit-scrollbar": { height: 10 },
+                  ? `${alpha(accent, 0.55)} transparent`
+                  : `${alpha(primaryOnSurface, 0.45)} transparent`,
+                "&::-webkit-scrollbar": { height: 6 },
                 "&::-webkit-scrollbar-track": {
-                  borderRadius: 5,
-                  marginLeft: 1,
-                  marginRight: 1,
-                  backgroundColor: isDark
-                    ? alpha("#fff", 0.07)
-                    : alpha("#000", 0.06),
+                  borderRadius: 3,
+                  backgroundColor: "transparent",
                 },
                 "&::-webkit-scrollbar-thumb": {
-                  borderRadius: 5,
-                  border: `2px solid ${
-                    isDark ? alpha("#0d111c", 1) : alpha("#f9fafb", 1)
-                  }`,
+                  borderRadius: 3,
                   backgroundColor: isDark
                     ? alpha(accent, 0.55)
                     : alpha(primaryOnSurface, 0.45),
@@ -784,7 +664,7 @@ const BrandCompanyList = ({ variant }) => {
               })}
             </Box>
           </Box>
-        </Box>
+        </Paper>
 
         <Box
           sx={{

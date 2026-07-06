@@ -3,6 +3,7 @@ const Store = require("../models/Store");
 const Brand = require("../models/Brand");
 const Company = require("../models/Company");
 const Category = require("../models/Category");
+const StoreType = require("../models/StoreType");
 const {
   storeList,
   brandList,
@@ -60,6 +61,7 @@ const search = async (req, res) => {
           companies: [],
           categories: [],
           categoryTypes: [],
+          storeTypes: [],
         },
       });
     }
@@ -92,7 +94,7 @@ const search = async (req, res) => {
         isActive: true,
         ...nameLangOr(regex),
       })
-        .select("name nameEn nameAr nameKu image icon")
+        .select("name nameEn nameAr nameKu image icon storeTypeId")
         .limit(limit)
         .lean(),
       Category.find({
@@ -104,7 +106,7 @@ const search = async (req, res) => {
           { "types.nameKu": regex },
         ],
       })
-        .select("name nameEn nameAr nameKu image icon types")
+        .select("name nameEn nameAr nameKu image icon storeTypeId types")
         .limit(80)
         .lean(),
     ]);
@@ -132,6 +134,7 @@ const search = async (req, res) => {
             nameKu: c.nameKu,
             image: c.image,
             icon: c.icon,
+            storeTypeId: c.storeTypeId,
           },
           type: {
             _id: t._id,
@@ -164,6 +167,7 @@ const search = async (req, res) => {
       productsRaw,
       brandsAll,
       companiesAll,
+      storeTypesAll,
     ] = await Promise.all([
       Store.find(storeQuery)
         .populate("storeTypeId", storeTypeList)
@@ -195,6 +199,13 @@ const search = async (req, res) => {
         ...nameLangOr(regex),
       })
         .populate("brandTypeId", "name nameEn nameAr nameKu icon")
+        .limit(limit)
+        .lean(),
+      StoreType.find({
+        showOnCategoriesList: { $ne: false },
+        ...nameLangOr(regex),
+      })
+        .select("name nameEn nameAr nameKu icon picture")
         .limit(limit)
         .lean(),
     ]);
@@ -241,6 +252,7 @@ const search = async (req, res) => {
         companies,
         categories: catsByTopName,
         categoryTypes: categoryTypeHits,
+        storeTypes: storeTypesAll || [],
       },
     });
   } catch (err) {

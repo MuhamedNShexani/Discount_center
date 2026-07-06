@@ -45,6 +45,7 @@ export function buildMainPagePayload(
     companiesData,
     giftsData,
     jobsData,
+    showcaseDiscountStores,
   },
   options = {},
 ) {
@@ -94,6 +95,7 @@ export function buildMainPagePayload(
     companies: companiesData || [],
     gifts: giftsData || [],
     jobs: jobsData || [],
+    showcaseDiscountStores: showcaseDiscountStores || [],
     productsByStore: productsMap,
     likeCounts: initialLikeCounts,
     likeStates: initialLikeStates,

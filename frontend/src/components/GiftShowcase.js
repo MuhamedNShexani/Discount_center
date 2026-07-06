@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -9,10 +9,6 @@ import {
   CardMedia,
   Chip,
 } from "@mui/material";
-import { Link } from "react-router-dom";
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import BusinessIcon from "@mui/icons-material/Business";
 import { useTheme } from "@mui/material/styles";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
@@ -20,12 +16,17 @@ import Slider from "react-slick";
 import { useTranslation } from "react-i18next";
 import { resolveMediaUrl } from "../utils/mediaUrl";
 import { useLocalizedContent } from "../hooks/useLocalizedContent";
+import { useGiftsDrawer } from "../hooks/useGiftsDrawer";
 
 const GiftShowcase = memo(function GiftShowcase({ gifts }) {
   const theme = useTheme();
-  const { t, i18n } = useTranslation();
-  const isRtl = i18n.dir() === "rtl";
+  const { t } = useTranslation();
   const { locName, locDescription } = useLocalizedContent();
+  const { openGifts } = useGiftsDrawer();
+
+  const handleOpenDrawer = useCallback(() => {
+    openGifts();
+  }, [openGifts]);
 
   const displayGifts = Array.isArray(gifts) ? gifts.slice(-5) : [];
   if (displayGifts.length === 0) return null;
@@ -85,8 +86,7 @@ const GiftShowcase = memo(function GiftShowcase({ gifts }) {
           {t("Featured Gifts")}
         </Typography>
         <Button
-          component={Link}
-          to="/gifts"
+          onClick={handleOpenDrawer}
           size="small"
           variant="outlined"
           sx={{ textTransform: "none" }}
@@ -104,14 +104,14 @@ const GiftShowcase = memo(function GiftShowcase({ gifts }) {
           return (
             <Box key={gift._id} sx={{ px: 0.5, width: "100%" }}>
               <Card
-                component={Link}
-                to="/gifts"
+                onClick={handleOpenDrawer}
                 sx={{
                   display: "flex",
                   height: { xs: "150px", sm: "250px", md: "280px" },
                   width: "100%",
                   borderRadius: 2,
                   overflow: "hidden",
+                  cursor: "pointer",
                   background:
                     theme.palette.mode === "dark"
                       ? "linear-gradient(135deg, #4A90E2 0%, #1E6FD9 100%)"

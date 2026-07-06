@@ -16,6 +16,7 @@ import {
   canAccessPendingPage,
   canApprovePendingProducts,
 } from "../utils/adminAccess";
+import { isOwnerDataEntryRole } from "../utils/roles";
 import {
   normalizeExpiryInputForApi,
   toDatetimeLocalValue,
@@ -568,6 +569,10 @@ export default function PendingPage() {
   }
 
   const canModerate = canApprovePendingProducts(user);
+  const hideOwnerDataEntryColumns =
+    isOwnerDataEntryRole(user) && !canModerate;
+  const tableColumnCount =
+    4 + (hideOwnerDataEntryColumns ? 0 : 4) + (canModerate ? 1 : 0);
   const listErrorMsg =
     error ||
     (pendingQueryError &&
@@ -650,17 +655,25 @@ export default function PendingPage() {
             <TableHead>
               <TableRow>
                 <TableCell>{t("Name")}</TableCell>
-                <TableCell>
-                  {t("pendingColumnType", { defaultValue: "Type" })}
-                </TableCell>
-                <TableCell>
-                  {t("pendingColumnSentBy", { defaultValue: "Sent by" })}
-                </TableCell>
+                {!hideOwnerDataEntryColumns && (
+                  <TableCell>
+                    {t("pendingColumnType", { defaultValue: "Type" })}
+                  </TableCell>
+                )}
+                {!hideOwnerDataEntryColumns && (
+                  <TableCell>
+                    {t("pendingColumnSentBy", { defaultValue: "Sent by" })}
+                  </TableCell>
+                )}
                 <TableCell>{t("Store", { defaultValue: "Store" })}</TableCell>
-                <TableCell>{t("Brand", { defaultValue: "Brand" })}</TableCell>
-                <TableCell>
-                  {t("Company", { defaultValue: "Company" })}
-                </TableCell>
+                {!hideOwnerDataEntryColumns && (
+                  <TableCell>{t("Brand", { defaultValue: "Brand" })}</TableCell>
+                )}
+                {!hideOwnerDataEntryColumns && (
+                  <TableCell>
+                    {t("Company", { defaultValue: "Company" })}
+                  </TableCell>
+                )}
                 <TableCell>{t("Price")}</TableCell>
                 <TableCell>
                   {t("pendingColumnUpdated", { defaultValue: "Updated" })}
@@ -675,7 +688,7 @@ export default function PendingPage() {
             <TableBody>
               {items.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={canModerate ? 9 : 8} align="center">
+                  <TableCell colSpan={tableColumnCount} align="center">
                     {t("pendingEmpty", {
                       defaultValue: "No pending products.",
                     })}
@@ -717,41 +730,49 @@ export default function PendingPage() {
                           </Typography>
                         )}
                       </TableCell>
-                      <TableCell>
-                        <Chip
-                          size="small"
-                          color={isAdding ? "warning" : "info"}
-                          label={
-                            isAdding
-                              ? t("pendingTypeAdding", {
-                                  defaultValue: "Adding",
-                                })
-                              : t("pendingTypeEditing", {
-                                  defaultValue: "Updating",
-                                })
-                          }
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2">
-                          {pendingSentByLabel(p, isAdding)}
-                        </Typography>
-                      </TableCell>
+                      {!hideOwnerDataEntryColumns && (
+                        <TableCell>
+                          <Chip
+                            size="small"
+                            color={isAdding ? "warning" : "info"}
+                            label={
+                              isAdding
+                                ? t("pendingTypeAdding", {
+                                    defaultValue: "Adding",
+                                  })
+                                : t("pendingTypeEditing", {
+                                    defaultValue: "Updating",
+                                  })
+                            }
+                          />
+                        </TableCell>
+                      )}
+                      {!hideOwnerDataEntryColumns && (
+                        <TableCell>
+                          <Typography variant="body2">
+                            {pendingSentByLabel(p, isAdding)}
+                          </Typography>
+                        </TableCell>
+                      )}
                       <TableCell>
                         <Typography variant="body2">
                           {entityLabel(p.storeId)}
                         </Typography>
                       </TableCell>
-                      <TableCell>
-                        <Typography variant="body2">
-                          {entityLabel(p.brandId)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2">
-                          {entityLabel(p.companyId)}
-                        </Typography>
-                      </TableCell>
+                      {!hideOwnerDataEntryColumns && (
+                        <TableCell>
+                          <Typography variant="body2">
+                            {entityLabel(p.brandId)}
+                          </Typography>
+                        </TableCell>
+                      )}
+                      {!hideOwnerDataEntryColumns && (
+                        <TableCell>
+                          <Typography variant="body2">
+                            {entityLabel(p.companyId)}
+                          </Typography>
+                        </TableCell>
+                      )}
                       <TableCell>
                         {dispNewPrice != null ? dispNewPrice : "—"}
                         {hasDraft &&

@@ -64,11 +64,13 @@ const ALLOWED_NAV_TEMPLATES = [
   "template3",
   "custom",
   "custom2",
+  "custom3",
 ];
 const ALLOWED_NAV_ACTIONS = [
   "", // empty slot
   "none",
   "label",
+  "logo",
   "home",
   "search",
   "refresh",

@@ -18,7 +18,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import CategoryIcon from "@mui/icons-material/Category";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -32,6 +32,7 @@ import { useCityFilter } from "../context/CityFilterContext";
 import { useUserTracking } from "../hooks/useUserTracking";
 import { resolveMediaUrl } from "../utils/mediaUrl";
 import { isExpiryStillValid } from "../utils/expiryDate";
+import { isStoreTypeShownOnCategoriesList } from "../utils/storeTypeVisibility";
 import { productStoreMatchesCity } from "../utils/cityMatch";
 import { formatPriceDigits } from "../utils/formatPriceNumber";
 import { isRtlLanguage } from "../utils/isRtlLanguage";
@@ -79,6 +80,7 @@ export default function StoreTypeBrowsePage() {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const navigate = useNavigate();
+  const location = useLocation();
   const { storeTypeId, categoryId } = useParams();
   const { t, i18n } = useTranslation();
   const isRtl = isRtlLanguage(i18n.language);
@@ -111,6 +113,10 @@ export default function StoreTypeBrowsePage() {
   );
 
   const isIndex = !storeTypeId;
+  const browseVisibleStoreTypes = useMemo(
+    () => storeTypes.filter(isStoreTypeShownOnCategoriesList),
+    [storeTypes],
+  );
   const isCategoriesView = Boolean(storeTypeId && !categoryId);
   const isProductsView = Boolean(storeTypeId && categoryId);
 
@@ -172,6 +178,7 @@ export default function StoreTypeBrowsePage() {
     }
 
     let cancelled = false;
+    const presetCategoryType = location.state?.categoryType;
     (async () => {
       setProductsLoading(true);
       setSelectedCategoryType(null);
@@ -182,7 +189,14 @@ export default function StoreTypeBrowsePage() {
         ]);
         if (!cancelled) {
           setProducts(productsRes.data || []);
-          setCategoryTypes(typesRes.data || []);
+          const types = typesRes.data || [];
+          setCategoryTypes(types);
+          if (presetCategoryType?._id) {
+            const match = types.find(
+              (type) => String(type._id) === String(presetCategoryType._id),
+            );
+            if (match) setSelectedCategoryType(match);
+          }
         }
       } catch {
         if (!cancelled) {
@@ -197,7 +211,7 @@ export default function StoreTypeBrowsePage() {
     return () => {
       cancelled = true;
     };
-  }, [categoryId]);
+  }, [categoryId, location.state?.categoryType]);
 
   useEffect(() => {
     productViewRecordedRef.current = new Set();
@@ -247,15 +261,7 @@ export default function StoreTypeBrowsePage() {
   );
 
   const handleBack = () => {
-    if (isProductsView) {
-      navigate(`/store-types/${storeTypeId}`);
-      return;
-    }
-    if (isCategoriesView) {
-      navigate("/store-types");
-      return;
-    }
-    navigate("/");
+    navigate(-1);
   };
 
   const pageTitle = isIndex
@@ -324,7 +330,7 @@ export default function StoreTypeBrowsePage() {
                 gap: 1.25,
               }}
             >
-              {storeTypes.map((type) => (
+              {browseVisibleStoreTypes.map((type) => (
                 <Box key={type._id}>
                   <StoreTypeCard
                     picture={type.picture || ""}

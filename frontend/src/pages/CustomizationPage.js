@@ -64,6 +64,10 @@ const NAV_TEMPLATES = [
     id: "custom2",
     label: "Custom 2 (Brand left + 3 top-right)",
   },
+  {
+    id: "custom3",
+    label: "Custom 3 (Logo left + label center + 2 top-right)",
+  },
 ];
 
 const DEFAULT_BOTTOM_SLOTS = {
@@ -77,6 +81,7 @@ const DEFAULT_BOTTOM_SLOTS = {
 const NAV_ACTIONS = [
   { id: "", label: "Empty" },
   { id: "label", label: "Label (center text)" },
+  { id: "logo", label: "Logo" },
   { id: "home", label: "Home" },
   { id: "search", label: "Search" },
   { id: "refresh", label: "Refresh" },
@@ -380,7 +385,27 @@ const CustomizationPage = () => {
                             topright3: p.topSlots?.topright3 || "profile",
                           },
                           bottomSlots:
-                            p.template === "custom" || p.template === "custom2"
+                            p.template === "custom" ||
+                            p.template === "custom2" ||
+                            p.template === "custom3"
+                              ? p.bottomSlots || { ...DEFAULT_BOTTOM_SLOTS }
+                              : { ...DEFAULT_BOTTOM_SLOTS },
+                        };
+                      }
+                      if (v === "custom3") {
+                        return {
+                          ...p,
+                          template: "custom3",
+                          topSlots: {
+                            ...(p.topSlots || {}),
+                            center: "label",
+                            topright1: p.topSlots?.topright1 || "search",
+                            topright2: p.topSlots?.topright2 || "notifications",
+                          },
+                          bottomSlots:
+                            p.template === "custom" ||
+                            p.template === "custom2" ||
+                            p.template === "custom3"
                               ? p.bottomSlots || { ...DEFAULT_BOTTOM_SLOTS }
                               : { ...DEFAULT_BOTTOM_SLOTS },
                         };
@@ -398,7 +423,8 @@ const CustomizationPage = () => {
               </FormControl>
 
               {(selectedNav?.template === "custom" ||
-                selectedNav?.template === "custom2") && (
+                selectedNav?.template === "custom2" ||
+                selectedNav?.template === "custom3") && (
                 <Box
                   sx={{
                     mt: 2,
@@ -503,6 +529,83 @@ const CustomizationPage = () => {
                         )}
                       </Typography>
                       {["topright1", "topright2", "topright3"].map((slot) => (
+                        <FormControl
+                          key={slot}
+                          fullWidth
+                          sx={{
+                            mb: 1,
+                            "& .MuiOutlinedInput-root": {
+                              borderRadius: 2.5,
+                              backgroundColor: isDark
+                                ? "rgba(255,255,255,0.05)"
+                                : "rgba(0,0,0,0.025)",
+                              "& fieldset": {
+                                borderColor: isDark
+                                  ? "rgba(255,255,255,0.1)"
+                                  : "rgba(0,0,0,0.1)",
+                              },
+                            },
+                          }}
+                        >
+                          <InputLabel>{slot}</InputLabel>
+                          <Select
+                            value={selectedNav?.topSlots?.[slot] ?? ""}
+                            label={slot}
+                            onChange={(e) =>
+                              setSelectedNav((prev) => {
+                                setIsDirty(true);
+                                return {
+                                  ...(prev || {}),
+                                  topSlots: {
+                                    ...(prev?.topSlots || {}),
+                                    [slot]: e.target.value,
+                                  },
+                                };
+                              })
+                            }
+                          >
+                            {NAV_ACTIONS.filter((a) => a.id !== "label").map(
+                              (a) => (
+                                <MenuItem key={a.id || "empty"} value={a.id}>
+                                  {a.label}
+                                </MenuItem>
+                              ),
+                            )}
+                          </Select>
+                        </FormControl>
+                      ))}
+                    </>
+                  )}
+
+                  {selectedNav?.template === "custom3" && (
+                    <>
+                      <Typography
+                        sx={{
+                          fontWeight: 800,
+                          mb: 0.75,
+                          color: isDark ? "rgba(255,255,255,0.8)" : "#111827",
+                        }}
+                      >
+                        {t("Top bar (mobile)")}
+                      </Typography>
+                      <Typography
+                        sx={{
+                          mb: 1.5,
+                          fontSize: "0.88rem",
+                          color: isDark
+                            ? "rgba(255,255,255,0.55)"
+                            : "rgba(0,0,0,0.55)",
+                        }}
+                      >
+                        {t(
+                          "Logo stays on the left, app name in the center. Assign up to two actions on the right.",
+                          {
+                            defaultValue:
+                              "Logo stays on the left, app name in the center. Assign up to two actions on the right.",
+                          },
+                        )}
+                      </Typography>
+                      {["topright1", "topright2"].map((slot) => (
                         <FormControl
                           key={slot}
                           fullWidth

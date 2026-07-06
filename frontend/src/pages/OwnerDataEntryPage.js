@@ -516,7 +516,7 @@ export default function OwnerDataEntryPage() {
     <Box
       sx={{
         minHeight: "100vh",
-        bgcolor: isDark ? "rgba(13,17,28,1)" : "rgba(248,249,252,1)",
+        bgcolor: "background.default",
         pb: { xs: 10, md: 6 },
       }}
     >

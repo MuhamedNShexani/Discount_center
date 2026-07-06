@@ -62,8 +62,8 @@ const NAV_PATH_NOTIFICATIONS = "__nav_notifications__";
 const NAV_PATH_DRAFT_CART = "__nav_draft_cart__";
 const NAV_PATH_PROFILE = "__nav_profile__";
 
-/** Same dark glass as `NavigationBar.js` (`NAV_BAR_GRADIENT_DARK_GLASS`). */
-const NAV_BAR_GRADIENT_DARK_GLASS =
+/** Dark glass surface for the bottom bar (unchanged from pre–mobile-orange-bar fix). */
+const BOTTOM_NAV_DARK_GLASS =
   "linear-gradient(118deg, rgba(7,11,20,0.78) 0%, rgba(15,23,42,0.7) 42%, rgba(23,37,84,0.62) 78%, rgba(37,99,235,0.45) 100%)";
 
 /** MUI Box + Framer Motion — keeps layout/animation working without relying on Tailwind. */
@@ -163,6 +163,11 @@ const BottomNavigationBar = () => {
   const actionMap = useMemo(
     () => ({
       home: { name: t("Home"), path: "/", Icon: Home },
+      logo: {
+        kind: "logo",
+        name: t("Logo", { defaultValue: "Logo" }),
+        path: "/",
+      },
       search: { name: t("Search"), path: "/search", Icon: Search },
       refresh: {
         kind: "refresh",
@@ -243,7 +248,7 @@ const BottomNavigationBar = () => {
             actionMap.favourites,
             actionMap.profile,
           ]
-        : template === "custom" || template === "custom2"
+        : template === "custom" || template === "custom2" || template === "custom3"
           ? [
               actionMap[navConfig?.bottomSlots?.bottomleft1] || null,
               actionMap[navConfig?.bottomSlots?.bottomleft2] || null,
@@ -376,7 +381,7 @@ const BottomNavigationBar = () => {
   const bottomNavSurfaceStyle = useMemo(
     () =>
       resolveBottomNavSurfaceStyle(location.pathname, isDark, {
-        darkDefault: NAV_BAR_GRADIENT_DARK_GLASS,
+        darkDefault: BOTTOM_NAV_DARK_GLASS,
         lightDefault: "rgba(255,255,255,0.98)",
       }),
     [isDark, location.pathname],
@@ -568,6 +573,47 @@ const BottomNavigationBar = () => {
                           {item.name || item.path}
                         </Typography>
                       </Box>
+                    </MotionBox>
+                  );
+                }
+
+                if (item.kind === "logo") {
+                  const logoActive =
+                    activeValue !== false && activeValue === "/";
+                  return (
+                    <MotionBox
+                      key={`${item.path}-${idx}`}
+                      component="button"
+                      type="button"
+                      aria-current={logoActive ? "page" : undefined}
+                      aria-label={item.name}
+                      onClick={() => handleRouteNavigate({ path: "/" })}
+                      whileTap={
+                        useLayoutAnimations ? { scale: 0.94 } : undefined
+                      }
+                      whileHover={
+                        useLayoutAnimations ? { scale: 1.06 } : undefined
+                      }
+                      sx={{
+                        ...tabBtnBaseSx,
+                        color: inactiveIconColor,
+                      }}
+                    >
+                      <Box
+                        component="img"
+                        src={`${import.meta.env.BASE_URL}logo512.png`}
+                        alt={item.name}
+                        sx={{
+                          width: 26,
+                          height: 26,
+                          borderRadius: 1.25,
+                          objectFit: "cover",
+                          border: logoActive
+                            ? "2px solid rgba(251, 146, 60, 0.95)"
+                            : "2px solid transparent",
+                          boxSizing: "border-box",
+                        }}
+                      />
                     </MotionBox>
                   );
                 }

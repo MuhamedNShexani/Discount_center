@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { giftAPI, jobAPI, productAPI, storeAPI, videoAPI } from "../services/api";
+import { giftAPI, jobAPI, productAPI, storeAPI, videoAPI, appAPI } from "../services/api";
 import { isExpiryStillValid } from "../utils/expiryDate";
 import { getSyncErrorHint } from "../utils/apiError";
 
@@ -9,6 +9,7 @@ export default function useStoreProfile(storeId) {
   const [gifts, setGifts] = useState([]);
   const [reels, setReels] = useState([]);
   const [jobs, setJobs] = useState([]);
+  const [appDiscounts, setAppDiscounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [giftsLoaded, setGiftsLoaded] = useState(false);
@@ -20,6 +21,7 @@ export default function useStoreProfile(storeId) {
     setGifts([]);
     setReels([]);
     setJobs([]);
+    setAppDiscounts([]);
     setGiftsLoaded(false);
     setReelsLoaded(false);
     setJobsLoaded(false);
@@ -30,12 +32,20 @@ export default function useStoreProfile(storeId) {
     try {
       setLoading(true);
       setError("");
-      const [storeResponse, productsResponse] = await Promise.all([
+      const [storeResponse, productsResponse, appDiscountsResponse] =
+        await Promise.all([
         storeAPI.getById(storeId),
         productAPI.getByStore(storeId),
+        appAPI.getByStore(storeId).catch(() => ({ data: { data: [] } })),
       ]);
       setStore(storeResponse.data);
       setProducts(Array.isArray(productsResponse.data) ? productsResponse.data : []);
+      const appRows = Array.isArray(appDiscountsResponse.data?.data)
+        ? appDiscountsResponse.data.data
+        : Array.isArray(appDiscountsResponse.data)
+          ? appDiscountsResponse.data
+          : [];
+      setAppDiscounts(appRows);
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -117,6 +127,8 @@ export default function useStoreProfile(storeId) {
     setReels,
     jobs,
     setJobs,
+    appDiscounts,
+    setAppDiscounts,
     loading,
     error,
     setError,

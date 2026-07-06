@@ -83,7 +83,7 @@ const JOB_GRADIENT_ICON = "linear-gradient(135deg, #10b981 0%, #059669 100%)";
 const JOB_GRADIENT_BTN = "linear-gradient(135deg, #10b981 0%, #059669 100%)";
 const JOB_GRADIENT_BTN_HOVER = "linear-gradient(135deg, #059669 0%, #047857 100%)";
 
-const FindJob = () => {
+const FindJob = ({ embedded = false, onClose } = {}) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const navigate = useNavigate();
@@ -269,23 +269,38 @@ const FindJob = () => {
 
   return (
     <Box
-      sx={{
-        py: { xs: 3, md: 6 },
-        mt: { xs: 3, md: 5 },
-        minHeight: "100vh",
-        bgcolor: "background.default",
-      }}
+      sx={
+        embedded
+          ? {
+              width: { xs: "100vw", sm: 420 },
+              maxWidth: "100%",
+              height: "100dvh",
+              overflow: "auto",
+              bgcolor: "background.default",
+              boxSizing: "border-box",
+            }
+          : {
+              py: { xs: 3, md: 6 },
+              mt: { xs: 3, md: 5 },
+              minHeight: "100vh",
+              bgcolor: "background.default",
+            }
+      }
     >
-      <Container maxWidth="lg">
-        {/* Ads banner — same as MainPage `BannerCarousel` */}
-        <BannerCarousel
-          banners={bannerAdsWithImages}
-          onBannerClick={(ad) => {
-            if (ad.brandId) navigate(`/brands/${ad.brandId}`);
-            else if (ad.storeId) navigate(`/stores/${ad.storeId}`);
-            else if (ad.giftId) navigate(`/gifts/${ad.giftId}`);
-          }}
-        />
+      <Container
+        maxWidth={embedded ? false : "lg"}
+        sx={embedded ? { px: 2, pt: 2.5, pb: 3 } : undefined}
+      >
+        {!embedded && (
+          <BannerCarousel
+            banners={bannerAdsWithImages}
+            onBannerClick={(ad) => {
+              if (ad.brandId) navigate(`/brands/${ad.brandId}`);
+              else if (ad.storeId) navigate(`/stores/${ad.storeId}`);
+              else if (ad.giftId) navigate(`/gifts/${ad.giftId}`);
+            }}
+          />
+        )}
 
         {/* Header — matches MainPage Find Job showcase accent */}
         <Box
@@ -294,14 +309,14 @@ const FindJob = () => {
             alignItems: "center",
             gap: 1.5,
             mb: 2,
-            mt: { xs: 1, sm: 1.5 },
+            mt: embedded ? 0 : { xs: 1, sm: 1.5 },
           }}
         >
           <Box
             sx={{
-              width: 48,
-              height: 48,
-              borderRadius: 2.5,
+              width: embedded ? 36 : 48,
+              height: embedded ? 36 : 48,
+              borderRadius: embedded ? "12px" : 2.5,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -310,11 +325,13 @@ const FindJob = () => {
               boxShadow: "0 4px 12px rgba(16,185,129,0.4)",
             }}
           >
-            <WorkOutlineIcon sx={{ color: "#fff", fontSize: "1.5rem" }} />
+            <WorkOutlineIcon
+              sx={{ color: "#fff", fontSize: embedded ? "1.1rem" : "1.5rem" }}
+            />
           </Box>
-          <Box>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
             <Typography
-              variant="h5"
+              variant={embedded ? "h6" : "h5"}
               sx={{
                 fontWeight: 900,
                 letterSpacing: "-0.02em",
@@ -328,12 +345,27 @@ const FindJob = () => {
               variant="body2"
               sx={{
                 color: isDark ? alpha("#fff", 0.65) : alpha("#065f46", 0.75),
-                fontSize: { xs: "0.8rem", sm: "0.875rem" },
+                fontSize: embedded ? "0.75rem" : { xs: "0.8rem", sm: "0.875rem" },
               }}
             >
               {t("Opportunities Near You")}
             </Typography>
           </Box>
+          {embedded ? (
+            <IconButton
+              onClick={onClose}
+              size="small"
+              aria-label={t("Close")}
+              sx={{
+                bgcolor: isDark ? "rgba(255,255,255,0.06)" : "#f3f4f6",
+                "&:hover": {
+                  bgcolor: isDark ? "rgba(255,255,255,0.1)" : "#e9ecf0",
+                },
+              }}
+            >
+              <CloseIcon sx={{ fontSize: 18 }} />
+            </IconButton>
+          ) : null}
         </Box>
 
         {/* Search + filters — same chrome as MainPage FilterChips */}

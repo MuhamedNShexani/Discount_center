@@ -68,6 +68,15 @@ const storeSchema = new mongoose.Schema(
   deliveryAllCities: { type: Boolean, default: false },
   /** City names (same as `storecity` values) where this store delivers when not all cities. */
   deliveryCities: [{ type: String, trim: true }],
+  /** Public percentage off all products (e.g. restaurant-wide 15% off). */
+  hasAllProductsDiscount: { type: Boolean, default: false },
+  allProductsDiscountPercent: {
+    type: Number,
+    min: 0,
+    max: 100,
+    default: null,
+  },
+  allProductsDiscountExpireDate: { type: Date, default: null },
   },
   { timestamps: true },
 );

@@ -275,31 +275,6 @@ const ReelCard = memo(function ReelCard({
             >
               {owner?.type === "store" ? "Visit Store" : "Visit Profile"}
             </Button>
-            {owner?.type === "store" && (
-              <Button
-                component={Link}
-                to={ownerProfilePath}
-                onClick={(e) => e.stopPropagation()}
-                size="small"
-                variant="outlined"
-                sx={{
-                  borderRadius: 99,
-                  minHeight: 34,
-                  px: 1.6,
-                  textTransform: "none",
-                  fontWeight: 900,
-                  color: "#fff",
-                  borderColor: "rgba(255,255,255,0.72)",
-                  backgroundColor: "rgba(0,0,0,0.28)",
-                  "&:hover": {
-                    borderColor: "#fff",
-                    backgroundColor: "rgba(255,255,255,0.12)",
-                  },
-                }}
-              >
-                Shop Products
-              </Button>
-            )}
           </Box>
         )}
       </MotionBox>

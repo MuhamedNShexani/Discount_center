@@ -1,5 +1,8 @@
 const Store = require("../models/Store");
 const { normalizeExpiryDate } = require("../utils/normalizeExpiryDate");
+const {
+  normalizeStoreAllProductsDiscountFields,
+} = require("../utils/normalizeStoreAllProductsDiscount");
 const { syncBranchCluster } = require("../utils/syncBranchCluster");
 const Product = require("../models/Product");
 
@@ -75,8 +78,10 @@ const createStore = async (req, res) => {
     }
 
     // Set default values for new fields
+    const discountFields = normalizeStoreAllProductsDiscountFields(rest);
     const storeData = {
       ...rest,
+      ...discountFields,
       storeTypeId: resolvedStoreTypeId,
       branches: rest.branches || [],
       show: rest.show !== undefined ? rest.show : true,
@@ -97,6 +102,9 @@ const createStore = async (req, res) => {
     res.json(populated);
   } catch (err) {
     console.error(err.message);
+    if (err.statusCode === 400) {
+      return res.status(400).json({ msg: err.message });
+    }
     res.status(500).send("Server Error");
   }
 };
@@ -137,6 +145,29 @@ const updateStore = async (req, res) => {
     if (rest.lastReleaseDiscountDate !== undefined) {
       updateDoc.lastReleaseDiscountDate = rest.lastReleaseDiscountDate || null;
     }
+    if (
+      rest.hasAllProductsDiscount !== undefined ||
+      rest.allProductsDiscountPercent !== undefined ||
+      rest.allProductsDiscountExpireDate !== undefined
+    ) {
+      Object.assign(
+        updateDoc,
+        normalizeStoreAllProductsDiscountFields({
+          hasAllProductsDiscount:
+            rest.hasAllProductsDiscount !== undefined
+              ? rest.hasAllProductsDiscount
+              : oldStore.hasAllProductsDiscount,
+          allProductsDiscountPercent:
+            rest.allProductsDiscountPercent !== undefined
+              ? rest.allProductsDiscountPercent
+              : oldStore.allProductsDiscountPercent,
+          allProductsDiscountExpireDate:
+            rest.allProductsDiscountExpireDate !== undefined
+              ? rest.allProductsDiscountExpireDate
+              : oldStore.allProductsDiscountExpireDate,
+        }),
+      );
+    }
 
     const store = await Store.findByIdAndUpdate(req.params.id, updateDoc, {
       new: true,
@@ -155,6 +186,9 @@ const updateStore = async (req, res) => {
     res.json(store);
   } catch (err) {
     console.error(err.message);
+    if (err.statusCode === 400) {
+      return res.status(400).json({ msg: err.message });
+    }
     res.status(500).send("Server Error");
   }
 };
