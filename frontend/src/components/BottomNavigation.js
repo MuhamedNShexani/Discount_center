@@ -320,9 +320,26 @@ const BottomNavigationBar = () => {
         return;
       }
 
+      if (
+        item.path === "/search" &&
+        (location.pathname === "/search" ||
+          location.pathname.startsWith("/search/"))
+      ) {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
+
       if (location.pathname === "/" && item.path !== "/") {
         persistMainPageScrollState(window.scrollY || window.pageYOffset || 0);
       }
+
+      if (item.path === "/search") {
+        navigate("/search", {
+          state: { from: `${location.pathname}${location.search}` },
+        });
+        return;
+      }
+
       navigate(item.path);
     },
     [location.pathname, navigate, triggerRefresh],

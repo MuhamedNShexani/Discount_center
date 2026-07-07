@@ -13,6 +13,7 @@ const ALLOWED_TYPES = new Set([
   "company",
   "category",
   "categoryType",
+  "storeType",
   "job",
   "gift",
 ]);

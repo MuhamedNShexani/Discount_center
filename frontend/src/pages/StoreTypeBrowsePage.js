@@ -13,12 +13,11 @@ import {
   Chip,
   Fade,
   IconButton,
-  LinearProgress,
   Skeleton,
   Typography,
 } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
-import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { alpha, useTheme } from "@mui/material/styles";
+import { useNavigate, useParams, useLocation, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import CategoryIcon from "@mui/icons-material/Category";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -36,6 +35,7 @@ import { isStoreTypeShownOnCategoriesList } from "../utils/storeTypeVisibility";
 import { productStoreMatchesCity } from "../utils/cityMatch";
 import { formatPriceDigits } from "../utils/formatPriceNumber";
 import { isRtlLanguage } from "../utils/isRtlLanguage";
+import { getEntityId } from "../utils/entityId";
 import ProductDetailDialog from "../components/ProductDetailDialog";
 import ProductViewTracker from "../components/ProductViewTracker";
 import CategoryBrowseCard, {
@@ -45,6 +45,236 @@ import StoreTypeCard, {
   getStoreTypeAccentColor,
 } from "../components/StoreTypeCard";
 import SectionHeader from "../components/SectionHeader";
+
+function useBrowseSkeletonTokens(isDark) {
+  return useMemo(
+    () => ({
+      base: isDark ? alpha("#fff", 0.08) : alpha("#0d111c", 0.07),
+      highlight: isDark ? alpha("#fff", 0.12) : alpha("#0d111c", 0.1),
+      soft: isDark ? alpha("#fff", 0.04) : alpha("#0d111c", 0.04),
+      border: isDark ? alpha("#fff", 0.08) : alpha("#0d111c", 0.08),
+      cardBg: isDark ? "rgba(30,36,52,1)" : "#ffffff",
+    }),
+    [isDark],
+  );
+}
+
+function StoreTypesIndexSkeleton({ tokens, isDark }) {
+  return (
+    <Box
+      sx={{
+        display: "grid",
+        gridTemplateColumns: {
+          xs: "repeat(3, 1fr)",
+          sm: "repeat(4, 1fr)",
+          md: "repeat(6, 1fr)",
+        },
+        gap: 1.25,
+      }}
+    >
+      {Array.from({ length: 9 }).map((_, i) => (
+        <Box key={i} sx={{ display: "flex", justifyContent: "center" }}>
+          <Box
+            sx={{
+              width: { xs: "100%", sm: 118, md: 124 },
+              maxWidth: 124,
+              minHeight: { xs: 138, sm: 144 },
+              borderRadius: "20px",
+              border: `1px solid ${tokens.border}`,
+              bgcolor: isDark
+                ? alpha("#fff", 0.03)
+                : alpha("#f8f9fb", 0.95),
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              pt: 1.25,
+              pb: 1,
+              px: 0.75,
+            }}
+          >
+            <Skeleton
+              variant="rounded"
+              animation="wave"
+              sx={{
+                width: { xs: 60, sm: 64 },
+                height: { xs: 60, sm: 64 },
+                borderRadius: "14px",
+                bgcolor: tokens.base,
+              }}
+            />
+            <Skeleton
+              variant="rounded"
+              animation="wave"
+              sx={{
+                mt: 1,
+                width: "72%",
+                height: 12,
+                borderRadius: 1,
+                bgcolor: tokens.base,
+              }}
+            />
+            <Skeleton
+              variant="rounded"
+              animation="wave"
+              sx={{
+                mt: 0.5,
+                width: "48%",
+                height: 10,
+                borderRadius: 1,
+                bgcolor: tokens.soft,
+              }}
+            />
+          </Box>
+        </Box>
+      ))}
+    </Box>
+  );
+}
+
+function CategoryBrowseSkeleton({ tokens, isDark }) {
+  return (
+    <Box sx={CATEGORY_BROWSE_GRID_SX}>
+      {Array.from({ length: 6 }).map((_, i) => (
+        <Box
+          key={i}
+          sx={{
+            width: "100%",
+            aspectRatio: "4 / 3",
+            borderRadius: "16px",
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+            border: `1px solid ${tokens.border}`,
+            bgcolor: isDark ? alpha("#fff", 0.03) : "#fff",
+            boxShadow: isDark
+              ? "0 6px 20px rgba(0,0,0,0.32)"
+              : "0 4px 16px rgba(15,23,42,0.08)",
+          }}
+        >
+          <Skeleton
+            variant="rectangular"
+            animation="wave"
+            sx={{ flex: 1, minHeight: 0, bgcolor: tokens.base }}
+          />
+          <Box
+            sx={{
+              px: 1.25,
+              py: 1,
+              borderTop: `1px solid ${tokens.border}`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 0.75,
+            }}
+          >
+            <Skeleton
+              variant="rounded"
+              animation="wave"
+              height={14}
+              sx={{ flex: 1, borderRadius: 1, bgcolor: tokens.highlight }}
+            />
+            <Skeleton
+              variant="circular"
+              animation="wave"
+              width={18}
+              height={18}
+              sx={{ flexShrink: 0, bgcolor: tokens.soft }}
+            />
+          </Box>
+        </Box>
+      ))}
+    </Box>
+  );
+}
+
+function ProductFilterChipsSkeleton({ tokens }) {
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        gap: 0.75,
+        overflow: "hidden",
+        mb: 1,
+        pb: 0.5,
+      }}
+    >
+      {[52, 72, 64, 80, 56].map((w, i) => (
+        <Skeleton
+          key={i}
+          variant="rounded"
+          animation="wave"
+          width={w}
+          height={28}
+          sx={{ flexShrink: 0, borderRadius: 99, bgcolor: tokens.base }}
+        />
+      ))}
+    </Box>
+  );
+}
+
+function ProductGridSkeleton({ tokens }) {
+  return (
+    <Box
+      sx={{
+        display: "grid",
+        gridTemplateColumns: "repeat(3, 1fr)",
+        gap: 1,
+        alignItems: "stretch",
+      }}
+    >
+      {Array.from({ length: 6 }).map((_, i) => (
+        <Box
+          key={i}
+          sx={{
+            borderRadius: 1,
+            overflow: "hidden",
+            border: `1px solid ${tokens.border}`,
+            bgcolor: tokens.cardBg,
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <Skeleton
+            variant="rectangular"
+            animation="wave"
+            height={90}
+            sx={{ bgcolor: tokens.base }}
+          />
+          <Box
+            sx={{
+              p: 0.75,
+              pt: 0.5,
+              minHeight: 78,
+              display: "flex",
+              flexDirection: "column",
+              gap: 0.5,
+              alignItems: "center",
+            }}
+          >
+            <Skeleton
+              variant="rounded"
+              animation="wave"
+              height={11}
+              sx={{ width: "88%", borderRadius: 1, bgcolor: tokens.highlight }}
+            />
+            <Skeleton
+              variant="rounded"
+              animation="wave"
+              height={10}
+              sx={{ width: "62%", borderRadius: 1, bgcolor: tokens.base }}
+            />
+            <Skeleton
+              variant="rounded"
+              animation="wave"
+              height={12}
+              sx={{ width: "42%", borderRadius: 1, bgcolor: tokens.soft }}
+            />
+          </Box>
+        </Box>
+      ))}
+    </Box>
+  );
+}
 
 const isDiscountValid = (product) => {
   const hasPriceDrop =
@@ -81,6 +311,7 @@ export default function StoreTypeBrowsePage() {
   const isDark = theme.palette.mode === "dark";
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { storeTypeId, categoryId } = useParams();
   const { t, i18n } = useTranslation();
   const isRtl = isRtlLanguage(i18n.language);
@@ -97,18 +328,26 @@ export default function StoreTypeBrowsePage() {
   const [products, setProducts] = useState([]);
   const [categoryTypes, setCategoryTypes] = useState([]);
   const [selectedCategoryType, setSelectedCategoryType] = useState(null);
+  const [storeTypesLoading, setStoreTypesLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [productsLoading, setProductsLoading] = useState(false);
+  const skeletonTokens = useBrowseSkeletonTokens(isDark);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const activeStoreType = useMemo(
-    () => storeTypes.find((st) => String(st._id) === String(storeTypeId)),
+    () =>
+      storeTypes.find(
+        (st) => String(getEntityId(st._id)) === String(storeTypeId),
+      ),
     [storeTypes, storeTypeId],
   );
 
   const activeCategory = useMemo(
-    () => categories.find((c) => String(c._id) === String(categoryId)),
+    () =>
+      categories.find(
+        (c) => String(getEntityId(c._id)) === String(categoryId),
+      ),
     [categories, categoryId],
   );
 
@@ -123,11 +362,14 @@ export default function StoreTypeBrowsePage() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      setStoreTypesLoading(true);
       try {
         const res = await storeTypeAPI.getAll();
         if (!cancelled) setStoreTypes(res.data || []);
       } catch {
         if (!cancelled) setStoreTypes([]);
+      } finally {
+        if (!cancelled) setStoreTypesLoading(false);
       }
     })();
     return () => {
@@ -149,7 +391,7 @@ export default function StoreTypeBrowsePage() {
         const st =
           activeStoreType ||
           (await storeTypeAPI.getAll()).data?.find(
-            (s) => String(s._id) === String(storeTypeId),
+            (s) => String(getEntityId(s._id)) === String(storeTypeId),
           );
         if (!st) {
           setCategories([]);
@@ -168,6 +410,8 @@ export default function StoreTypeBrowsePage() {
       cancelled = true;
     };
   }, [storeTypeId, activeStoreType]);
+
+  const categoryTypeIdParam = searchParams.get("categoryTypeId");
 
   useEffect(() => {
     if (!categoryId) {
@@ -191,9 +435,17 @@ export default function StoreTypeBrowsePage() {
           setProducts(productsRes.data || []);
           const types = typesRes.data || [];
           setCategoryTypes(types);
-          if (presetCategoryType?._id) {
+          if (categoryTypeIdParam) {
             const match = types.find(
-              (type) => String(type._id) === String(presetCategoryType._id),
+              (type) =>
+                String(getEntityId(type._id)) === String(categoryTypeIdParam),
+            );
+            if (match) setSelectedCategoryType(match);
+          } else if (presetCategoryType?._id) {
+            const match = types.find(
+              (type) =>
+                String(getEntityId(type._id)) ===
+                String(getEntityId(presetCategoryType._id)),
             );
             if (match) setSelectedCategoryType(match);
           }
@@ -211,7 +463,7 @@ export default function StoreTypeBrowsePage() {
     return () => {
       cancelled = true;
     };
-  }, [categoryId, location.state?.categoryType]);
+  }, [categoryId, categoryTypeIdParam, location.state?.categoryType]);
 
   useEffect(() => {
     productViewRecordedRef.current = new Set();
@@ -245,8 +497,12 @@ export default function StoreTypeBrowsePage() {
       }
       if (!productStoreMatchesCity(product, selectedCity)) return false;
       if (selectedCategoryType) {
-        const typeId = product.categoryTypeId?._id ?? product.categoryTypeId;
-        if (String(typeId) !== String(selectedCategoryType._id)) return false;
+        const typeId = getEntityId(
+          product.categoryTypeId?._id ?? product.categoryTypeId,
+        );
+        if (String(typeId) !== String(getEntityId(selectedCategoryType._id))) {
+          return false;
+        }
       }
       return true;
     });
@@ -260,9 +516,61 @@ export default function StoreTypeBrowsePage() {
     [t],
   );
 
-  const handleBack = () => {
-    navigate(-1);
-  };
+  const handleBack = useCallback(() => {
+    const stId = getEntityId(storeTypeId);
+    const catId = getEntityId(categoryId);
+
+    // Products: clear category-type filter first, then go up to categories.
+    if (isProductsView && stId && catId) {
+      if (selectedCategoryType || categoryTypeIdParam) {
+        setSelectedCategoryType(null);
+        if (categoryTypeIdParam) {
+          const nextParams = new URLSearchParams(searchParams);
+          nextParams.delete("categoryTypeId");
+          setSearchParams(nextParams, { replace: true });
+        }
+        return;
+      }
+      navigate(`/store-types/${encodeURIComponent(stId)}`);
+      return;
+    }
+
+    // Categories list -> store types index.
+    if (isCategoriesView && stId) {
+      navigate("/store-types");
+      return;
+    }
+
+    // Store types index -> previous page or home.
+    const from = location.state?.from;
+    if (
+      typeof from === "string" &&
+      from.length > 0 &&
+      !from.startsWith("/store-types")
+    ) {
+      navigate(from);
+      return;
+    }
+
+    const historyIdx = window.history.state?.idx;
+    if (typeof historyIdx === "number" && historyIdx > 0) {
+      navigate(-1);
+      return;
+    }
+
+    navigate("/");
+  }, [
+    storeTypeId,
+    categoryId,
+    isProductsView,
+    isCategoriesView,
+    selectedCategoryType,
+    categoryTypeIdParam,
+    searchParams,
+    setSearchParams,
+    navigate,
+    location.state,
+  ]);
 
   const pageTitle = isIndex
     ? t("Store Types", { defaultValue: "Store Types" })
@@ -292,7 +600,16 @@ export default function StoreTypeBrowsePage() {
           gap: 1,
         }}
       >
-        <IconButton onClick={handleBack} aria-label={t("Back")} size="small">
+        <IconButton
+          type="button"
+          onClick={handleBack}
+          aria-label={t("Back")}
+          size="small"
+          sx={{
+            touchAction: "manipulation",
+            WebkitTapHighlightColor: "transparent",
+          }}
+        >
           {isRtl ? <ArrowForwardIcon /> : <ArrowBackIcon />}
         </IconButton>
         <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -319,54 +636,52 @@ export default function StoreTypeBrowsePage() {
               icon={StorefrontRoundedIcon}
               title={t("Store Types", { defaultValue: "Store Types" })}
             />
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: {
-                  xs: "repeat(3, 1fr)",
-                  sm: "repeat(4, 1fr)",
-                  md: "repeat(6, 1fr)",
-                },
-                gap: 1.25,
-              }}
-            >
-              {browseVisibleStoreTypes.map((type) => (
-                <Box key={type._id}>
-                  <StoreTypeCard
-                    picture={type.picture || ""}
-                    icon={type.icon || ""}
-                    label={locName(type) || t(type.name)}
-                    badge={type.badge}
-                    accentColor={getStoreTypeAccentColor(type._id)}
-                    selected={false}
-                    onSelect={() =>
-                      navigate(
-                        `/store-types/${encodeURIComponent(String(type._id))}`,
-                      )
-                    }
-                  />
-                </Box>
-              ))}
-            </Box>
+            {storeTypesLoading ? (
+              <StoreTypesIndexSkeleton
+                tokens={skeletonTokens}
+                isDark={isDark}
+              />
+            ) : (
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: {
+                    xs: "repeat(3, 1fr)",
+                    sm: "repeat(4, 1fr)",
+                    md: "repeat(6, 1fr)",
+                  },
+                  gap: 1.25,
+                }}
+              >
+                {browseVisibleStoreTypes.map((type) => (
+                  <Box key={type._id}>
+                    <StoreTypeCard
+                      picture={type.picture || ""}
+                      icon={type.icon || ""}
+                      label={locName(type) || t(type.name)}
+                      badge={type.badge}
+                      accentColor={getStoreTypeAccentColor(type._id)}
+                      selected={false}
+                      onSelect={() =>
+                        navigate(
+                          `/store-types/${encodeURIComponent(String(type._id))}`,
+                        )
+                      }
+                    />
+                  </Box>
+                ))}
+              </Box>
+            )}
           </>
         )}
 
         {isCategoriesView && (
           <>
             {loading ? (
-              <Box sx={CATEGORY_BROWSE_GRID_SX}>
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <Skeleton
-                    key={i}
-                    variant="rounded"
-                    sx={{
-                      width: "100%",
-                      aspectRatio: "4 / 3",
-                      borderRadius: "16px",
-                    }}
-                  />
-                ))}
-              </Box>
+              <CategoryBrowseSkeleton
+                tokens={skeletonTokens}
+                isDark={isDark}
+              />
             ) : categories.length === 0 ? (
               <Box sx={{ textAlign: "center", py: 8 }}>
                 <CategoryIcon sx={{ fontSize: 56, opacity: 0.25, mb: 1 }} />
@@ -382,11 +697,14 @@ export default function StoreTypeBrowsePage() {
                     label={locName(category)}
                     image={category.image}
                     icon={category.icon}
-                    onClick={() =>
+                    onClick={() => {
+                      const stId = getEntityId(storeTypeId);
+                      const catId = getEntityId(category._id);
+                      if (!stId || !catId) return;
                       navigate(
-                        `/store-types/${storeTypeId}/category/${category._id}`,
-                      )
-                    }
+                        `/store-types/${encodeURIComponent(stId)}/category/${encodeURIComponent(catId)}`,
+                      );
+                    }}
                   />
                 ))}
               </Box>
@@ -449,24 +767,8 @@ export default function StoreTypeBrowsePage() {
 
             {productsLoading ? (
               <Box sx={{ px: 0.5 }}>
-                <LinearProgress
-                  sx={{ height: 3, borderRadius: 1, mb: 2, opacity: 0.95 }}
-                />
-                <Box
-                  sx={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(3, 1fr)",
-                    gap: 1,
-                  }}
-                >
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <Skeleton
-                      key={i}
-                      variant="rounded"
-                      sx={{ width: "100%", height: 168, borderRadius: 1 }}
-                    />
-                  ))}
-                </Box>
+                <ProductFilterChipsSkeleton tokens={skeletonTokens} />
+                <ProductGridSkeleton tokens={skeletonTokens} />
               </Box>
             ) : filteredProducts.length === 0 ? (
               <Box

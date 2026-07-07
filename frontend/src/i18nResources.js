@@ -918,8 +918,7 @@ export const resources = {
       "error.state.offline.body":
         "تعذر الوصول إلى الإنترنت. تحقق من الواي فاي أو بيانات الجوال ثم أعد المحاولة.",
       "error.state.server.title": "الخدمة غير متاحة مؤقتاً",
-      "error.state.server.body":
-        "الخادم لا يستجيب. يرجى المحاولة بعد قليل.",
+      "error.state.server.body": "الخادم لا يستجيب. يرجى المحاولة بعد قليل.",
       "error.state.timeout.title": "انتهت مهلة الطلب",
       "error.state.timeout.body":
         "الاتصال بطيء أو استغرق الخادم وقتاً طويلاً. أعد المحاولة.",
@@ -1838,15 +1837,15 @@ export const resources = {
       "All products discount": "داشکاندن بۆ هەموو کاڵاکان",
       "Discount %": "ڕێژەی داشکاندن %",
       "Discount expires (optional)": "کۆتایی داشکاندن (ئارەزوومەندانە)",
-      "Stores with store-wide discounts":
-        "فرۆشگاکان بە داشکاندنی گشتی",
+      "Stores with store-wide discounts": "فرۆشگاکان بە داشکاندنی گشتی",
       "All products discount stores subtitle":
         "فرۆشگاکانی داشکاندن بۆ هەموو کاڵاکان",
       "No store-wide discounts": "هیچ داشکاندنێکی گشتی نییە",
       "No stores with store-wide discounts in this city":
         "لەم شارەدا هیچ فرۆشگایەک بە داشکاندنی گشتی نییە",
       "{{percent}}% off all items": "{{percent}}% داشکاندن بۆ هەموو کاڵاکان",
-      "{{percent}}% off selected items": "{{percent}}% داشکاندن بۆ کاڵای هەڵبژێردراو",
+      "{{percent}}% off selected items":
+        "{{percent}}% داشکاندن بۆ کاڵای هەڵبژێردراو",
       "{{amount}} IQD off": "{{amount}} دیناری عێراقی داشکاندن",
       "Discount type": "جۆری داشکاندن",
       "Percentage off all items": "ڕێژە بۆ هەموو کاڵاکان",
@@ -2629,6 +2628,7 @@ export const resources = {
       "about.features.gifts.desc":
         "کەمپەینی دیاری بۆ زیادکردنی دڵسۆزی و گەڕانەوەی کڕیار.",
       "about.features.reels.title": "ڕیلز",
+      Reels: "ڕیلز",
       "about.features.reels.desc":
         "دۆزینەوەی ڤیدیۆی کورت کە سەردانی بەکارهێنەر دەگۆڕێت بۆ کردار.",
       "about.features.ordering.title": "داواکاری",

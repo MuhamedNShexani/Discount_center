@@ -46,7 +46,7 @@ export async function logSearchEvent({
 /**
  * @param {string} logId
  * @param {string} clickedResultId
- * @param {"product"|"store"|"brand"|"company"|"category"|"categoryType"|"job"|"gift"} clickedResultType
+ * @param {"product"|"store"|"brand"|"company"|"category"|"categoryType"|"storeType"|"job"|"gift"} clickedResultType
  */
 export async function recordSearchClick(logId, clickedResultId, clickedResultType) {
   if (!logId) return;

@@ -95,6 +95,7 @@ const search = async (req, res) => {
         ...nameLangOr(regex),
       })
         .select("name nameEn nameAr nameKu image icon storeTypeId")
+        .populate("storeTypeId", "_id name")
         .limit(limit)
         .lean(),
       Category.find({
@@ -107,6 +108,7 @@ const search = async (req, res) => {
         ],
       })
         .select("name nameEn nameAr nameKu image icon storeTypeId types")
+        .populate("storeTypeId", "_id name")
         .limit(80)
         .lean(),
     ]);

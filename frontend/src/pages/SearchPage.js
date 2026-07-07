@@ -5,7 +5,7 @@ import React, {
   useRef,
   useMemo,
 } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -59,6 +59,8 @@ import {
 import { useDraftCartDrawer } from "../hooks/useDraftCartDrawer";
 import BrandShowcase from "../components/BrandShowcase";
 import { isRtlLanguage } from "../utils/isRtlLanguage";
+import { getEntityId, resolveStoreTypeId } from "../utils/entityId";
+import { storeMatchesSelectedCity } from "../utils/cityMatch";
 
 /** Opens Shopping draft cart drawer (EN/KU/AR-friendly keywords). */
 function isCartSearchIntent(raw) {
@@ -76,19 +78,29 @@ function isCartSearchIntent(raw) {
   return /سلة|کارت|باسکێت|هەڵگرتن/i.test(q);
 }
 
-function resolveStoreTypeId(entity) {
-  const value = entity?.storeTypeId;
-  if (value == null || value === "") return null;
-  if (typeof value === "object" && value._id != null) return String(value._id);
-  return String(value);
-}
-
-function storeTypeCategoryPath(storeTypeId, categoryId) {
-  return `/store-types/${encodeURIComponent(String(storeTypeId))}/category/${encodeURIComponent(String(categoryId))}`;
+function storeTypeCategoryPath(storeTypeId, categoryId, categoryTypeId) {
+  const stId = getEntityId(storeTypeId);
+  const catId = getEntityId(categoryId);
+  if (!stId || !catId) return null;
+  const base = `/store-types/${encodeURIComponent(stId)}/category/${encodeURIComponent(catId)}`;
+  const typeId = getEntityId(categoryTypeId);
+  return typeId
+    ? `${base}?categoryTypeId=${encodeURIComponent(typeId)}`
+    : base;
 }
 
 const SEARCH_SHOWCASE_SURFACE_SX = {
   borderRadius: (theme) => theme.spacing(0.5),
+};
+
+const EMPTY_SEARCH_RESULTS = {
+  products: [],
+  stores: [],
+  brands: [],
+  companies: [],
+  categories: [],
+  categoryTypes: [],
+  storeTypes: [],
 };
 
 const SearchPage = () => {
@@ -98,6 +110,7 @@ const SearchPage = () => {
   const isRtl = isRtlLanguage(i18n.language);
   const { dataLanguage } = useDataLanguage();
   const navigate = useNavigate();
+  const location = useLocation();
   const { openDraftCart } = useDraftCartDrawer();
   const { user } = useAuth();
   const { trendingSearches } = useActiveTheme();
@@ -107,15 +120,7 @@ const SearchPage = () => {
 
   const [query, setQuery] = useState(qParam);
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState({
-    products: [],
-    stores: [],
-    brands: [],
-    companies: [],
-    categories: [],
-    categoryTypes: [],
-    storeTypes: [],
-  });
+  const [results, setResults] = useState({ ...EMPTY_SEARCH_RESULTS });
   const [searched, setSearched] = useState(false);
   const [recentSearches, setRecentSearches] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -289,12 +294,45 @@ const SearchPage = () => {
   };
 
   const handleBack = useCallback(() => {
-    if (window.history.length > 1) {
+    const hasActiveSearch =
+      (qParam || "").trim().length >= 2 ||
+      ((query || "").trim().length >= 2 && searched);
+
+    // First back clears results/query; second back leaves the page.
+    if (hasActiveSearch) {
+      setQuery("");
+      setSearchParams({}, { replace: true });
+      setSearched(false);
+      setResults({ ...EMPTY_SEARCH_RESULTS });
+      searchPageLogIdRef.current = null;
+      return;
+    }
+
+    const from = location.state?.from;
+    if (
+      typeof from === "string" &&
+      from.length > 0 &&
+      !from.startsWith("/search")
+    ) {
+      navigate(from);
+      return;
+    }
+
+    const historyIdx = window.history.state?.idx;
+    if (typeof historyIdx === "number" && historyIdx > 0) {
       navigate(-1);
       return;
     }
+
     navigate("/");
-  }, [navigate]);
+  }, [
+    navigate,
+    location.state,
+    qParam,
+    query,
+    searched,
+    setSearchParams,
+  ]);
 
   const handleRecentClick = (term) => {
     setQuery(term);
@@ -344,44 +382,45 @@ const SearchPage = () => {
   };
 
   const handleCategoryClick = (cat) => {
-    if (searchPageLogIdRef.current && cat?._id) {
-      recordSearchClick(
-        searchPageLogIdRef.current,
-        String(cat._id),
-        "category",
-      );
-    }
+    const catId = getEntityId(cat?._id);
     const stId = resolveStoreTypeId(cat);
-    if (!cat?._id || !stId) return;
-    navigate(storeTypeCategoryPath(stId, cat._id));
+    if (!catId || !stId) return;
+
+    if (searchPageLogIdRef.current) {
+      recordSearchClick(searchPageLogIdRef.current, catId, "category");
+    }
+
+    const path = storeTypeCategoryPath(stId, catId);
+    if (path) navigate(path);
   };
 
   const handleCategoryTypeClick = (hit) => {
-    if (searchPageLogIdRef.current && hit?.category?._id && hit?.type?._id) {
+    const catId = getEntityId(hit?.category?._id);
+    const typeId = getEntityId(hit?.type?._id);
+    const stId = resolveStoreTypeId(hit?.category);
+    if (!catId || !typeId || !stId) return;
+
+    if (searchPageLogIdRef.current) {
       recordSearchClick(
         searchPageLogIdRef.current,
-        `${hit.category._id}:${hit.type._id}`,
+        `${catId}:${typeId}`,
         "categoryType",
       );
     }
-    const stId = resolveStoreTypeId(hit.category);
-    if (!hit?.category?._id || !stId) return;
-    navigate(storeTypeCategoryPath(stId, hit.category._id), {
-      state: { categoryType: hit.type },
-    });
+
+    const path = storeTypeCategoryPath(stId, catId, typeId);
+    if (path) navigate(path);
   };
 
   const handleStoreTypeClick = (storeType) => {
-    if (searchPageLogIdRef.current && storeType?._id) {
-      recordSearchClick(
-        searchPageLogIdRef.current,
-        String(storeType._id),
-        "storeType",
-      );
+    const stId = getEntityId(storeType?._id);
+    if (!stId) return;
+
+    if (searchPageLogIdRef.current) {
+      recordSearchClick(searchPageLogIdRef.current, stId, "storeType");
     }
-    navigate(
-      `/store-types/${encodeURIComponent(String(storeType._id))}`,
-    );
+
+    navigate(`/store-types/${encodeURIComponent(stId)}`);
   };
 
   // const bannerAdsWithImages = useMemo(
@@ -537,6 +576,7 @@ const SearchPage = () => {
           }}
         >
           <IconButton
+            type="button"
             onClick={handleBack}
             aria-label={t("Back")}
             size="small"
@@ -544,6 +584,8 @@ const SearchPage = () => {
               width: 38,
               height: 38,
               flexShrink: 0,
+              touchAction: "manipulation",
+              WebkitTapHighlightColor: "transparent",
               bgcolor: isDark ? alpha("#fff", 0.08) : alpha("#1e6fd9", 0.08),
               border: `1px solid ${isDark ? alpha("#fff", 0.1) : alpha("#1e6fd9", 0.14)}`,
               color: isDark ? "rgba(255,255,255,0.9)" : "primary.main",
@@ -886,7 +928,7 @@ const SearchPage = () => {
               <List disablePadding>
                 {searchStoreTypes.map((storeType) => (
                   <ListItemButton
-                    key={storeType._id}
+                    key={getEntityId(storeType._id) || storeType.name}
                     onClick={() => handleStoreTypeClick(storeType)}
                     sx={{
                       py: 1.5,
@@ -955,7 +997,7 @@ const SearchPage = () => {
               <List disablePadding>
                 {searchCategories.map((cat) => (
                   <ListItemButton
-                    key={cat._id}
+                    key={getEntityId(cat._id) || cat.name}
                     onClick={() => handleCategoryClick(cat)}
                     sx={{
                       py: 1.5,
@@ -1019,7 +1061,7 @@ const SearchPage = () => {
               <List disablePadding>
                 {searchCategoryTypes.map((hit) => (
                   <ListItemButton
-                    key={`${hit.category._id}-${hit.type._id}`}
+                    key={`${getEntityId(hit.category?._id)}-${getEntityId(hit.type?._id)}`}
                     onClick={() => handleCategoryTypeClick(hit)}
                     sx={{
                       py: 1.5,

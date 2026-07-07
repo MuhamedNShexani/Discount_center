@@ -32,7 +32,6 @@ import {
   useTheme,
   Autocomplete,
   Alert,
-  CircularProgress,
   IconButton,
   Stack,
 } from "@mui/material";
@@ -118,6 +117,9 @@ import {
 import { isOwnerDashboardRole } from "../utils/roles";
 import { storeAPI, brandAPI, companyAPI, feedbackAPI } from "../services/api";
 import { useActiveTheme } from "../context/ActiveThemeContext";
+import ProfilePageSkeleton, {
+  ProfileOwnerSectionSkeleton,
+} from "../components/ProfilePageSkeleton";
 import {
   PROFILE_SHORTCUT_CATALOG,
   normalizeProfileShortcutIds,
@@ -225,7 +227,7 @@ const ProfilePage = ({ onClose }) => {
   const theme = useTheme();
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
-  const { user, logout, updateProfile, deactivate } = useAuth();
+  const { user, logout, updateProfile, deactivate, loading: authLoading } = useAuth();
   const { user: guestUser, updateGuestName } = useUserTracking();
   const { selectedCity, changeCity, cities } = useCityFilter();
   const { contactInfo } = useAppSettings();
@@ -751,6 +753,18 @@ const ProfilePage = ({ onClose }) => {
     },
   ].filter((group) => group.items.length > 0);
 
+  const showOwnerAdminSection =
+    user &&
+    (ownerProfileChoices.length > 0 ||
+      canAccessOwnerDashboard(user) ||
+      canAccessOwnerDataEntryPage(user) ||
+      canAccessPendingPage(user) ||
+      showDataEntryLink);
+
+  if (authLoading) {
+    return <ProfilePageSkeleton />;
+  }
+
   return (
     <>
       <Box
@@ -978,13 +992,11 @@ const ProfilePage = ({ onClose }) => {
           }}
         >
           {/* Owner / Admin section */}
-          {user &&
-            (ownerProfileChoices.length > 0 ||
-              canAccessOwnerDashboard(user) ||
-              canAccessOwnerDataEntryPage(user) ||
-              canAccessPendingPage(user) ||
-              showDataEntryLink) && (
+          {showOwnerAdminSection && (
               <Box sx={{ px: 2 }}>
+                {loadingEntities ? (
+                  <ProfileOwnerSectionSkeleton rows={3} />
+                ) : (
                 <Box sx={cardSx}>
                   {user && ownerProfileChoices.length > 0 && (
                     <ListItemButton
@@ -1185,6 +1197,7 @@ const ProfilePage = ({ onClose }) => {
                     </>
                   )}
                 </Box>
+                )}
               </Box>
             )}
 
