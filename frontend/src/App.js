@@ -5,7 +5,6 @@ import React, {
   useState,
   useMemo,
   useEffect,
-  useCallback,
   lazy,
   Suspense,
 } from "react";
@@ -72,7 +71,6 @@ import ProtectedRoute, {
 import ScrollToTop from "./components/ScrollToTop";
 import ErrorBoundary from "./components/ErrorBoundary";
 import NotificationEnableBanner from "./components/NotificationEnableBanner";
-import SplashScreen from "./components/SplashScreen";
 import ConnectionLostBanner from "./components/ConnectionLostBanner";
 import NetworkDebugBanner from "./components/NetworkDebugBanner";
 import AppUpdateBanner from "./components/AppUpdateBanner";
@@ -112,6 +110,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { appVisitAPI } from "./services/api";
 import { getDeviceId } from "./utils/deviceId";
 import { installGlobalImageLazyLoading } from "./utils/globalImageLazyLoading";
+import { installFcmTokenBridge } from "./utils/fcmTokenRegistration";
 import { schedulePrefetchSearchPageWhenIdle } from "./utils/prefetchSearchPage";
 import { useExternalLinkInterceptor } from "./hooks/useExternalLinkInterceptor";
 import { NetworkStatusProvider } from "./context/NetworkStatusContext";
@@ -158,64 +157,16 @@ function AppContent() {
   const isStoreTypesPage = /^\/store-types(\/|$)/.test(location.pathname);
   const { effectiveTheme, activeFontKey } = useActiveTheme();
 
-  /** Shown on every cold load (browser tab or WebView) — no one-time skip. */
-  const [splashFinished, setSplashFinished] = useState(false);
-  const [appReadySignal, setAppReadySignal] = useState(false);
-
-  const handleSplashComplete = useCallback(() => {
-    setSplashFinished(true);
-  }, []);
-
   useEffect(() => {
     return installGlobalImageLazyLoading();
   }, []);
+
+  useEffect(() => installFcmTokenBridge(), []);
 
   /** External https/wa.me/maps/mailto open outside embedded WebView where possible */
   useExternalLinkInterceptor(true);
 
   useEffect(() => {
-    let cancelled = false;
-
-    const waitForWindowLoad = () =>
-      new Promise((resolve) => {
-        if (document.readyState === "complete") {
-          resolve();
-          return;
-        }
-        const handleLoad = () => {
-          window.removeEventListener("load", handleLoad);
-          resolve();
-        };
-        window.addEventListener("load", handleLoad, { once: true });
-      });
-
-    const waitForFonts = async () => {
-      try {
-        if (document.fonts?.ready) {
-          await document.fonts.ready;
-        }
-      } catch {
-        // ignore font readiness failures
-      }
-    };
-
-    void (async () => {
-      await Promise.all([waitForWindowLoad(), waitForFonts()]);
-      if (cancelled) return;
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          if (!cancelled) setAppReadySignal(true);
-        });
-      });
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!splashFinished) return;
     void (async () => {
       try {
         const visitSessionId = getOrCreateVisitSessionId();
@@ -225,13 +176,12 @@ function AppContent() {
         /* ignore */
       }
     })();
-  }, [splashFinished]);
+  }, []);
 
   useEffect(() => {
-    if (!splashFinished) return undefined;
     schedulePrefetchSearchPageWhenIdle();
     return undefined;
-  }, [splashFinished]);
+  }, []);
 
   useEffect(() => {
     setLang(i18n.language || "en");
@@ -293,14 +243,7 @@ function AppContent() {
               <FindJobDrawerProvider>
               <GiftsDrawerProvider>
               <CssBaseline />
-              {!splashFinished ? (
-                <SplashScreen
-                  darkMode={darkMode}
-                  appReady={appReadySignal}
-                  onComplete={handleSplashComplete}
-                />
-              ) : null}
-              {splashFinished ? <FirstVisitCityDialog /> : null}
+              <FirstVisitCityDialog />
               <Box
                 sx={{
                   minHeight: "100vh",
@@ -309,14 +252,10 @@ function AppContent() {
                 }}
               >
                 <Box
-                  aria-hidden={!splashFinished}
                   sx={{
                     display: "flex",
                     flexDirection: "column",
                     minHeight: "100vh",
-                    opacity: splashFinished ? 1 : 0,
-                    pointerEvents: splashFinished ? "auto" : "none",
-                    transition: "opacity 0.35s ease-out",
                   }}
                 >
                   <ConnectionLostBanner />

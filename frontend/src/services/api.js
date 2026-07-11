@@ -345,6 +345,8 @@ export const userAPI = {
       subscription,
       ...(deviceId && { deviceId }),
     }),
+  registerFcmToken: (payload, headers = {}) =>
+    api.post("/users/fcm-token", payload, { headers }),
   updateDeviceProfile: (deviceId, name) =>
     api.put("/users/device-profile", { deviceId, name }),
 };

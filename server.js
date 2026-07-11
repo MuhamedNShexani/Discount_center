@@ -118,9 +118,11 @@ app.use("/api/cart-orders", require("./routes/cartOrders"));
 app.use("/api/feedback", require("./routes/feedback"));
 
 const PORT = process.env.PORT || 5000;
+const { initializeFirebase } = require("./services/firebaseService");
 // app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server started on http://0.0.0.0:${PORT}`);
+  initializeFirebase();
   // Run job to delete deactivated users past grace period (every 24h)
   const deleteDeactivatedUsers = require("./jobs/deleteDeactivatedUsers");
   setInterval(() => deleteDeactivatedUsers.run().catch((e) => console.error("[deleteDeactivatedUsers]", e.message)), 24 * 60 * 60 * 1000);

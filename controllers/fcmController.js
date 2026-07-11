@@ -3,6 +3,21 @@ const FcmToken = require("../models/FcmToken");
 
 const PLATFORMS = FcmToken.PLATFORMS || ["android", "ios"];
 
+function tokenPreview(token) {
+  if (!token || typeof token !== "string") return "(empty)";
+  const t = token.trim();
+  if (t.length <= 12) return `${t.slice(0, 4)}…`;
+  return `${t.slice(0, 8)}…${t.slice(-4)} (${t.length} chars)`;
+}
+
+function safeBodyForLog(body) {
+  if (!body || typeof body !== "object") return body;
+  return {
+    ...body,
+    token: body.token ? tokenPreview(String(body.token)) : undefined,
+  };
+}
+
 async function resolveUserId(req) {
   if (req.userId) return req.userId;
 
@@ -14,6 +29,7 @@ async function resolveUserId(req) {
   if (!user) {
     user = new User({ deviceId });
     await user.save();
+    console.log("[FCM] Created guest user for deviceId:", deviceId);
   }
   return user._id;
 }
@@ -22,6 +38,11 @@ async function resolveUserId(req) {
 // @route   POST /api/users/fcm-token
 // @access  Optional auth (Bearer JWT or deviceId for guests)
 const registerFcmToken = async (req, res) => {
+  console.log("[FCM] Incoming POST /api/users/fcm-token");
+  console.log("[FCM] Request body:", safeBodyForLog(req.body));
+  console.log("[FCM] Authenticated user:", req.userId ? String(req.userId) : "(none)");
+  console.log("[FCM] DeviceId:", req.body?.deviceId || "(none)");
+
   try {
     const token =
       typeof req.body?.token === "string" ? req.body.token.trim() : "";
@@ -40,7 +61,10 @@ const registerFcmToken = async (req, res) => {
         ? req.body.language.trim().slice(0, 16)
         : "";
 
+    console.log("[FCM] Token:", tokenPreview(token));
+
     if (!token) {
+      console.warn("[FCM] Validation failed: token is required");
       return res.status(400).json({
         success: false,
         message: "token is required",
@@ -48,6 +72,7 @@ const registerFcmToken = async (req, res) => {
     }
 
     if (token.length < 20 || token.length > 4096) {
+      console.warn("[FCM] Validation failed: token length is invalid");
       return res.status(400).json({
         success: false,
         message: "token length is invalid",
@@ -55,6 +80,7 @@ const registerFcmToken = async (req, res) => {
     }
 
     if (platform && !PLATFORMS.includes(platform)) {
+      console.warn("[FCM] Validation failed: invalid platform:", platform);
       return res.status(400).json({
         success: false,
         message: `platform must be one of: ${PLATFORMS.join(", ")}`,
@@ -63,11 +89,14 @@ const registerFcmToken = async (req, res) => {
 
     const userId = await resolveUserId(req);
     if (!userId) {
+      console.warn("[FCM] Auth failed: no JWT user and no deviceId");
       return res.status(401).json({
         success: false,
         message: "Login or provide deviceId to register FCM token",
       });
     }
+
+    console.log("[FCM] Resolved userId:", String(userId));
 
     const update = {
       userId,
@@ -78,21 +107,34 @@ const registerFcmToken = async (req, res) => {
       ...(deviceId ? { deviceId } : {}),
     };
 
-    // Token is globally unique — upsert by token (same device refreshing token).
-    const record = await FcmToken.findOneAndUpdate(
-      { token },
-      update,
-      { upsert: true, new: true, setDefaultsOnInsert: true },
-    );
-
-    // One active token per device: remove older tokens for this user+device.
+    // Remove stale tokens for this user+device BEFORE upsert to avoid
+    // partial unique index { userId, deviceId } rejecting token refresh.
     if (deviceId) {
-      await FcmToken.deleteMany({
+      const removed = await FcmToken.deleteMany({
         userId,
         deviceId,
         token: { $ne: token },
       });
+      if (removed.deletedCount > 0) {
+        console.log(
+          `[FCM] Removed ${removed.deletedCount} stale token(s) for user+device`,
+        );
+      }
     }
+
+    const record = await FcmToken.findOneAndUpdate(
+      { token },
+      update,
+      { upsert: true, new: true, setDefaultsOnInsert: true, runValidators: true },
+    );
+
+    console.log("[FCM] Mongo save result:", {
+      id: String(record._id),
+      userId: String(record.userId),
+      deviceId: record.deviceId || null,
+      platform: record.platform || null,
+      collection: record.collection?.name || "fcmtokens",
+    });
 
     res.json({
       success: true,
@@ -109,12 +151,26 @@ const registerFcmToken = async (req, res) => {
     });
   } catch (error) {
     if (error.code === 11000) {
-      // Rare race on unique index — retry read.
+      console.warn("[FCM] Duplicate key on save, attempting recovery:", error.message);
       try {
-        const existing = await FcmToken.findOne({
-          token: String(req.body?.token || "").trim(),
-        }).lean();
+        const token = String(req.body?.token || "").trim();
+        const deviceId =
+          typeof req.body?.deviceId === "string" ? req.body.deviceId.trim() : "";
+        const userId = await resolveUserId(req);
+
+        if (userId && deviceId) {
+          await FcmToken.deleteMany({
+            userId,
+            deviceId,
+            token: { $ne: token },
+          });
+        }
+
+        const existing = token
+          ? await FcmToken.findOne({ token }).lean()
+          : null;
         if (existing) {
+          console.log("[FCM] Mongo save recovered existing token document");
           return res.json({
             success: true,
             message: "FCM token saved",
@@ -129,11 +185,15 @@ const registerFcmToken = async (req, res) => {
             },
           });
         }
-      } catch {
-        // fall through
+      } catch (retryErr) {
+        console.error("[FCM] Duplicate-key recovery failed:", retryErr.message);
       }
     }
-    console.error("Register FCM token error:", error);
+
+    console.error("[FCM] Register FCM token error:", error.message);
+    if (error.stack) {
+      console.error("[FCM] Stack trace:", error.stack);
+    }
     res.status(500).json({ success: false, message: "Server error" });
   }
 };

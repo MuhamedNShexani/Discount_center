@@ -1,6 +1,7 @@
-const admin = require("firebase-admin");
 const fs = require("fs");
 const path = require("path");
+const { initializeApp, cert, getApps, getApp } = require("firebase-admin/app");
+const { getMessaging } = require("firebase-admin/messaging");
 const FcmToken = require("../models/FcmToken");
 
 const FCM_BATCH_SIZE = 500;
@@ -11,16 +12,32 @@ const INVALID_TOKEN_CODES = new Set([
   "messaging/registration-token-not-registered",
 ]);
 
+let firebaseApp = null;
 let firebaseReady = false;
 let initAttempted = false;
+
+function resolveProjectId(serviceAccount) {
+  return (
+    serviceAccount?.project_id ||
+    serviceAccount?.projectId ||
+    process.env.FIREBASE_PROJECT_ID ||
+    "(unknown)"
+  );
+}
 
 function loadServiceAccount() {
   const jsonInline = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
   if (jsonInline && jsonInline.trim()) {
     try {
-      return JSON.parse(jsonInline);
+      const parsed = JSON.parse(jsonInline);
+      console.log("[Firebase] Firebase credentials loaded (FIREBASE_SERVICE_ACCOUNT_JSON)");
+      console.log("[Firebase] Firebase project ID:", resolveProjectId(parsed));
+      return parsed;
     } catch (e) {
-      console.error("FIREBASE_SERVICE_ACCOUNT_JSON is not valid JSON:", e.message);
+      console.error(
+        "[Firebase] FIREBASE_SERVICE_ACCOUNT_JSON is not valid JSON:",
+        e.message,
+      );
       return null;
     }
   }
@@ -30,9 +47,12 @@ function loadServiceAccount() {
     try {
       const resolved = path.resolve(filePath.trim());
       const raw = fs.readFileSync(resolved, "utf8");
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      console.log("[Firebase] Firebase credentials loaded (FIREBASE_SERVICE_ACCOUNT_PATH)");
+      console.log("[Firebase] Firebase project ID:", resolveProjectId(parsed));
+      return parsed;
     } catch (e) {
-      console.error("Failed to load FIREBASE_SERVICE_ACCOUNT_PATH:", e.message);
+      console.error("[Firebase] Failed to load FIREBASE_SERVICE_ACCOUNT_PATH:", e.message);
       return null;
     }
   }
@@ -42,6 +62,8 @@ function loadServiceAccount() {
   let privateKey = process.env.FIREBASE_PRIVATE_KEY;
   if (projectId && clientEmail && privateKey) {
     privateKey = privateKey.replace(/\\n/g, "\n");
+    console.log("[Firebase] Firebase credentials loaded (env fields)");
+    console.log("[Firebase] Firebase project ID:", projectId);
     return {
       projectId,
       clientEmail,
@@ -52,33 +74,67 @@ function loadServiceAccount() {
   return null;
 }
 
+function getExistingFirebaseApp() {
+  const apps = getApps();
+  if (apps.length > 0) {
+    return apps[0];
+  }
+  return null;
+}
+
 function initializeFirebase() {
-  if (firebaseReady) return true;
-  if (initAttempted) return false;
-  initAttempted = true;
+  if (firebaseReady && firebaseApp) return true;
 
   try {
-    if (admin.apps.length > 0) {
+    const existing = getExistingFirebaseApp();
+    if (existing) {
+      firebaseApp = existing;
       firebaseReady = true;
+      console.log("[Firebase] Firebase already initialized");
+      console.log(
+        "[Firebase] Firebase project ID:",
+        existing.options?.projectId || resolveProjectId(null),
+      );
       return true;
     }
+
+    if (initAttempted) return false;
+    initAttempted = true;
 
     const serviceAccount = loadServiceAccount();
     if (!serviceAccount) {
       console.warn(
-        "Firebase Admin not configured. Set FIREBASE_SERVICE_ACCOUNT_JSON, FIREBASE_SERVICE_ACCOUNT_PATH, or FIREBASE_PROJECT_ID + FIREBASE_CLIENT_EMAIL + FIREBASE_PRIVATE_KEY.",
+        "[Firebase] Firebase Admin not configured. Set FIREBASE_SERVICE_ACCOUNT_JSON, FIREBASE_SERVICE_ACCOUNT_PATH, or FIREBASE_PROJECT_ID + FIREBASE_CLIENT_EMAIL + FIREBASE_PRIVATE_KEY.",
       );
       return false;
     }
 
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
+    firebaseApp = initializeApp({
+      credential: cert(serviceAccount),
     });
     firebaseReady = true;
+    console.log("[Firebase] Firebase initialized successfully");
+    console.log(
+      "[Firebase] Firebase project ID:",
+      firebaseApp.options?.projectId || resolveProjectId(serviceAccount),
+    );
     return true;
   } catch (err) {
-    console.error("Firebase Admin initialization failed:", err.message);
+    console.error("[Firebase] Firebase initialization failed:", err.message);
+    if (err.stack) {
+      console.error("[Firebase] Stack trace:", err.stack);
+    }
     return false;
+  }
+}
+
+function getFirebaseMessaging() {
+  if (!initializeFirebase()) return null;
+  try {
+    return getMessaging(firebaseApp || getApp());
+  } catch (err) {
+    console.error("[Firebase] getMessaging failed:", err.message);
+    return null;
   }
 }
 
@@ -98,7 +154,8 @@ function normalizeDataPayload({ type = "general", link = "" } = {}) {
  * @returns {{ success: boolean, invalidToken?: boolean, error?: string }}
  */
 async function sendToToken(token, { title, body, type, link } = {}) {
-  if (!initializeFirebase()) {
+  const messaging = getFirebaseMessaging();
+  if (!messaging) {
     return { success: false, error: "Firebase not configured" };
   }
   if (!token || typeof token !== "string") {
@@ -106,7 +163,7 @@ async function sendToToken(token, { title, body, type, link } = {}) {
   }
 
   try {
-    await admin.messaging().send({
+    await messaging.send({
       token: token.trim(),
       notification: {
         title: String(title || "Notification"),
@@ -154,7 +211,8 @@ async function removeInvalidTokens(tokens, responses) {
  * @returns {{ sent: number, failed: number, removed: number }}
  */
 async function sendToTokens(tokens, { title, body, type, link } = {}) {
-  if (!initializeFirebase()) {
+  const messaging = getFirebaseMessaging();
+  if (!messaging) {
     return { sent: 0, failed: 0, removed: 0, skipped: true };
   }
 
@@ -176,7 +234,7 @@ async function sendToTokens(tokens, { title, body, type, link } = {}) {
   for (let offset = 0; offset < uniqueTokens.length; offset += FCM_BATCH_SIZE) {
     const batch = uniqueTokens.slice(offset, offset + FCM_BATCH_SIZE);
     try {
-      const response = await admin.messaging().sendEachForMulticast({
+      const response = await messaging.sendEachForMulticast({
         tokens: batch,
         notification,
         data,
@@ -189,7 +247,7 @@ async function sendToTokens(tokens, { title, body, type, link } = {}) {
         removed += await removeInvalidTokens(batch, response.responses);
       }
     } catch (err) {
-      console.error("FCM multicast batch error:", err.message);
+      console.error("[Firebase] FCM multicast batch error:", err.message);
       failed += batch.length;
     }
   }
@@ -208,6 +266,7 @@ async function sendFcmToAll(title, body = "", { type = "general", link = "" } = 
 
   const docs = await FcmToken.find({}).select("token").lean();
   const tokens = docs.map((d) => d.token).filter(Boolean);
+  console.log(`[Firebase] sendFcmToAll: ${tokens.length} token(s) in fcmtokens`);
   return sendToTokens(tokens, { title, body, type, link });
 }
 
