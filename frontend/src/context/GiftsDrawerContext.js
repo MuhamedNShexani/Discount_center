@@ -10,6 +10,11 @@ import React, {
 } from "react";
 import { Box, Drawer, Skeleton, useTheme } from "@mui/material";
 import { Navigate } from "react-router-dom";
+import {
+  DrawerBody,
+  DrawerSafeAreaTop,
+  drawerPaperSx,
+} from "../utils/drawerSafeArea";
 
 const Gifts = lazy(() => import("../pages/Gifts"));
 
@@ -51,20 +56,18 @@ export function GiftsDrawerProvider({ children }) {
         open={open}
         onClose={closeGifts}
         PaperProps={{
-          sx: {
-            borderRadius: 0,
-            background: isDark ? "#0f1927" : "#ffffff",
-            borderLeft: isDark
-              ? "1px solid rgba(255,255,255,0.08)"
-              : "1px solid #eef0f4",
-            overflow: "hidden",
-          },
+          sx: drawerPaperSx(isDark),
         }}
       >
         {open ? (
-          <Suspense fallback={<GiftsDrawerFallback />}>
-            <Gifts embedded onClose={closeGifts} />
-          </Suspense>
+          <>
+            <DrawerSafeAreaTop bgcolor={isDark ? "#0f1927" : "#ffffff"} />
+            <DrawerBody>
+              <Suspense fallback={<GiftsDrawerFallback />}>
+                <Gifts embedded onClose={closeGifts} />
+              </Suspense>
+            </DrawerBody>
+          </>
         ) : null}
       </Drawer>
     </GiftsDrawerContext.Provider>

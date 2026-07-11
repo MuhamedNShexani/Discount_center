@@ -134,7 +134,9 @@ const NAV_BRAND_TITLE = "iDashkan";
 const NAV_BRAND_TITLE_FONT_FAMILY =
   '"Brush Script MT", "Brush Script", "Segoe Script", cursive';
 
-/** Original solid brand bar (light mode). RTL-safe via inline style on AppBar. */
+/** Minimum upward scroll (px) before the mobile top nav reappears after hiding. */
+const MOBILE_NAV_REVEAL_SCROLL_UP_PX = 96;
+
 const NAV_BAR_GRADIENT = DEFAULT_NAV_BAR_GRADIENT_LIGHT;
 const NAV_BAR_GRADIENT_DARK_GLASS = DEFAULT_NAV_BAR_GRADIENT_DARK_GLASS;
 
@@ -203,6 +205,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
   const showAdminNav = !!user && canAccessDataEntry(user);
   const [showMobileNavbar, setShowMobileNavbar] = useState(true);
   const lastScrollYRef = useRef(0);
+  const scrollUpAccumRef = useRef(0);
   // Profile menu state
   const [profileAnchorEl, setProfileAnchorEl] = useState(null);
   const [sideMenuOpen, setSideMenuOpen] = useState(false);
@@ -777,14 +780,16 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
     [isDarkNav, location.pathname],
   );
 
-  // Mobile: hide header on scroll down, show on scroll up / at top.
+  // Mobile: hide on scroll down; reveal only after a deliberate upward scroll.
   useEffect(() => {
     if (!mobileHeaderActive) {
       setShowMobileNavbar(true);
+      scrollUpAccumRef.current = 0;
       return undefined;
     }
 
     lastScrollYRef.current = window.scrollY || 0;
+    scrollUpAccumRef.current = 0;
     let rafId = 0;
 
     const handleScroll = () => {
@@ -794,17 +799,27 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
         const currentY = window.scrollY || 0;
         const prevY = lastScrollYRef.current;
 
-        // Always show when at (or near) the top.
         if (currentY <= 0) {
           setShowMobileNavbar(true);
+          scrollUpAccumRef.current = 0;
           lastScrollYRef.current = 0;
           return;
         }
 
-        // Ignore tiny movement to avoid flicker.
-        if (Math.abs(currentY - prevY) < 4) return;
+        const delta = currentY - prevY;
+        if (Math.abs(delta) < 4) return;
 
-        setShowMobileNavbar(currentY < prevY);
+        if (delta > 0) {
+          scrollUpAccumRef.current = 0;
+          setShowMobileNavbar(false);
+        } else {
+          scrollUpAccumRef.current += -delta;
+          if (scrollUpAccumRef.current >= MOBILE_NAV_REVEAL_SCROLL_UP_PX) {
+            setShowMobileNavbar(true);
+            scrollUpAccumRef.current = 0;
+          }
+        }
+
         lastScrollYRef.current = currentY;
       });
     };

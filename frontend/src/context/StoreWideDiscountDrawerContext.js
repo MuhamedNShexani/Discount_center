@@ -28,6 +28,12 @@ import { getSyncErrorHint } from "../utils/apiError";
 import DiscountStoreCard, {
   ORANGE_ACCENT,
 } from "../components/storeWideDiscount/DiscountStoreCard";
+import {
+  DRAWER_SAFE_BOTTOM,
+  DrawerBody,
+  DrawerSafeAreaTop,
+  drawerPaperSx,
+} from "../utils/drawerSafeArea";
 
 export const StoreWideDiscountDrawerContext = createContext(null);
 
@@ -94,7 +100,8 @@ function StoreWideDiscountDrawerContent({ onClose }) {
       sx={{
         width: { xs: "100vw", sm: 420 },
         maxWidth: "100%",
-        height: "100dvh",
+        height: "100%",
+        minHeight: 0,
         display: "flex",
         flexDirection: "column",
         boxSizing: "border-box",
@@ -162,7 +169,7 @@ function StoreWideDiscountDrawerContent({ onClose }) {
           flex: 1,
           overflow: "auto",
           px: 2,
-          pb: "max(16px, env(safe-area-inset-bottom, 0px))",
+          pb: `max(16px, ${DRAWER_SAFE_BOTTOM})`,
         }}
       >
         {error ? (
@@ -262,17 +269,16 @@ export function StoreWideDiscountDrawerProvider({ children }) {
         open={open}
         onClose={closeStoreWideDiscounts}
         PaperProps={{
-          sx: {
-            borderRadius: 0,
-            background: isDark ? "#0f1927" : "#ffffff",
-            borderLeft: isDark
-              ? "1px solid rgba(255,255,255,0.08)"
-              : "1px solid #eef0f4",
-          },
+          sx: drawerPaperSx(isDark),
         }}
       >
         {open ? (
-          <StoreWideDiscountDrawerContent onClose={closeStoreWideDiscounts} />
+          <>
+            <DrawerSafeAreaTop bgcolor={isDark ? "#0f1927" : "#ffffff"} />
+            <DrawerBody>
+              <StoreWideDiscountDrawerContent onClose={closeStoreWideDiscounts} />
+            </DrawerBody>
+          </>
         ) : null}
       </Drawer>
     </StoreWideDiscountDrawerContext.Provider>

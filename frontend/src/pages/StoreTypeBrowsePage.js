@@ -531,17 +531,19 @@ export default function StoreTypeBrowsePage() {
         }
         return;
       }
-      navigate(`/store-types/${encodeURIComponent(stId)}`);
+      navigate(`/store-types/${encodeURIComponent(stId)}`, {
+        state: location.state,
+      });
       return;
     }
 
     // Categories list -> store types index.
     if (isCategoriesView && stId) {
-      navigate("/store-types");
+      navigate("/store-types", { state: location.state });
       return;
     }
 
-    // Store types index -> previous page or home.
+    // Store types index -> previous page or home (never navigate(-1) within browse flow).
     const from = location.state?.from;
     if (
       typeof from === "string" &&
@@ -549,12 +551,6 @@ export default function StoreTypeBrowsePage() {
       !from.startsWith("/store-types")
     ) {
       navigate(from);
-      return;
-    }
-
-    const historyIdx = window.history.state?.idx;
-    if (typeof historyIdx === "number" && historyIdx > 0) {
-      navigate(-1);
       return;
     }
 
@@ -665,6 +661,7 @@ export default function StoreTypeBrowsePage() {
                       onSelect={() =>
                         navigate(
                           `/store-types/${encodeURIComponent(String(type._id))}`,
+                          { state: location.state },
                         )
                       }
                     />
@@ -703,6 +700,7 @@ export default function StoreTypeBrowsePage() {
                       if (!stId || !catId) return;
                       navigate(
                         `/store-types/${encodeURIComponent(stId)}/category/${encodeURIComponent(catId)}`,
+                        { state: location.state },
                       );
                     }}
                   />

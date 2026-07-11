@@ -10,11 +10,15 @@ import {
   Chip,
   Container,
   Grid,
+  IconButton,
   Stack,
   TextField,
   Typography,
   useTheme,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
+import CloseIcon from "@mui/icons-material/Close";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import StorefrontIcon from "@mui/icons-material/Storefront";
@@ -35,20 +39,21 @@ const MotionCard = motion(Card);
 
 const EASE = [0.22, 1, 0.36, 1];
 
-const AboutPage = () => {
+const AboutPage = ({ embedded = false, onClose } = {}) => {
   const { t } = useTranslation();
   const theme = useTheme();
   const prefersReducedMotion = useReducedMotion();
   const isDark = theme.palette.mode === "dark";
 
-  const sectionFade = prefersReducedMotion
-    ? {}
-    : {
-        initial: { opacity: 0, y: 22 },
-        whileInView: { opacity: 1, y: 0 },
-        viewport: { once: true, amount: 0.2 },
-        transition: { duration: 0.65, ease: EASE },
-      };
+  const sectionFade =
+    embedded || prefersReducedMotion
+      ? {}
+      : {
+          initial: { opacity: 0, y: 22 },
+          whileInView: { opacity: 1, y: 0 },
+          viewport: { once: true, amount: 0.2 },
+          transition: { duration: 0.65, ease: EASE },
+        };
 
   const featureCards = [
     { key: "discounts", icon: <LocalOfferIcon /> },
@@ -106,8 +111,77 @@ const AboutPage = () => {
     "about.faq.q6",
   ];
 
+  const pageShell = embedded
+    ? {
+        width: { xs: "100vw", sm: 420 },
+        maxWidth: "100%",
+        height: "100%",
+        minHeight: 0,
+        overflow: "auto",
+        bgcolor: "background.default",
+        boxSizing: "border-box",
+        px: 2,
+        pt: 2.5,
+        pb: 3,
+      }
+    : { bgcolor: "background.default", pb: { xs: 10, md: 6 } };
+
+  const contentMaxWidth = embedded ? false : "lg";
+
   return (
-    <Box sx={{ bgcolor: "background.default", pb: { xs: 10, md: 6 } }}>
+    <Box sx={pageShell}>
+      {embedded ? (
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1.5,
+            mb: 2.5,
+          }}
+        >
+          <Box
+            sx={{
+              width: 36,
+              height: 36,
+              borderRadius: "12px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              bgcolor: isDark ? alpha("#1e6fd9", 0.22) : alpha("#1e6fd9", 0.12),
+              color: "primary.main",
+            }}
+          >
+            <InfoOutlinedIcon sx={{ fontSize: "1.1rem" }} />
+          </Box>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 900,
+                letterSpacing: "-0.02em",
+                lineHeight: 1.2,
+              }}
+            >
+              {t("About the app", { defaultValue: "About the app" })}
+            </Typography>
+          </Box>
+          <IconButton
+            onClick={onClose}
+            size="small"
+            aria-label={t("Close")}
+            sx={{
+              bgcolor: isDark ? "rgba(255,255,255,0.06)" : "#f3f4f6",
+              "&:hover": {
+                bgcolor: isDark ? "rgba(255,255,255,0.1)" : "#e9ecf0",
+              },
+            }}
+          >
+            <CloseIcon sx={{ fontSize: 18 }} />
+          </IconButton>
+        </Box>
+      ) : null}
+
       <MotionBox
         {...sectionFade}
         sx={{
@@ -118,8 +192,11 @@ const AboutPage = () => {
           borderColor: isDark ? "rgba(148,163,184,0.26)" : "divider",
         }}
       >
-        <Container maxWidth="lg" sx={{ py: { xs: 7, md: 11 } }}>
-          <Stack spacing={2.2} sx={{ maxWidth: 760 }}>
+        <Container
+          maxWidth={contentMaxWidth}
+          sx={{ py: embedded ? { xs: 3, md: 4 } : { xs: 7, md: 11 } }}
+        >
+          <Stack spacing={embedded ? 1.5 : 2.2} sx={{ maxWidth: 760 }}>
             <Chip
               label={t("about.heroBadge")}
               icon={<AutoAwesomeIcon />}
@@ -133,30 +210,46 @@ const AboutPage = () => {
             />
             <Typography
               variant="h2"
-              sx={{ fontSize: "1.8rem", fontWeight: 500, lineHeight: 1.3 }}
+              sx={{
+                fontSize: embedded ? "1.35rem" : "1.8rem",
+                fontWeight: 500,
+                lineHeight: 1.3,
+              }}
             >
               {t("about.heroTitle")}
             </Typography>
-            <Typography variant="h6" color="text.secondary">
+            <Typography
+              variant={embedded ? "body1" : "h6"}
+              color="text.secondary"
+            >
               {t("about.heroSubtitle")}
             </Typography>
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} pt={1}>
-              <Button variant="contained" size="large">
-                {t("about.heroPrimaryCta")}
-              </Button>
-              <Button
-                variant="outlined"
-                size="large"
-                startIcon={<PriceCheckIcon />}
+            {!embedded ? (
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                spacing={1.5}
+                pt={1}
               >
-                {t("about.heroSecondaryCta")}
-              </Button>
-            </Stack>
+                <Button variant="contained" size="large">
+                  {t("about.heroPrimaryCta")}
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="large"
+                  startIcon={<PriceCheckIcon />}
+                >
+                  {t("about.heroSecondaryCta")}
+                </Button>
+              </Stack>
+            ) : null}
           </Stack>
         </Container>
       </MotionBox>
 
-      <Container maxWidth="lg" sx={{ pt: { xs: 4, md: 6 } }}>
+      <Container
+        maxWidth={contentMaxWidth}
+        sx={{ pt: embedded ? { xs: 2.5, md: 3 } : { xs: 4, md: 6 } }}
+      >
         <MotionBox {...sectionFade} sx={{ mb: { xs: 5, md: 7 } }}>
           <Card
             sx={{

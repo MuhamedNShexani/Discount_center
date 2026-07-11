@@ -1,6 +1,12 @@
 import React from "react";
 import { Box, Skeleton, useTheme } from "@mui/material";
 import { alpha } from "@mui/material/styles";
+import { DrawerSafeAreaTop } from "../utils/drawerSafeArea";
+
+const PROFILE_HERO_SAFE_BG = {
+  dark: "#0c1525",
+  light: "#eef3ff",
+};
 
 function useSkeletonTokens(isDark) {
   return {
@@ -121,7 +127,8 @@ export default function ProfilePageSkeleton() {
       sx={{
         width: "100%",
         maxWidth: "100%",
-        height: "100dvh",
+        height: "100%",
+        minHeight: 0,
         overflowY: "auto",
         display: "flex",
         flexDirection: "column",
@@ -130,6 +137,9 @@ export default function ProfilePageSkeleton() {
           : "linear-gradient(180deg, #eef3ff 0%, #f6f9ff 25%, #fff 55%)",
       }}
     >
+      <DrawerSafeAreaTop
+        bgcolor={isDark ? PROFILE_HERO_SAFE_BG.dark : PROFILE_HERO_SAFE_BG.light}
+      />
       <Box
         sx={{
           position: "relative",

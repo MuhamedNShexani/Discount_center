@@ -199,7 +199,7 @@ const ShoppingPage = () => {
   return (
     <Box
       sx={{
-        py: { xs: 9, md: 8 },
+        py: { xs: 5, md: 8 },
         px: { xs: 1, sm: 1.5, md: 3 },
         pb: { xs: 12, sm: 4 },
       }}
@@ -219,7 +219,7 @@ const ShoppingPage = () => {
           "&::before": {
             content: '""',
             position: "absolute",
-            top: "-30%",
+            top: "100%",
             right: "-5%",
             width: 200,
             height: 200,

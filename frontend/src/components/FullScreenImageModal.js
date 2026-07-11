@@ -38,7 +38,7 @@ function FullScreenImageModal({ open, onClose, imageUrl, alt = "" }) {
           }}
           sx={{
             position: "fixed",
-            top: 8,
+            top: "calc(8px + env(safe-area-inset-top, 0px))",
             right: 8,
             color: "common.white",
             bgcolor: "rgba(0,0,0,0.45)",

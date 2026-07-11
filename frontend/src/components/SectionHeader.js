@@ -6,7 +6,7 @@ import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import { useTheme } from "@mui/material/styles";
 import { useTranslation } from "react-i18next";
 
-const SectionHeader = ({ title, subtitle, seeAllTo, icon: Icon, action }) => {
+const SectionHeader = ({ title, subtitle, seeAllTo, seeAllState, icon: Icon, action }) => {
   const theme = useTheme();
   const { i18n } = useTranslation();
   const isRtl = i18n.dir() === "rtl";
@@ -73,6 +73,7 @@ const SectionHeader = ({ title, subtitle, seeAllTo, icon: Icon, action }) => {
         <Button
           component={Link}
           to={seeAllTo}
+          state={seeAllState}
           size="small"
           sx={{
             textTransform: "none",

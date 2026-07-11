@@ -30,6 +30,8 @@ import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import StarIcon from "@mui/icons-material/Star";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@mui/material/styles";
+import useIsMobileLayout from "../hooks/useIsMobileLayout";
+import { MOBILE_NAV_OFFSET_SX } from "../hooks/useMobileHeaderLayout";
 import { useUserTracking } from "../hooks/useUserTracking";
 import { resolveMediaUrl } from "../utils/mediaUrl";
 import {
@@ -55,6 +57,7 @@ const ProductDetail = () => {
   const isRtl = i18n.dir() === "rtl";
   const { locName } = useLocalizedContent();
   const theme = useTheme();
+  const isMobile = useIsMobileLayout();
 
   // User tracking hook (user = device user for guests)
   const { toggleLike, recordView, isProductLiked } = useUserTracking();
@@ -287,7 +290,13 @@ const ProductDetail = () => {
   }
 
   return (
-    <Box sx={{ px: { xs: 2, sm: 3, md: 4 }, pt: 2, mt: { xs: 4, md: 3 } }}>
+    <Box
+      sx={{
+        px: { xs: 2, sm: 3, md: 4 },
+        pb: 2,
+        ...(isMobile ? MOBILE_NAV_OFFSET_SX : { pt: 2, mt: { md: 3 } }),
+      }}
+    >
       <Button
         variant="outlined"
         startIcon={<ArrowBack sx={{ transform: isRtl ? "scaleX(-1)" : undefined }} />}

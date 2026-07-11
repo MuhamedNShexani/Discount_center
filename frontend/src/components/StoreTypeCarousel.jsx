@@ -9,7 +9,7 @@ import React, {
 import { Box, IconButton } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import StorefrontRoundedIcon from "@mui/icons-material/StorefrontRounded";
@@ -57,11 +57,13 @@ const StoreTypeCarousel = memo(function StoreTypeCarousel({
   storeTypeCounts,
   browseMode = false,
   seeAllTo = "/stores",
+  seeAllState,
 }) {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const isRtl = isRtlLanguage(i18n.language);
   const { locName } = useLocalizedContent();
 
@@ -192,9 +194,13 @@ const StoreTypeCarousel = memo(function StoreTypeCarousel({
 
   const handleBrowseSelect = useCallback(
     (storeTypeId) => {
-      navigate(`/store-types/${encodeURIComponent(String(storeTypeId))}`);
+      navigate(`/store-types/${encodeURIComponent(String(storeTypeId))}`, {
+        state: {
+          from: location.pathname + location.search,
+        },
+      });
     },
-    [navigate],
+    [navigate, location.pathname, location.search],
   );
 
   return (
@@ -203,6 +209,9 @@ const StoreTypeCarousel = memo(function StoreTypeCarousel({
         icon={StorefrontRoundedIcon}
         title={t("Store Types", { defaultValue: "Store Types" })}
         seeAllTo={seeAllTo}
+        seeAllState={
+          seeAllState ?? { from: location.pathname + location.search }
+        }
         action={t("See All", { defaultValue: "See All" })}
       />
 

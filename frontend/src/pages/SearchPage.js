@@ -420,7 +420,9 @@ const SearchPage = () => {
       recordSearchClick(searchPageLogIdRef.current, stId, "storeType");
     }
 
-    navigate(`/store-types/${encodeURIComponent(stId)}`);
+    navigate(`/store-types/${encodeURIComponent(stId)}`, {
+      state: { from: location.pathname + location.search },
+    });
   };
 
   // const bannerAdsWithImages = useMemo(

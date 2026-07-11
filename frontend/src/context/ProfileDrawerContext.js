@@ -11,6 +11,7 @@ import React, {
 import { Drawer, useTheme } from "@mui/material";
 import { Navigate } from "react-router-dom";
 import ProfilePageSkeleton from "../components/ProfilePageSkeleton";
+import { DrawerBody, drawerPaperSx } from "../utils/drawerSafeArea";
 
 const ProfilePage = lazy(() => import("../pages/ProfilePage"));
 
@@ -37,21 +38,18 @@ export function ProfileDrawerProvider({ children }) {
         open={open}
         onClose={closeProfile}
         PaperProps={{
-          sx: {
-            borderRadius: 0,
-            background: isDark ? "#0f1927" : "#ffffff",
-            borderLeft: isDark
-              ? "1px solid rgba(255,255,255,0.08)"
-              : "1px solid #eef0f4",
+          sx: drawerPaperSx(isDark, {
             width: { xs: "100vw", sm: 390 },
             maxWidth: "100%",
-          },
+          }),
         }}
       >
         {open ? (
-          <Suspense fallback={<ProfilePageSkeleton />}>
-            <ProfilePage onClose={closeProfile} />
-          </Suspense>
+          <DrawerBody>
+            <Suspense fallback={<ProfilePageSkeleton />}>
+              <ProfilePage onClose={closeProfile} />
+            </Suspense>
+          </DrawerBody>
         ) : null}
       </Drawer>
     </ProfileDrawerContext.Provider>

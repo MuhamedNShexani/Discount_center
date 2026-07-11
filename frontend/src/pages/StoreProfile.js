@@ -40,10 +40,7 @@ import {
   ArrowForward,
   ArrowBack,
 } from "@mui/icons-material";
-import {
-  productAPI,
-  cartOrderLogAPI,
-} from "../services/api";
+import { productAPI, cartOrderLogAPI } from "../services/api";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
@@ -94,9 +91,11 @@ const GiftsTab = lazy(() => import("../components/store/GiftsTab"));
 const ReelsTab = lazy(() => import("../components/store/ReelsTab"));
 const JobsTab = lazy(() => import("../components/store/JobsTab"));
 const CartDrawer = lazy(() => import("../components/store/CartDrawer"));
-const ProductDetailDialog = lazy(() => import("../components/ProductDetailDialog"));
-const AdminProductEditDialog = lazy(() =>
-  import("../components/AdminProductEditDialog"),
+const ProductDetailDialog = lazy(
+  () => import("../components/ProductDetailDialog"),
+);
+const AdminProductEditDialog = lazy(
+  () => import("../components/AdminProductEditDialog"),
 );
 
 const PROFILE_GRID_PAGE_SIZE = 8;
@@ -766,165 +765,168 @@ const StoreProfile = () => {
   };
 
   // Render gift card
-  const renderGiftCard = useCallback((gift) => {
-    const giftExp = getExpiryRemainingInfo(gift.expireDate);
-    const isDark = theme.palette.mode === "dark";
+  const renderGiftCard = useCallback(
+    (gift) => {
+      const giftExp = getExpiryRemainingInfo(gift.expireDate);
+      const isDark = theme.palette.mode === "dark";
 
-    return (
-      <Card
-        key={gift._id}
-        onClick={() => {
-          setSelectedGift(gift);
-          setDialogOpen(true);
-        }}
-        sx={{
-          display: "flex",
-          height: { xs: 140, sm: 200 },
-          width: "100%",
-          borderRadius: "16px",
-          overflow: "hidden",
-          background: isDark
-            ? "linear-gradient(145deg, #1e2a3a, #243040)"
-            : "#fff",
-          border: isDark
-            ? "1px solid rgba(255,255,255,0.07)"
-            : "1px solid #f0f2f5",
-          boxShadow: isDark
-            ? "0 4px 16px rgba(0,0,0,0.35)"
-            : "0 2px 12px rgba(0,0,0,0.06)",
-          cursor: "pointer",
-          transition: "all 0.25s ease",
-          "&:hover": {
-            transform: "translateY(-2px)",
-            boxShadow: isDark
-              ? "0 8px 28px rgba(0,0,0,0.5)"
-              : "0 8px 24px rgba(0,0,0,0.1)",
-          },
-        }}
-      >
-        {/* Gift Image */}
-        <Box
+      return (
+        <Card
+          key={gift._id}
+          onClick={() => {
+            setSelectedGift(gift);
+            setDialogOpen(true);
+          }}
           sx={{
-            width: { xs: 120, sm: 180 },
-            flexShrink: 0,
-            position: "relative",
+            display: "flex",
+            height: { xs: 140, sm: 200 },
+            width: "100%",
+            borderRadius: "16px",
             overflow: "hidden",
+            background: isDark
+              ? "linear-gradient(145deg, #1e2a3a, #243040)"
+              : "#fff",
+            border: isDark
+              ? "1px solid rgba(255,255,255,0.07)"
+              : "1px solid #f0f2f5",
+            boxShadow: isDark
+              ? "0 4px 16px rgba(0,0,0,0.35)"
+              : "0 2px 12px rgba(0,0,0,0.06)",
+            cursor: "pointer",
+            transition: "all 0.25s ease",
+            "&:hover": {
+              transform: "translateY(-2px)",
+              boxShadow: isDark
+                ? "0 8px 28px rgba(0,0,0,0.5)"
+                : "0 8px 24px rgba(0,0,0,0.1)",
+            },
           }}
         >
-          <CardMedia
-            component="img"
-            image={resolveMediaUrl(gift.image)}
-            alt={gift.description}
-            sx={{ width: "100%", height: "100%", objectFit: "cover" }}
-          />
+          {/* Gift Image */}
           <Box
             sx={{
-              position: "absolute",
-              inset: 0,
-              background:
-                "linear-gradient(to right, rgba(0,0,0,0) 60%, " +
-                (isDark ? "rgba(30,42,58,0.8)" : "rgba(255,255,255,0.6)") +
-                " 100%)",
-              pointerEvents: "none",
-            }}
-          />
-        </Box>
-
-        {/* Gift Content */}
-        <CardContent
-          sx={{
-            flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-            p: { xs: "12px !important", sm: "16px !important" },
-            minWidth: 0,
-          }}
-        >
-          <Typography
-            variant="body2"
-            sx={{
-              fontWeight: 700,
-              fontSize: { xs: "0.82rem", sm: "0.95rem" },
-              lineHeight: 1.4,
-              color: isDark ? "rgba(255,255,255,0.92)" : "#111827",
-              display: "-webkit-box",
-              WebkitLineClamp: 3,
-              WebkitBoxOrient: "vertical",
+              width: { xs: 120, sm: 180 },
+              flexShrink: 0,
+              position: "relative",
               overflow: "hidden",
-              mb: 1,
             }}
           >
-            {gift.description}
-          </Typography>
-
-          {gift.brandId && (
+            <CardMedia
+              component="img"
+              image={resolveMediaUrl(gift.image)}
+              alt={gift.description}
+              sx={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
             <Box
               sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 0.5,
-                mb: 0.8,
-                cursor: "pointer",
+                position: "absolute",
+                inset: 0,
+                background:
+                  "linear-gradient(to right, rgba(0,0,0,0) 60%, " +
+                  (isDark ? "rgba(30,42,58,0.8)" : "rgba(255,255,255,0.6)") +
+                  " 100%)",
+                pointerEvents: "none",
               }}
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/brands/${gift.brandId._id}?tab=gifts`);
+            />
+          </Box>
+
+          {/* Gift Content */}
+          <CardContent
+            sx={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              p: { xs: "12px !important", sm: "16px !important" },
+              minWidth: 0,
+            }}
+          >
+            <Typography
+              variant="body2"
+              sx={{
+                fontWeight: 700,
+                fontSize: { xs: "0.82rem", sm: "0.95rem" },
+                lineHeight: 1.4,
+                color: isDark ? "rgba(255,255,255,0.92)" : "#111827",
+                display: "-webkit-box",
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+                mb: 1,
               }}
             >
-              <Business
+              {gift.description}
+            </Typography>
+
+            {gift.brandId && (
+              <Box
                 sx={{
-                  fontSize: 14,
-                  color: "var(--brand-accent-orange, #ff8c00)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.5,
+                  mb: 0.8,
+                  cursor: "pointer",
                 }}
-              />
-              <Typography
-                variant="caption"
-                sx={{
-                  color: "var(--brand-accent-orange, #ff8c00)",
-                  fontWeight: 600,
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/brands/${gift.brandId._id}?tab=gifts`);
                 }}
               >
-                {locName(gift.brandId)}
-              </Typography>
-            </Box>
-          )}
-
-          <Box>
-            {gift.expireDate ? (
-              <Chip
-                label={formatExpiryExpiresPrefixedLabel(giftExp, t)}
-                size="small"
-                sx={{
-                  height: 22,
-                  fontSize: "0.7rem",
-                  fontWeight: 600,
-                  bgcolor: expiryGiftCardBg(giftExp),
-                  color: "white",
-                  "& .MuiChip-label": { px: 0.8 },
-                }}
-              />
-            ) : (
-              <Chip
-                label={t("No expiry")}
-                size="small"
-                sx={{
-                  height: 22,
-                  fontSize: "0.7rem",
-                  bgcolor: isDark ? "rgba(255,255,255,0.15)" : "#e5e7eb",
-                  color: isDark ? "white" : "#374151",
-                  "& .MuiChip-label": { px: 0.8 },
-                }}
-              />
+                <Business
+                  sx={{
+                    fontSize: 14,
+                    color: "var(--brand-accent-orange, #ff8c00)",
+                  }}
+                />
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "var(--brand-accent-orange, #ff8c00)",
+                    fontWeight: 600,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {locName(gift.brandId)}
+                </Typography>
+              </Box>
             )}
-          </Box>
-        </CardContent>
-      </Card>
-    );
-  }, [theme.palette.mode, navigate, locName, t]);
+
+            <Box>
+              {gift.expireDate ? (
+                <Chip
+                  label={formatExpiryExpiresPrefixedLabel(giftExp, t)}
+                  size="small"
+                  sx={{
+                    height: 22,
+                    fontSize: "0.7rem",
+                    fontWeight: 600,
+                    bgcolor: expiryGiftCardBg(giftExp),
+                    color: "white",
+                    "& .MuiChip-label": { px: 0.8 },
+                  }}
+                />
+              ) : (
+                <Chip
+                  label={t("No expiry")}
+                  size="small"
+                  sx={{
+                    height: 22,
+                    fontSize: "0.7rem",
+                    bgcolor: isDark ? "rgba(255,255,255,0.15)" : "#e5e7eb",
+                    color: isDark ? "white" : "#374151",
+                    "& .MuiChip-label": { px: 0.8 },
+                  }}
+                />
+              )}
+            </Box>
+          </CardContent>
+        </Card>
+      );
+    },
+    [theme.palette.mode, navigate, locName, t],
+  );
 
   // Render product card — modern premium card
   /** @param {boolean|'ifPresent'} showPriceMode @param {'row'|'grid2'} layoutMode */
@@ -1232,8 +1234,7 @@ const StoreProfile = () => {
     ],
   );
   const visibleTabs = useMemo(
-    () =>
-      tabDefs.filter((d) => Number(d.count) > 0),
+    () => tabDefs.filter((d) => Number(d.count) > 0),
     [tabDefs],
   );
 
@@ -1284,7 +1285,7 @@ const StoreProfile = () => {
     return (
       <Box
         sx={{
-          py: { xs: 8, sm: 4 },
+          py: { xs: 5, sm: 4 },
           px: { xs: 1, sm: 1.5, md: 3 },
           pb: { xs: 10, sm: 4 },
           width: "100%",
@@ -1316,13 +1317,35 @@ const StoreProfile = () => {
                 : "linear-gradient(135deg,#2a72d9 0%, #4a90e2 100%)",
           }}
         >
-          <Box sx={{ display: "flex", gap: 1.5, alignItems: "flex-start", mb: 1.5 }}>
-            <Skeleton variant="rounded" width={74} height={74} sx={{ borderRadius: "18px", flexShrink: 0 }} />
+          <Box
+            sx={{
+              display: "flex",
+              gap: 1.5,
+              alignItems: "flex-start",
+              mb: 1.5,
+            }}
+          >
+            <Skeleton
+              variant="rounded"
+              width={74}
+              height={74}
+              sx={{ borderRadius: "18px", flexShrink: 0 }}
+            />
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Skeleton variant="text" width="52%" height={32} />
               <Box sx={{ display: "flex", gap: 1, mt: 0.5, mb: 0.5 }}>
-                <Skeleton variant="rounded" width={48} height={22} sx={{ borderRadius: "999px" }} />
-                <Skeleton variant="rounded" width={76} height={22} sx={{ borderRadius: "999px" }} />
+                <Skeleton
+                  variant="rounded"
+                  width={48}
+                  height={22}
+                  sx={{ borderRadius: "999px" }}
+                />
+                <Skeleton
+                  variant="rounded"
+                  width={76}
+                  height={22}
+                  sx={{ borderRadius: "999px" }}
+                />
               </Box>
               <Skeleton variant="text" width="34%" height={18} />
             </Box>
@@ -1390,14 +1413,24 @@ const StoreProfile = () => {
                 gap: 1,
               }}
             >
-              <Skeleton variant="rounded" width={30} height={30} sx={{ borderRadius: "9px" }} />
+              <Skeleton
+                variant="rounded"
+                width={30}
+                height={30}
+                sx={{ borderRadius: "9px" }}
+              />
               <Skeleton
                 variant="text"
                 width="45%"
                 height={28}
                 sx={{ mb: 0.5, flexShrink: 0 }}
               />
-              <Skeleton variant="rounded" width={28} height={20} sx={{ borderRadius: "999px" }} />
+              <Skeleton
+                variant="rounded"
+                width={28}
+                height={20}
+                sx={{ borderRadius: "999px" }}
+              />
             </Box>
             <Box
               sx={{
@@ -1465,7 +1498,7 @@ const StoreProfile = () => {
   return (
     <Box
       sx={{
-        py: { xs: 8, sm: 4 },
+        py: { xs: 5, sm: 4 },
         px: { xs: 1, sm: 1.5, md: 3 },
         pb: { xs: 10, sm: 4 },
       }}

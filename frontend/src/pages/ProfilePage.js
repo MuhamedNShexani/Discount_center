@@ -120,6 +120,9 @@ import { useActiveTheme } from "../context/ActiveThemeContext";
 import ProfilePageSkeleton, {
   ProfileOwnerSectionSkeleton,
 } from "../components/ProfilePageSkeleton";
+import { DrawerSafeAreaTop } from "../utils/drawerSafeArea";
+import { useAboutDrawer } from "../hooks/useAboutDrawer";
+import { usePrivacyDrawer } from "../hooks/usePrivacyDrawer";
 import {
   PROFILE_SHORTCUT_CATALOG,
   normalizeProfileShortcutIds,
@@ -223,6 +226,11 @@ const profileSettingsRowSx = {
   gap: 1,
 };
 
+const PROFILE_HERO_SAFE_BG = {
+  dark: "#0c1525",
+  light: "#eef3ff",
+};
+
 const ProfilePage = ({ onClose }) => {
   const theme = useTheme();
   const navigate = useNavigate();
@@ -235,6 +243,8 @@ const ProfilePage = ({ onClose }) => {
   const { dataLanguage, setDataLanguage } = useDataLanguage();
   const { locName } = useLocalizedContent();
   const { colorMode, setColorMode } = useDarkMode();
+  const { openAbout } = useAboutDrawer();
+  const { openPrivacy } = usePrivacyDrawer();
 
   const [guestNameDialogOpen, setGuestNameDialogOpen] = useState(false);
   const [ownerProfilePickerOpen, setOwnerProfilePickerOpen] = useState(false);
@@ -740,14 +750,14 @@ const ProfilePage = ({ onClose }) => {
         {
           key: "about",
           label: t("About the app", { defaultValue: "About the app" }),
-          path: "/about",
           Icon: InfoOutlinedIcon,
+          onClick: () => openAbout(),
         },
         {
           key: "privacy",
           label: t("Privacy Policy"),
-          path: "/privacy-policy",
           Icon: PrivacyTipIcon,
+          onClick: () => openPrivacy(),
         },
       ],
     },
@@ -771,7 +781,8 @@ const ProfilePage = ({ onClose }) => {
         sx={{
           width: "100%",
           maxWidth: "100%",
-          height: "100dvh",
+          height: "100%",
+          minHeight: 0,
           overflowY: "auto",
           display: "flex",
           flexDirection: "column",
@@ -792,6 +803,9 @@ const ProfilePage = ({ onClose }) => {
           willChange: "transform, opacity",
         }}
       >
+        <DrawerSafeAreaTop
+          bgcolor={isDark ? PROFILE_HERO_SAFE_BG.dark : PROFILE_HERO_SAFE_BG.light}
+        />
         {/* ── HERO HEADER ── */}
         <Box
           sx={{

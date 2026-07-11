@@ -688,7 +688,8 @@ const Gifts = ({ embedded = false, onClose } = {}) => {
           ? {
               width: { xs: "100vw", sm: 420 },
               maxWidth: "100%",
-              height: "100dvh",
+              height: "100%",
+              minHeight: 0,
               overflow: "auto",
               bgcolor: "background.default",
               boxSizing: "border-box",

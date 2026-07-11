@@ -25,6 +25,11 @@ import {
   DATA_LANG_KU,
   useDataLanguage,
 } from "./DataLanguageContext";
+import {
+  DrawerBody,
+  DrawerSafeAreaTop,
+  drawerPaperSx,
+} from "../utils/drawerSafeArea";
 
 export const NotificationDrawerContext = createContext(null);
 
@@ -88,20 +93,19 @@ export function NotificationDrawerProvider({ children }) {
         open={open}
         onClose={closeNotifications}
         PaperProps={{
-          sx: {
-            borderRadius: 0,
-            background: isDark ? "#0f1927" : "#ffffff",
-            borderLeft: isDark
-              ? "1px solid rgba(255,255,255,0.08)"
-              : "1px solid #eef0f4",
-          },
-        }}
-      >
-        <Box
-          sx={{
+          sx: drawerPaperSx(isDark, {
             width: { xs: "100vw", sm: 380 },
             maxWidth: "100%",
-            height: "100dvh",
+          }),
+        }}
+      >
+        <DrawerSafeAreaTop bgcolor={isDark ? "#0f1927" : "#ffffff"} />
+        <DrawerBody>
+        <Box
+          sx={{
+            width: "100%",
+            height: "100%",
+            minHeight: 0,
             display: "flex",
             flexDirection: "column",
             boxSizing: "border-box",
@@ -325,6 +329,7 @@ export function NotificationDrawerProvider({ children }) {
             )}
           </Box>
         </Box>
+        </DrawerBody>
       </Drawer>
     </NotificationDrawerContext.Provider>
   );

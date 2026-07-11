@@ -58,13 +58,11 @@ import { DataLanguageProvider } from "./context/DataLanguageContext";
 import { AppSettingsProvider } from "./context/AppSettingsContext";
 import { NotificationProvider } from "./context/NotificationContext";
 const LoginPage = lazy(() => import("./pages/LoginPage"));
-const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const OwnerDashboardPage = lazy(() => import("./pages/OwnerDashboardPage"));
 const OwnerDataEntryPage = lazy(() => import("./pages/OwnerDataEntryPage"));
 const PendingPage = lazy(() => import("./pages/PendingPage"));
 const FindJob = lazy(() => import("./pages/FindJob"));
 const ShoppingPage = lazy(() => import("./pages/ShoppingPage"));
-const AboutPage = lazy(() => import("./pages/AboutPage"));
 import ProtectedRoute, {
   ProtectedAdminOnlyRoute,
   ProtectedOwnerRoute,
@@ -101,6 +99,14 @@ import {
 } from "./context/StoreWideDiscountDrawerContext";
 import { FindJobDrawerProvider } from "./context/FindJobDrawerContext";
 import { GiftsDrawerProvider } from "./context/GiftsDrawerContext";
+import {
+  AboutDrawerProvider,
+  AboutRouteRedirect,
+} from "./context/AboutDrawerContext";
+import {
+  PrivacyDrawerProvider,
+  PrivacyRouteRedirect,
+} from "./context/PrivacyDrawerContext";
 import { DarkModeProvider, useDarkMode } from "./context/DarkModeContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { appVisitAPI } from "./services/api";
@@ -280,6 +286,8 @@ function AppContent() {
       <ThemeProvider theme={theme}>
         <DraftCartDrawerProvider>
           <NotificationDrawerProvider>
+            <AboutDrawerProvider>
+            <PrivacyDrawerProvider>
             <ProfileDrawerProvider>
               <StoreWideDiscountDrawerProvider>
               <FindJobDrawerProvider>
@@ -550,7 +558,7 @@ function AppContent() {
                           <Route path="/login" element={<LoginPage />} />
                           <Route
                             path="/privacy-policy"
-                            element={<PrivacyPolicy />}
+                            element={<PrivacyRouteRedirect />}
                           />
                           <Route
                             path="/profile"
@@ -586,7 +594,7 @@ function AppContent() {
                             element={<StoreWideDiscountRouteRedirect />}
                           />
                           <Route path="/shopping" element={<ShoppingPage />} />
-                          <Route path="/about" element={<AboutPage />} />
+                          <Route path="/about" element={<AboutRouteRedirect />} />
                           <Route
                             path="/products/:id"
                             element={<ProductDetail />}
@@ -603,6 +611,8 @@ function AppContent() {
               </FindJobDrawerProvider>
               </StoreWideDiscountDrawerProvider>
             </ProfileDrawerProvider>
+            </PrivacyDrawerProvider>
+            </AboutDrawerProvider>
           </NotificationDrawerProvider>
         </DraftCartDrawerProvider>
       </ThemeProvider>

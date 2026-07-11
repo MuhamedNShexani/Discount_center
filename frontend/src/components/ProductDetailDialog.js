@@ -308,15 +308,35 @@ const ProductDetailDialog = ({
             backgroundColor:
               theme.palette.mode === "dark" ? "rgba(22,28,44,1)" : "#fff",
             backgroundImage: "none",
+            ...(isMobile
+              ? {
+                  display: "flex",
+                  flexDirection: "column",
+                  maxHeight: "100dvh",
+                  pb: "env(safe-area-inset-bottom, 0px)",
+                }
+              : {}),
           },
         }}
       >
+        {isMobile ? (
+          <Box
+            aria-hidden
+            sx={{
+              height: "env(safe-area-inset-top, 0px)",
+              flexShrink: 0,
+              bgcolor:
+                theme.palette.mode === "dark" ? "rgba(22,28,44,1)" : "#fff",
+            }}
+          />
+        ) : null}
         <Box
           sx={{
             display: "flex",
             alignItems: "center",
             px: 2,
             py: 1.5,
+            flexShrink: 0,
             borderBottom: `1px solid ${theme.palette.mode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"}`,
           }}
         >
@@ -339,7 +359,13 @@ const ProductDetailDialog = ({
           </Typography>
         </Box>
 
-        <DialogContent sx={{ p: 0, overflowX: "hidden" }}>
+        <DialogContent
+          sx={{
+            p: 0,
+            overflowX: "hidden",
+            ...(isMobile ? { flex: 1, minHeight: 0, overflowY: "auto" } : {}),
+          }}
+        >
           {product &&
             (() => {
               const isDark = theme.palette.mode === "dark";

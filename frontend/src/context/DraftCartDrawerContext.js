@@ -24,6 +24,11 @@ import {
   readDraftCartGroupsByStore,
   totalDraftCartQty,
 } from "../utils/draftCarts";
+import {
+  DrawerBody,
+  DrawerSafeAreaTop,
+  drawerPaperSx,
+} from "../utils/drawerSafeArea";
 import { useLocalizedContent } from "../hooks/useLocalizedContent";
 
 export const DraftCartDrawerContext = createContext(null);
@@ -94,19 +99,20 @@ export function DraftCartDrawerProvider({ children }) {
         open={open}
         onClose={closeDraftCart}
         PaperProps={{
-          sx: {
-            borderRadius: 0,
-            background: isDark ? "#0f1927" : "#ffffff",
-            borderLeft: isDark
-              ? "1px solid rgba(255,255,255,0.08)"
-              : "1px solid #eef0f4",
-          },
-        }}
-      >
-        <Box
-          sx={{
+          sx: drawerPaperSx(isDark, {
             width: { xs: "100vw", sm: 380 },
             maxWidth: "100%",
+          }),
+        }}
+      >
+        <DrawerSafeAreaTop bgcolor={isDark ? "#0f1927" : "#ffffff"} />
+        <DrawerBody>
+        <Box
+          sx={{
+            width: "100%",
+            height: "100%",
+            minHeight: 0,
+            overflow: "auto",
             p: 2.5,
             boxSizing: "border-box",
           }}
@@ -287,6 +293,7 @@ export function DraftCartDrawerProvider({ children }) {
             </Box>
           )}
         </Box>
+        </DrawerBody>
       </Drawer>
     </DraftCartDrawerContext.Provider>
   );
