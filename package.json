@@ -12,7 +12,7 @@
     "seed:translations": "node scripts/seed-i18n-to-mongo.js"
   },
   "engines": {
-    "node": "18.20.8",
+    "node": ">=22",
     "npm": ">=9"
   },
   "keywords": [],
