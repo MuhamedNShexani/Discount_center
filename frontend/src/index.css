@@ -25,3 +25,34 @@ code {
   font-family:
     source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
 }
+
+/* Mobile fixed header stack (Facebook-style) — desktop keeps --nav-height at 0 */
+:root {
+  --safe-top: 0px;
+  --nav-height: 0px;
+  --tabs-height: 0px;
+  --header-height: calc(
+    var(--safe-top) + var(--nav-height) + var(--tabs-height)
+  );
+}
+
+@media (max-width: 899px) {
+  html.mobile-header-active {
+    --safe-top: env(safe-area-inset-top, 0px);
+    --nav-height: 56px;
+  }
+
+  html.mobile-main-tabs {
+    --tabs-height: 48px;
+  }
+}
+
+.mobile-page-offset {
+  padding-top: var(--header-height);
+}
+
+@media (min-width: 900px) {
+  .mobile-page-offset {
+    padding-top: 113px;
+  }
+}

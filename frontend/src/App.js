@@ -339,6 +339,15 @@ function AppContent() {
                             : isSearchPage && isMobile
                               ? 1
                               : 3,
+                      pt:
+                        isMobile &&
+                        !isReelsPage &&
+                        !isDataEntryPage &&
+                        !isSearchPage &&
+                        !isStoreTypesPage &&
+                        !isHomePage
+                          ? "calc(var(--safe-top) + var(--nav-height))"
+                          : undefined,
                       pb: isMobile
                         ? isSearchPage
                           ? "env(safe-area-inset-bottom, 0px)"

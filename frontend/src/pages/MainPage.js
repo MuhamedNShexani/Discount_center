@@ -20,12 +20,10 @@ import {
   DialogContent,
   DialogActions,
   Fab,
-  Tabs,
-  Tab,
   Skeleton,
 } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
-import { productAPI, storeTypeAPI, appAPI } from "../services/api";
+import { storeTypeAPI, appAPI } from "../services/api";
 import {
   fetchMainPageFullBundle,
   mainPageQueryKeys,
@@ -41,7 +39,6 @@ import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
-import PersonAddDisabledIcon from "@mui/icons-material/PersonAddDisabled";
 import Loader from "../components/Loader";
 import ApiConnectionErrorPanel from "../components/ApiConnectionErrorPanel";
 import BrandShowcase from "../components/BrandShowcase";
@@ -64,6 +61,10 @@ import { useTheme } from "@mui/material/styles";
 import { useUserTracking } from "../hooks/useUserTracking";
 import { useCityFilter } from "../context/CityFilterContext";
 import useIsMobileLayout from "../hooks/useIsMobileLayout";
+import {
+  MOBILE_NAV_OFFSET_SX,
+  MOBILE_NAV_SCROLL_MARGIN_SX,
+} from "../hooks/useMobileHeaderLayout";
 import { resolveMediaUrl } from "../utils/mediaUrl";
 import {
   isExpiryStillValid,
@@ -94,22 +95,6 @@ import {
   saveProductLayout,
 } from "../utils/productLayoutPreference";
 import { isAndroidPerformanceMode } from "../utils/androidPerformance";
-
-/** Restore For You / Following tab from session before first paint (must not run in scroll restore effect — that aborted async scroll). */
-function getInitialMainPageTabFromSession() {
-  try {
-    if (typeof navigator !== "undefined" && navigator.onLine) {
-      const rawState = sessionStorage.getItem(MAIN_PAGE_SCROLL_STATE_KEY);
-      if (rawState) {
-        const tab = Number(JSON.parse(rawState).tab);
-        if (Number.isFinite(tab) && tab >= 0 && tab <= 1) return tab;
-      }
-    }
-  } catch {
-    /* ignore */
-  }
-  return 0;
-}
 
 /** Apply scroll position (some WebViews need documentElement/body as well as window). */
 function applyWindowScrollY(y) {
@@ -277,8 +262,6 @@ const MainPage = () => {
 
   // Scroll to top state
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const [showMainTabs, setShowMainTabs] = useState(true);
-  const lastMainScrollYRef = useRef(0);
 
   // Stores pagination state
   const [displayedStores, setDisplayedStores] = useState([]);
@@ -302,7 +285,7 @@ const MainPage = () => {
   const loadMoreSentinelRef = useRef(null);
   const loadMoreStoresRef = useRef(() => {});
   const mainPageSearchLogIdRef = useRef(null);
-  /** Scroll target: banner hero (below fixed For You / Following tabs) — not the search row. */
+  /** Scroll target: banner hero (below fixed nav) — not the search row. */
   const mainPageFeedTopRef = useRef(null);
 
   // User tracking hook (user = device user for guests)
@@ -311,7 +294,6 @@ const MainPage = () => {
     toggleFollowStore,
     isProductLiked,
     isStoreFollowed,
-    getFollowedStores,
     isAuthenticated,
     user,
     recordView,
@@ -342,14 +324,7 @@ const MainPage = () => {
   const [followLoading, setFollowLoading] = useState({}); // Track follow state per store
   const followLoadingRef = useRef({});
   followLoadingRef.current = followLoading;
-  const [mainPageTab, setMainPageTab] = useState(
-    getInitialMainPageTabFromSession,
-  ); // 0 = For You, 1 = Following
-  const [followedStores, setFollowedStores] = useState([]);
-  const [productsByFollowedStore, setProductsByFollowedStore] = useState({});
-  const [followLoadingTab, setFollowLoadingTab] = useState(false);
   const mainPageScrollRestoredRef = useRef(false);
-  const mainPageTabRef = useRef(0);
   const displayedStoresCountRef = useRef(0);
   const skipInitialSilentRefreshRef = useRef(false);
   const lastScrollPersistRef = useRef({ y: 0, at: 0 });
@@ -385,7 +360,6 @@ const MainPage = () => {
           MAIN_PAGE_SCROLL_STATE_KEY,
           JSON.stringify({
             y,
-            tab: mainPageTabRef.current,
             displayedCount: displayedStoresCountRef.current,
           }),
         );
@@ -394,10 +368,6 @@ const MainPage = () => {
       }
     };
   }, []);
-
-  useEffect(() => {
-    mainPageTabRef.current = mainPageTab;
-  }, [mainPageTab]);
 
   useEffect(() => {
     displayedStoresCountRef.current = displayedStores.length;
@@ -480,23 +450,12 @@ const MainPage = () => {
         const result = await toggleFollowStore(storeId);
         if (!result.success) {
           alert(result.message || "Failed to update follow");
-        } else if (
-          mainPageTab === 1 &&
-          result.data &&
-          !result.data.isFollowed
-        ) {
-          setFollowedStores((prev) => prev.filter((s) => s._id !== storeId));
-          setProductsByFollowedStore((prev) => {
-            const next = { ...prev };
-            delete next[storeId];
-            return next;
-          });
         }
       } finally {
         setFollowLoading((prev) => ({ ...prev, [storeId]: false }));
       }
     },
-    [toggleFollowStore, mainPageTab],
+    [toggleFollowStore],
   );
 
   const handleProductClick = useCallback(
@@ -734,7 +693,7 @@ const MainPage = () => {
     }
   }, [selectedCity, fetchData]);
 
-  // Single window scroll handler: persist position, scroll-to-top FAB, mobile tab bar.
+  // Single window scroll handler: persist position and scroll-to-top FAB.
   useEffect(() => {
     let rafId = 0;
 
@@ -756,7 +715,6 @@ const MainPage = () => {
               MAIN_PAGE_SCROLL_STATE_KEY,
               JSON.stringify({
                 y,
-                tab: mainPageTabRef.current,
                 displayedCount: displayedStoresCountRef.current,
               }),
             );
@@ -769,40 +727,14 @@ const MainPage = () => {
           window.pageYOffset || document.documentElement.scrollTop;
         const nextVisible = scrollTop > 600;
         setShowScrollTop((prev) => (prev === nextVisible ? prev : nextVisible));
-
-        if (isMobile) {
-          const currentY = y;
-          const previousY = lastMainScrollYRef.current;
-
-          if (currentY <= 0) {
-            setShowMainTabs((prev) => (prev ? prev : true));
-            lastMainScrollYRef.current = 0;
-            return;
-          }
-
-          if (Math.abs(currentY - previousY) < 4) return;
-
-          if (currentY > previousY) {
-            setShowMainTabs((prev) => (prev ? false : prev));
-          } else {
-            setShowMainTabs((prev) => (prev ? prev : true));
-          }
-
-          lastMainScrollYRef.current = currentY;
-        }
       });
     };
 
-    lastMainScrollYRef.current = window.scrollY || 0;
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
       window.removeEventListener("scroll", onScroll);
       if (rafId) window.cancelAnimationFrame(rafId);
     };
-  }, [isMobile]);
-
-  useEffect(() => {
-    if (!isMobile) setShowMainTabs(true);
   }, [isMobile]);
 
   /** Align to tabs + banner region; avoids landing on the search/filter row when window scroll is 0 but layout uses a tall header. */
@@ -830,48 +762,6 @@ const MainPage = () => {
       setLikeStates(updatedLikeStates);
     }
   }, [isAuthenticated, user, allProducts, isProductLiked]);
-
-  // Fetch followed stores when user switches to Following tab
-  useEffect(() => {
-    if (mainPageTab !== 1) return;
-    const fetchFollowed = async () => {
-      try {
-        setFollowLoadingTab(true);
-        const result = await getFollowedStores();
-        if (result.success && result.data && Array.isArray(result.data)) {
-          const sorted = [...result.data].sort((a, b) => {
-            if (a.isVip && !b.isVip) return -1;
-            if (!a.isVip && b.isVip) return 1;
-            return 0;
-          });
-          setFollowedStores(sorted);
-          const byStore = {};
-          await Promise.all(
-            result.data.map(async (s) => {
-              try {
-                const res = await productAPI.getByStore(s._id);
-                const prods = res.data?.data ?? res.data ?? [];
-                byStore[s._id] = Array.isArray(prods) ? prods : [];
-              } catch {
-                byStore[s._id] = [];
-              }
-            }),
-          );
-          setProductsByFollowedStore(byStore);
-        } else {
-          setFollowedStores([]);
-          setProductsByFollowedStore({});
-        }
-      } catch (err) {
-        console.error("Error fetching followed stores:", err);
-        setFollowedStores([]);
-        setProductsByFollowedStore({});
-      } finally {
-        setFollowLoadingTab(false);
-      }
-    };
-    fetchFollowed();
-  }, [mainPageTab, getFollowedStores, user]);
 
   const getID = useCallback((id) => {
     if (typeof id === "string") return id;
@@ -1549,120 +1439,6 @@ const MainPage = () => {
     selectedCity,
   ]);
 
-  const filterFollowedStoreProducts = useCallback(
-    (store, rawProducts, storeNameMatch) => {
-      const matches = (product, requireDiscount) => {
-        if (
-          selectedStoreTypeId !== "all" &&
-          String(getID(store.storeTypeId ?? product.storeTypeId)) !==
-            String(selectedStoreTypeId)
-        ) {
-          return false;
-        }
-        if (selectedCategory) {
-          const want = String(getID(selectedCategory._id));
-          const have = productCategoryIdString(product, getID);
-          if (want === UNCATEGORIZED_CATEGORY_ID) {
-            if (have != null) return false;
-          } else if (have !== want) {
-            return false;
-          }
-        }
-        if (
-          selectedCategoryType &&
-          getID(product.categoryTypeId) !== getID(selectedCategoryType._id)
-        ) {
-          return false;
-        }
-        const price = product.newPrice ?? product.price ?? 0;
-        if (price < priceRange[0] || price > priceRange[1]) {
-          return false;
-        }
-        if (
-          requireDiscount &&
-          !productHasActiveDiscount(product, isDiscountValid)
-        ) {
-          return false;
-        }
-        if (
-          normalizedSearch &&
-          !product.name?.toLowerCase().includes(normalizedSearch) &&
-          !storeNameMatch
-        ) {
-          return false;
-        }
-        if (product.expireDate && !isExpiryStillValid(product.expireDate)) {
-          return false;
-        }
-        return true;
-      };
-
-      const discounted = rawProducts.filter((product) =>
-        matches(product, true),
-      );
-      const base = rawProducts.filter((product) => matches(product, false));
-      return discounted.length > 0 ? discounted : base;
-    },
-    [
-      selectedStoreTypeId,
-      selectedCategory,
-      selectedCategoryType,
-      priceRange,
-      normalizedSearch,
-      getID,
-    ],
-  );
-
-  // Filtered followed stores and their products for Following tab
-  const filteredFollowedStoresWithProducts = useMemo(() => {
-    return followedStores
-      .filter((store) => {
-        // Store type filter
-        if (
-          selectedStoreTypeId !== "all" &&
-          String(getID(store.storeTypeId)) !== String(selectedStoreTypeId)
-        ) {
-          return false;
-        }
-        // City filter
-        if (!storeMatchesSelectedCity(store, selectedCity)) {
-          return false;
-        }
-        // Store name search match (if search, store can show if name matches)
-        const storeNameMatch =
-          normalizedSearch &&
-          store.name?.toLowerCase().includes(normalizedSearch);
-
-        // Get products for this store
-        const rawProducts = productsByFollowedStore[store._id] || [];
-        const filteredProds = filterFollowedStoreProducts(
-          store,
-          rawProducts,
-          storeNameMatch,
-        );
-
-        return storeNameMatch || filteredProds.length > 0;
-      })
-      .map((store) => {
-        const rawProducts = productsByFollowedStore[store._id] || [];
-        const storeNameMatch =
-          normalizedSearch &&
-          store.name?.toLowerCase().includes(normalizedSearch);
-        const filteredProds = filterFollowedStoreProducts(
-          store,
-          rawProducts,
-          storeNameMatch,
-        );
-        return { store, products: filteredProds };
-      });
-  }, [
-    followedStores,
-    productsByFollowedStore,
-    filterFollowedStoreProducts,
-    normalizedSearch,
-    selectedCity,
-  ]);
-
   const HOME_REELS_AFTER_STORE_COUNT = 14;
 
   const mainFeedItems = useMemo(() => {
@@ -1742,23 +1518,6 @@ const MainPage = () => {
     ],
   );
 
-  useEffect(() => {
-    if (mainPageTab !== 1 || followLoadingTab) return undefined;
-    if (filteredFollowedStoresWithProducts.length > 0) return undefined;
-
-    const id = window.setTimeout(() => {
-      setMainPageTab(0);
-      scrollToMainFeedTop("smooth");
-    }, 3000);
-
-    return () => window.clearTimeout(id);
-  }, [
-    mainPageTab,
-    followLoadingTab,
-    filteredFollowedStoresWithProducts.length,
-    scrollToMainFeedTop,
-  ]);
-
   // Effect for pagination ? on mobile, preload two chunks (16 stores) so rows after the
   // first BrandShowcase block exist without depending on the infinite-scroll sentinel
   // (it often misses after route return / overlay / browser chrome). Reset rotating
@@ -1814,7 +1573,7 @@ const MainPage = () => {
 
   // Infinite scroll: load next store chunk when sentinel nears the viewport (all breakpoints).
   useEffect(() => {
-    if (mainPageTab !== 0 || !hasMoreStores) return undefined;
+    if (!hasMoreStores) return undefined;
     const el = loadMoreSentinelRef.current;
     if (!el) return undefined;
 
@@ -1833,7 +1592,7 @@ const MainPage = () => {
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [mainPageTab, hasMoreStores]);
+  }, [hasMoreStores]);
 
   // Runs after store pagination has applied (above) so displayedStores/hasMoreStores match list depth.
   useLayoutEffect(() => {
@@ -1906,8 +1665,7 @@ const MainPage = () => {
         targetDisplayedCount = 0;
       }
 
-      // Tab is applied via getInitialMainPageTabFromSession on mount — do not setMainPageTab
-      // here (it was in the effect deps and cancelled pending restoreScroll timeouts).
+      // Tab is no longer restored from session — always show the standard feed.
 
       const countReady =
         targetDisplayedCount <= 0 ||
@@ -2017,54 +1775,13 @@ const MainPage = () => {
         sx={{
           /* xs: no extra horizontal padding — App Container supplies narrow inset on mobile */
           px: { xs: 0, sm: 1.5, md: 3 },
-          pt: { xs: "100px", sm: "113px", md: "113px" },
+          ...MOBILE_NAV_OFFSET_SX,
           pb: { xs: 10, sm: 4 },
           width: "100%",
           maxWidth: "100%",
           boxSizing: "border-box",
         }}
       >
-        {/* Fixed For You / Following tabs shell */}
-        <Box
-          sx={{
-            position: "fixed",
-            top: 75,
-            left: 0,
-            right: 0,
-            zIndex: 1090,
-            width: "fit-content",
-            borderRadius: "14px",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            margin: "0 auto",
-            px: 1,
-            py: 0.5,
-            backdropFilter: isAndroidPerfMode ? "none" : "blur(12px)",
-            background:
-              theme.palette.mode === "dark"
-                ? isAndroidPerfMode
-                  ? "rgba(15,23,42,0.96)"
-                  : "rgba(15,23,42,0.85)"
-                : isAndroidPerfMode
-                  ? "rgba(255,255,255,0.97)"
-                  : "rgba(255,255,255,0.9)",
-            boxShadow:
-              theme.palette.mode === "dark"
-                ? isAndroidPerfMode
-                  ? "0 2px 8px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.06)"
-                  : "0 4px 20px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.07)"
-                : isAndroidPerfMode
-                  ? "0 2px 8px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.03)"
-                  : "0 4px 20px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04)",
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Skeleton variant="text" width={68} height={28} />
-            <Skeleton variant="text" width={74} height={28} />
-          </Box>
-        </Box>
-
         {/* Banner skeleton (same region as BannerCarousel) */}
         <Skeleton
           variant="rounded"
@@ -2235,107 +1952,11 @@ const MainPage = () => {
   return (
     <Box
       sx={{
-        pt: { xs: "100px", sm: "113px", md: "113px" },
+        ...MOBILE_NAV_OFFSET_SX,
         pb: { xs: 2, sm: 4 },
       }}
     >
-      {/* --- */}
-      <Box
-        sx={{
-          position: "fixed",
-          top: 75,
-          left: 0,
-          right: 0,
-          zIndex: 1090,
-          width: "fit-content",
-          borderRadius: "14px",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          margin: "0 auto",
-          backdropFilter: isAndroidPerfMode ? "none" : "blur(12px)",
-          background:
-            theme.palette.mode === "dark"
-              ? isAndroidPerfMode
-                ? "rgba(15,23,42,0.96)"
-                : "rgba(15,23,42,0.85)"
-              : isAndroidPerfMode
-                ? "rgba(255,255,255,0.97)"
-                : "rgba(255,255,255,0.9)",
-          boxShadow:
-            theme.palette.mode === "dark"
-              ? isAndroidPerfMode
-                ? "0 2px 8px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.06)"
-                : "0 4px 20px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.07)"
-              : isAndroidPerfMode
-                ? "0 2px 8px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.03)"
-                : "0 4px 20px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04)",
-          transform: !isMobile
-            ? "translateY(0)"
-            : showMainTabs
-              ? "translateY(0)"
-              : "translateY(-160%)",
-          transition: isAndroidPerfMode
-            ? "none"
-            : "transform 280ms cubic-bezier(0.4,0,0.2,1)",
-          willChange: "transform",
-        }}
-      >
-        <Tabs
-          value={mainPageTab}
-          TabIndicatorProps={{
-            children: <span className="MuiTabs-indicatorSpan" />,
-          }}
-          onChange={(_, v) => {
-            setMainPageTab(v);
-            if (v === 1) setFollowLoadingTab(true);
-            scrollToMainFeedTop("smooth");
-          }}
-          sx={{
-            minHeight: 44,
-
-            px: 0.5,
-            "& .MuiTabs-indicator": {
-              display: "flex",
-              justifyContent: "center",
-              backgroundColor: "transparent",
-            },
-            "& .MuiTabs-indicatorSpan": {
-              width: "60%",
-              backgroundColor: "var(--brand-accent-orange, #ff8c00)",
-              borderRadius: "999px",
-              height: "3px",
-            },
-            "& .MuiTab-root": {
-              fontWeight: 700,
-              textTransform: "none",
-              color:
-                theme.palette.mode === "dark"
-                  ? "rgba(255,255,255,0.55)"
-                  : "rgba(0,0,0,0.45)",
-              minHeight: 44,
-              minWidth: "auto",
-              px: 2,
-              fontSize: "0.9rem",
-              transition: "color 0.2s",
-              "&.Mui-selected": {
-                color: theme.palette.mode === "dark" ? "white" : "#111827",
-                fontWeight: 800,
-              },
-            },
-          }}
-        >
-          <Tab label={t("For You")} />
-          <Tab label={t("Following")} />
-        </Tabs>
-      </Box>
-      {/* --- */}
-      <Box
-        ref={mainPageFeedTopRef}
-        sx={{
-          scrollMarginTop: { xs: "100px", sm: "113px", md: "113px" },
-        }}
-      >
+      <Box ref={mainPageFeedTopRef} sx={MOBILE_NAV_SCROLL_MARGIN_SX}>
         <BannerCarousel
           banners={bannerAdsWithImages}
           onBannerClick={(ad) => {
@@ -2872,9 +2493,7 @@ const MainPage = () => {
           gap: 0,
         }}
       >
-        {mainPageTab === 0 ? (
-          <>
-            {!isMobile || mobileDeferredSectionsReady ? (
+        {!isMobile || mobileDeferredSectionsReady ? (
               <>
                 {showcaseEligibleGifts.length > 0 && (
                   <Box sx={{ mb: { xs: 1.5, sm: 2 } }}>
@@ -2923,7 +2542,7 @@ const MainPage = () => {
               </Box>
             )}
 
-            <Virtuoso
+        <Virtuoso
               useWindowScroll
               increaseViewportBy={{ top: 600, bottom: 1000 }}
               data={mainFeedItems}
@@ -2988,65 +2607,9 @@ const MainPage = () => {
                 ),
               }}
             />
-          </>
-        ) : followLoadingTab ? (
-          <Box display="flex" justifyContent="center" py={8}>
-            <Loader />
-          </Box>
-        ) : followedStores.length === 0 ? (
-          <Box sx={{ textAlign: "center", py: 8, px: 2 }}>
-            <PersonAddDisabledIcon
-              sx={{ fontSize: 80, color: "grey.400", mb: 2 }}
-            />
-            <Typography variant="h6" color="text.secondary" gutterBottom>
-              {t("No followed stores yet")}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {t("Follow stores from the main page to see them here")}
-            </Typography>
-          </Box>
-        ) : filteredFollowedStoresWithProducts.length === 0 ? (
-          <>
-            <br />
-            <Alert
-              severity="info"
-              sx={{
-                borderRadius: 2,
-                backgroundColor:
-                  theme.palette.mode === "dark" ? "#FFA94D" : "#e3f2fd",
-                border: `1px solid ${theme.palette.mode === "dark" ? "#FF7A1A" : "#bbdefb"}`,
-              }}
-            >
-              {t("No stores match the current filters.")}
-            </Alert>
-          </>
-        ) : (
-          <Virtuoso
-            useWindowScroll
-            increaseViewportBy={{ top: 500, bottom: 800 }}
-            data={filteredFollowedStoresWithProducts}
-            computeItemKey={(_, row) => String(row.store._id)}
-            itemContent={(_, { store, products: storeProducts }) => (
-              <StoreGroupSection
-                store={store}
-                products={storeProducts}
-                onProductOpen={handleProductClick}
-                isStoreFollowed={isStoreFollowed}
-                onFollowClick={handleFollowClick}
-                followLoading={followLoading[store._id]}
-                likeStates={likeStates}
-                isProductLiked={isProductLiked}
-                onLikeClick={handleLikeClick}
-                likeLoading={likeLoading}
-                formatPrice={formatPrice}
-                productLayout={productLayout}
-              />
-            )}
-          />
-        )}
       </Box>
 
-      {mainPageTab === 0 && finalFilteredStores.length === 0 && !loading && (
+      {finalFilteredStores.length === 0 && !loading && (
         <Alert
           severity="info"
           sx={{

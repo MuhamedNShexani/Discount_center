@@ -91,6 +91,7 @@ import { useAppSettings } from "./context/AppSettingsContext";
 import { useNotifications } from "./context/NotificationContext";
 import { useContentRefresh } from "./context/ContentRefreshContext";
 import useIsMobileLayout from "./hooks/useIsMobileLayout";
+import { useMobileHeaderActive } from "./hooks/useMobileHeaderLayout";
 import { useActiveTheme } from "./context/ActiveThemeContext";
 import { giftAPI, productAPI } from "./services/api";
 import { isExpiryStillValid } from "./utils/expiryDate";
@@ -187,6 +188,8 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
     hideMobileNavOnSearch ||
     hideMobileNavOnStoreTypes ||
     hideMobileNavOnPrivacyPolicy;
+  const mobileHeaderActive = !isSmUp && !hideMobileNavChrome;
+  useMobileHeaderActive(mobileHeaderActive);
   /** Toolbar refresh: scroll home to top + clear saved scroll, then bump refreshKey (all routes). */
   const handleNavRefresh = useCallback(() => {
     if (location.pathname === "/") {
@@ -684,54 +687,6 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
     </Badge>
   );
 
-  useEffect(() => {
-    if (isSmUp) return;
-    if (!hideMobileNavChrome) {
-      setShowMobileNavbar(true);
-    }
-  }, [isSmUp, hideMobileNavChrome]);
-
-  useEffect(() => {
-    if (isSmUp) {
-      setShowMobileNavbar(true);
-      return undefined;
-    }
-
-    if (hideMobileNavChrome) {
-      return undefined;
-    }
-
-    lastScrollYRef.current = window.scrollY || 0;
-
-    const handleScroll = () => {
-      const currentY = window.scrollY || 0;
-      const prevY = lastScrollYRef.current;
-
-      // Always show when at top.
-      if (currentY <= 0) {
-        setShowMobileNavbar(true);
-        lastScrollYRef.current = 0;
-        return;
-      }
-
-      // Ignore tiny movement to avoid flicker.
-      if (Math.abs(currentY - prevY) < 4) return;
-
-      if (currentY > prevY) {
-        // Scrolling down -> hide
-        setShowMobileNavbar(false);
-      } else {
-        // Scrolling up -> show
-        setShowMobileNavbar(true);
-      }
-
-      lastScrollYRef.current = currentY;
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [isSmUp, hideMobileNavChrome]);
-
   const navAppBarStyle = useMemo(
     () => ({
       background: getNavBarBackground(
@@ -807,39 +762,61 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
     [],
   );
 
-  return (
-    <>
-      <AppBar
-        position="fixed"
-        elevation={0}
-        style={navAppBarStyle}
-        sx={{
-          ...(isSmUp ? {} : { borderRadius: 0 }),
-          backdropFilter: isDarkNav
-            ? "blur(22px) saturate(170%)"
-            : "blur(20px)",
-          WebkitBackdropFilter: isDarkNav
-            ? "blur(22px) saturate(170%)"
-            : "blur(20px)",
-          borderBottom: isDarkNav ? "1px solid rgba(255,255,255,0.12)" : "none",
-          boxShadow: isDarkNav
-            ? isAndroidPerfMode
-              ? "0 2px 10px rgba(0,0,0,0.35)"
-              : "0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.12)"
-            : isAndroidPerfMode
-              ? "0 2px 10px rgba(0,0,0,0.08)"
-              : "0 8px 32px rgba(0,0,0,0.1)",
-          transform: isSmUp
-            ? "translateY(0)"
-            : hideMobileNavChrome
-              ? "translateY(-110%)"
-              : showMobileNavbar
-                ? "translateY(0)"
-                : "translateY(-110%)",
-          transition: isAndroidPerfMode ? "none" : "transform 260ms ease",
-          willChange: "transform",
-        }}
-      >
+  const mobileHeaderSurfaceSx = useMemo(
+    () => ({
+      background: getNavBarBackground(
+        location.pathname,
+        isDarkNav,
+        isDarkNav ? NAV_BAR_GRADIENT_DARK_GLASS : NAV_BAR_GRADIENT,
+      ),
+      backdropFilter: isDarkNav ? "blur(22px) saturate(170%)" : "blur(20px)",
+      WebkitBackdropFilter: isDarkNav
+        ? "blur(22px) saturate(170%)"
+        : "blur(20px)",
+    }),
+    [isDarkNav, location.pathname],
+  );
+
+  // Mobile: hide header on scroll down, show on scroll up / at top.
+  useEffect(() => {
+    if (!mobileHeaderActive) {
+      setShowMobileNavbar(true);
+      return undefined;
+    }
+
+    lastScrollYRef.current = window.scrollY || 0;
+    let rafId = 0;
+
+    const handleScroll = () => {
+      if (rafId) return;
+      rafId = window.requestAnimationFrame(() => {
+        rafId = 0;
+        const currentY = window.scrollY || 0;
+        const prevY = lastScrollYRef.current;
+
+        // Always show when at (or near) the top.
+        if (currentY <= 0) {
+          setShowMobileNavbar(true);
+          lastScrollYRef.current = 0;
+          return;
+        }
+
+        // Ignore tiny movement to avoid flicker.
+        if (Math.abs(currentY - prevY) < 4) return;
+
+        setShowMobileNavbar(currentY < prevY);
+        lastScrollYRef.current = currentY;
+      });
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (rafId) window.cancelAnimationFrame(rafId);
+    };
+  }, [mobileHeaderActive]);
+
+  const appBarInner = (
         <Toolbar
           sx={{
             justifyContent: isSmUp ? "flex-start" : "flex-start",
@@ -847,7 +824,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
             gap: isSmUp ? 1 : 0,
             rowGap: isSmUp ? 1 : 0,
             px: { xs: 1, sm: 2, md: 4 },
-            ...(isSmUp ? {} : { minHeight: 56 }),
+            ...(isSmUp ? {} : { minHeight: "var(--nav-height, 56px)" }),
             position: "relative",
             ...(isDarkNav
               ? {
@@ -863,7 +840,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
               : {}),
           }}
         >
-          {/* Mobile navbar — Template 1: logo + notifications | label | city */}
+          {/* Mobile navbar — Template 1: logo | search, notifications, cart, city */}
           {!isSmUp && navTemplate === "template1" && (
             <Box
               sx={{
@@ -875,44 +852,54 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
               }}
             >
               <Box
+                component={Link}
+                to="/"
                 sx={{
-                  flex: 1,
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "flex-start",
-                  gap: 0.25,
-                  minWidth: 0,
+                  flexShrink: 0,
+                  textDecoration: "none",
                 }}
               >
-                <Box
-                  component={Link}
-                  to="/"
+                <Avatar
+                  src={`${import.meta.env.BASE_URL}logo512.png`}
+                  alt={NAV_BRAND_TITLE}
+                  variant="rounded"
                   sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    flexShrink: 0,
-                    textDecoration: "none",
+                    width: 40,
+                    height: 40,
+                    borderRadius: 2.25,
+                    bgcolor: "rgba(255,255,255,0.12)",
+                    "& img": {
+                      objectFit: "cover",
+                      borderRadius: "inherit",
+                    },
+                    ...(isDarkNav
+                      ? { border: "2px solid rgba(255,255,255,0.28)" }
+                      : { border: "2px solid rgba(255,255,255,0.3)" }),
                   }}
+                />
+              </Box>
+
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "flex-end",
+                  gap: 0.25,
+                  minWidth: 0,
+                  flexShrink: 0,
+                }}
+              >
+                <IconButton
+                  component={Link}
+                  to="/search"
+                  onPointerEnter={() => prefetchSearchPageChunk()}
+                  sx={navIconBtnSx}
+                  aria-label={t("Search")}
                 >
-                  <Avatar
-                    src={`${import.meta.env.BASE_URL}logo512.png`}
-                    alt={NAV_BRAND_TITLE}
-                    variant="rounded"
-                    sx={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 2.25,
-                      bgcolor: "rgba(255,255,255,0.12)",
-                      "& img": {
-                        objectFit: "cover",
-                        borderRadius: "inherit",
-                      },
-                      ...(isDarkNav
-                        ? { border: "2px solid rgba(255,255,255,0.28)" }
-                        : { border: "2px solid rgba(255,255,255,0.3)" }),
-                    }}
-                  />
-                </Box>
+                  <SearchIcon />
+                </IconButton>
                 {NOTIFICATIONS_CENTER_ENABLED && (
                   <IconButton
                     onClick={blurThen(() => openNotifications())}
@@ -924,74 +911,22 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                     </Badge>
                   </IconButton>
                 )}
-              </Box>
-
-              <Typography
-                className="nav-brand-title"
-                component={Link}
-                to="/"
-                sx={{
-                  flex: 1,
-                  textAlign: "center",
-                  textDecoration: "none",
-                  ...navBrandTitleSx,
-                  "&:hover": { transform: "scale(1.05)" },
-                }}
-              >
-                {NAV_BRAND_TITLE}
-              </Typography>
-
-              <Box
-                sx={{
-                  flex: 1,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "flex-end",
-                  minWidth: 0,
-                }}
-              >
-                <Box
+                <IconButton
+                  onClick={blurThen(() => openDraftCart())}
+                  sx={navIconBtnSx}
+                  aria-label={t("Draft cart")}
+                >
+                  <ShoppingCartIcon />
+                </IconButton>
+                <IconButton
                   onClick={blurThen((e) =>
                     setMobileNavCityAnchor(e.currentTarget),
                   )}
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 0.25,
-                    cursor: "pointer",
-                    minWidth: 0,
-                    maxWidth: { xs: 110, sm: 140 },
-                    py: 0.4,
-                    borderRadius: "999px",
-                    WebkitTapHighlightColor: "transparent",
-                    "&:focus:not(:focus-visible)": { outline: "none" },
-                  }}
+                  sx={navIconBtnSx}
                   aria-label={t("City")}
                 >
-                  <LocationOnIcon
-                    sx={{
-                      fontSize: 18,
-                      color: navIconBtnSx?.color || "text.secondary",
-                    }}
-                  />
-                  <Typography
-                    noWrap
-                    sx={{
-                      fontWeight: 700,
-                      fontSize: "0.82rem",
-                      color: navIconBtnSx?.color || "text.primary",
-                    }}
-                  >
-                    {cities.find((c) => c.value === selectedCity)?.label ||
-                      selectedCity}
-                  </Typography>
-                  <KeyboardArrowDownIcon
-                    sx={{
-                      fontSize: 18,
-                      color: navIconBtnSx?.color || "text.secondary",
-                    }}
-                  />
-                </Box>
+                  <LocationOnIcon />
+                </IconButton>
               </Box>
 
               <Menu
@@ -2184,7 +2119,66 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
 
           {/* Controls - desktop only (mobile has its own navbar above) */}
         </Toolbar>
-      </AppBar>
+  );
+
+  const appBarSx = {
+    ...(isSmUp ? {} : { borderRadius: 0 }),
+    borderBottom: isDarkNav ? "1px solid rgba(255,255,255,0.12)" : "none",
+    boxShadow: isDarkNav
+      ? isAndroidPerfMode
+        ? "0 2px 10px rgba(0,0,0,0.35)"
+        : "0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.12)"
+      : isAndroidPerfMode
+        ? "0 2px 10px rgba(0,0,0,0.08)"
+        : "0 8px 32px rgba(0,0,0,0.1)",
+    ...mobileHeaderSurfaceSx,
+  };
+
+  return (
+    <>
+      {isSmUp ? (
+        <AppBar
+          position="fixed"
+          elevation={0}
+          style={navAppBarStyle}
+          sx={appBarSx}
+        >
+          {appBarInner}
+        </AppBar>
+      ) : mobileHeaderActive ? (
+        <Box
+          className="mobile-fixed-header"
+          sx={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 1100,
+            transform: showMobileNavbar
+              ? "translateY(0)"
+              : "translateY(-110%)",
+            transition: isAndroidPerfMode ? "none" : "transform 260ms ease",
+            willChange: "transform",
+          }}
+        >
+          <Box
+            aria-hidden
+            className="mobile-header-safe-area"
+            sx={{
+              height: "var(--safe-top)",
+              ...mobileHeaderSurfaceSx,
+            }}
+          />
+          <AppBar
+            position="static"
+            elevation={0}
+            style={navAppBarStyle}
+            sx={appBarSx}
+          >
+            {appBarInner}
+          </AppBar>
+        </Box>
+      ) : null}
 
       <Drawer
         anchor={i18n.dir() === "rtl" ? "right" : "left"}

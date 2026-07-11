@@ -430,7 +430,7 @@ const BrandCompanyList = ({ variant }) => {
     return (
       <Box
         sx={{
-          pt: { xs: "100px", sm: "113px", md: "113px" },
+          pt: { md: "113px" },
           pb: { xs: 2, sm: 4 },
         }}
       >
@@ -491,7 +491,7 @@ const BrandCompanyList = ({ variant }) => {
   return (
     <Box
       sx={{
-        pt: { xs: "100px", sm: "113px", md: "113px" },
+        pt: { md: "113px" },
         pb: { xs: 2, sm: 4 },
       }}
     >
