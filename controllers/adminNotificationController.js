@@ -1,6 +1,7 @@
 const BroadcastNotification = require("../models/BroadcastNotification");
 const User = require("../models/User");
 const { sendPushToAll } = require("../services/pushService");
+const { sendFcmToAll } = require("../services/firebaseService");
 
 const ADMIN_EMAILS = ["mshexani45@gmail.com", "admin@gmail.com"];
 
@@ -39,6 +40,7 @@ const sendNotification = async (req, res) => {
         message: "No users to notify",
         count: 0,
         pushSent: 0,
+        fcmSent: 0,
       });
     }
 
@@ -63,23 +65,40 @@ const sendNotification = async (req, res) => {
 
     await BroadcastNotification.create(createPayload);
 
-    // Send web push to system notification center
+    const notificationType = createPayload.type;
+    const pushTitle = title.trim();
+    const pushBody = (body || "").trim();
+    const pushLink = linkVal || "";
+
+    // Send web push to system notification center (unchanged)
     let pushResult = { sent: 0, failed: 0 };
     try {
-      pushResult = await sendPushToAll(
-        title.trim(),
-        (body || "").trim(),
-        { type }
-      );
+      pushResult = await sendPushToAll(pushTitle, pushBody, {
+        type: notificationType,
+      });
     } catch (pushErr) {
       console.error("Web push send error:", pushErr);
     }
 
+    // Send Firebase Cloud Messaging to registered mobile apps (additional channel)
+    let fcmResult = { sent: 0, failed: 0, removed: 0 };
+    try {
+      fcmResult = await sendFcmToAll(pushTitle, pushBody, {
+        type: notificationType,
+        link: pushLink,
+      });
+    } catch (fcmErr) {
+      console.error("FCM send error:", fcmErr);
+    }
+
     res.json({
       success: true,
-      message: `Notification sent to ${userCount} users (${pushResult.sent} push)`,
+      message: `Notification sent to ${userCount} users (${pushResult.sent} web push, ${fcmResult.sent} FCM)`,
       count: userCount,
       pushSent: pushResult.sent,
+      fcmSent: fcmResult.sent,
+      fcmFailed: fcmResult.failed,
+      fcmTokensRemoved: fcmResult.removed || 0,
     });
   } catch (error) {
     console.error("Send notification error:", error);

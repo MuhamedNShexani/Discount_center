@@ -11,12 +11,14 @@ const {
   updateDeviceProfile,
 } = require("../controllers/userController");
 const { pushSubscribe } = require("../controllers/pushController");
+const fcmRoutes = require("./fcm");
 // optionalAuth is applied globally in server.js (Bearer → req.user + audit fields)
 
 // Public routes (for anonymous users)
 router.get("/device/:deviceId", getUserByDevice);
 router.post("/view-product", recordProductView);
 router.post("/push-subscribe", pushSubscribe);
+router.use(fcmRoutes);
 
 // Like/product routes - work with auth OR deviceId (anonymous)
 router.post("/like-product", toggleProductLike);

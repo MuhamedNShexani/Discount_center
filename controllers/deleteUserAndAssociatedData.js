@@ -5,6 +5,7 @@
 const User = require("../models/User");
 const NotificationRead = require("../models/NotificationRead");
 const PushSubscription = require("../models/PushSubscription");
+const FcmToken = require("../models/FcmToken");
 const UserNotificationState = require("../models/UserNotificationState");
 const Product = require("../models/Product");
 
@@ -15,6 +16,7 @@ async function deleteUserAndAssociatedData(userId) {
   await Promise.all([
     NotificationRead.deleteMany({ userId: id }),
     PushSubscription.deleteMany({ userId: id }),
+    FcmToken.deleteMany({ userId: id }),
     UserNotificationState.deleteOne({ userId: id }),
   ]);
 
