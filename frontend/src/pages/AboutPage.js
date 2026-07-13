@@ -1,8 +1,5 @@
 import React from "react";
 import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
   Box,
   Button,
   Card,
@@ -12,14 +9,12 @@ import {
   Grid,
   IconButton,
   Stack,
-  TextField,
   Typography,
   useTheme,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import CloseIcon from "@mui/icons-material/Close";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import BusinessIcon from "@mui/icons-material/Business";
@@ -101,14 +96,6 @@ const AboutPage = ({ embedded = false, onClose } = {}) => {
     "about.blog.post1",
     "about.blog.post2",
     "about.blog.post3",
-  ];
-  const faqs = [
-    "about.faq.q1",
-    "about.faq.q2",
-    "about.faq.q3",
-    "about.faq.q4",
-    "about.faq.q5",
-    "about.faq.q6",
   ];
 
   const pageShell = embedded
@@ -451,77 +438,6 @@ const AboutPage = ({ embedded = false, onClose } = {}) => {
           </Grid>
         </MotionBox> */}
 
-        <MotionBox {...sectionFade} sx={{ mb: { xs: 6, md: 8 } }}>
-          <Typography variant="h4" sx={{ fontWeight: 800, mb: 2 }}>
-            {t("about.faq.title")}
-          </Typography>
-          <Stack spacing={1}>
-            {faqs.map((faqKey) => (
-              <Accordion
-                key={faqKey}
-                disableGutters
-                sx={{
-                  bgcolor: isDark ? "rgba(17,24,39,0.9)" : "background.paper",
-                  border: "1px solid",
-                  borderColor: isDark ? "rgba(148,163,184,0.2)" : "divider",
-                }}
-              >
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                  <Typography sx={{ fontWeight: 700 }}>{t(faqKey)}</Typography>
-                </AccordionSummary>
-                <AccordionDetails>
-                  <Typography color="text.secondary">
-                    {t(`${faqKey}.a`)}
-                  </Typography>
-                </AccordionDetails>
-              </Accordion>
-            ))}
-          </Stack>
-        </MotionBox>
-
-        {/* <MotionBox {...sectionFade}>
-          <Card>
-            <CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
-              <Typography variant="h4" sx={{ fontWeight: 800, mb: 1 }}>
-                {t("about.contact.title")}
-              </Typography>
-              <Typography color="text.secondary" sx={{ mb: 2.2 }}>
-                {t("about.contact.subtitle")}
-              </Typography>
-              <Grid container spacing={1.5}>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField fullWidth label={t("about.contact.name")} />
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField fullWidth label={t("about.contact.email")} />
-                </Grid>
-                <Grid size={{ xs: 12 }}>
-                  <TextField
-                    fullWidth
-                    multiline
-                    minRows={4}
-                    label={t("about.contact.message")}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12 }}>
-                  <Stack
-                    direction={{ xs: "column", sm: "row" }}
-                    spacing={1.3}
-                    alignItems={{ sm: "center" }}
-                    justifyContent="space-between"
-                  >
-                    <Typography variant="body2" color="text.secondary">
-                      {t("about.contact.note")}
-                    </Typography>
-                    <Button variant="contained">
-                      {t("about.contact.send")}
-                    </Button>
-                  </Stack>
-                </Grid>
-              </Grid>
-            </CardContent>
-          </Card>
-        </MotionBox> */}
       </Container>
     </Box>
   );

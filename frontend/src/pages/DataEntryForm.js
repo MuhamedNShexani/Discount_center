@@ -91,11 +91,13 @@ import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import VideoLibraryIcon from "@mui/icons-material/VideoLibrary";
 import WorkOutlineIcon from "@mui/icons-material/WorkOutline";
 import PhoneAndroidIcon from "@mui/icons-material/PhoneAndroid";
+import QuestionAnswerIcon from "@mui/icons-material/QuestionAnswer";
 import TranslateIcon from "@mui/icons-material/Translate";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 import { useAppSettings } from "../context/AppSettingsContext";
 import DataEntryAppsTab from "../components/admin/DataEntryAppsTab";
+import DataEntryCommonQuestionsTab from "../components/admin/DataEntryCommonQuestionsTab";
 import DataEntryEntityAutocomplete, {
   dataEntryEntityLabel,
 } from "../components/DataEntryEntityAutocomplete";
@@ -217,11 +219,12 @@ const LIST_TAB = {
   ADS: 6,
   JOBS: 7,
   APPS: 8,
-  CATEGORIES: 9,
-  STORE_TYPES: 10,
-  BRAND_TYPES: 11,
-  SETTINGS: 12,
-  NOTIFICATIONS: 13,
+  COMMON_QUESTIONS: 9,
+  CATEGORIES: 10,
+  STORE_TYPES: 11,
+  BRAND_TYPES: 12,
+  SETTINGS: 13,
+  NOTIFICATIONS: 14,
 };
 
 /** Horizontal scroll for action + filter rows inside each data-list tab */
@@ -1019,7 +1022,7 @@ const DataEntryForm = () => {
     const managing =
       activeListTab >= LIST_TAB.STORES && activeListTab <= LIST_TAB.REELS;
     const service =
-      activeListTab >= LIST_TAB.ADS && activeListTab <= LIST_TAB.APPS;
+      activeListTab >= LIST_TAB.ADS && activeListTab <= LIST_TAB.COMMON_QUESTIONS;
     const mainSystem =
       activeListTab >= LIST_TAB.CATEGORIES &&
       activeListTab <= LIST_TAB.BRAND_TYPES;
@@ -1034,7 +1037,7 @@ const DataEntryForm = () => {
     if (activeListTab >= LIST_TAB.STORES && activeListTab <= LIST_TAB.REELS) {
       return "managing";
     }
-    if (activeListTab >= LIST_TAB.ADS && activeListTab <= LIST_TAB.APPS) {
+    if (activeListTab >= LIST_TAB.ADS && activeListTab <= LIST_TAB.COMMON_QUESTIONS) {
       return "service";
     }
     if (
@@ -3925,7 +3928,7 @@ const DataEntryForm = () => {
         }}
       >
         <Box sx={{ p: 4, color: "white", position: "relative" }}>
-          <Grid spacing={3} alignItems="center">
+          <Grid container spacing={3} alignItems="center">
             <Grid size={{ xs: 12, md: 8 }}>
               <Box display="flex" alignItems="center" mb={2}>
                 <Avatar
@@ -4280,6 +4283,13 @@ const DataEntryForm = () => {
                 value={LIST_TAB.APPS}
                 label={t("Apps")}
                 icon={<PhoneAndroidIcon />}
+                iconPosition="start"
+              />,
+              <Tab
+                key="common-questions"
+                value={LIST_TAB.COMMON_QUESTIONS}
+                label={t("Common Questions", { defaultValue: "Common Questions" })}
+                icon={<QuestionAnswerIcon />}
                 iconPosition="start"
               />,
             ]}
@@ -4984,7 +4994,7 @@ const DataEntryForm = () => {
                   "Contact links shown in profile page. Fill only what you need.",
                 )}
               </Typography>
-              <Grid spacing={2} alignItems="center">
+              <Grid container spacing={2} alignItems="center">
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
                     fullWidth
@@ -5150,7 +5160,7 @@ const DataEntryForm = () => {
                     "Compose a notification that will be sent to all users (both registered and anonymous).",
                   )}
                 </Typography>
-                <Grid spacing={2}>
+                <Grid container spacing={2}>
                   <Grid size={{ xs: 12, md: 8 }}>
                     <TextField
                       fullWidth
@@ -8392,6 +8402,12 @@ const DataEntryForm = () => {
           {activeListTab === LIST_TAB.APPS && (
             <DataEntryAppsTab
               stores={stores}
+              toolbarSx={DATA_LIST_TAB_TOOLBAR_SCROLL_SX}
+            />
+          )}
+
+          {activeListTab === LIST_TAB.COMMON_QUESTIONS && (
+            <DataEntryCommonQuestionsTab
               toolbarSx={DATA_LIST_TAB_TOOLBAR_SCROLL_SX}
             />
           )}
@@ -12364,7 +12380,7 @@ const DataEntryForm = () => {
             </Box>
           ) : editDialog.type === "category" ? (
             <Box component="form" sx={{ mt: 1 }}>
-              <Grid spacing={2}>
+              <Grid container spacing={2}>
                 <Grid xs={12} sm={6}>
                   <TextField
                     margin="normal"
@@ -12743,7 +12759,7 @@ const DataEntryForm = () => {
                 </label>
               </Box>
 
-              <Grid spacing={2}>
+              <Grid container spacing={2}>
                 <Grid xs={12} sm={6}>
                   <FormControl fullWidth>
                     <InputLabel>{t("Pages")}</InputLabel>

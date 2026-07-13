@@ -14,16 +14,14 @@ const BRAND = {
 const isValidHex = (value) =>
   typeof value === "string" && /^#([0-9a-fA-F]{6})$/.test(value.trim());
 
-export const createAppTheme = (
-  {
-    darkMode = false,
-    language = "en",
-    primaryColor = "",
-    fontFamily = "",
-    activeFontKey = "default",
-    activeTheme = "default",
-  } = {},
-) => {
+export const createAppTheme = ({
+  darkMode = false,
+  language = "en",
+  primaryColor = "",
+  fontFamily = "",
+  activeFontKey = "default",
+  activeTheme = "default",
+} = {}) => {
   const themePrimaryMap = {
     default: BRAND.primaryBlue,
     blackWhite: "#000000",
@@ -53,8 +51,7 @@ export const createAppTheme = (
           const fontByKey = {
             default:
               "'NRT', 'Noto Sans Kurdish', 'Scheherazade New', 'Arial', sans-serif",
-            nrt:
-              "'NRT', 'Noto Sans Kurdish', 'Scheherazade New', 'Arial', sans-serif",
+            nrt: "'NRT', 'Noto Sans Kurdish', 'Scheherazade New', 'Arial', sans-serif",
             system: "system-ui, sans-serif",
             arial: "Arial, sans-serif",
             roboto: "Roboto, Arial, sans-serif",
@@ -115,7 +112,9 @@ export const createAppTheme = (
             "--brand-bg": darkMode ? "#0F172A" : BRAND.background,
             "--brand-surface": darkMode ? "#111827" : BRAND.surface,
             "--brand-text-primary": darkMode ? "#F9FAFB" : BRAND.textPrimary,
-            "--brand-text-secondary": darkMode ? "#CBD5E1" : BRAND.textSecondary,
+            "--brand-text-secondary": darkMode
+              ? "#CBD5E1"
+              : BRAND.textSecondary,
             ...(darkMode
               ? {
                   "--color-bg": "#0F172A",
@@ -271,4 +270,3 @@ export const createAppTheme = (
     },
   });
 };
-

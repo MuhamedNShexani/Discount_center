@@ -1,7 +1,12 @@
 /** Matches StoreProfile: localStorage key `cart.store.<storeId>.v1` */
 
-const PREFIX = "cart.store.";
-const SUFFIX = ".v1";
+import {
+  CART_STORE_PREFIX,
+  CART_STORE_SUFFIX,
+} from "./storeCartStorage";
+
+const PREFIX = CART_STORE_PREFIX;
+const SUFFIX = CART_STORE_SUFFIX;
 
 /**
  * @param {Array<{ _id: string, name?: string }>} stores - used to resolve store names
@@ -42,7 +47,7 @@ export function readDraftCartGroupsByStore(stores) {
 
       groups.push({
         storeId: String(storeId),
-        storeName: storeName || String(storeId),
+        storeName: storeName || "",
         totalQty,
         lines,
       });

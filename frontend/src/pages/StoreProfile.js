@@ -34,7 +34,6 @@ import {
 } from "@mui/material";
 import {
   Business,
-  WhatsApp,
   VideoLibrary,
   WorkOutline,
   ArrowForward,
@@ -46,7 +45,6 @@ import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import CardGiftcardIcon from "@mui/icons-material/CardGiftcard";
-import KeyboardDoubleArrowRightIcon from "@mui/icons-material/KeyboardDoubleArrowRight";
 import { useTranslation } from "react-i18next";
 import Loader from "../components/Loader";
 import { useUserTracking } from "../hooks/useUserTracking";
@@ -197,8 +195,6 @@ const StoreProfile = () => {
   const [cartItems, setCartItems] = useState({});
   const { cartCount } = useStoreCart(cartItems);
   const [cartToast, setCartToast] = useState({ open: false, text: "" });
-  const [orderWhatsAppConfirmOpen, setOrderWhatsAppConfirmOpen] =
-    useState(false);
   const notifyWhatsAppFallback = useCallback((hint) => {
     setCartToast({ open: true, text: hint });
   }, []);
@@ -481,16 +477,6 @@ const StoreProfile = () => {
       setCartToast({ open: true, text: t("WhatsApp number not found") });
       return;
     }
-    setOrderWhatsAppConfirmOpen(true);
-  };
-
-  const confirmOrderWhatsApp = () => {
-    const wa = getStoreWhatsAppUrl();
-    if (!wa) {
-      setOrderWhatsAppConfirmOpen(false);
-      setCartToast({ open: true, text: t("WhatsApp number not found") });
-      return;
-    }
     const payload = buildWhatsAppOrderPayload();
     const text = encodeURIComponent(payload.messageText);
     const url = wa.includes("?") ? `${wa}&text=${text}` : `${wa}?text=${text}`;
@@ -511,7 +497,6 @@ const StoreProfile = () => {
       .catch(() => {});
     trackOrderRequest(id, "whatsapp");
     openWhatsAppLink(url, { onClipboardFallback: notifyWhatsAppFallback });
-    setOrderWhatsAppConfirmOpen(false);
     setCartOpen(false);
     clearCart();
   };
@@ -584,7 +569,7 @@ const StoreProfile = () => {
   const syncCartWithLatestProductsRef = useRef(syncCartWithLatestProducts);
   syncCartWithLatestProductsRef.current = syncCartWithLatestProducts;
 
-  /** Deep link from Shopping draft cart: `/stores/:id?cart=1` opens cart dialog after hydrate + sync */
+  /** Deep link from Shopping draft cart: `/stores/:id?cart=1` opens cart drawer after hydrate + sync */
   useEffect(() => {
     const cartParam = searchParams.get("cart");
     const openCartFromUrl =
@@ -1803,79 +1788,12 @@ const StoreProfile = () => {
           updateCartQty={updateCartQty}
           clearCart={clearCart}
           requestOrderWhatsApp={requestOrderWhatsApp}
+          onAddMore={() => setCartOpen(false)}
           t={t}
           closeButtonRef={cartCloseButtonRef}
           buttonRefOnExit={cartButtonRef}
         />
       </Suspense>
-
-      <Dialog
-        open={orderWhatsAppConfirmOpen}
-        onClose={() => setOrderWhatsAppConfirmOpen(false)}
-        maxWidth="xs"
-        fullWidth
-      >
-        <DialogTitle>{t("cartOrderWhatsAppWarningTitle")}</DialogTitle>
-        <DialogContent>
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 0.5,
-              mb: 1.5,
-            }}
-          >
-            <Box
-              aria-hidden
-              sx={{
-                display: "inline-flex",
-                alignItems: "flex-start",
-                justifyContent: "flex-start",
-                px: 2.5,
-                py: 1,
-                borderRadius: 999,
-                bgcolor: "action.hover",
-                border: "1px solid",
-                borderColor: "divider",
-                "@keyframes cartOrderSwipeRight": {
-                  "0%, 100%": { transform: "translateX(-8px)" },
-                  "50%": { transform: "translateX(14px)" },
-                },
-                animation: "cartOrderSwipeRight 1.5s ease-in-out infinite",
-              }}
-            >
-              <KeyboardDoubleArrowRightIcon
-                color="primary"
-                sx={{ fontSize: 36 }}
-              />
-            </Box>
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{ fontWeight: 600 }}
-            >
-              {t("Scroll right")}
-            </Typography>
-          </Box>
-          <Typography variant="body2" color="text.secondary">
-            {t("cartOrderWhatsAppWarningBody")}
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setOrderWhatsAppConfirmOpen(false)}>
-            {t("Cancel")}
-          </Button>
-          <Button
-            onClick={confirmOrderWhatsApp}
-            variant="contained"
-            color="success"
-            startIcon={<WhatsApp />}
-          >
-            {t("Continue to WhatsApp")}
-          </Button>
-        </DialogActions>
-      </Dialog>
 
       <Snackbar
         open={cartToast.open}

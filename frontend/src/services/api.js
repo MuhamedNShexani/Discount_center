@@ -307,6 +307,15 @@ export const appAPI = {
     }),
 };
 
+export const faqAPI = {
+  getAll: () => api.get("/faqs"),
+  getAllAdmin: () => api.get("/faqs/admin"),
+  seedDefaults: () => api.post("/faqs/seed-defaults"),
+  create: (data) => api.post("/faqs", data),
+  update: (id, data) => api.put(`/faqs/${id}`, data),
+  delete: (id) => api.delete(`/faqs/${id}`),
+};
+
 // User API calls (work with auth token OR deviceId for anonymous users)
 export const userAPI = {
   getByDevice: (deviceId) => api.get(`/users/device/${deviceId}`),

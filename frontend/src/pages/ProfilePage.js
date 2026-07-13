@@ -34,6 +34,7 @@ import {
   Alert,
   IconButton,
   Stack,
+  CircularProgress,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import {
@@ -82,6 +83,10 @@ import {
   GridView as GridViewIcon,
   ContactMail as ContactMailIcon,
   EditOutlined as EditIcon,
+  LightbulbOutlined,
+  ReportProblemOutlined,
+  QuestionAnswer as QuestionAnswerIcon,
+  SendRounded,
 } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
@@ -120,9 +125,11 @@ import { useActiveTheme } from "../context/ActiveThemeContext";
 import ProfilePageSkeleton, {
   ProfileOwnerSectionSkeleton,
 } from "../components/ProfilePageSkeleton";
-import { DrawerSafeAreaTop } from "../utils/drawerSafeArea";
 import { useAboutDrawer } from "../hooks/useAboutDrawer";
 import { usePrivacyDrawer } from "../hooks/usePrivacyDrawer";
+import { useCommonQuestionsDrawer } from "../hooks/useCommonQuestionsDrawer";
+import useIsMobileLayout from "../hooks/useIsMobileLayout";
+import { useVisualViewportKeyboardInset } from "../hooks/useVisualViewportKeyboardInset";
 import {
   PROFILE_SHORTCUT_CATALOG,
   normalizeProfileShortcutIds,
@@ -226,16 +233,17 @@ const profileSettingsRowSx = {
   gap: 1,
 };
 
-const PROFILE_HERO_SAFE_BG = {
-  dark: "#0c1525",
-  light: "#eef3ff",
-};
-
 const ProfilePage = ({ onClose }) => {
   const theme = useTheme();
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
-  const { user, logout, updateProfile, deactivate, loading: authLoading } = useAuth();
+  const {
+    user,
+    logout,
+    updateProfile,
+    deactivate,
+    loading: authLoading,
+  } = useAuth();
   const { user: guestUser, updateGuestName } = useUserTracking();
   const { selectedCity, changeCity, cities } = useCityFilter();
   const { contactInfo } = useAppSettings();
@@ -245,11 +253,11 @@ const ProfilePage = ({ onClose }) => {
   const { colorMode, setColorMode } = useDarkMode();
   const { openAbout } = useAboutDrawer();
   const { openPrivacy } = usePrivacyDrawer();
+  const { openCommonQuestions } = useCommonQuestionsDrawer();
+  const isMobileLayout = useIsMobileLayout();
 
   const [guestNameDialogOpen, setGuestNameDialogOpen] = useState(false);
   const [ownerProfilePickerOpen, setOwnerProfilePickerOpen] = useState(false);
-  const [pageEnterActive, setPageEnterActive] = useState(false);
-  const [pageClosing, setPageClosing] = useState(false);
   const [guestNameInput, setGuestNameInput] = useState("");
   const [userNameDialogOpen, setUserNameDialogOpen] = useState(false);
   const [userNameInput, setUserNameInput] = useState("");
@@ -264,6 +272,9 @@ const ProfilePage = ({ onClose }) => {
   const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
   const [feedbackError, setFeedbackError] = useState("");
   const [feedbackSuccess, setFeedbackSuccess] = useState("");
+  const feedbackKeyboardInset = useVisualViewportKeyboardInset(
+    feedbackDialogOpen && isMobileLayout,
+  );
   const changeNameButtonRef = useRef(null);
   const deactivateButtonRef = useRef(null);
   const deactivateCancelButtonRef = useRef(null);
@@ -299,13 +310,6 @@ const ProfilePage = ({ onClose }) => {
     if (!isOwnerDashboardRole(user)) return;
     setDraftOwnerEntities(normalizeOwnerEntities(user));
   }, [ownerEntitiesServerSig, user?.role]);
-
-  useEffect(() => {
-    const raf = window.requestAnimationFrame(() => {
-      setPageEnterActive(true);
-    });
-    return () => window.cancelAnimationFrame(raf);
-  }, []);
 
   const loadEntityLists = useCallback(async () => {
     if (!user) return;
@@ -647,14 +651,6 @@ const ProfilePage = ({ onClose }) => {
     [onClose],
   );
 
-  const handleBack = useCallback(() => {
-    if (pageClosing) return;
-    setPageClosing(true);
-    window.setTimeout(() => {
-      onClose?.();
-    }, 170);
-  }, [onClose, pageClosing]);
-
   const isDark = theme.palette.mode === "dark";
 
   const cardSx = {
@@ -748,6 +744,12 @@ const ProfilePage = ({ onClose }) => {
           onClick: openFeedbackDialog,
         },
         {
+          key: "common-questions",
+          label: t("Common Questions", { defaultValue: "Common Questions" }),
+          Icon: QuestionAnswerIcon,
+          onClick: () => openCommonQuestions(),
+        },
+        {
           key: "about",
           label: t("About the app", { defaultValue: "About the app" }),
           Icon: InfoOutlinedIcon,
@@ -762,6 +764,23 @@ const ProfilePage = ({ onClose }) => {
       ],
     },
   ].filter((group) => group.items.length > 0);
+
+  const feedbackTypeOptions = [
+    {
+      value: "suggestion",
+      label: t("Suggestion", { defaultValue: "Suggestion" }),
+      hint: t("Share an idea", { defaultValue: "Share an idea" }),
+      Icon: LightbulbOutlined,
+      accent: "#f59e0b",
+    },
+    {
+      value: "problem",
+      label: t("Report a problem", { defaultValue: "Report a problem" }),
+      hint: t("Report a bug", { defaultValue: "Report a bug" }),
+      Icon: ReportProblemOutlined,
+      accent: "#ef4444",
+    },
+  ];
 
   const showOwnerAdminSection =
     user &&
@@ -789,23 +808,8 @@ const ProfilePage = ({ onClose }) => {
           background: isDark
             ? `linear-gradient(180deg, #0c1525 0%, #0f1927 60%, #0b1220 100%)`
             : `linear-gradient(180deg, #eef3ff 0%, #f6f9ff 25%, #fff 55%)`,
-          boxShadow: isDark
-            ? "-32px 0 96px rgba(0,0,0,0.7)"
-            : "-24px 0 64px rgba(30,111,217,0.14)",
-          transform: pageClosing
-            ? "translateX(32px)"
-            : pageEnterActive
-              ? "translateX(0)"
-              : "translateX(24px)",
-          opacity: pageClosing ? 0.55 : pageEnterActive ? 1 : 0.7,
-          transition:
-            "transform 220ms cubic-bezier(0.22,1,0.36,1), opacity 180ms ease",
-          willChange: "transform, opacity",
         }}
       >
-        <DrawerSafeAreaTop
-          bgcolor={isDark ? PROFILE_HERO_SAFE_BG.dark : PROFILE_HERO_SAFE_BG.light}
-        />
         {/* ── HERO HEADER ── */}
         <Box
           sx={{
@@ -860,8 +864,7 @@ const ProfilePage = ({ onClose }) => {
               {t("Account", { defaultValue: "Account" })}
             </Typography>
             <IconButton
-              onClick={handleBack}
-              disabled={pageClosing}
+              onClick={() => onClose?.()}
               size="small"
               sx={{
                 width: 30,
@@ -1007,10 +1010,10 @@ const ProfilePage = ({ onClose }) => {
         >
           {/* Owner / Admin section */}
           {showOwnerAdminSection && (
-              <Box sx={{ px: 2 }}>
-                {loadingEntities ? (
-                  <ProfileOwnerSectionSkeleton rows={3} />
-                ) : (
+            <Box sx={{ px: 2 }}>
+              {loadingEntities ? (
+                <ProfileOwnerSectionSkeleton rows={3} />
+              ) : (
                 <Box sx={cardSx}>
                   {user && ownerProfileChoices.length > 0 && (
                     <ListItemButton
@@ -1211,9 +1214,9 @@ const ProfilePage = ({ onClose }) => {
                     </>
                   )}
                 </Box>
-                )}
-              </Box>
-            )}
+              )}
+            </Box>
+          )}
 
           {/* Profile navigation hub */}
           <Box sx={{ px: 2 }}>
@@ -1667,45 +1670,242 @@ const ProfilePage = ({ onClose }) => {
         onClose={() => !feedbackSubmitting && setFeedbackDialogOpen(false)}
         maxWidth="sm"
         fullWidth
+        fullScreen={isMobileLayout}
+        scroll="paper"
+        disableScrollLock
+        PaperProps={{
+          sx: {
+            borderRadius: isMobileLayout ? 0 : 3,
+            overflow: "hidden",
+            bgcolor: isDark ? "#0f1927" : "#f8fafc",
+            ...(isMobileLayout
+              ? {
+                  display: "flex",
+                  flexDirection: "column",
+                  maxHeight: "100dvh",
+                  height: "100dvh",
+                  pb:
+                    feedbackKeyboardInset > 0
+                      ? `calc(${feedbackKeyboardInset}px + env(safe-area-inset-bottom, 0px))`
+                      : "env(safe-area-inset-bottom, 0px)",
+                }
+              : {}),
+          },
+        }}
       >
-        <DialogTitle>
-          {t("Suggestion / Report a problem", {
-            defaultValue: "Suggestion / Report a problem",
-          })}
-        </DialogTitle>
-        <DialogContent sx={{ pt: 1 }}>
-          <FormControl fullWidth sx={{ mb: 2, mt: 1 }}>
-            <InputLabel>{t("Type", { defaultValue: "Type" })}</InputLabel>
-            <Select
-              label={t("Type", { defaultValue: "Type" })}
-              value={feedbackType}
-              onChange={(e) => setFeedbackType(e.target.value)}
-              MenuProps={{
-                PaperProps: {
-                  sx: {
-                    "& .MuiMenuItem-root": {
-                      whiteSpace: "normal",
-                      lineHeight: 1.35,
-                    },
-                  },
-                },
-              }}
+        <Box
+          sx={{
+            flexShrink: 0,
+            px: 2.5,
+            pt: isMobileLayout
+              ? "max(12px, env(safe-area-inset-top, 0px))"
+              : 2.5,
+            pb: 2,
+            background: isDark
+              ? `linear-gradient(135deg, ${alpha("#1e6fd9", 0.22)}, ${alpha("#6366f1", 0.14)})`
+              : `linear-gradient(135deg, ${alpha("#1e6fd9", 0.1)}, ${alpha("#6366f1", 0.06)})`,
+            borderBottom: `1px solid ${isDark ? alpha("#fff", 0.08) : alpha("#1e6fd9", 0.1)}`,
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "flex-start",
+              justifyContent: "space-between",
+              gap: 1,
+            }}
+          >
+            <Box
               sx={{
-                "& .MuiSelect-select": {
-                  whiteSpace: "normal",
-                  lineHeight: 1.35,
-                  py: 1.2,
-                },
+                display: "flex",
+                alignItems: "center",
+                gap: 1.5,
+                minWidth: 0,
               }}
             >
-              <MenuItem value="suggestion" sx={{ whiteSpace: "normal" }}>
-                {t("Suggestion", { defaultValue: "Suggestion" })}
-              </MenuItem>
-              <MenuItem value="problem" sx={{ whiteSpace: "normal" }}>
-                {t("Report a problem", { defaultValue: "Report a problem" })}
-              </MenuItem>
-            </Select>
-          </FormControl>
+              <Box
+                sx={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: "14px",
+                  flexShrink: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "linear-gradient(135deg,#3b82f6,#2563eb)",
+                  boxShadow: `0 6px 18px ${alpha("#2563eb", 0.35)}`,
+                }}
+              >
+                <FeedbackIcon sx={{ fontSize: 22, color: "#fff" }} />
+              </Box>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontWeight: 800,
+                    lineHeight: 1.2,
+                    color: isDark ? "rgba(255,255,255,0.95)" : "#111827",
+                  }}
+                >
+                  {t("Help", { defaultValue: "Help" })}
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    mt: 0.35,
+                    color: isDark ? "rgba(255,255,255,0.65)" : "text.secondary",
+                    lineHeight: 1.45,
+                  }}
+                >
+                  {t("Tell us what we can improve or what went wrong.", {
+                    defaultValue:
+                      "Tell us what we can improve or what went wrong.",
+                  })}
+                </Typography>
+              </Box>
+            </Box>
+            <IconButton
+              onClick={() =>
+                !feedbackSubmitting && setFeedbackDialogOpen(false)
+              }
+              disabled={feedbackSubmitting}
+              size="small"
+              sx={{
+                mt: 0.25,
+                bgcolor: isDark ? alpha("#fff", 0.08) : alpha("#fff", 0.85),
+                "&:hover": {
+                  bgcolor: isDark ? alpha("#fff", 0.12) : "#fff",
+                },
+              }}
+              aria-label={t("Close")}
+            >
+              <CloseIcon sx={{ fontSize: 18 }} />
+            </IconButton>
+          </Box>
+        </Box>
+
+        <DialogContent
+          sx={{
+            px: { xs: 2, sm: 2.5 },
+            pt: 2,
+            pb: 1,
+            ...(isMobileLayout
+              ? { flex: 1, minHeight: 0, overflow: "auto" }
+              : {}),
+          }}
+        >
+          <Typography
+            variant="caption"
+            sx={{
+              display: "block",
+              mb: 1,
+              fontWeight: 700,
+              letterSpacing: "0.04em",
+              textTransform: "uppercase",
+              color: "text.secondary",
+            }}
+          >
+            {t("What is this about?", { defaultValue: "What is this about?" })}
+          </Typography>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 1,
+              mb: 2.5,
+            }}
+          >
+            {feedbackTypeOptions.map(({ value, label, hint, Icon, accent }) => {
+              const selected = feedbackType === value;
+              return (
+                <Box
+                  key={value}
+                  component="button"
+                  type="button"
+                  onClick={() => setFeedbackType(value)}
+                  sx={{
+                    textAlign: "left",
+                    p: 1.25,
+                    border: `1.5px solid ${
+                      selected
+                        ? accent
+                        : isDark
+                          ? alpha("#fff", 0.1)
+                          : alpha("#000", 0.08)
+                    }`,
+                    borderRadius: 2,
+                    cursor: "pointer",
+                    background: selected
+                      ? isDark
+                        ? alpha(accent, 0.14)
+                        : alpha(accent, 0.08)
+                      : isDark
+                        ? alpha("#fff", 0.03)
+                        : "#fff",
+                    boxShadow: selected
+                      ? `0 6px 18px ${alpha(accent, 0.22)}`
+                      : "none",
+                    transition: "all 0.18s ease",
+                    "&:hover": {
+                      borderColor: accent,
+                      transform: "translateY(-1px)",
+                    },
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: "10px",
+                      mb: 0.75,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      bgcolor: alpha(accent, selected ? 0.22 : 0.12),
+                      color: accent,
+                    }}
+                  >
+                    <Icon sx={{ fontSize: 18 }} />
+                  </Box>
+                  <Typography
+                    sx={{
+                      fontSize: "0.82rem",
+                      fontWeight: 700,
+                      color: isDark ? "rgba(255,255,255,0.92)" : "#111827",
+                      lineHeight: 1.25,
+                    }}
+                  >
+                    {label}
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      display: "block",
+                      mt: 0.25,
+                      color: "text.secondary",
+                      lineHeight: 1.3,
+                    }}
+                  >
+                    {hint}
+                  </Typography>
+                </Box>
+              );
+            })}
+          </Box>
+
+          <Typography
+            variant="caption"
+            sx={{
+              display: "block",
+              mb: 1,
+              fontWeight: 700,
+              letterSpacing: "0.04em",
+              textTransform: "uppercase",
+              color: "text.secondary",
+            }}
+          >
+            {t("Your message", { defaultValue: "Your message" })}
+          </Typography>
           <TextField
             fullWidth
             multiline
@@ -1716,22 +1916,159 @@ const ProfilePage = ({ onClose }) => {
             placeholder={t("Write your note here...", {
               defaultValue: "Write your note here...",
             })}
+            onFocus={(e) => {
+              if (!isMobileLayout) return;
+              window.setTimeout(() => {
+                e.target.scrollIntoView({
+                  block: "center",
+                  behavior: "smooth",
+                });
+              }, 280);
+            }}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                borderRadius: 2,
+                bgcolor: isDark ? alpha("#fff", 0.04) : "#fff",
+                "& fieldset": {
+                  borderColor: isDark
+                    ? alpha("#fff", 0.1)
+                    : alpha("#1e6fd9", 0.12),
+                },
+                "&:hover fieldset": {
+                  borderColor: isDark
+                    ? alpha("#fff", 0.18)
+                    : alpha("#1e6fd9", 0.28),
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: "primary.main",
+                },
+              },
+            }}
           />
+
+          {contactItems.length > 0 && (
+            <Box
+              sx={{
+                mt: 2.5,
+                p: 1.5,
+                borderRadius: 2,
+                border: `1px solid ${isDark ? alpha("#fff", 0.08) : alpha("#1e6fd9", 0.1)}`,
+                bgcolor: isDark ? alpha("#fff", 0.03) : "#fff",
+              }}
+            >
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 1,
+                  mb: 1.25,
+                }}
+              >
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                  <ContactMailIcon
+                    sx={{ fontSize: 18, color: "primary.main" }}
+                  />
+                  <Typography sx={{ fontWeight: 700, fontSize: "0.9rem" }}>
+                    {t("Contact Us")}
+                  </Typography>
+                </Box>
+              </Box>
+              <Box
+                sx={{
+                  display: "flex",
+                  gap: 0.75,
+                  flexWrap: "wrap",
+                }}
+              >
+                {contactItems.map((item) => {
+                  const href = normalizeUrl(item.value, item.key);
+                  const btnSx = {
+                    minWidth: 42,
+                    width: 42,
+                    height: 42,
+                    p: 0,
+                    borderRadius: 1.5,
+                    borderColor: isDark
+                      ? alpha("#fff", 0.1)
+                      : alpha("#000", 0.08),
+                    color: "text.secondary",
+                    flexShrink: 0,
+                    transition: "all 0.15s ease",
+                    "&:hover": {
+                      borderColor: "primary.main",
+                      color: "primary.main",
+                      transform: "translateY(-1px)",
+                      boxShadow: `0 4px 12px ${alpha("#1e6fd9", 0.2)}`,
+                    },
+                  };
+                  if (item.key === "whatsapp" && href) {
+                    return (
+                      <Button
+                        key={item.key}
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          openWhatsAppLink(href);
+                        }}
+                        size="small"
+                        variant="outlined"
+                        sx={btnSx}
+                      >
+                        {item.icon}
+                      </Button>
+                    );
+                  }
+                  return (
+                    <Button
+                      key={item.key}
+                      component="a"
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      size="small"
+                      variant="outlined"
+                      sx={btnSx}
+                    >
+                      {item.icon}
+                    </Button>
+                  );
+                })}
+              </Box>
+            </Box>
+          )}
+
           {feedbackError && (
-            <Alert severity="error" sx={{ mt: 2 }}>
+            <Alert severity="error" sx={{ mt: 2, borderRadius: 2 }}>
               {feedbackError}
             </Alert>
           )}
           {feedbackSuccess && (
-            <Alert severity="success" sx={{ mt: 2 }}>
+            <Alert severity="success" sx={{ mt: 2, borderRadius: 2 }}>
               {feedbackSuccess}
             </Alert>
           )}
         </DialogContent>
-        <DialogActions>
+
+        <DialogActions
+          sx={{
+            flexShrink: 0,
+            px: { xs: 2, sm: 2.5 },
+            py: 2,
+            gap: 1,
+            borderTop: `1px solid ${isDark ? alpha("#fff", 0.08) : alpha("#1e6fd9", 0.08)}`,
+            bgcolor: isDark ? alpha("#fff", 0.02) : alpha("#fff", 0.9),
+            flexDirection: isMobileLayout ? "column-reverse" : "row",
+          }}
+        >
           <Button
             onClick={() => setFeedbackDialogOpen(false)}
             disabled={feedbackSubmitting}
+            fullWidth={isMobileLayout}
+            sx={{
+              color: "text.secondary",
+              fontWeight: 600,
+            }}
           >
             {t("Cancel")}
           </Button>
@@ -1739,6 +2076,20 @@ const ProfilePage = ({ onClose }) => {
             variant="contained"
             onClick={submitFeedback}
             disabled={feedbackSubmitting}
+            fullWidth={isMobileLayout}
+            startIcon={
+              feedbackSubmitting ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : (
+                <SendRounded sx={{ fontSize: 18 }} />
+              )
+            }
+            sx={{
+              fontWeight: 700,
+              borderRadius: 2,
+              py: 1.05,
+              boxShadow: `0 6px 18px ${alpha("#2563eb", 0.28)}`,
+            }}
           >
             {feedbackSubmitting
               ? t("Sending...", { defaultValue: "Sending..." })

@@ -11,7 +11,11 @@ import React, {
 import { Drawer, useTheme } from "@mui/material";
 import { Navigate } from "react-router-dom";
 import ProfilePageSkeleton from "../components/ProfilePageSkeleton";
-import { DrawerBody, drawerPaperSx } from "../utils/drawerSafeArea";
+import {
+  DrawerBody,
+  DrawerSafeAreaTop,
+  drawerPaperSx,
+} from "../utils/drawerSafeArea";
 
 const ProfilePage = lazy(() => import("../pages/ProfilePage"));
 
@@ -45,11 +49,14 @@ export function ProfileDrawerProvider({ children }) {
         }}
       >
         {open ? (
-          <DrawerBody>
-            <Suspense fallback={<ProfilePageSkeleton />}>
-              <ProfilePage onClose={closeProfile} />
-            </Suspense>
-          </DrawerBody>
+          <>
+            <DrawerSafeAreaTop bgcolor={isDark ? "#0c1525" : "#eef3ff"} />
+            <DrawerBody>
+              <Suspense fallback={<ProfilePageSkeleton />}>
+                <ProfilePage onClose={closeProfile} />
+              </Suspense>
+            </DrawerBody>
+          </>
         ) : null}
       </Drawer>
     </ProfileDrawerContext.Provider>

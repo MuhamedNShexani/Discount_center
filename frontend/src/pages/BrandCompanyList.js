@@ -1,8 +1,4 @@
-import React, {
-  useState,
-  useEffect,
-  useMemo,
-} from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -257,7 +253,10 @@ const BrandCompanyList = ({ variant }) => {
       setError(
         err.response?.data?.message ||
           err.response?.data?.msg ||
-          getSyncErrorHint(err, t("Network error. Please check your connection.")),
+          getSyncErrorHint(
+            err,
+            t("Network error. Please check your connection."),
+          ),
       );
       console.error("Error fetching Brands:", err);
     } finally {
@@ -434,7 +433,10 @@ const BrandCompanyList = ({ variant }) => {
           pb: { xs: 2, sm: 4 },
         }}
       >
-        <Container maxWidth="lg" sx={{ px: { xs: 1.5, sm: 2 } }}>
+        <Container
+          maxWidth="lg"
+          sx={{ mt: { xs: 4, sm: 0, md: 0 }, px: { xs: 1.5, sm: 2 } }}
+        >
           <Skeleton
             variant="rounded"
             sx={{
@@ -495,7 +497,10 @@ const BrandCompanyList = ({ variant }) => {
         pb: { xs: 2, sm: 4 },
       }}
     >
-      <Container maxWidth="lg" sx={{ px: { xs: 1.5, sm: 2 } }}>
+      <Container
+        maxWidth="lg"
+        sx={{ mt: { xs: 4, sm: 0, md: 0 }, px: { xs: 1.5, sm: 2 } }}
+      >
         {/* Ads banner — same as MainPage `BannerCarousel` */}
         <BannerCarousel
           banners={bannerAdsWithImages}

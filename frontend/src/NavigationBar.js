@@ -134,6 +134,9 @@ const NAV_BRAND_TITLE = "iDashkan";
 const NAV_BRAND_TITLE_FONT_FAMILY =
   '"Brush Script MT", "Brush Script", "Segoe Script", cursive';
 
+/** Minimum downward scroll from top (px) before the mobile top nav hides. */
+const MOBILE_NAV_HIDE_AFTER_SCROLL_PX = 50;
+
 /** Minimum upward scroll (px) before the mobile top nav reappears after hiding. */
 const MOBILE_NAV_REVEAL_SCROLL_UP_PX = 96;
 
@@ -162,9 +165,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
   const { contactInfo } = useAppSettings();
   const { colorMode, setColorMode } = useDarkMode();
 
-  const {
-    unreadCount,
-  } = useNotifications();
+  const { unreadCount } = useNotifications();
   const isSmUp = !useIsMobileLayout();
   const { triggerRefresh } = useContentRefresh();
   const { navConfig } = useActiveTheme();
@@ -580,50 +581,95 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
         to: "/companies",
         Icon: CorporateFareIcon,
       },
-      { label: t("Shopping", { defaultValue: "Shopping" }), to: "/shopping", Icon: ShoppingBagIcon },
+      {
+        label: t("Shopping", { defaultValue: "Shopping" }),
+        to: "/shopping",
+        Icon: ShoppingBagIcon,
+      },
       { label: t("Gifts"), to: "/gifts", Icon: CardGiftcardIcon },
       { label: t("Find Job"), to: "/findjob", Icon: WorkOutlineIcon },
     ];
 
     const account = [
       { label: t("Favourites"), to: "/favourites", Icon: FavoriteIcon },
-      { label: t("About the app", { defaultValue: "About the app" }), to: "/about", Icon: InfoOutlinedIcon },
-      { label: t("Privacy Policy"), to: "/privacy-policy", Icon: PrivacyTipIcon },
+      {
+        label: t("About the app", { defaultValue: "About the app" }),
+        to: "/about",
+        Icon: InfoOutlinedIcon,
+      },
+      {
+        label: t("Privacy Policy"),
+        to: "/privacy-policy",
+        Icon: PrivacyTipIcon,
+      },
     ];
 
-    const owner = isAuthenticated && canSeeOwnerNavSection(user)
-      ? [
-          {
-            label: t("ownerMyProfile", { defaultValue: "My profile" }),
-            to: ownerMyProfileNavPath,
-            Icon: PersonIcon,
-            profileFallback: ownerMyProfileNavPath === "/profile",
-          },
-          {
-            label: t("Owner dashboard", { defaultValue: "Owner dashboard" }),
-            to: "/owner-dashboard",
-            Icon: DashboardIcon,
-          },
-          {
-            label: t("Owner Data Entry", { defaultValue: "Owner Data Entry" }),
-            to: "/owner-data-entry",
-            Icon: AddOwnerDataEntryIcon,
-          },
-        ]
-      : [];
+    const owner =
+      isAuthenticated && canSeeOwnerNavSection(user)
+        ? [
+            {
+              label: t("ownerMyProfile", { defaultValue: "My profile" }),
+              to: ownerMyProfileNavPath,
+              Icon: PersonIcon,
+              profileFallback: ownerMyProfileNavPath === "/profile",
+            },
+            {
+              label: t("Owner dashboard", { defaultValue: "Owner dashboard" }),
+              to: "/owner-dashboard",
+              Icon: DashboardIcon,
+            },
+            {
+              label: t("Owner Data Entry", {
+                defaultValue: "Owner Data Entry",
+              }),
+              to: "/owner-data-entry",
+              Icon: AddOwnerDataEntryIcon,
+            },
+          ]
+        : [];
 
     const admin = showAdminNav
       ? [
-          { label: t("Data Entry"), to: "/admin", Icon: AdminPanelSettingsIcon },
+          {
+            label: t("Data Entry"),
+            to: "/admin",
+            Icon: AdminPanelSettingsIcon,
+          },
           ...(isFullAdmin
             ? [
                 { label: t("Users"), to: "/admin/users", Icon: PeopleIcon },
-                { label: t("translationPage.title"), to: "/admin/translations", Icon: LanguageIcon },
-                { label: t("Admin Dashboard"), to: "/admin/dashboard", Icon: DashboardIcon },
-                { label: t("Customization"), to: "/admin/customization", Icon: SettingsIcon },
-                { label: t("Visitors report"), to: "/admin/visitors", Icon: BarChartIcon },
-                { label: t("User feedback", { defaultValue: "User feedback" }), to: "/admin/feedback", Icon: FeedbackIcon },
-                { label: t("City management", { defaultValue: "City management" }), to: "/admin/cities", Icon: LocationOnIcon },
+                {
+                  label: t("translationPage.title"),
+                  to: "/admin/translations",
+                  Icon: LanguageIcon,
+                },
+                {
+                  label: t("Admin Dashboard"),
+                  to: "/admin/dashboard",
+                  Icon: DashboardIcon,
+                },
+                {
+                  label: t("Customization"),
+                  to: "/admin/customization",
+                  Icon: SettingsIcon,
+                },
+                {
+                  label: t("Visitors report"),
+                  to: "/admin/visitors",
+                  Icon: BarChartIcon,
+                },
+                {
+                  label: t("User feedback", { defaultValue: "User feedback" }),
+                  to: "/admin/feedback",
+                  Icon: FeedbackIcon,
+                },
+                {
+                  label: t("City management", {
+                    defaultValue: "City management",
+                  }),
+                  to: "/admin/cities",
+                  Icon: LocationOnIcon,
+                },
               ]
             : []),
         ]
@@ -631,9 +677,14 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
 
     return [
       { title: t("Discover", { defaultValue: "Discover" }), items: primary },
-      { title: t("Marketplace", { defaultValue: "Marketplace" }), items: marketplace },
+      {
+        title: t("Marketplace", { defaultValue: "Marketplace" }),
+        items: marketplace,
+      },
       { title: t("Account", { defaultValue: "Account" }), items: account },
-      ...(owner.length ? [{ title: t("Owner", { defaultValue: "Owner" }), items: owner }] : []),
+      ...(owner.length
+        ? [{ title: t("Owner", { defaultValue: "Owner" }), items: owner }]
+        : []),
       ...(admin.length ? [{ title: t("Admin"), items: admin }] : []),
     ];
   }, [
@@ -780,7 +831,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
     [isDarkNav, location.pathname],
   );
 
-  // Mobile: hide on scroll down; reveal only after a deliberate upward scroll.
+  // Mobile: show at top; hide after 10px scroll down; reveal after deliberate upward scroll.
   useEffect(() => {
     if (!mobileHeaderActive) {
       setShowMobileNavbar(true);
@@ -790,6 +841,9 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
 
     lastScrollYRef.current = window.scrollY || 0;
     scrollUpAccumRef.current = 0;
+    setShowMobileNavbar(
+      lastScrollYRef.current < MOBILE_NAV_HIDE_AFTER_SCROLL_PX,
+    );
     let rafId = 0;
 
     const handleScroll = () => {
@@ -799,10 +853,10 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
         const currentY = window.scrollY || 0;
         const prevY = lastScrollYRef.current;
 
-        if (currentY <= 0) {
+        if (currentY < MOBILE_NAV_HIDE_AFTER_SCROLL_PX) {
           setShowMobileNavbar(true);
           scrollUpAccumRef.current = 0;
-          lastScrollYRef.current = 0;
+          lastScrollYRef.current = currentY;
           return;
         }
 
@@ -832,1308 +886,1292 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
   }, [mobileHeaderActive]);
 
   const appBarInner = (
-        <Toolbar
+    <Toolbar
+      sx={{
+        justifyContent: isSmUp ? "flex-start" : "flex-start",
+        flexWrap: isSmUp ? "wrap" : "nowrap",
+        gap: isSmUp ? 1 : 0,
+        rowGap: isSmUp ? 1 : 0,
+        px: { xs: 1, sm: 2, md: 4 },
+        ...(isSmUp ? {} : { minHeight: "var(--nav-height, 56px)" }),
+        position: "relative",
+        ...(isDarkNav
+          ? {
+              "&::before": {
+                content: '""',
+                position: "absolute",
+                inset: 0,
+                pointerEvents: "none",
+                background:
+                  "linear-gradient(180deg, rgba(255,255,255,0.07) 0%, transparent 42%)",
+              },
+            }
+          : {}),
+      }}
+    >
+      {/* Mobile navbar — Template 1: logo | search, notifications, cart, city */}
+      {!isSmUp && navTemplate === "template1" && (
+        <Box
           sx={{
-            justifyContent: isSmUp ? "flex-start" : "flex-start",
-            flexWrap: isSmUp ? "wrap" : "nowrap",
-            gap: isSmUp ? 1 : 0,
-            rowGap: isSmUp ? 1 : 0,
-            px: { xs: 1, sm: 2, md: 4 },
-            ...(isSmUp ? {} : { minHeight: "var(--nav-height, 56px)" }),
-            position: "relative",
-            ...(isDarkNav
-              ? {
-                  "&::before": {
-                    content: '""',
-                    position: "absolute",
-                    inset: 0,
-                    pointerEvents: "none",
-                    background:
-                      "linear-gradient(180deg, rgba(255,255,255,0.07) 0%, transparent 42%)",
-                  },
-                }
-              : {}),
+            display: "flex",
+            alignItems: "center",
+            width: "100%",
+            justifyContent: "space-between",
+            gap: 0.5,
           }}
         >
-          {/* Mobile navbar — Template 1: logo | search, notifications, cart, city */}
-          {!isSmUp && navTemplate === "template1" && (
-            <Box
+          <Box
+            component={Link}
+            to="/"
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              flexShrink: 0,
+              textDecoration: "none",
+            }}
+          >
+            <Avatar
+              src={`${import.meta.env.BASE_URL}logo512.png`}
+              alt={NAV_BRAND_TITLE}
+              variant="rounded"
               sx={{
-                display: "flex",
-                alignItems: "center",
-                width: "100%",
-                justifyContent: "space-between",
-                gap: 0.5,
+                width: 40,
+                height: 40,
+                borderRadius: 2.25,
+                bgcolor: "rgba(255,255,255,0.12)",
+                "& img": {
+                  objectFit: "cover",
+                  borderRadius: "inherit",
+                },
+                ...(isDarkNav
+                  ? { border: "2px solid rgba(255,255,255,0.28)" }
+                  : { border: "2px solid rgba(255,255,255,0.3)" }),
+              }}
+            />
+          </Box>
+
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-end",
+              gap: 0.25,
+              minWidth: 0,
+              flexShrink: 0,
+            }}
+          >
+            <IconButton
+              component={Link}
+              to="/search"
+              onPointerEnter={() => prefetchSearchPageChunk()}
+              sx={navIconBtnSx}
+              aria-label={t("Search")}
+            >
+              <SearchIcon />
+            </IconButton>
+            {NOTIFICATIONS_CENTER_ENABLED && (
+              <IconButton
+                onClick={blurThen(() => openNotifications())}
+                sx={navIconBtnSx}
+                aria-label={t("Notifications")}
+              >
+                <Badge badgeContent={unreadCount} color="error">
+                  <NotificationsIcon />
+                </Badge>
+              </IconButton>
+            )}
+            <IconButton
+              onClick={blurThen(() => openDraftCart())}
+              sx={navIconBtnSx}
+              aria-label={t("Draft cart")}
+            >
+              <ShoppingCartIcon />
+            </IconButton>
+            <IconButton
+              onClick={blurThen((e) => setMobileNavCityAnchor(e.currentTarget))}
+              sx={navIconBtnSx}
+              aria-label={t("City")}
+            >
+              <LocationOnIcon />
+            </IconButton>
+          </Box>
+
+          <Menu
+            anchorEl={mobileNavCityAnchor}
+            open={Boolean(mobileNavCityAnchor)}
+            onClose={() => setMobileNavCityAnchor(null)}
+            anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+            transformOrigin={{ vertical: "top", horizontal: "right" }}
+            PaperProps={{ sx: { mt: 1, minWidth: 200, maxHeight: 320 } }}
+          >
+            {cities.map((city) => (
+              <MenuItem
+                key={city.value}
+                selected={selectedCity === city.value}
+                onClick={() => {
+                  changeCity(city.value);
+                  setMobileNavCityAnchor(null);
+                }}
+              >
+                {city.label}
+              </MenuItem>
+            ))}
+          </Menu>
+        </Box>
+      )}
+
+      {!isSmUp && navTemplate === "template3" && (
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            width: "100%",
+            justifyContent: "space-between",
+            gap: 0.5,
+          }}
+        >
+          <Box
+            onClick={blurThen((e) => setMobileNavCityAnchor(e.currentTarget))}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 0.25,
+              cursor: "pointer",
+              minWidth: 0,
+              maxWidth: { xs: 92, sm: 130 },
+              py: 0.4,
+              borderRadius: "999px",
+              WebkitTapHighlightColor: "transparent",
+              "&:focus:not(:focus-visible)": { outline: "none" },
+            }}
+            aria-label={t("City")}
+          >
+            <LocationOnIcon
+              sx={{
+                fontSize: 18,
+                color: navIconBtnSx?.color || "text.secondary",
+              }}
+            />
+            <Typography
+              noWrap
+              sx={{
+                fontWeight: 700,
+                fontSize: "0.82rem",
+                color: navIconBtnSx?.color || "text.primary",
               }}
             >
-              <Box
-                component={Link}
-                to="/"
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  flexShrink: 0,
-                  textDecoration: "none",
-                }}
-              >
-                <Avatar
-                  src={`${import.meta.env.BASE_URL}logo512.png`}
-                  alt={NAV_BRAND_TITLE}
-                  variant="rounded"
-                  sx={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 2.25,
-                    bgcolor: "rgba(255,255,255,0.12)",
-                    "& img": {
-                      objectFit: "cover",
-                      borderRadius: "inherit",
-                    },
-                    ...(isDarkNav
-                      ? { border: "2px solid rgba(255,255,255,0.28)" }
-                      : { border: "2px solid rgba(255,255,255,0.3)" }),
-                  }}
-                />
-              </Box>
-
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "flex-end",
-                  gap: 0.25,
-                  minWidth: 0,
-                  flexShrink: 0,
-                }}
-              >
-                <IconButton
-                  component={Link}
-                  to="/search"
-                  onPointerEnter={() => prefetchSearchPageChunk()}
-                  sx={navIconBtnSx}
-                  aria-label={t("Search")}
-                >
-                  <SearchIcon />
-                </IconButton>
-                {NOTIFICATIONS_CENTER_ENABLED && (
-                  <IconButton
-                    onClick={blurThen(() => openNotifications())}
-                    sx={navIconBtnSx}
-                    aria-label={t("Notifications")}
-                  >
-                    <Badge badgeContent={unreadCount} color="error">
-                      <NotificationsIcon />
-                    </Badge>
-                  </IconButton>
-                )}
-                <IconButton
-                  onClick={blurThen(() => openDraftCart())}
-                  sx={navIconBtnSx}
-                  aria-label={t("Draft cart")}
-                >
-                  <ShoppingCartIcon />
-                </IconButton>
-                <IconButton
-                  onClick={blurThen((e) =>
-                    setMobileNavCityAnchor(e.currentTarget),
-                  )}
-                  sx={navIconBtnSx}
-                  aria-label={t("City")}
-                >
-                  <LocationOnIcon />
-                </IconButton>
-              </Box>
-
-              <Menu
-                anchorEl={mobileNavCityAnchor}
-                open={Boolean(mobileNavCityAnchor)}
-                onClose={() => setMobileNavCityAnchor(null)}
-                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-                transformOrigin={{ vertical: "top", horizontal: "right" }}
-                PaperProps={{ sx: { mt: 1, minWidth: 200, maxHeight: 320 } }}
-              >
-                {cities.map((city) => (
-                  <MenuItem
-                    key={city.value}
-                    selected={selectedCity === city.value}
-                    onClick={() => {
-                      changeCity(city.value);
-                      setMobileNavCityAnchor(null);
-                    }}
-                  >
-                    {city.label}
-                  </MenuItem>
-                ))}
-              </Menu>
-            </Box>
-          )}
-
-          {!isSmUp && navTemplate === "template3" && (
-            <Box
+              {cities.find((c) => c.value === selectedCity)?.label ||
+                selectedCity}
+            </Typography>
+            <KeyboardArrowDownIcon
               sx={{
-                display: "flex",
-                alignItems: "center",
-                width: "100%",
-                justifyContent: "space-between",
-                gap: 0.5,
+                fontSize: 18,
+                color: navIconBtnSx?.color || "text.secondary",
               }}
+            />
+          </Box>
+          <Typography
+            className="nav-brand-title"
+            component={Link}
+            to="/"
+            sx={{
+              flex: 1,
+              textAlign: "center",
+              textDecoration: "none",
+              ...navBrandTitleSx,
+              "&:hover": { transform: "scale(1.05)" },
+            }}
+          >
+            {NAV_BRAND_TITLE}
+          </Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.9 }}>
+            {NOTIFICATIONS_CENTER_ENABLED && (
+              <IconButton
+                onClick={blurThen(() => openNotifications())}
+                sx={navIconBtnSx}
+                aria-label={t("Notifications")}
+              >
+                <Badge badgeContent={unreadCount} color="error">
+                  <NotificationsIcon />
+                </Badge>
+              </IconButton>
+            )}
+            <IconButton
+              onClick={blurThen(() => openProfile())}
+              sx={{ p: 0.25 }}
+              aria-label={t("Profile")}
             >
-              <Box
-                onClick={blurThen((e) => setMobileNavCityAnchor(e.currentTarget))}
+              <Avatar
                 sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 0.25,
-                  cursor: "pointer",
-                  minWidth: 0,
-                  maxWidth: { xs: 92, sm: 130 },
-                  py: 0.4,
-                  borderRadius: "999px",
-                  WebkitTapHighlightColor: "transparent",
-                  "&:focus:not(:focus-visible)": { outline: "none" },
-                }}
-                aria-label={t("City")}
-              >
-                <LocationOnIcon
-                  sx={{ fontSize: 18, color: navIconBtnSx?.color || "text.secondary" }}
-                />
-                <Typography
-                  noWrap
-                  sx={{
-                    fontWeight: 700,
-                    fontSize: "0.82rem",
-                    color: navIconBtnSx?.color || "text.primary",
-                  }}
-                >
-                  {cities.find((c) => c.value === selectedCity)?.label ||
-                    selectedCity}
-                </Typography>
-                <KeyboardArrowDownIcon
-                  sx={{ fontSize: 18, color: navIconBtnSx?.color || "text.secondary" }}
-                />
-              </Box>
-              <Typography
-                className="nav-brand-title"
-                component={Link}
-                to="/"
-                sx={{
-                  flex: 1,
-                  textAlign: "center",
-                  textDecoration: "none",
-                  ...navBrandTitleSx,
-                  "&:hover": { transform: "scale(1.05)" },
+                  width: 30,
+                  height: 30,
+                  fontSize: "0.78rem",
+                  fontWeight: 800,
+                  bgcolor: "primary.main",
                 }}
               >
-                {NAV_BRAND_TITLE}
-              </Typography>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.9 }}>
-                {NOTIFICATIONS_CENTER_ENABLED && (
-                  <IconButton
-                    onClick={blurThen(() => openNotifications())}
-                    sx={navIconBtnSx}
-                    aria-label={t("Notifications")}
-                  >
-                    <Badge badgeContent={unreadCount} color="error">
-                      <NotificationsIcon />
-                    </Badge>
-                  </IconButton>
-                )}
-                <IconButton
-                  onClick={blurThen(() => openProfile())}
-                  sx={{ p: 0.25 }}
-                  aria-label={t("Profile")}
-                >
-                  <Avatar
-                    sx={{
-                      width: 30,
-                      height: 30,
-                      fontSize: "0.78rem",
-                      fontWeight: 800,
-                      bgcolor: "primary.main",
-                    }}
-                  >
-                    {(displayName || "U").charAt(0).toUpperCase()}
-                  </Avatar>
-                </IconButton>
-              </Box>
+                {(displayName || "U").charAt(0).toUpperCase()}
+              </Avatar>
+            </IconButton>
+          </Box>
 
-              <Menu
-                anchorEl={mobileNavCityAnchor}
-                open={Boolean(mobileNavCityAnchor)}
-                onClose={() => setMobileNavCityAnchor(null)}
-                anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-                transformOrigin={{ vertical: "top", horizontal: "left" }}
-                PaperProps={{ sx: { mt: 1, minWidth: 200, maxHeight: 320 } }}
+          <Menu
+            anchorEl={mobileNavCityAnchor}
+            open={Boolean(mobileNavCityAnchor)}
+            onClose={() => setMobileNavCityAnchor(null)}
+            anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+            transformOrigin={{ vertical: "top", horizontal: "left" }}
+            PaperProps={{ sx: { mt: 1, minWidth: 200, maxHeight: 320 } }}
+          >
+            {cities.map((city) => (
+              <MenuItem
+                key={city.value}
+                selected={selectedCity === city.value}
+                onClick={() => {
+                  changeCity(city.value);
+                  setMobileNavCityAnchor(null);
+                }}
               >
-                {cities.map((city) => (
-                  <MenuItem
-                    key={city.value}
-                    selected={selectedCity === city.value}
-                    onClick={() => {
-                      changeCity(city.value);
-                      setMobileNavCityAnchor(null);
-                    }}
-                  >
-                    {city.label}
-                  </MenuItem>
-                ))}
-              </Menu>
-            </Box>
-          )}
+                {city.label}
+              </MenuItem>
+            ))}
+          </Menu>
+        </Box>
+      )}
 
-          {!isSmUp && navTemplate === "template2" && (
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                width: "100%",
-                justifyContent: "space-between",
-                gap: 0.5,
-              }}
+      {!isSmUp && navTemplate === "template2" && (
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            width: "100%",
+            justifyContent: "space-between",
+            gap: 0.5,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.9 }}>
+            <IconButton
+              component={Link}
+              to="/search"
+              onPointerEnter={() => prefetchSearchPageChunk()}
+              sx={navIconBtnSx}
+              aria-label={t("Search")}
             >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.9 }}>
-                <IconButton
-                  component={Link}
-                  to="/search"
-                  onPointerEnter={() => prefetchSearchPageChunk()}
-                  sx={navIconBtnSx}
-                  aria-label={t("Search")}
-                >
-                  <SearchIcon />
-                </IconButton>
-              </Box>
+              <SearchIcon />
+            </IconButton>
+          </Box>
 
-              <Typography
-                className="nav-brand-title"
-                sx={{
-                  flex: 1,
-                  textAlign: "center",
-                  ...navBrandTitleSx,
-                }}
-              >
-                {NAV_BRAND_TITLE}
-              </Typography>
+          <Typography
+            className="nav-brand-title"
+            sx={{
+              flex: 1,
+              textAlign: "center",
+              ...navBrandTitleSx,
+            }}
+          >
+            {NAV_BRAND_TITLE}
+          </Typography>
 
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.9 }}>
-                <IconButton
-                  component={Link}
-                  to="/"
-                  onClick={handleHomeTopAction}
-                  sx={navIconBtnSx}
-                  aria-label={t("Home")}
-                >
-                  <HomeIcon />
-                </IconButton>
-                <IconButton
-                  onClick={handleNavRefresh}
-                  sx={navIconBtnSx}
-                  aria-label={t("Refresh")}
-                >
-                  <RefreshIcon />
-                </IconButton>
-              </Box>
-            </Box>
-          )}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.9 }}>
+            <IconButton
+              component={Link}
+              to="/"
+              onClick={handleHomeTopAction}
+              sx={navIconBtnSx}
+              aria-label={t("Home")}
+            >
+              <HomeIcon />
+            </IconButton>
+            <IconButton
+              onClick={handleNavRefresh}
+              sx={navIconBtnSx}
+              aria-label={t("Refresh")}
+            >
+              <RefreshIcon />
+            </IconButton>
+          </Box>
+        </Box>
+      )}
 
-          {!isSmUp &&
-            (navTemplate === "custom" ||
-              navTemplate === "custom2" ||
-              navTemplate === "custom3") && (
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  width: "100%",
-                  justifyContent: "space-between",
-                  gap: 0.5,
-                }}
-              >
-                {(() => {
-                  const top = navConfig?.topSlots || {};
-                  const sxBtn = navIconBtnSx;
-                  const tpl = navTemplate;
+      {!isSmUp &&
+        (navTemplate === "custom" ||
+          navTemplate === "custom2" ||
+          navTemplate === "custom3") && (
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              width: "100%",
+              justifyContent: "space-between",
+              gap: 0.5,
+            }}
+          >
+            {(() => {
+              const top = navConfig?.topSlots || {};
+              const sxBtn = navIconBtnSx;
+              const tpl = navTemplate;
 
-                  const map = {
-                    home: { to: "/", icon: <HomeIcon /> },
-                    search: { to: "/search", icon: <SearchIcon /> },
-                    categories: { to: "/categories", icon: <CategoryIcon /> },
-                    reels: { to: "/reels", icon: <VideoLibraryIcon /> },
-                    favourites: { to: "/favourites", icon: <FavoriteIcon /> },
-                    stores: { to: "/stores", icon: <StoreIcon /> },
-                    gifts: { to: "/gifts", icon: giftsIconWithBadge },
-                    shopping: { to: "/shopping", icon: <ShoppingBagIcon /> },
-                    profile: { to: "/profile", icon: <PersonIcon /> },
-                    brands: { to: "/brands", icon: <BusinessIcon /> },
-                    companies: {
-                      to: "/companies",
-                      icon: <CorporateFareIcon />,
-                    },
-                    jobs: { to: "/findjob", icon: <WorkOutlineIcon /> },
-                  };
+              const map = {
+                home: { to: "/", icon: <HomeIcon /> },
+                search: { to: "/search", icon: <SearchIcon /> },
+                categories: { to: "/categories", icon: <CategoryIcon /> },
+                reels: { to: "/reels", icon: <VideoLibraryIcon /> },
+                favourites: { to: "/favourites", icon: <FavoriteIcon /> },
+                stores: { to: "/stores", icon: <StoreIcon /> },
+                gifts: { to: "/gifts", icon: giftsIconWithBadge },
+                shopping: { to: "/shopping", icon: <ShoppingBagIcon /> },
+                profile: { to: "/profile", icon: <PersonIcon /> },
+                brands: { to: "/brands", icon: <BusinessIcon /> },
+                companies: {
+                  to: "/companies",
+                  icon: <CorporateFareIcon />,
+                },
+                jobs: { to: "/findjob", icon: <WorkOutlineIcon /> },
+              };
 
-                  const renderAction = (action, key) => {
-                    if (!action || action === "none") {
-                      return <Box key={key} sx={{ width: 40, height: 40 }} />;
-                    }
-                    if (action === "label")
-                      return <Box key={key} sx={{ width: 40, height: 40 }} />;
-                    if (action === "logo") {
-                      return (
-                        <Box
-                          key={key}
-                          component={Link}
-                          to="/"
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            flexShrink: 0,
-                            textDecoration: "none",
-                          }}
-                        >
-                          <Avatar
-                            src={`${import.meta.env.BASE_URL}logo512.png`}
-                            alt={NAV_BRAND_TITLE}
-                            variant="rounded"
-                            sx={{
-                              width: 40,
-                              height: 40,
-                              borderRadius: 2.25,
-                              bgcolor: "rgba(255,255,255,0.12)",
-                              "& img": {
-                                objectFit: "cover",
-                                borderRadius: "inherit",
-                              },
-                              ...(isDarkNav
-                                ? { border: "2px solid rgba(255,255,255,0.28)" }
-                                : { border: "2px solid rgba(255,255,255,0.3)" }),
-                            }}
-                          />
-                        </Box>
-                      );
-                    }
-                    if (action === "refresh") {
-                      return (
-                        <IconButton
-                          key={key}
-                          onClick={handleNavRefresh}
-                          sx={sxBtn}
-                        >
-                          <RefreshIcon />
-                        </IconButton>
-                      );
-                    }
-                    if (action === "city") {
-                      return (
-                        <IconButton
-                          key={key}
-                          onClick={(e) =>
-                            setMobileNavCityAnchor(e.currentTarget)
-                          }
-                          sx={sxBtn}
-                          aria-label={t("City")}
-                        >
-                          <LocationOnIcon />
-                        </IconButton>
-                      );
-                    }
-                    if (action === "language") {
-                      return (
-                        <IconButton
-                          key={key}
-                          onClick={(e) =>
-                            setMobileNavLangAnchor(e.currentTarget)
-                          }
-                          sx={sxBtn}
-                          aria-label={t("Language")}
-                        >
-                          <LanguageIcon />
-                        </IconButton>
-                      );
-                    }
-                    if (action === "notifications") {
-                      return (
-                        <IconButton
-                          key={key}
-                          onClick={blurThen(() => openNotifications())}
-                          sx={sxBtn}
-                          aria-label={t("Notifications")}
-                        >
-                          <Badge badgeContent={unreadCount} color="error">
-                            <NotificationsIcon />
-                          </Badge>
-                        </IconButton>
-                      );
-                    }
-                    if (action === "draftCart") {
-                      return (
-                        <IconButton
-                          key={key}
-                          onClick={blurThen(() => openDraftCart())}
-                          sx={sxBtn}
-                          aria-label={t("Draft cart")}
-                        >
-                          <ShoppingCartIcon />
-                        </IconButton>
-                      );
-                    }
-                    if (action === "profile") {
-                      return (
-                        <IconButton
-                          key={key}
-                          onClick={blurThen(() => openProfile())}
-                          sx={sxBtn}
-                          aria-label={t("Account")}
-                        >
-                          <PersonIcon />
-                        </IconButton>
-                      );
-                    }
-                    const cfg = map[action];
-                    if (!cfg)
-                      return <Box key={key} sx={{ width: 40, height: 40 }} />;
-                    return (
-                      <IconButton
-                        key={key}
-                        component={Link}
-                        to={cfg.to}
-                        sx={{
-                          ...sxBtn,
-                          ...getNavRouteIconActiveSx(location.pathname, cfg.to),
-                        }}
-                        onClick={
-                          cfg.to === "/gifts" ? markGiftsSeen : undefined
-                        }
-                      >
-                        {cfg.icon}
-                      </IconButton>
-                    );
-                  };
-
-                  if (tpl === "custom3") {
-                    return (
-                      <>
-                        <Box
-                          sx={{
-                            flex: 1,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            minWidth: 0,
-                          }}
-                        >
-                          <Box
-                            component={Link}
-                            to="/"
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              flexShrink: 0,
-                              textDecoration: "none",
-                              transform: "translateX(-10px)",
-                            }}
-                          >
-                            <Avatar
-                              src={`${import.meta.env.BASE_URL}logo512.png`}
-                              alt={NAV_BRAND_TITLE}
-                              variant="rounded"
-                              sx={{
-                                width: 44,
-                                height: 44,
-                                borderRadius: 2.5,
-                                bgcolor: "rgba(255,255,255,0.12)",
-                                "& img": {
-                                  objectFit: "cover",
-                                  borderRadius: "inherit",
-                                },
-                                ...(isDarkNav
-                                  ? {
-                                      border: "2px solid rgba(255,255,255,0.28)",
-                                    }
-                                  : {
-                                      border: "2px solid rgba(255,255,255,0.3)",
-                                    }),
-                              }}
-                            />
-                          </Box>
-                        </Box>
-                        <Typography
-                          className="nav-brand-title"
-                          component={Link}
-                          to="/"
-                          sx={{
-                            flex: 1,
-                            textAlign: "center",
-                            textDecoration: "none",
-                            ...navBrandTitleSx,
-                            "&:hover": { transform: "scale(1.05)" },
-                          }}
-                        >
-                          {NAV_BRAND_TITLE}
-                        </Typography>
-                        <Box
-                          sx={{
-                            flex: 1,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "flex-end",
-                            gap: 0.9,
-                            minWidth: 0,
-                          }}
-                        >
-                          {renderAction(top.topright1, "custom3-tr1")}
-                          {renderAction(top.topright2, "custom3-tr2")}
-                        </Box>
-                      </>
-                    );
-                  }
-
-                  if (tpl === "custom2") {
-                    return (
-                      <>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1,
-                            minWidth: 0,
-                            flex: "1 1 auto",
-                            overflow: "hidden",
-                          }}
-                        >
-                          <Avatar
-                            src={`${import.meta.env.BASE_URL}logo512.png`}
-                            alt={NAV_BRAND_TITLE}
-                            variant="rounded"
-                            sx={{
-                              width: 44,
-                              height: 44,
-                              flexShrink: 0,
-                              borderRadius: 2.5,
-                              bgcolor: "rgba(255,255,255,0.12)",
-                              "& img": {
-                                objectFit: "cover",
-                                borderRadius: "inherit",
-                              },
-                              ...(isDarkNav
-                                ? {
-                                    border: "2px solid rgba(255,255,255,0.28)",
-                                  }
-                                : {
-                                    border: "2px solid rgba(255,255,255,0.3)",
-                                  }),
-                            }}
-                          />
-                          <Typography
-                            className="nav-brand-title"
-                            component={Link}
-                            to="/"
-                            noWrap
-                            sx={{
-                              textDecoration: "none",
-                              fontSize: "1.35rem",
-                              ...navBrandTitleSx,
-                              minWidth: 0,
-                              "&:hover": { transform: "scale(1.03)" },
-                            }}
-                          >
-                            {NAV_BRAND_TITLE}
-                          </Typography>
-                        </Box>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 0.75,
-                            flexShrink: 0,
-                          }}
-                        >
-                          {renderAction(top.topright1, "custom2-tr1")}
-                          {renderAction(top.topright2, "custom2-tr2")}
-                          {renderAction(top.topright3, "custom2-tr3")}
-                        </Box>
-                      </>
-                    );
-                  }
-
-                  const centerIsLabel = (top.center || "label") === "label";
+              const renderAction = (action, key) => {
+                if (!action || action === "none") {
+                  return <Box key={key} sx={{ width: 40, height: 40 }} />;
+                }
+                if (action === "label")
+                  return <Box key={key} sx={{ width: 40, height: 40 }} />;
+                if (action === "logo") {
                   return (
-                    <>
-                      <Box
-                        sx={{ display: "flex", alignItems: "center", gap: 0.9 }}
-                      >
-                        {renderAction(top.topleft1, "topleft1")}
-                        {renderAction(top.topleft2, "topleft2")}
-                      </Box>
+                    <Box
+                      key={key}
+                      component={Link}
+                      to="/"
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        flexShrink: 0,
+                        textDecoration: "none",
+                      }}
+                    >
+                      <Avatar
+                        src={`${import.meta.env.BASE_URL}logo512.png`}
+                        alt={NAV_BRAND_TITLE}
+                        variant="rounded"
+                        sx={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 2.25,
+                          bgcolor: "rgba(255,255,255,0.12)",
+                          "& img": {
+                            objectFit: "cover",
+                            borderRadius: "inherit",
+                          },
+                          ...(isDarkNav
+                            ? { border: "2px solid rgba(255,255,255,0.28)" }
+                            : { border: "2px solid rgba(255,255,255,0.3)" }),
+                        }}
+                      />
+                    </Box>
+                  );
+                }
+                if (action === "refresh") {
+                  return (
+                    <IconButton key={key} onClick={handleNavRefresh} sx={sxBtn}>
+                      <RefreshIcon />
+                    </IconButton>
+                  );
+                }
+                if (action === "city") {
+                  return (
+                    <IconButton
+                      key={key}
+                      onClick={(e) => setMobileNavCityAnchor(e.currentTarget)}
+                      sx={sxBtn}
+                      aria-label={t("City")}
+                    >
+                      <LocationOnIcon />
+                    </IconButton>
+                  );
+                }
+                if (action === "language") {
+                  return (
+                    <IconButton
+                      key={key}
+                      onClick={(e) => setMobileNavLangAnchor(e.currentTarget)}
+                      sx={sxBtn}
+                      aria-label={t("Language")}
+                    >
+                      <LanguageIcon />
+                    </IconButton>
+                  );
+                }
+                if (action === "notifications") {
+                  return (
+                    <IconButton
+                      key={key}
+                      onClick={blurThen(() => openNotifications())}
+                      sx={sxBtn}
+                      aria-label={t("Notifications")}
+                    >
+                      <Badge badgeContent={unreadCount} color="error">
+                        <NotificationsIcon />
+                      </Badge>
+                    </IconButton>
+                  );
+                }
+                if (action === "draftCart") {
+                  return (
+                    <IconButton
+                      key={key}
+                      onClick={blurThen(() => openDraftCart())}
+                      sx={sxBtn}
+                      aria-label={t("Draft cart")}
+                    >
+                      <ShoppingCartIcon />
+                    </IconButton>
+                  );
+                }
+                if (action === "profile") {
+                  return (
+                    <IconButton
+                      key={key}
+                      onClick={blurThen(() => openProfile())}
+                      sx={sxBtn}
+                      aria-label={t("Account")}
+                    >
+                      <PersonIcon />
+                    </IconButton>
+                  );
+                }
+                const cfg = map[action];
+                if (!cfg)
+                  return <Box key={key} sx={{ width: 40, height: 40 }} />;
+                return (
+                  <IconButton
+                    key={key}
+                    component={Link}
+                    to={cfg.to}
+                    sx={{
+                      ...sxBtn,
+                      ...getNavRouteIconActiveSx(location.pathname, cfg.to),
+                    }}
+                    onClick={cfg.to === "/gifts" ? markGiftsSeen : undefined}
+                  >
+                    {cfg.icon}
+                  </IconButton>
+                );
+              };
 
+              if (tpl === "custom3") {
+                return (
+                  <>
+                    <Box
+                      sx={{
+                        flex: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        minWidth: 0,
+                      }}
+                    >
+                      <Box
+                        component={Link}
+                        to="/"
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          flexShrink: 0,
+                          textDecoration: "none",
+                          transform: "translateX(-10px)",
+                        }}
+                      >
+                        <Avatar
+                          src={`${import.meta.env.BASE_URL}logo512.png`}
+                          alt={NAV_BRAND_TITLE}
+                          variant="rounded"
+                          sx={{
+                            width: 44,
+                            height: 44,
+                            borderRadius: 2.5,
+                            bgcolor: "rgba(255,255,255,0.12)",
+                            "& img": {
+                              objectFit: "cover",
+                              borderRadius: "inherit",
+                            },
+                            ...(isDarkNav
+                              ? {
+                                  border: "2px solid rgba(255,255,255,0.28)",
+                                }
+                              : {
+                                  border: "2px solid rgba(255,255,255,0.3)",
+                                }),
+                          }}
+                        />
+                      </Box>
+                    </Box>
+                    <Typography
+                      className="nav-brand-title"
+                      component={Link}
+                      to="/"
+                      sx={{
+                        flex: 1,
+                        textAlign: "center",
+                        textDecoration: "none",
+                        ...navBrandTitleSx,
+                        "&:hover": { transform: "scale(1.05)" },
+                      }}
+                    >
+                      {NAV_BRAND_TITLE}
+                    </Typography>
+                    <Box
+                      sx={{
+                        flex: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "flex-end",
+                        gap: 0.9,
+                        minWidth: 0,
+                      }}
+                    >
+                      {renderAction(top.topright1, "custom3-tr1")}
+                      {renderAction(top.topright2, "custom3-tr2")}
+                    </Box>
+                  </>
+                );
+              }
+
+              if (tpl === "custom2") {
+                return (
+                  <>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        minWidth: 0,
+                        flex: "1 1 auto",
+                        overflow: "hidden",
+                      }}
+                    >
+                      <Avatar
+                        src={`${import.meta.env.BASE_URL}logo512.png`}
+                        alt={NAV_BRAND_TITLE}
+                        variant="rounded"
+                        sx={{
+                          width: 44,
+                          height: 44,
+                          flexShrink: 0,
+                          borderRadius: 2.5,
+                          bgcolor: "rgba(255,255,255,0.12)",
+                          "& img": {
+                            objectFit: "cover",
+                            borderRadius: "inherit",
+                          },
+                          ...(isDarkNav
+                            ? {
+                                border: "2px solid rgba(255,255,255,0.28)",
+                              }
+                            : {
+                                border: "2px solid rgba(255,255,255,0.3)",
+                              }),
+                        }}
+                      />
                       <Typography
                         className="nav-brand-title"
-                        component={centerIsLabel ? Link : "div"}
-                        to={centerIsLabel ? "/" : undefined}
+                        component={Link}
+                        to="/"
+                        noWrap
                         sx={{
-                          flex: 1,
-                          textAlign: "center",
                           textDecoration: "none",
+                          fontSize: "1.35rem",
                           ...navBrandTitleSx,
-                          pointerEvents: centerIsLabel ? "auto" : "none",
+                          minWidth: 0,
+                          "&:hover": { transform: "scale(1.03)" },
                         }}
                       >
                         {NAV_BRAND_TITLE}
                       </Typography>
-
-                      <Box
-                        sx={{ display: "flex", alignItems: "center", gap: 0.9 }}
-                      >
-                        {renderAction(top.topright1, "topright1")}
-                        {renderAction(top.topright2, "topright2")}
-                      </Box>
-                    </>
-                  );
-                })()}
-                <Menu
-                  anchorEl={mobileNavCityAnchor}
-                  open={Boolean(mobileNavCityAnchor)}
-                  onClose={() => setMobileNavCityAnchor(null)}
-                  anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-                  transformOrigin={{ vertical: "top", horizontal: "center" }}
-                  PaperProps={{
-                    sx: {
-                      mt: 1,
-                      minWidth: 200,
-                      maxHeight: 320,
-                    },
-                  }}
-                >
-                  {cities.map((city) => (
-                    <MenuItem
-                      key={city.value}
-                      selected={selectedCity === city.value}
-                      onClick={() => {
-                        changeCity(city.value);
-                        setMobileNavCityAnchor(null);
-                      }}
-                    >
-                      {city.label}
-                    </MenuItem>
-                  ))}
-                </Menu>
-                <Menu
-                  anchorEl={mobileNavLangAnchor}
-                  open={Boolean(mobileNavLangAnchor)}
-                  onClose={() => setMobileNavLangAnchor(null)}
-                  anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-                  transformOrigin={{ vertical: "top", horizontal: "center" }}
-                  PaperProps={{
-                    sx: {
-                      mt: 1,
-                      minWidth: 200,
-                    },
-                  }}
-                >
-                  <MenuItem
-                    selected={i18n.language === "en"}
-                    onClick={() => {
-                      i18n.changeLanguage("en");
-                      setMobileNavLangAnchor(null);
-                    }}
-                  >
-                    🇺🇸 {t("English")}
-                  </MenuItem>
-                  <MenuItem
-                    selected={i18n.language === "ar"}
-                    onClick={() => {
-                      i18n.changeLanguage("ar");
-                      setMobileNavLangAnchor(null);
-                    }}
-                  >
-                    🇸🇦 {t("Arabic")}
-                  </MenuItem>
-                  <MenuItem
-                    selected={i18n.language === "ku"}
-                    onClick={() => {
-                      i18n.changeLanguage("ku");
-                      setMobileNavLangAnchor(null);
-                    }}
-                  >
-                    <Box
-                      component="span"
-                      sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
-                    >
-                      <Box
-                        component="img"
-                        src={kurdishFlag}
-                        alt="Kurdish"
-                        sx={{
-                          width: 16,
-                          height: 12,
-                          objectFit: "cover",
-                          borderRadius: 0,
-                        }}
-                      />
-                      {t("Kurdish")}
                     </Box>
-                  </MenuItem>
-                </Menu>
-              </Box>
-            )}
-
-          {/* Desktop: logo + main nav (LTR) + notifications + profile menu (not /profile) */}
-          {isSmUp && (
-            <>
-              <Box display="flex" alignItems="center" flexShrink={0}>
-                <Avatar
-                  src={`${import.meta.env.BASE_URL}logo512.png`}
-                  alt={NAV_BRAND_TITLE}
-                  variant="rounded"
-                  sx={{
-                    mr: 2,
-                    width: 44,
-                    height: 44,
-                    bgcolor: "rgba(255,255,255,0.12)",
-                    "& img": {
-                      objectFit: "cover",
-                    },
-                    ...(isDarkNav
-                      ? {
-                          backdropFilter: "blur(12px) saturate(150%)",
-                          WebkitBackdropFilter: "blur(12px) saturate(150%)",
-                          border: "2px solid rgba(255,255,255,0.28)",
-                          boxShadow:
-                            "0 4px 16px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.2)",
-                        }
-                      : {
-                          backdropFilter: "blur(10px)",
-                          border: "2px solid rgba(255,255,255,0.3)",
-                        }),
-                  }}
-                />
-                <Typography
-                  className="nav-brand-title"
-                  variant="h5"
-                  component={Link}
-                  to="/"
-                  sx={{
-                    textDecoration: "none",
-                    fontSize: { xs: "1.75rem", sm: "1.75rem", md: "1.75rem" },
-                    ...navBrandTitleSx,
-                    "&:hover": {
-                      transform: "scale(1.05)",
-                    },
-                  }}
-                >
-                  {NAV_BRAND_TITLE}
-                </Typography>
-              </Box>
-
-              <Box
-                sx={{
-                  flex: "1 1 auto",
-                  display: "flex",
-                  flexWrap: "wrap",
-                  alignItems: "center",
-                  justifyContent: "flex-end",
-                  gap: 0.5,
-                  minWidth: 0,
-                  pl: { md: 2 },
-                }}
-              >
-                <Button
-                  startIcon={<MenuIcon />}
-                  onClick={() => setSideMenuOpen(true)}
-                  sx={desktopNavButtonSx(false)}
-                >
-                  {t("Menu", { defaultValue: "Menu" })}
-                </Button>
-                <Button
-                  component={Link}
-                  to="/"
-                  onClick={handleHomeTopAction}
-                  startIcon={<HomeIcon />}
-                  sx={{ ...desktopNavButtonSx(location.pathname === "/"), display: "none" }}
-                >
-                  {t("Main Page")}
-                </Button>
-                <Button
-                  component={Link}
-                  to="/reels"
-                  startIcon={<VideoLibraryIcon />}
-                  sx={desktopNavButtonSx(
-                    location.pathname.startsWith("/reels"),
-                  )}
-                  style={{ display: "none" }}
-                >
-                  {t("Reels")}
-                </Button>
-                <Button
-                  component={Link}
-                  to="/search"
-                  onPointerEnter={() => prefetchSearchPageChunk()}
-                  startIcon={<SearchIcon />}
-                  sx={desktopNavButtonSx(
-                    location.pathname.startsWith("/search"),
-                  )}
-                >
-                  {t("Search")}
-                </Button>
-                <Button
-                  component={Link}
-                  to="/categories"
-                  startIcon={<CategoryIcon />}
-                  sx={desktopNavButtonSx(
-                    location.pathname.startsWith("/categories"),
-                  )}
-                  style={{ display: "none" }}
-                >
-                  {t("Categories")}
-                </Button>
-
-                <Button
-                  startIcon={<StoreIcon />}
-                  endIcon={<ExpandMoreIcon />}
-                  onClick={handlePlacesMenuOpen}
-                  sx={{ ...desktopNavButtonSx(placesMenuActive), display: "none" }}
-                >
-                  {t("Places", { defaultValue: "Places" })}
-                </Button>
-                <Menu
-                  anchorEl={placesAnchorEl}
-                  open={Boolean(placesAnchorEl)}
-                  onClose={handlePlacesMenuClose}
-                  anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-                  transformOrigin={{ vertical: "top", horizontal: "right" }}
-                  PaperProps={{
-                    sx: {
-                      mt: 1.5,
-                      minWidth: 200,
-                      backgroundColor:
-                        theme.palette.mode === "dark"
-                          ? "var(--brand-primary-blue)"
-                          : "#fff",
-                      border: `1px solid ${theme.palette.divider}`,
-                      borderRadius: 2,
-                    },
-                  }}
-                >
-                  <MenuItem
-                    component={Link}
-                    to="/stores"
-                    onClick={handlePlacesMenuClose}
-                    selected={location.pathname.startsWith("/stores")}
-                  >
-                    <ListItemIcon>
-                      <StoreIcon fontSize="small" />
-                    </ListItemIcon>
-                    <ListItemText primary={t("Stores")} />
-                  </MenuItem>
-                  <MenuItem
-                    component={Link}
-                    to="/brands"
-                    onClick={handlePlacesMenuClose}
-                    selected={location.pathname.startsWith("/brands")}
-                  >
-                    <ListItemIcon>
-                      <BusinessIcon fontSize="small" />
-                    </ListItemIcon>
-                    <ListItemText primary={t("Brands")} />
-                  </MenuItem>
-                  <MenuItem
-                    component={Link}
-                    to="/companies"
-                    onClick={handlePlacesMenuClose}
-                    selected={location.pathname.startsWith("/companies")}
-                  >
-                    <ListItemIcon>
-                      <CorporateFareIcon fontSize="small" />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={t("Companies", { defaultValue: "Companies" })}
-                    />
-                  </MenuItem>
-                </Menu>
-
-                <Button
-                  startIcon={<ShoppingBagIcon />}
-                  endIcon={<ExpandMoreIcon />}
-                  onClick={handleServicesMenuOpen}
-                  sx={{ ...desktopNavButtonSx(servicesMenuActive), display: "none" }}
-                >
-                  {t("Services", { defaultValue: "Services" })}
-                </Button>
-                <Menu
-                  anchorEl={servicesAnchorEl}
-                  open={Boolean(servicesAnchorEl)}
-                  onClose={handleServicesMenuClose}
-                  anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-                  transformOrigin={{ vertical: "top", horizontal: "right" }}
-                  PaperProps={{
-                    sx: {
-                      mt: 1.5,
-                      minWidth: 200,
-                      backgroundColor:
-                        theme.palette.mode === "dark"
-                          ? "var(--brand-primary-blue)"
-                          : "#fff",
-                      border: `1px solid ${theme.palette.divider}`,
-                      borderRadius: 2,
-                    },
-                  }}
-                >
-                  <MenuItem
-                    component={Link}
-                    to="/findjob"
-                    onClick={handleServicesMenuClose}
-                    selected={location.pathname.startsWith("/findjob")}
-                  >
-                    <ListItemIcon>
-                      <WorkOutlineIcon fontSize="small" />
-                    </ListItemIcon>
-                    <ListItemText primary={t("Find Job")} />
-                  </MenuItem>
-                  <MenuItem
-                    component={Link}
-                    to="/shopping"
-                    onClick={handleServicesMenuClose}
-                    selected={location.pathname.startsWith("/shopping")}
-                  >
-                    <ListItemIcon>
-                      <ShoppingBagIcon fontSize="small" />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={t("Shopping", { defaultValue: "Shopping" })}
-                    />
-                  </MenuItem>
-                  <MenuItem
-                    component={Link}
-                    to="/gifts"
-                    onClick={() => {
-                      markGiftsSeen();
-                      handleServicesMenuClose();
-                    }}
-                    selected={location.pathname.startsWith("/gifts")}
-                  >
-                    <ListItemIcon>{giftsIconWithBadge}</ListItemIcon>
-                    <ListItemText primary={t("Gifts")} />
-                  </MenuItem>
-                </Menu>
-
-                {isAuthenticated && canAccessPendingPage(user) && (
-                  <Button
-                    component={Link}
-                    to="/pending"
-                    startIcon={<HourglassTopIcon />}
-                    sx={desktopNavButtonSx(
-                      location.pathname.startsWith("/pending"),
-                    )}
-                  >
                     <Box
                       sx={{
-                        display: "inline-flex",
+                        display: "flex",
                         alignItems: "center",
                         gap: 0.75,
+                        flexShrink: 0,
                       }}
                     >
-                      <span>
-                        {t("Pending", {
-                          defaultValue: "Pending",
-                        })}
-                      </span>
-                      {canAccessDataEntry(user) && pendingReviewsCount > 0 && (
-                        <Chip
-                          label={pendingReviewsCount}
-                          size="small"
-                          color="warning"
-                          sx={{
-                            height: 18,
-                            minWidth: 18,
-                            fontSize: "0.68rem",
-                            fontWeight: 700,
-                            "& .MuiChip-label": { px: 0.6 },
-                          }}
-                        />
-                      )}
+                      {renderAction(top.topright1, "custom2-tr1")}
+                      {renderAction(top.topright2, "custom2-tr2")}
+                      {renderAction(top.topright3, "custom2-tr3")}
                     </Box>
-                  </Button>
-                )}
-
-                {isAuthenticated && canSeeOwnerNavSection(user) && (
-                  <>
-                    <Button
-                      startIcon={<StorefrontNavOwnerIcon />}
-                      endIcon={<ExpandMoreIcon />}
-                      onClick={handleOwnerNavMenuOpen}
-                      sx={desktopNavButtonSx(ownerNavMenuActive)}
-                    >
-                      {t("navOwnerSection", { defaultValue: "Owner" })}
-                    </Button>
-                    <Menu
-                      anchorEl={ownerNavAnchorEl}
-                      open={Boolean(ownerNavAnchorEl)}
-                      onClose={handleOwnerNavMenuClose}
-                      anchorOrigin={{
-                        vertical: "bottom",
-                        horizontal: "right",
-                      }}
-                      transformOrigin={{
-                        vertical: "top",
-                        horizontal: "right",
-                      }}
-                      PaperProps={{
-                        sx: {
-                          mt: 1.5,
-                          minWidth: 220,
-                          backgroundColor:
-                            theme.palette.mode === "dark"
-                              ? "var(--brand-primary-blue)"
-                              : "#fff",
-                          border: `1px solid ${theme.palette.divider}`,
-                          borderRadius: 2,
-                        },
-                      }}
-                    >
-                      {ownerMyProfileNavPath === "/profile" ? (
-                        <MenuItem
-                          onClick={() => {
-                            handleOwnerNavMenuClose();
-                            openProfile();
-                          }}
-                          selected={isProfileOpen}
-                        >
-                          <ListItemIcon>
-                            <PersonIcon fontSize="small" />
-                          </ListItemIcon>
-                          <ListItemText
-                            primary={t("ownerMyProfile", {
-                              defaultValue: "My profile",
-                            })}
-                          />
-                        </MenuItem>
-                      ) : (
-                        <MenuItem
-                          component={Link}
-                          to={ownerMyProfileNavPath}
-                          onClick={handleOwnerNavMenuClose}
-                          selected={
-                            location.pathname === ownerMyProfileNavPath
-                          }
-                        >
-                          <ListItemIcon>
-                            <PersonIcon fontSize="small" />
-                          </ListItemIcon>
-                          <ListItemText
-                            primary={t("ownerMyProfile", {
-                              defaultValue: "My profile",
-                            })}
-                          />
-                        </MenuItem>
-                      )}
-                      <MenuItem
-                        component={Link}
-                        to="/owner-dashboard"
-                        onClick={handleOwnerNavMenuClose}
-                        selected={location.pathname.startsWith(
-                          "/owner-dashboard",
-                        )}
-                      >
-                        <ListItemIcon>
-                          <DashboardIcon fontSize="small" />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={t("Owner dashboard", {
-                            defaultValue: "Owner dashboard",
-                          })}
-                        />
-                      </MenuItem>
-                      <MenuItem
-                        component={Link}
-                        to="/owner-data-entry"
-                        onClick={handleOwnerNavMenuClose}
-                        selected={location.pathname.startsWith(
-                          "/owner-data-entry",
-                        )}
-                      >
-                        <ListItemIcon>
-                          <AddOwnerDataEntryIcon fontSize="small" />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={t("Owner Data Entry", {
-                            defaultValue: "Owner Data Entry",
-                          })}
-                        />
-                      </MenuItem>
-                    </Menu>
                   </>
-                )}
+                );
+              }
 
-                {showAdminNav && (
-                  <>
-                    <Button
-                      startIcon={<AdminPanelSettingsIcon />}
-                      endIcon={isFullAdmin ? <ExpandMoreIcon /> : undefined}
-                      sx={{
-                        ...desktopNavButtonSx(
-                          location.pathname.startsWith("/admin"),
-                        ),
-                        backgroundColor: location.pathname.startsWith("/admin")
-                          ? "rgba(255,255,255,0.12)"
-                          : undefined,
-                      }}
-                      {...(isFullAdmin
-                        ? { onClick: handleAdminMenuOpen }
-                        : { component: Link, to: "/admin" })}
-                    >
-                      {t("Admin")}
-                    </Button>
-                    {isFullAdmin && (
-                      <Menu
-                        anchorEl={adminAnchorEl}
-                        open={Boolean(adminAnchorEl)}
-                        onClose={handleAdminMenuClose}
-                        anchorOrigin={{
-                          vertical: "bottom",
-                          horizontal: "right",
-                        }}
-                        transformOrigin={{
-                          vertical: "top",
-                          horizontal: "right",
-                        }}
-                        PaperProps={{
-                          sx: {
-                            mt: 1.5,
-                            minWidth: 220,
-                            backgroundColor:
-                              theme.palette.mode === "dark"
-                                ? "var(--brand-primary-blue)"
-                                : "#fff",
-                            border: `1px solid ${theme.palette.divider}`,
-                            borderRadius: 2,
-                          },
-                        }}
-                      >
-                        <MenuItem
-                          component={Link}
-                          to="/admin"
-                          onClick={handleAdminMenuClose}
-                          selected={location.pathname === "/admin"}
-                        >
-                          <ListItemIcon>
-                            <AdminPanelSettingsIcon fontSize="small" />
-                          </ListItemIcon>
-                          <ListItemText primary={t("Data Entry")} />
-                        </MenuItem>
-                        <MenuItem
-                          component={Link}
-                          to="/admin/users"
-                          onClick={handleAdminMenuClose}
-                          selected={location.pathname === "/admin/users"}
-                        >
-                          <ListItemIcon>
-                            <PeopleIcon fontSize="small" />
-                          </ListItemIcon>
-                          <ListItemText primary={t("Users")} />
-                        </MenuItem>
-                        <MenuItem
-                          component={Link}
-                          to="/admin/translations"
-                          onClick={handleAdminMenuClose}
-                          selected={location.pathname === "/admin/translations"}
-                        >
-                          <ListItemIcon>
-                            <LanguageIcon fontSize="small" />
-                          </ListItemIcon>
-                          <ListItemText primary={t("translationPage.title")} />
-                        </MenuItem>
-                        <MenuItem
-                          component={Link}
-                          to="/admin/dashboard"
-                          onClick={handleAdminMenuClose}
-                          selected={location.pathname === "/admin/dashboard"}
-                        >
-                          <ListItemIcon>
-                            <DashboardIcon fontSize="small" />
-                          </ListItemIcon>
-                          <ListItemText primary={t("Admin Dashboard")} />
-                        </MenuItem>
-                        <MenuItem
-                          component={Link}
-                          to="/admin/customization"
-                          onClick={handleAdminMenuClose}
-                          selected={
-                            location.pathname === "/admin/customization"
-                          }
-                        >
-                          <ListItemIcon>
-                            <SettingsIcon fontSize="small" />
-                          </ListItemIcon>
-                          <ListItemText primary={t("Customization")} />
-                        </MenuItem>
-                        <MenuItem
-                          component={Link}
-                          to="/admin/visitors"
-                          onClick={handleAdminMenuClose}
-                          selected={location.pathname === "/admin/visitors"}
-                        >
-                          <ListItemIcon>
-                            <BarChartIcon fontSize="small" />
-                          </ListItemIcon>
-                          <ListItemText primary={t("Visitors report")} />
-                        </MenuItem>
-                        <MenuItem
-                          component={Link}
-                          to="/admin/feedback"
-                          onClick={handleAdminMenuClose}
-                          selected={location.pathname === "/admin/feedback"}
-                        >
-                          <ListItemIcon>
-                            <FeedbackIcon fontSize="small" />
-                          </ListItemIcon>
-                          <ListItemText
-                            primary={t("User feedback", {
-                              defaultValue: "User feedback",
-                            })}
-                          />
-                        </MenuItem>
-                        <MenuItem
-                          component={Link}
-                          to="/admin/cities"
-                          onClick={handleAdminMenuClose}
-                          selected={location.pathname === "/admin/cities"}
-                        >
-                          <ListItemIcon>
-                            <LocationOnIcon fontSize="small" />
-                          </ListItemIcon>
-                          <ListItemText
-                            primary={t("City management", {
-                              defaultValue: "City management",
-                            })}
-                          />
-                        </MenuItem>
-                      </Menu>
-                    )}
-                  </>
-                )}
+              const centerIsLabel = (top.center || "label") === "label";
+              return (
+                <>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.9 }}>
+                    {renderAction(top.topleft1, "topleft1")}
+                    {renderAction(top.topleft2, "topleft2")}
+                  </Box>
 
-                {NOTIFICATIONS_CENTER_ENABLED && (
-                  <IconButton
-                    onClick={blurThen(() => openNotifications())}
-                    sx={{ ...navIconBtnSx, ml: 0.5 }}
+                  <Typography
+                    className="nav-brand-title"
+                    component={centerIsLabel ? Link : "div"}
+                    to={centerIsLabel ? "/" : undefined}
+                    sx={{
+                      flex: 1,
+                      textAlign: "center",
+                      textDecoration: "none",
+                      ...navBrandTitleSx,
+                      pointerEvents: centerIsLabel ? "auto" : "none",
+                    }}
                   >
-                    <Badge badgeContent={unreadCount} color="error">
-                      <NotificationsIcon />
-                    </Badge>
-                  </IconButton>
-                )}
-                <IconButton
-                  onClick={handleProfileMenuOpen}
-                  sx={{ ...navIconBtnSx, ml: 0.5 }}
-                  aria-label={t("Profile", { defaultValue: "Profile" })}
-                >
-                  <PersonIcon />
-                </IconButton>
-              </Box>
-            </>
-          )}
+                    {NAV_BRAND_TITLE}
+                  </Typography>
 
-          {/* Controls - desktop only (mobile has its own navbar above) */}
-        </Toolbar>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.9 }}>
+                    {renderAction(top.topright1, "topright1")}
+                    {renderAction(top.topright2, "topright2")}
+                  </Box>
+                </>
+              );
+            })()}
+            <Menu
+              anchorEl={mobileNavCityAnchor}
+              open={Boolean(mobileNavCityAnchor)}
+              onClose={() => setMobileNavCityAnchor(null)}
+              anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+              transformOrigin={{ vertical: "top", horizontal: "center" }}
+              PaperProps={{
+                sx: {
+                  mt: 1,
+                  minWidth: 200,
+                  maxHeight: 320,
+                },
+              }}
+            >
+              {cities.map((city) => (
+                <MenuItem
+                  key={city.value}
+                  selected={selectedCity === city.value}
+                  onClick={() => {
+                    changeCity(city.value);
+                    setMobileNavCityAnchor(null);
+                  }}
+                >
+                  {city.label}
+                </MenuItem>
+              ))}
+            </Menu>
+            <Menu
+              anchorEl={mobileNavLangAnchor}
+              open={Boolean(mobileNavLangAnchor)}
+              onClose={() => setMobileNavLangAnchor(null)}
+              anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+              transformOrigin={{ vertical: "top", horizontal: "center" }}
+              PaperProps={{
+                sx: {
+                  mt: 1,
+                  minWidth: 200,
+                },
+              }}
+            >
+              <MenuItem
+                selected={i18n.language === "en"}
+                onClick={() => {
+                  i18n.changeLanguage("en");
+                  setMobileNavLangAnchor(null);
+                }}
+              >
+                🇺🇸 {t("English")}
+              </MenuItem>
+              <MenuItem
+                selected={i18n.language === "ar"}
+                onClick={() => {
+                  i18n.changeLanguage("ar");
+                  setMobileNavLangAnchor(null);
+                }}
+              >
+                🇸🇦 {t("Arabic")}
+              </MenuItem>
+              <MenuItem
+                selected={i18n.language === "ku"}
+                onClick={() => {
+                  i18n.changeLanguage("ku");
+                  setMobileNavLangAnchor(null);
+                }}
+              >
+                <Box
+                  component="span"
+                  sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+                >
+                  <Box
+                    component="img"
+                    src={kurdishFlag}
+                    alt="Kurdish"
+                    sx={{
+                      width: 16,
+                      height: 12,
+                      objectFit: "cover",
+                      borderRadius: 0,
+                    }}
+                  />
+                  {t("Kurdish")}
+                </Box>
+              </MenuItem>
+            </Menu>
+          </Box>
+        )}
+
+      {/* Desktop: logo + main nav (LTR) + notifications + profile menu (not /profile) */}
+      {isSmUp && (
+        <>
+          <Box display="flex" alignItems="center" flexShrink={0}>
+            <Avatar
+              src={`${import.meta.env.BASE_URL}logo512.png`}
+              alt={NAV_BRAND_TITLE}
+              variant="rounded"
+              sx={{
+                mr: 2,
+                width: 44,
+                height: 44,
+                bgcolor: "rgba(255,255,255,0.12)",
+                "& img": {
+                  objectFit: "cover",
+                },
+                ...(isDarkNav
+                  ? {
+                      backdropFilter: "blur(12px) saturate(150%)",
+                      WebkitBackdropFilter: "blur(12px) saturate(150%)",
+                      border: "2px solid rgba(255,255,255,0.28)",
+                      boxShadow:
+                        "0 4px 16px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.2)",
+                    }
+                  : {
+                      backdropFilter: "blur(10px)",
+                      border: "2px solid rgba(255,255,255,0.3)",
+                    }),
+              }}
+            />
+            <Typography
+              className="nav-brand-title"
+              variant="h5"
+              component={Link}
+              to="/"
+              sx={{
+                textDecoration: "none",
+                fontSize: { xs: "1.75rem", sm: "1.75rem", md: "1.75rem" },
+                ...navBrandTitleSx,
+                "&:hover": {
+                  transform: "scale(1.05)",
+                },
+              }}
+            >
+              {NAV_BRAND_TITLE}
+            </Typography>
+          </Box>
+
+          <Box
+            sx={{
+              flex: "1 1 auto",
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "center",
+              justifyContent: "flex-end",
+              gap: 0.5,
+              minWidth: 0,
+              pl: { md: 2 },
+            }}
+          >
+            <Button
+              startIcon={<MenuIcon />}
+              onClick={() => setSideMenuOpen(true)}
+              sx={desktopNavButtonSx(false)}
+            >
+              {t("Menu", { defaultValue: "Menu" })}
+            </Button>
+            <Button
+              component={Link}
+              to="/"
+              onClick={handleHomeTopAction}
+              startIcon={<HomeIcon />}
+              sx={{
+                ...desktopNavButtonSx(location.pathname === "/"),
+                display: "none",
+              }}
+            >
+              {t("Main Page")}
+            </Button>
+            <Button
+              component={Link}
+              to="/reels"
+              startIcon={<VideoLibraryIcon />}
+              sx={desktopNavButtonSx(location.pathname.startsWith("/reels"))}
+              style={{ display: "none" }}
+            >
+              {t("Reels")}
+            </Button>
+            <Button
+              component={Link}
+              to="/search"
+              onPointerEnter={() => prefetchSearchPageChunk()}
+              startIcon={<SearchIcon />}
+              sx={desktopNavButtonSx(location.pathname.startsWith("/search"))}
+            >
+              {t("Search")}
+            </Button>
+            <Button
+              component={Link}
+              to="/categories"
+              startIcon={<CategoryIcon />}
+              sx={desktopNavButtonSx(
+                location.pathname.startsWith("/categories"),
+              )}
+              style={{ display: "none" }}
+            >
+              {t("Categories")}
+            </Button>
+
+            <Button
+              startIcon={<StoreIcon />}
+              endIcon={<ExpandMoreIcon />}
+              onClick={handlePlacesMenuOpen}
+              sx={{ ...desktopNavButtonSx(placesMenuActive), display: "none" }}
+            >
+              {t("Places", { defaultValue: "Places" })}
+            </Button>
+            <Menu
+              anchorEl={placesAnchorEl}
+              open={Boolean(placesAnchorEl)}
+              onClose={handlePlacesMenuClose}
+              anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+              transformOrigin={{ vertical: "top", horizontal: "right" }}
+              PaperProps={{
+                sx: {
+                  mt: 1.5,
+                  minWidth: 200,
+                  backgroundColor:
+                    theme.palette.mode === "dark"
+                      ? "var(--brand-primary-blue)"
+                      : "#fff",
+                  border: `1px solid ${theme.palette.divider}`,
+                  borderRadius: 2,
+                },
+              }}
+            >
+              <MenuItem
+                component={Link}
+                to="/stores"
+                onClick={handlePlacesMenuClose}
+                selected={location.pathname.startsWith("/stores")}
+              >
+                <ListItemIcon>
+                  <StoreIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary={t("Stores")} />
+              </MenuItem>
+              <MenuItem
+                component={Link}
+                to="/brands"
+                onClick={handlePlacesMenuClose}
+                selected={location.pathname.startsWith("/brands")}
+              >
+                <ListItemIcon>
+                  <BusinessIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary={t("Brands")} />
+              </MenuItem>
+              <MenuItem
+                component={Link}
+                to="/companies"
+                onClick={handlePlacesMenuClose}
+                selected={location.pathname.startsWith("/companies")}
+              >
+                <ListItemIcon>
+                  <CorporateFareIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText
+                  primary={t("Companies", { defaultValue: "Companies" })}
+                />
+              </MenuItem>
+            </Menu>
+
+            <Button
+              startIcon={<ShoppingBagIcon />}
+              endIcon={<ExpandMoreIcon />}
+              onClick={handleServicesMenuOpen}
+              sx={{
+                ...desktopNavButtonSx(servicesMenuActive),
+                display: "none",
+              }}
+            >
+              {t("Services", { defaultValue: "Services" })}
+            </Button>
+            <Menu
+              anchorEl={servicesAnchorEl}
+              open={Boolean(servicesAnchorEl)}
+              onClose={handleServicesMenuClose}
+              anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+              transformOrigin={{ vertical: "top", horizontal: "right" }}
+              PaperProps={{
+                sx: {
+                  mt: 1.5,
+                  minWidth: 200,
+                  backgroundColor:
+                    theme.palette.mode === "dark"
+                      ? "var(--brand-primary-blue)"
+                      : "#fff",
+                  border: `1px solid ${theme.palette.divider}`,
+                  borderRadius: 2,
+                },
+              }}
+            >
+              <MenuItem
+                component={Link}
+                to="/findjob"
+                onClick={handleServicesMenuClose}
+                selected={location.pathname.startsWith("/findjob")}
+              >
+                <ListItemIcon>
+                  <WorkOutlineIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary={t("Find Job")} />
+              </MenuItem>
+              <MenuItem
+                component={Link}
+                to="/shopping"
+                onClick={handleServicesMenuClose}
+                selected={location.pathname.startsWith("/shopping")}
+              >
+                <ListItemIcon>
+                  <ShoppingBagIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText
+                  primary={t("Shopping", { defaultValue: "Shopping" })}
+                />
+              </MenuItem>
+              <MenuItem
+                component={Link}
+                to="/gifts"
+                onClick={() => {
+                  markGiftsSeen();
+                  handleServicesMenuClose();
+                }}
+                selected={location.pathname.startsWith("/gifts")}
+              >
+                <ListItemIcon>{giftsIconWithBadge}</ListItemIcon>
+                <ListItemText primary={t("Gifts")} />
+              </MenuItem>
+            </Menu>
+
+            {isAuthenticated && canAccessPendingPage(user) && (
+              <Button
+                component={Link}
+                to="/pending"
+                startIcon={<HourglassTopIcon />}
+                sx={desktopNavButtonSx(
+                  location.pathname.startsWith("/pending"),
+                )}
+              >
+                <Box
+                  sx={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 0.75,
+                  }}
+                >
+                  <span>
+                    {t("Pending", {
+                      defaultValue: "Pending",
+                    })}
+                  </span>
+                  {canAccessDataEntry(user) && pendingReviewsCount > 0 && (
+                    <Chip
+                      label={pendingReviewsCount}
+                      size="small"
+                      color="warning"
+                      sx={{
+                        height: 18,
+                        minWidth: 18,
+                        fontSize: "0.68rem",
+                        fontWeight: 700,
+                        "& .MuiChip-label": { px: 0.6 },
+                      }}
+                    />
+                  )}
+                </Box>
+              </Button>
+            )}
+
+            {isAuthenticated && canSeeOwnerNavSection(user) && (
+              <>
+                <Button
+                  startIcon={<StorefrontNavOwnerIcon />}
+                  endIcon={<ExpandMoreIcon />}
+                  onClick={handleOwnerNavMenuOpen}
+                  sx={desktopNavButtonSx(ownerNavMenuActive)}
+                >
+                  {t("navOwnerSection", { defaultValue: "Owner" })}
+                </Button>
+                <Menu
+                  anchorEl={ownerNavAnchorEl}
+                  open={Boolean(ownerNavAnchorEl)}
+                  onClose={handleOwnerNavMenuClose}
+                  anchorOrigin={{
+                    vertical: "bottom",
+                    horizontal: "right",
+                  }}
+                  transformOrigin={{
+                    vertical: "top",
+                    horizontal: "right",
+                  }}
+                  PaperProps={{
+                    sx: {
+                      mt: 1.5,
+                      minWidth: 220,
+                      backgroundColor:
+                        theme.palette.mode === "dark"
+                          ? "var(--brand-primary-blue)"
+                          : "#fff",
+                      border: `1px solid ${theme.palette.divider}`,
+                      borderRadius: 2,
+                    },
+                  }}
+                >
+                  {ownerMyProfileNavPath === "/profile" ? (
+                    <MenuItem
+                      onClick={() => {
+                        handleOwnerNavMenuClose();
+                        openProfile();
+                      }}
+                      selected={isProfileOpen}
+                    >
+                      <ListItemIcon>
+                        <PersonIcon fontSize="small" />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={t("ownerMyProfile", {
+                          defaultValue: "My profile",
+                        })}
+                      />
+                    </MenuItem>
+                  ) : (
+                    <MenuItem
+                      component={Link}
+                      to={ownerMyProfileNavPath}
+                      onClick={handleOwnerNavMenuClose}
+                      selected={location.pathname === ownerMyProfileNavPath}
+                    >
+                      <ListItemIcon>
+                        <PersonIcon fontSize="small" />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={t("ownerMyProfile", {
+                          defaultValue: "My profile",
+                        })}
+                      />
+                    </MenuItem>
+                  )}
+                  <MenuItem
+                    component={Link}
+                    to="/owner-dashboard"
+                    onClick={handleOwnerNavMenuClose}
+                    selected={location.pathname.startsWith("/owner-dashboard")}
+                  >
+                    <ListItemIcon>
+                      <DashboardIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={t("Owner dashboard", {
+                        defaultValue: "Owner dashboard",
+                      })}
+                    />
+                  </MenuItem>
+                  <MenuItem
+                    component={Link}
+                    to="/owner-data-entry"
+                    onClick={handleOwnerNavMenuClose}
+                    selected={location.pathname.startsWith("/owner-data-entry")}
+                  >
+                    <ListItemIcon>
+                      <AddOwnerDataEntryIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={t("Owner Data Entry", {
+                        defaultValue: "Owner Data Entry",
+                      })}
+                    />
+                  </MenuItem>
+                </Menu>
+              </>
+            )}
+
+            {showAdminNav && (
+              <>
+                <Button
+                  startIcon={<AdminPanelSettingsIcon />}
+                  endIcon={isFullAdmin ? <ExpandMoreIcon /> : undefined}
+                  sx={{
+                    ...desktopNavButtonSx(
+                      location.pathname.startsWith("/admin"),
+                    ),
+                    backgroundColor: location.pathname.startsWith("/admin")
+                      ? "rgba(255,255,255,0.12)"
+                      : undefined,
+                  }}
+                  {...(isFullAdmin
+                    ? { onClick: handleAdminMenuOpen }
+                    : { component: Link, to: "/admin" })}
+                >
+                  {t("Admin")}
+                </Button>
+                {isFullAdmin && (
+                  <Menu
+                    anchorEl={adminAnchorEl}
+                    open={Boolean(adminAnchorEl)}
+                    onClose={handleAdminMenuClose}
+                    anchorOrigin={{
+                      vertical: "bottom",
+                      horizontal: "right",
+                    }}
+                    transformOrigin={{
+                      vertical: "top",
+                      horizontal: "right",
+                    }}
+                    PaperProps={{
+                      sx: {
+                        mt: 1.5,
+                        minWidth: 220,
+                        backgroundColor:
+                          theme.palette.mode === "dark"
+                            ? "var(--brand-primary-blue)"
+                            : "#fff",
+                        border: `1px solid ${theme.palette.divider}`,
+                        borderRadius: 2,
+                      },
+                    }}
+                  >
+                    <MenuItem
+                      component={Link}
+                      to="/admin"
+                      onClick={handleAdminMenuClose}
+                      selected={location.pathname === "/admin"}
+                    >
+                      <ListItemIcon>
+                        <AdminPanelSettingsIcon fontSize="small" />
+                      </ListItemIcon>
+                      <ListItemText primary={t("Data Entry")} />
+                    </MenuItem>
+                    <MenuItem
+                      component={Link}
+                      to="/admin/users"
+                      onClick={handleAdminMenuClose}
+                      selected={location.pathname === "/admin/users"}
+                    >
+                      <ListItemIcon>
+                        <PeopleIcon fontSize="small" />
+                      </ListItemIcon>
+                      <ListItemText primary={t("Users")} />
+                    </MenuItem>
+                    <MenuItem
+                      component={Link}
+                      to="/admin/translations"
+                      onClick={handleAdminMenuClose}
+                      selected={location.pathname === "/admin/translations"}
+                    >
+                      <ListItemIcon>
+                        <LanguageIcon fontSize="small" />
+                      </ListItemIcon>
+                      <ListItemText primary={t("translationPage.title")} />
+                    </MenuItem>
+                    <MenuItem
+                      component={Link}
+                      to="/admin/dashboard"
+                      onClick={handleAdminMenuClose}
+                      selected={location.pathname === "/admin/dashboard"}
+                    >
+                      <ListItemIcon>
+                        <DashboardIcon fontSize="small" />
+                      </ListItemIcon>
+                      <ListItemText primary={t("Admin Dashboard")} />
+                    </MenuItem>
+                    <MenuItem
+                      component={Link}
+                      to="/admin/customization"
+                      onClick={handleAdminMenuClose}
+                      selected={location.pathname === "/admin/customization"}
+                    >
+                      <ListItemIcon>
+                        <SettingsIcon fontSize="small" />
+                      </ListItemIcon>
+                      <ListItemText primary={t("Customization")} />
+                    </MenuItem>
+                    <MenuItem
+                      component={Link}
+                      to="/admin/visitors"
+                      onClick={handleAdminMenuClose}
+                      selected={location.pathname === "/admin/visitors"}
+                    >
+                      <ListItemIcon>
+                        <BarChartIcon fontSize="small" />
+                      </ListItemIcon>
+                      <ListItemText primary={t("Visitors report")} />
+                    </MenuItem>
+                    <MenuItem
+                      component={Link}
+                      to="/admin/feedback"
+                      onClick={handleAdminMenuClose}
+                      selected={location.pathname === "/admin/feedback"}
+                    >
+                      <ListItemIcon>
+                        <FeedbackIcon fontSize="small" />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={t("User feedback", {
+                          defaultValue: "User feedback",
+                        })}
+                      />
+                    </MenuItem>
+                    <MenuItem
+                      component={Link}
+                      to="/admin/cities"
+                      onClick={handleAdminMenuClose}
+                      selected={location.pathname === "/admin/cities"}
+                    >
+                      <ListItemIcon>
+                        <LocationOnIcon fontSize="small" />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={t("City management", {
+                          defaultValue: "City management",
+                        })}
+                      />
+                    </MenuItem>
+                  </Menu>
+                )}
+              </>
+            )}
+
+            {NOTIFICATIONS_CENTER_ENABLED && (
+              <IconButton
+                onClick={blurThen(() => openNotifications())}
+                sx={{ ...navIconBtnSx, ml: 0.5 }}
+              >
+                <Badge badgeContent={unreadCount} color="error">
+                  <NotificationsIcon />
+                </Badge>
+              </IconButton>
+            )}
+            <IconButton
+              onClick={handleProfileMenuOpen}
+              sx={{ ...navIconBtnSx, ml: 0.5 }}
+              aria-label={t("Profile", { defaultValue: "Profile" })}
+            >
+              <PersonIcon />
+            </IconButton>
+          </Box>
+        </>
+      )}
+
+      {/* Controls - desktop only (mobile has its own navbar above) */}
+    </Toolbar>
   );
 
   const appBarSx = {
@@ -2169,9 +2207,7 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
             left: 0,
             right: 0,
             zIndex: 1100,
-            transform: showMobileNavbar
-              ? "translateY(0)"
-              : "translateY(-110%)",
+            transform: showMobileNavbar ? "translateY(0)" : "translateY(-110%)",
             transition: isAndroidPerfMode ? "none" : "transform 260ms ease",
             willChange: "transform",
           }}
@@ -2265,7 +2301,9 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                           onClick: closeSideMenu,
                         })}
                     selected={
-                      !profileFallback && to !== "/" && location.pathname.startsWith(to)
+                      !profileFallback &&
+                      to !== "/" &&
+                      location.pathname.startsWith(to)
                     }
                     sx={{
                       minHeight: 48,
@@ -2285,7 +2323,10 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
                     </ListItemIcon>
                     <ListItemText
                       primary={label}
-                      primaryTypographyProps={{ fontWeight: 700, fontSize: "0.92rem" }}
+                      primaryTypographyProps={{
+                        fontWeight: 700,
+                        fontSize: "0.92rem",
+                      }}
                     />
                   </ListItemButton>
                 ))}
@@ -2302,7 +2343,12 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
               closeSideMenu();
               openProfile();
             }}
-            sx={{ borderRadius: 3, py: 1.1, textTransform: "none", fontWeight: 800 }}
+            sx={{
+              borderRadius: 3,
+              py: 1.1,
+              textTransform: "none",
+              fontWeight: 800,
+            }}
           >
             {t("Open Profile", { defaultValue: "Open Profile" })}
           </Button>

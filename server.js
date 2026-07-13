@@ -50,6 +50,12 @@ mongoose.connection.once("open", async () => {
   } catch (e) {
     console.error("[migration] user role:", e.message);
   }
+  try {
+    const { seedDefaultFaqsIfMissing } = require("./controllers/faqController");
+    await seedDefaultFaqsIfMissing();
+  } catch (e) {
+    console.error("[migration] default FAQs:", e.message);
+  }
 });
 
 // Middleware - CORS: allow known frontends + localhost; mobile needs explicit origins
@@ -116,6 +122,7 @@ app.use("/api/owner-analytics", require("./routes/ownerAnalytics"));
 app.use("/api/app-visits", require("./routes/appVisits"));
 app.use("/api/cart-orders", require("./routes/cartOrders"));
 app.use("/api/feedback", require("./routes/feedback"));
+app.use("/api/faqs", require("./routes/faq"));
 
 const PORT = process.env.PORT || 5000;
 const { initializeFirebase } = require("./services/firebaseService");
