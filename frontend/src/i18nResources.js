@@ -420,6 +420,11 @@ export const resources = {
         "Google sign-in is not configured in this build. Add VITE_GOOGLE_CLIENT_ID to frontend/.env (same value as server GOOGLE_CLIENT_ID), save the file, then stop and run npm start again.",
       googleWebViewRedirectHint:
         "Google sign-in will continue in this window (full page), then bring you back here.",
+      googleWebViewNativeHint:
+        "Continue with Google opens the Google account picker in the app, then signs you in here.",
+      googleNativeUnavailable:
+        "Native Google sign-in is not available. Update the app and try again.",
+      "Signing in...": "Signing in...",
       "sign in to sync across devices": "sign in to sync across devices",
       "Create an account to save your favourites":
         "Create an account to save your favourites",
@@ -1015,6 +1020,11 @@ export const resources = {
         "تسجيل الدخول عبر Google غير مُعدّ في هذا الإصدار. أضف VITE_GOOGLE_CLIENT_ID إلى frontend/.env ثم أعد تشغيل npm start.",
       googleWebViewRedirectHint:
         "سيتم متابعة تسجيل الدخول عبر Google في هذه النافذة بالكامل، ثم العودة إلى هنا.",
+      googleWebViewNativeHint:
+        "المتابعة باستخدام Google تفتح اختيار الحساب في التطبيق ثم تسجّل دخولك هنا.",
+      googleNativeUnavailable:
+        "تسجيل الدخول الأصلي عبر Google غير متاح. حدّث التطبيق وحاول مرة أخرى.",
+      "Signing in...": "جاري تسجيل الدخول...",
       "Sign in to sync across devices": "تسجيل الدخول لمزامنة الأجهزة",
       Electronic: "إلكترونيات",
       Cosmetic: "تجميل",
@@ -1998,6 +2008,11 @@ export const resources = {
         "چوونەژوورەوەی گووگڵ لەم وەشانەدا ڕێک نەکراوە. VITE_GOOGLE_CLIENT_ID زیاد بکە لە frontend/.env دواتر npm start دووبارە بکەوە.",
       googleWebViewRedirectHint:
         "چوونەژوورەوە لەگەڵ گووگڵ لەم پەنجەرەیەدا بەردەوام دەبێت، دواتر دەگەڕێیتەوە بۆ لێرە.",
+      googleWebViewNativeHint:
+        "بەردەوامبوون لەگەڵ گووگڵ هەڵبژاردنی هەژمار لە ئەپدا دەکاتەوە، پاشان لێرە دەچیتە ژوورەوە.",
+      googleNativeUnavailable:
+        "چوونەژوورەوەی ڕەسەنی گووگڵ بەردەست نییە. ئەپ نوێ بکەوە و دووبارە هەوڵ بدە.",
+      "Signing in...": "چوونەژوورەوە...",
       "Sign in to sync across devices": "لەڕێگەى هەژمارەکەتەوە بڕۆ ژوورەوە",
       Theme: "ڕەنگ",
       "This brand hasn't added any products yet. Check back later!":

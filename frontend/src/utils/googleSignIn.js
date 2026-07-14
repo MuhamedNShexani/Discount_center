@@ -10,15 +10,26 @@ export function getGoogleClientId() {
   return (import.meta.env.VITE_GOOGLE_CLIENT_ID || "").trim();
 }
 
+/** Explicit env override for full-page OAuth (not used for normal WebView native flow). */
 export function shouldUseGoogleOAuthRedirect() {
-  if (import.meta.env.VITE_GOOGLE_OAUTH_REDIRECT === "true") return true;
+  return import.meta.env.VITE_GOOGLE_OAUTH_REDIRECT === "true";
+}
+
+/**
+ * Android / iOS InAppWebView: use Flutter native Google Sign-In bridge.
+ * Desktop / mobile Safari/Chrome: use GIS.
+ */
+export function shouldUseNativeGoogleSignIn() {
+  if (shouldUseGoogleOAuthRedirect()) return false;
   return isEmbeddedWebView();
 }
 
 export function startGoogleOAuthRedirect(returnTo = "/login") {
   const base = getApiBaseURL();
   const path =
-    typeof returnTo === "string" && returnTo.startsWith("/") ? returnTo : "/login";
+    typeof returnTo === "string" && returnTo.startsWith("/")
+      ? returnTo
+      : "/login";
   const url = `${base}/auth/google/start?returnTo=${encodeURIComponent(path)}`;
   window.location.assign(url);
 }

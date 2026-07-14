@@ -1,16 +1,21 @@
-import React, { useCallback, useEffect, useMemo, useRef } from "react";
-import { Alert, Box, Button, useTheme } from "@mui/material";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Alert, Box, Button, CircularProgress, useTheme } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
-import { isEmbeddedWebView } from "../utils/isEmbeddedWebView";
 import {
   getGoogleClientId,
   GoogleGLogo,
   googleIdentityState,
   loadGsiScript,
   shouldUseGoogleOAuthRedirect,
+  shouldUseNativeGoogleSignIn,
   startGoogleOAuthRedirect,
 } from "../utils/googleSignIn";
+import {
+  DASHKAN_AUTH_ERROR_EVENT,
+  DASHKAN_AUTH_SESSION_EVENT,
+  requestNativeGoogleSignIn,
+} from "../utils/nativeGoogleAuthBridge";
 
 export default function GoogleSignInButton({
   onSuccess,
@@ -24,12 +29,17 @@ export default function GoogleSignInButton({
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const { t } = useTranslation();
-  const { loginWithGoogle } = useAuth();
+  const { loginWithGoogle, isAuthenticated } = useAuth();
   const googleRenderRef = useRef(null);
   const handlerRef = useRef(async () => {});
+  const [nativePending, setNativePending] = useState(false);
 
   const googleClientId = getGoogleClientId();
-  const useGoogleOAuthRedirect = useMemo(() => shouldUseGoogleOAuthRedirect(), []);
+  const useNativeGoogle = useMemo(() => shouldUseNativeGoogleSignIn(), []);
+  const useGoogleOAuthRedirect = useMemo(
+    () => shouldUseGoogleOAuthRedirect(),
+    [],
+  );
 
   const handleGoogleCredential = useCallback(
     async (credential) => {
@@ -58,6 +68,39 @@ export default function GoogleSignInButton({
 
   handlerRef.current = handleGoogleCredential;
 
+  // Native WebView: AuthContext applies JWT; finish button waiters here.
+  useEffect(() => {
+    if (!useNativeGoogle) return undefined;
+
+    const onSession = () => {
+      setNativePending(false);
+      onSuccess?.();
+    };
+    const onFail = (event) => {
+      setNativePending(false);
+      const message =
+        (typeof event?.detail?.message === "string" && event.detail.message) ||
+        t("Google sign-in failed", {
+          defaultValue: "Google sign-in failed",
+        });
+      onError?.(message);
+    };
+
+    window.addEventListener(DASHKAN_AUTH_SESSION_EVENT, onSession);
+    window.addEventListener(DASHKAN_AUTH_ERROR_EVENT, onFail);
+    return () => {
+      window.removeEventListener(DASHKAN_AUTH_SESSION_EVENT, onSession);
+      window.removeEventListener(DASHKAN_AUTH_ERROR_EVENT, onFail);
+    };
+  }, [useNativeGoogle, onSuccess, onError, t]);
+
+  useEffect(() => {
+    if (isAuthenticated && nativePending) {
+      setNativePending(false);
+      onSuccess?.();
+    }
+  }, [isAuthenticated, nativePending, onSuccess]);
+
   const defaultButtonSx = useMemo(
     () => ({
       py: 1.25,
@@ -78,8 +121,39 @@ export default function GoogleSignInButton({
     [isDark, buttonSx],
   );
 
+  const startNativeGoogle = useCallback(() => {
+    setNativePending(true);
+    const ok = requestNativeGoogleSignIn({ returnTo });
+    if (!ok) {
+      setNativePending(false);
+      onError?.(
+        t("googleNativeUnavailable", {
+          defaultValue:
+            "Native Google sign-in is not available. Update the app and try again.",
+        }),
+      );
+      return;
+    }
+    // Safety: if Flutter never answers, clear spinner.
+    window.setTimeout(() => {
+      setNativePending((pending) => {
+        if (pending) {
+          onError?.(
+            t("Google sign-in failed", {
+              defaultValue: "Google sign-in failed",
+            }),
+          );
+        }
+        return false;
+      });
+    }, 90_000);
+  }, [returnTo, onError, t]);
+
+  // Desktop / normal browsers only — never mount GIS inside embedded WebView.
   useEffect(() => {
-    if (!googleClientId || useGoogleOAuthRedirect) return undefined;
+    if (!googleClientId || useNativeGoogle || useGoogleOAuthRedirect) {
+      return undefined;
+    }
 
     let cancelled = false;
 
@@ -148,9 +222,9 @@ export default function GoogleSignInButton({
       cancelled = true;
       if (googleRenderRef.current) googleRenderRef.current.innerHTML = "";
     };
-  }, [googleClientId, useGoogleOAuthRedirect]);
+  }, [googleClientId, useNativeGoogle, useGoogleOAuthRedirect]);
 
-  if (!googleClientId) {
+  if (!googleClientId && !useNativeGoogle) {
     if (!showEnvWarning) return null;
     return (
       <Alert severity="warning" sx={{ borderRadius: 2 }}>
@@ -169,15 +243,34 @@ export default function GoogleSignInButton({
         gap: 1,
       }}
     >
-      {showWebViewHint && useGoogleOAuthRedirect && isEmbeddedWebView() && (
+      {showWebViewHint && useNativeGoogle && (
         <Alert severity="info" sx={{ borderRadius: 2 }}>
-          {t("googleWebViewRedirectHint", {
+          {t("googleWebViewNativeHint", {
             defaultValue:
-              "Google sign-in will continue in this window (full page), then bring you back here.",
+              "Continue with Google opens the Google account picker in the app, then signs you in here.",
           })}
         </Alert>
       )}
-      {useGoogleOAuthRedirect ? (
+      {useNativeGoogle ? (
+        <Button
+          type="button"
+          fullWidth
+          variant="outlined"
+          size="large"
+          disabled={disabled || nativePending}
+          onClick={startNativeGoogle}
+          sx={defaultButtonSx}
+        >
+          {nativePending ? (
+            <CircularProgress size={22} thickness={4} />
+          ) : (
+            <GoogleGLogo size={22} />
+          )}
+          {nativePending
+            ? t("Signing in...", { defaultValue: "Signing in..." })
+            : t("Continue with Google")}
+        </Button>
+      ) : useGoogleOAuthRedirect ? (
         <Button
           type="button"
           fullWidth

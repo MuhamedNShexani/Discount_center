@@ -20,7 +20,7 @@ export const DATA_LANGUAGE_OPTIONS = [
   { value: DATA_LANG_AR, labelKey: "Arabic" },
 ];
 
-const STORAGE_KEY = "patrisSystemDataLanguage.v1";
+const STORAGE_KEY = "dashkanSystemDataLanguage.v1";
 
 function readStored() {
   try {

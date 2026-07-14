@@ -816,7 +816,7 @@ const ReelsPage = () => {
 
     // Android WebView often skips visibilitychange; native host can call this from Activity.onPause.
     if (typeof window !== "undefined") {
-      window.patrisPauseReels = pauseAllForBackground;
+      window.dashkanPauseReels = pauseAllForBackground;
     }
 
     return () => {
@@ -826,8 +826,8 @@ const ReelsPage = () => {
       window.removeEventListener("blur", onWindowBlur);
       window.removeEventListener("focus", onWindowFocus);
       document.removeEventListener("freeze", onFreeze);
-      if (typeof window !== "undefined" && window.patrisPauseReels) {
-        delete window.patrisPauseReels;
+      if (typeof window !== "undefined" && window.dashkanPauseReels) {
+        delete window.dashkanPauseReels;
       }
     };
   }, []);

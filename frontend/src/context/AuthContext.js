@@ -1,5 +1,6 @@
-import React, { createContext, useState, useContext, useEffect } from "react";
+import React, { createContext, useState, useContext, useEffect, useCallback } from "react";
 import { authAPI } from "../services/api";
+import { installNativeGoogleAuthBridge } from "../utils/nativeGoogleAuthBridge";
 
 const AuthContext = createContext(null);
 
@@ -28,6 +29,14 @@ export const AuthProvider = ({ children }) => {
     }
 
     setLoading(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only hydrate
+  }, []);
+
+  const logout = useCallback(() => {
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
   }, []);
 
   const refreshUserProfile = async () => {
@@ -104,38 +113,69 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  /** After Google OAuth redirect (?google_oauth_token= app JWT). */
-  const completeSessionWithToken = async (appJwt) => {
-    if (!appJwt || typeof appJwt !== "string") {
-      return { success: false, message: "Invalid session" };
-    }
-    try {
-      const response = await authAPI.getProfile({
-        headers: { Authorization: `Bearer ${appJwt}` },
-      });
-      if (response.data?.success) {
-        const u = response.data.data.user;
-        setToken(appJwt);
-        setUser(u);
-        localStorage.setItem("token", appJwt);
-        localStorage.setItem("user", JSON.stringify(u));
+  /** After Google OAuth redirect or native Flutter JWT injection. */
+  const completeSessionWithToken = useCallback(
+    async (appJwt) => {
+      if (!appJwt || typeof appJwt !== "string") {
+        return { success: false, message: "Invalid session" };
+      }
+      try {
+        const response = await authAPI.getProfile({
+          headers: { Authorization: `Bearer ${appJwt}` },
+        });
+        if (response.data?.success) {
+          const u = response.data.data.user;
+          setToken(appJwt);
+          setUser(u);
+          localStorage.setItem("token", appJwt);
+          localStorage.setItem("user", JSON.stringify(u));
+          return { success: true };
+        }
+        logout();
+        return {
+          success: false,
+          message: response.data?.message || "Could not complete sign-in",
+        };
+      } catch (error) {
+        console.error("completeSessionWithToken:", error);
+        logout();
+        return {
+          success: false,
+          message:
+            error.response?.data?.message || "Could not complete sign-in",
+        };
+      }
+    },
+    [logout],
+  );
+
+  /** Apply session from Flutter (JWT already issued by POST /api/auth/google). */
+  const acceptNativeAuthSession = useCallback(
+    async ({ token: appJwt, user: injectedUser } = {}) => {
+      const jwt = typeof appJwt === "string" ? appJwt.trim() : "";
+      if (!jwt) {
+        return { success: false, message: "Invalid session" };
+      }
+      if (injectedUser && typeof injectedUser === "object") {
+        setToken(jwt);
+        setUser(injectedUser);
+        localStorage.setItem("token", jwt);
+        localStorage.setItem("user", JSON.stringify(injectedUser));
         return { success: true };
       }
-      logout();
-      return {
-        success: false,
-        message: response.data?.message || "Could not complete sign-in",
-      };
-    } catch (error) {
-      console.error("completeSessionWithToken:", error);
-      logout();
-      return {
-        success: false,
-        message:
-          error.response?.data?.message || "Could not complete sign-in",
-      };
-    }
-  };
+      return completeSessionWithToken(jwt);
+    },
+    [completeSessionWithToken],
+  );
+
+  // Flutter WebView → AuthContext (same pattern as installFcmTokenBridge).
+  useEffect(() => {
+    return installNativeGoogleAuthBridge({
+      onSession: (payload) => {
+        void acceptNativeAuthSession(payload);
+      },
+    });
+  }, [acceptNativeAuthSession]);
 
   const register = async (userData) => {
     try {
@@ -158,13 +198,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-  };
-
   const deactivate = async () => {
     try {
       const response = await authAPI.deactivate(getAuthHeaders());
@@ -172,9 +205,13 @@ export const AuthProvider = ({ children }) => {
         logout();
         return { success: true, message: response.data.message };
       }
-      return { success: false, message: response.data?.message || "Deactivation failed" };
+      return {
+        success: false,
+        message: response.data?.message || "Deactivation failed",
+      };
     } catch (error) {
-      const message = error.response?.data?.message || error.message || "Deactivation failed";
+      const message =
+        error.response?.data?.message || error.message || "Deactivation failed";
       return { success: false, message };
     }
   };
@@ -230,6 +267,7 @@ export const AuthProvider = ({ children }) => {
         login,
         loginWithGoogle,
         completeSessionWithToken,
+        acceptNativeAuthSession,
         logout,
         deactivate,
         register,

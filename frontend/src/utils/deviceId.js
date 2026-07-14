@@ -5,8 +5,8 @@
  */
 
 const STORAGE_KEY = "deviceId";
-const COOKIE_NAME = "patris_device_id";
-const IDB_NAME = "patris_device";
+const COOKIE_NAME = "dashkan_device_id";
+const IDB_NAME = "dashkan_device";
 const IDB_STORE = "kv";
 const IDB_VERSION = 1;
 /** ~10 years — cookie backup when localStorage is cleared but cookie survives (some WebViews). */
@@ -170,8 +170,8 @@ export async function hydrateDeviceId() {
   /** Optional: native WebView sets a stable id when no local id exists (e.g. ANDROID_ID / Keychain). */
   const nativeRaw =
     typeof window !== "undefined" &&
-    typeof window.__PATRIS_DEVICE_ID__ === "string"
-      ? window.__PATRIS_DEVICE_ID__.trim()
+    typeof window.__DASHKAN_DEVICE_ID__ === "string"
+      ? window.__DASHKAN_DEVICE_ID__.trim()
       : "";
   if (nativeRaw.length >= 8 && nativeRaw.length <= 128) {
     const nativeId = nativeRaw.startsWith("dev_")

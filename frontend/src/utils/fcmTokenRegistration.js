@@ -19,8 +19,8 @@ function resolvePlatform() {
 
 /**
  * Register an FCM token with the backend.
- * Used when the native WebView injects a token via window.__PATRIS_FCM_TOKEN__
- * or dispatches a `patris:fcm-token` CustomEvent.
+ * Used when the native WebView injects a token via window.__DASHKAN_FCM_TOKEN__
+ * or dispatches a `dashkan:fcm-token` CustomEvent.
  */
 export async function registerFcmTokenWithBackend(fcmToken, options = {}) {
   const token = typeof fcmToken === "string" ? fcmToken.trim() : "";
@@ -69,8 +69,8 @@ export function installFcmTokenBridge() {
     const detail = event?.detail || {};
     const token =
       detail.token ||
-      (typeof window.__PATRIS_FCM_TOKEN__ === "string"
-        ? window.__PATRIS_FCM_TOKEN__
+      (typeof window.__DASHKAN_FCM_TOKEN__ === "string"
+        ? window.__DASHKAN_FCM_TOKEN__
         : "");
     if (!token) return;
     void registerFcmTokenWithBackend(token, {
@@ -81,16 +81,16 @@ export function installFcmTokenBridge() {
     });
   };
 
-  window.addEventListener("patris:fcm-token", handler);
+  window.addEventListener("dashkan:fcm-token", handler);
 
-  if (typeof window.__PATRIS_FCM_TOKEN__ === "string") {
-    void registerFcmTokenWithBackend(window.__PATRIS_FCM_TOKEN__, {
+  if (typeof window.__DASHKAN_FCM_TOKEN__ === "string") {
+    void registerFcmTokenWithBackend(window.__DASHKAN_FCM_TOKEN__, {
       platform:
-        typeof window.__PATRIS_FCM_PLATFORM__ === "string"
-          ? window.__PATRIS_FCM_PLATFORM__
+        typeof window.__DASHKAN_FCM_PLATFORM__ === "string"
+          ? window.__DASHKAN_FCM_PLATFORM__
           : undefined,
     });
   }
 
-  return () => window.removeEventListener("patris:fcm-token", handler);
+  return () => window.removeEventListener("dashkan:fcm-token", handler);
 }
