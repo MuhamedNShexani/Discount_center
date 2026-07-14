@@ -2,6 +2,7 @@ import React, {
   useState,
   useMemo,
   useCallback,
+  useEffect,
 } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -39,7 +40,8 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { login, register } = useAuth();
+  const { login, register, isAuthenticated, user, loading: authLoading } =
+    useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
@@ -65,6 +67,10 @@ const LoginPage = () => {
   });
 
   const finishAuthNavigation = useCallback(() => {
+    console.log("[DASHKAN_WEB] finishAuthNavigation", {
+      fromOnboarding,
+      from: location.state?.from?.pathname || "/",
+    });
     if (fromOnboarding) {
       completeAccountOnboarding();
     }
@@ -76,6 +82,14 @@ const LoginPage = () => {
     location.state,
     navigate,
   ]);
+
+  // Native Google (and any async auth): leave /login when AuthContext becomes authenticated.
+  useEffect(() => {
+    if (authLoading) return;
+    if (!isAuthenticated || !user) return;
+    console.log("[DASHKAN_WEB] LoginPage detected isAuthenticated → navigate away");
+    finishAuthNavigation();
+  }, [authLoading, isAuthenticated, user, finishAuthNavigation]);
 
   const oauthReturnTo = location.state?.from?.pathname || "/";
 

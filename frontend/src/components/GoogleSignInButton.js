@@ -14,8 +14,11 @@ import {
 import {
   DASHKAN_AUTH_ERROR_EVENT,
   DASHKAN_AUTH_SESSION_EVENT,
+  readNativeAuthPayload,
   requestNativeGoogleSignIn,
 } from "../utils/nativeGoogleAuthBridge";
+
+const LOG = (...args) => console.log("[DASHKAN_WEB]", ...args);
 
 export default function GoogleSignInButton({
   onSuccess,
@@ -29,10 +32,15 @@ export default function GoogleSignInButton({
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const { t } = useTranslation();
-  const { loginWithGoogle, isAuthenticated } = useAuth();
+  const { loginWithGoogle, isAuthenticated, acceptNativeAuthSession } =
+    useAuth();
   const googleRenderRef = useRef(null);
   const handlerRef = useRef(async () => {});
   const [nativePending, setNativePending] = useState(false);
+  const onSuccessRef = useRef(onSuccess);
+  const onErrorRef = useRef(onError);
+  onSuccessRef.current = onSuccess;
+  onErrorRef.current = onError;
 
   const googleClientId = getGoogleClientId();
   const useNativeGoogle = useMemo(() => shouldUseNativeGoogleSignIn(), []);
@@ -46,9 +54,9 @@ export default function GoogleSignInButton({
       try {
         const result = await loginWithGoogle(credential);
         if (result.success) {
-          onSuccess?.();
+          onSuccessRef.current?.();
         } else {
-          onError?.(
+          onErrorRef.current?.(
             result.message ||
               t("Google sign-in failed", {
                 defaultValue: "Google sign-in failed",
@@ -56,50 +64,89 @@ export default function GoogleSignInButton({
           );
         }
       } catch {
-        onError?.(
+        onErrorRef.current?.(
           t("Google sign-in failed", {
             defaultValue: "Google sign-in failed",
           }),
         );
       }
     },
-    [loginWithGoogle, onSuccess, onError, t],
+    [loginWithGoogle, t],
   );
 
   handlerRef.current = handleGoogleCredential;
 
-  // Native WebView: AuthContext applies JWT; finish button waiters here.
+  // Native WebView: finish UI waiters when session lands (event OR AuthContext).
   useEffect(() => {
     if (!useNativeGoogle) return undefined;
 
-    const onSession = () => {
+    const onSession = (event) => {
+      LOG("GoogleSignInButton auth-session received", event?.detail);
       setNativePending(false);
-      onSuccess?.();
+      onSuccessRef.current?.();
     };
     const onFail = (event) => {
+      LOG("GoogleSignInButton auth-error received", event?.detail);
       setNativePending(false);
       const message =
         (typeof event?.detail?.message === "string" && event.detail.message) ||
         t("Google sign-in failed", {
           defaultValue: "Google sign-in failed",
         });
-      onError?.(message);
+      onErrorRef.current?.(message);
     };
 
-    window.addEventListener(DASHKAN_AUTH_SESSION_EVENT, onSession);
-    window.addEventListener(DASHKAN_AUTH_ERROR_EVENT, onFail);
+    window.addEventListener(DASHKAN_AUTH_SESSION_EVENT, onSession, true);
+    document.addEventListener(DASHKAN_AUTH_SESSION_EVENT, onSession, true);
+    window.addEventListener(DASHKAN_AUTH_ERROR_EVENT, onFail, true);
+    document.addEventListener(DASHKAN_AUTH_ERROR_EVENT, onFail, true);
     return () => {
-      window.removeEventListener(DASHKAN_AUTH_SESSION_EVENT, onSession);
-      window.removeEventListener(DASHKAN_AUTH_ERROR_EVENT, onFail);
+      window.removeEventListener(DASHKAN_AUTH_SESSION_EVENT, onSession, true);
+      document.removeEventListener(DASHKAN_AUTH_SESSION_EVENT, onSession, true);
+      window.removeEventListener(DASHKAN_AUTH_ERROR_EVENT, onFail, true);
+      document.removeEventListener(DASHKAN_AUTH_ERROR_EVENT, onFail, true);
     };
-  }, [useNativeGoogle, onSuccess, onError, t]);
+  }, [useNativeGoogle, t]);
 
   useEffect(() => {
     if (isAuthenticated && nativePending) {
+      LOG("GoogleSignInButton: isAuthenticated became true while pending → onSuccess");
       setNativePending(false);
-      onSuccess?.();
+      onSuccessRef.current?.();
     }
-  }, [isAuthenticated, nativePending, onSuccess]);
+  }, [isAuthenticated, nativePending]);
+
+  // Poll globals/localStorage while pending — covers missed CustomEvents (non-bubbling).
+  useEffect(() => {
+    if (!useNativeGoogle || !nativePending) return undefined;
+    let cancelled = false;
+    const tick = async () => {
+      if (cancelled) return;
+      const payload = readNativeAuthPayload({});
+      if (!payload.token) return;
+      LOG("GoogleSignInButton poll found injected token → acceptNativeAuthSession");
+      setNativePending(false);
+      const result = await acceptNativeAuthSession?.(payload);
+      if (result?.success) {
+        onSuccessRef.current?.();
+      } else {
+        onErrorRef.current?.(
+          result?.message ||
+            t("Google sign-in failed", {
+              defaultValue: "Google sign-in failed",
+            }),
+        );
+      }
+    };
+    const id = window.setInterval(() => {
+      void tick();
+    }, 400);
+    void tick();
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [useNativeGoogle, nativePending, acceptNativeAuthSession, t]);
 
   const defaultButtonSx = useMemo(
     () => ({
@@ -122,11 +169,12 @@ export default function GoogleSignInButton({
   );
 
   const startNativeGoogle = useCallback(() => {
+    LOG("Continue with Google clicked (native path)");
     setNativePending(true);
     const ok = requestNativeGoogleSignIn({ returnTo });
     if (!ok) {
       setNativePending(false);
-      onError?.(
+      onErrorRef.current?.(
         t("googleNativeUnavailable", {
           defaultValue:
             "Native Google sign-in is not available. Update the app and try again.",
@@ -134,11 +182,11 @@ export default function GoogleSignInButton({
       );
       return;
     }
-    // Safety: if Flutter never answers, clear spinner.
     window.setTimeout(() => {
       setNativePending((pending) => {
         if (pending) {
-          onError?.(
+          LOG("native Google sign-in timed out after 90s");
+          onErrorRef.current?.(
             t("Google sign-in failed", {
               defaultValue: "Google sign-in failed",
             }),
@@ -147,7 +195,7 @@ export default function GoogleSignInButton({
         return false;
       });
     }, 90_000);
-  }, [returnTo, onError, t]);
+  }, [returnTo, t]);
 
   // Desktop / normal browsers only — never mount GIS inside embedded WebView.
   useEffect(() => {
