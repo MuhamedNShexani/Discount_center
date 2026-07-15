@@ -408,6 +408,8 @@ export const resources = {
 
       // Authentication
       "Welcome Back": "Welcome Back",
+      "Welcome, {{name}}!": "Welcome, {{name}}!",
+      "Welcome!": "Welcome!",
       "Sign in to your account or create a new one":
         "Sign in to your account or create a new one",
       "Continue as Guest": "Continue as Guest",
@@ -505,6 +507,13 @@ export const resources = {
       "No followed stores yet": "No followed stores yet",
       "Follow stores from the main page to see them here":
         "Follow stores from the main page to see them here",
+      "No followed brands yet": "No followed brands yet",
+      "Follow brands from brand pages to see them here":
+        "Follow brands from brand pages to see them here",
+      "No followed companies yet": "No followed companies yet",
+      "Follow companies from company pages to see them here":
+        "Follow companies from company pages to see them here",
+      "Failed to load following": "Failed to load following",
       "No likes yet": "No likes yet",
       "Like products to add them to your likes":
         "Like products to add them to your likes",
@@ -983,6 +992,8 @@ export const resources = {
       Available: "متاح",
       Register: "تسجيل",
       "Welcome Back": "مرحباً بعودتك",
+      "Welcome, {{name}}!": "مرحباً بك، {{name}}!",
+      "Welcome!": "مرحباً بك!",
       "Sign in to your account or create a new one":
         "سجّل دخولك أو أنشئ حسابًا جديدًا",
       Login: "تسجيل الدخول",
@@ -1466,6 +1477,13 @@ export const resources = {
       "No followed stores yet": "لا متاجر متابع عليها بعد",
       "Follow stores from the main page to see them here":
         "تابِع المتاجر من الصفحة الرئيسية لعرضها هنا",
+      "No followed brands yet": "لا علامات تجارية متابع عليها بعد",
+      "Follow brands from brand pages to see them here":
+        "تابِع العلامات التجارية من صفحاتها لعرضها هنا",
+      "No followed companies yet": "لا شركات متابع عليها بعد",
+      "Follow companies from company pages to see them here":
+        "تابِع الشركات من صفحاتها لعرضها هنا",
+      "Failed to load following": "فشل تحميل قائمة المتابعة",
       "No favourites yet": "لا معجبات بعد",
       "Like products to add them to your favourites":
         "أعجب بالمنتجات لإضافتها إلى المفضلة",
@@ -1876,6 +1894,8 @@ export const resources = {
       Available: "بەردەست",
       Register: "دروستکردنی هەژمار",
       "Welcome Back": "بەخێربێیتەوە ",
+      "Welcome, {{name}}!": "بەخێربێیت، {{name}}!",
+      "Welcome!": "بەخێربێیت!",
       "Sign in to your account or create a new one":
         "هەژمارەکەت تۆماربکە یاخود دانەیەکى نوێ دروست بکە",
       Login: "چوونەژوورەوە",
@@ -2480,6 +2500,13 @@ export const resources = {
       "No followed stores yet": "هێشتا هیچ فرۆشگایەک شوێنکەوت نەکراوە",
       "Follow stores from the main page to see them here":
         "فرۆشگاکان لە پەڕەی سەرەوە شوێنکەوتن بکە بۆ بینین لێرە",
+      "No followed brands yet": "هێشتا هیچ براندێک شوێنکەوت نەکراوە",
+      "Follow brands from brand pages to see them here":
+        "براندەکان لە پەڕەی براند شوێنکەوتن بکە بۆ بینین لێرە",
+      "No followed companies yet": "هێشتا هیچ کۆمپانیایەک شوێنکەوت نەکراوە",
+      "Follow companies from company pages to see them here":
+        "کۆمپانیاکان لە پەڕەی کۆمپانیا شوێنکەوتن بکە بۆ بینین لێرە",
+      "Failed to load following": "شکستی هێنا لە بارکردنی شوێنکەوتن",
       "No favourites yet": "هیچ کاڵایەکى بەدڵبوو نەدۆزرایەوە",
       "Like products to add them to your favourites":
         "لایکی کاڵا بەدڵبووەکانت بکە بۆ ئەوەى  بێتە نێو لیستى داشکاندنە بەدڵبووەکانت",

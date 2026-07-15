@@ -97,14 +97,14 @@ const sanitizeSlot = (value) => {
 };
 
 const DEFAULT_PROFILE_SHORTCUTS = [
+  "favourites",
+  "following",
   "brands",
   "companies",
   "findjob",
   "categories",
   "stores",
   "gifts",
-  "search",
-  "reels",
 ];
 
 const DEFAULT_TRENDING_SEARCHES = [
@@ -124,6 +124,7 @@ const ALLOWED_PROFILE_SHORTCUT_IDS = new Set([
   "categories",
   "reels",
   "favourites",
+  "following",
   "stores",
   "gifts",
   "shopping",

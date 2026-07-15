@@ -5,9 +5,14 @@ const {
   toggleProductLike,
   toggleVideoLike,
   toggleFollowStore,
+  toggleFollowBrand,
+  toggleFollowCompany,
   recordProductView,
   getLikedProducts,
   getFollowedStores,
+  getFollowedBrands,
+  getFollowedCompanies,
+  getFollowing,
   updateDeviceProfile,
 } = require("../controllers/userController");
 const { pushSubscribe } = require("../controllers/pushController");
@@ -24,8 +29,13 @@ router.use(fcmRoutes);
 router.post("/like-product", toggleProductLike);
 router.post("/like-video", toggleVideoLike);
 router.post("/follow-store", toggleFollowStore);
+router.post("/follow-brand", toggleFollowBrand);
+router.post("/follow-company", toggleFollowCompany);
 router.get("/liked-products", getLikedProducts);
 router.get("/followed-stores", getFollowedStores);
+router.get("/followed-brands", getFollowedBrands);
+router.get("/followed-companies", getFollowedCompanies);
+router.get("/following", getFollowing);
 router.put("/device-profile", updateDeviceProfile);
 
 module.exports = router;

@@ -76,6 +76,7 @@ import CardGiftcardIcon from "@mui/icons-material/CardGiftcard";
 import { useTranslation } from "react-i18next";
 import Loader from "../components/Loader";
 import { useUserTracking } from "../hooks/useUserTracking";
+import FollowButton from "../components/store/FollowButton";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { useCityFilter } from "../context/CityFilterContext";
 import { cityStringsMatch, productStoreMatchesCity } from "../utils/cityMatch";
@@ -165,7 +166,15 @@ const BrandProfile = () => {
   const { locName, locDescription, locTitle, locAddress } =
     useLocalizedContent();
   const { selectedCity } = useCityFilter();
-  const { toggleLike, isProductLiked, recordView } = useUserTracking();
+  const {
+    toggleLike,
+    isProductLiked,
+    recordView,
+    toggleFollowBrand,
+    toggleFollowCompany,
+    isBrandFollowed,
+    isCompanyFollowed,
+  } = useUserTracking();
   const { user } = useAuth();
   const profileAdminEdit = isAdminEmail(user);
 
@@ -188,6 +197,8 @@ const BrandProfile = () => {
   const [adminEditProduct, setAdminEditProduct] = useState(null);
 
   const [brand, setBrand] = useState(null);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [followLoading, setFollowLoading] = useState(false);
   const [products, setProducts] = useState([]);
   const [gifts, setGifts] = useState([]);
   const [reels, setReels] = useState([]);
@@ -325,6 +336,7 @@ const BrandProfile = () => {
         ? companyAPI.getById(id)
         : brandAPI.getById(id));
       setBrand(brandResponse.data);
+      setFollowerCount(Number(brandResponse.data?.followerCount) || 0);
 
       // Fetch products for this brand/company
       const productsResponse = await (isCompanyMode
@@ -1771,6 +1783,55 @@ const BrandProfile = () => {
                     }}
                   />
                 )}
+              </Box>
+
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                  flexWrap: "wrap",
+                  mt: 1,
+                }}
+              >
+                <Chip
+                  label={`${followerCount} ${t("Followers", { defaultValue: "Followers" })}`}
+                  size="small"
+                  sx={{
+                    height: 22,
+                    fontSize: "0.68rem",
+                    fontWeight: 600,
+                    bgcolor: "rgba(255,255,255,0.15)",
+                    color: "white",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                  }}
+                />
+                <FollowButton
+                  isFollowed={
+                    isCompanyMode
+                      ? isCompanyFollowed(brand?._id)
+                      : isBrandFollowed(brand?._id)
+                  }
+                  loading={followLoading}
+                  t={t}
+                  onClick={async (e) => {
+                    e?.stopPropagation?.();
+                    if (!brand?._id || followLoading) return;
+                    setFollowLoading(true);
+                    try {
+                      const result = isCompanyMode
+                        ? await toggleFollowCompany(brand._id)
+                        : await toggleFollowBrand(brand._id);
+                      if (result?.success && result?.data) {
+                        setFollowerCount(
+                          Math.max(0, Number(result.data.followerCount) || 0),
+                        );
+                      }
+                    } finally {
+                      setFollowLoading(false);
+                    }
+                  }}
+                />
               </Box>
             </Box>
           </Box>

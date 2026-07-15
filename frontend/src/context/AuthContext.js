@@ -13,11 +13,29 @@ const AuthContext = createContext(null);
 
 const LOG = (...args) => console.log("[DASHKAN_WEB]", ...args);
 
+const getWelcomeName = (user) =>
+  user?.displayName?.trim?.() ||
+  user?.username?.trim?.() ||
+  user?.firstName?.trim?.() ||
+  user?.name?.trim?.() ||
+  user?.email?.split?.("@")?.[0] ||
+  "";
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [welcomeNotice, setWelcomeNotice] = useState(null);
   const acceptRef = useRef(null);
+
+  const showWelcome = useCallback((signedInUser) => {
+    setWelcomeNotice({
+      id: Date.now(),
+      name: getWelcomeName(signedInUser),
+    });
+  }, []);
+
+  const dismissWelcome = useCallback(() => setWelcomeNotice(null), []);
 
   // Check for existing token on app load
   useEffect(() => {
@@ -100,6 +118,7 @@ export const AuthProvider = ({ children }) => {
         setToken(token);
         localStorage.setItem("token", token);
         localStorage.setItem("user", JSON.stringify(user));
+        showWelcome(user);
         LOG("password login success → state + localStorage updated");
         return { success: true };
       }
@@ -122,6 +141,7 @@ export const AuthProvider = ({ children }) => {
         setToken(token);
         localStorage.setItem("token", token);
         localStorage.setItem("user", JSON.stringify(user));
+        showWelcome(user);
         LOG("GIS loginWithGoogle success → state + localStorage updated");
         return { success: true };
       }
@@ -154,6 +174,7 @@ export const AuthProvider = ({ children }) => {
           setUser(u);
           localStorage.setItem("token", appJwt);
           localStorage.setItem("user", JSON.stringify(u));
+          showWelcome(u);
           LOG("completeSessionWithToken success", {
             userId: u?._id,
             email: u?.email,
@@ -177,7 +198,7 @@ export const AuthProvider = ({ children }) => {
         };
       }
     },
-    [logout],
+    [logout, showWelcome],
   );
 
   /**
@@ -203,6 +224,7 @@ export const AuthProvider = ({ children }) => {
         setToken(jwt);
         setUser(injectedUser);
         localStorage.setItem("user", JSON.stringify(injectedUser));
+        showWelcome(injectedUser);
         LOG("acceptNativeAuthSession: applied injected user + token", {
           userId: injectedUser?._id,
           email: injectedUser?.email,
@@ -216,7 +238,7 @@ export const AuthProvider = ({ children }) => {
       LOG("acceptNativeAuthSession: no injected user → completeSessionWithToken");
       return completeSessionWithToken(jwt);
     },
-    [completeSessionWithToken],
+    [completeSessionWithToken, showWelcome],
   );
 
   acceptRef.current = acceptNativeAuthSession;
@@ -254,6 +276,7 @@ export const AuthProvider = ({ children }) => {
         setToken(token);
         localStorage.setItem("token", token);
         localStorage.setItem("user", JSON.stringify(user));
+        showWelcome(user);
         return { success: true };
       }
       return { success: false, message: response.data.message };
@@ -344,6 +367,8 @@ export const AuthProvider = ({ children }) => {
         getAuthHeaders,
         refreshUserProfile,
         isAuthenticated: !!user && !!token,
+        welcomeNotice,
+        dismissWelcome,
       }}
     >
       {children}

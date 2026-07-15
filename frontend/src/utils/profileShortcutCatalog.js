@@ -8,6 +8,7 @@ export const PROFILE_SHORTCUT_CATALOG = [
   { id: "categories", path: "/categories", labelKey: "Categories" },
   { id: "reels", path: "/reels", labelKey: "Reels" },
   { id: "favourites", path: "/favourites", labelKey: "Favourites" },
+  { id: "following", path: "/following", labelKey: "Following" },
   { id: "stores", path: "/stores", labelKey: "Stores" },
   { id: "gifts", path: "/gifts", labelKey: "Gifts" },
   { id: "shopping", path: "/shopping", labelKey: "Shopping" },
@@ -17,14 +18,14 @@ export const PROFILE_SHORTCUT_CATALOG = [
 ];
 
 export const DEFAULT_PROFILE_SHORTCUT_IDS = [
+  "favourites",
+  "following",
   "brands",
   "companies",
   "findjob",
   "categories",
   "stores",
   "gifts",
-  "search",
-  "reels",
 ];
 
 const ALLOWED_IDS = new Set(PROFILE_SHORTCUT_CATALOG.map((x) => x.id));

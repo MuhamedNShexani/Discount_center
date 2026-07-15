@@ -290,6 +290,59 @@ export const useUserTracking = () => {
     }
   }, [isAuthenticated, deviceId, getAuthHeaders]);
 
+  const syncFollowedList = useCallback(
+    (field, entityId) => {
+      const idStr = String(entityId);
+      const matches = (id) => String(id) === idStr;
+      if (!isAuthenticated) {
+        setUser((prevUser) => {
+          if (!prevUser) return prevUser;
+          const list = prevUser[field] || [];
+          const isCurrentlyFollowed = list.some(matches);
+          return {
+            ...prevUser,
+            [field]: isCurrentlyFollowed
+              ? list.filter((id) => !matches(id))
+              : [...list, entityId],
+          };
+        });
+        return;
+      }
+      try {
+        const authUser = JSON.parse(localStorage.getItem("user"));
+        if (!authUser) return;
+        const list = authUser[field] || [];
+        const isCurrentlyFollowed = list.some(matches);
+        authUser[field] = isCurrentlyFollowed
+          ? list.filter((id) => !matches(id))
+          : [...list, entityId];
+        localStorage.setItem("user", JSON.stringify(authUser));
+      } catch (e) {
+        console.error("syncFollowedList:", e);
+      }
+    },
+    [isAuthenticated],
+  );
+
+  const isEntityFollowed = useCallback(
+    (field, entityId) => {
+      if (!entityId) return false;
+      const idStr = String(entityId);
+      if (isAuthenticated) {
+        try {
+          const authUser = JSON.parse(localStorage.getItem("user"));
+          if (!authUser?.[field]) return false;
+          return authUser[field].some((id) => String(id) === idStr);
+        } catch {
+          return false;
+        }
+      }
+      if (!user?.[field]) return false;
+      return user[field].some((id) => String(id) === idStr);
+    },
+    [isAuthenticated, user],
+  );
+
   // Toggle store follow (works for both logged-in and device users)
   const toggleFollowStore = useCallback(
     async (storeId) => {
@@ -310,44 +363,7 @@ export const useUserTracking = () => {
         );
 
         if (response.data.success) {
-          if (!isAuthenticated) {
-            setUser((prevUser) => {
-              if (!prevUser) return prevUser;
-              const isCurrentlyFollowed = (prevUser.followedStores || []).some(
-                (id) => id.toString() === storeId || id === storeId,
-              );
-              if (isCurrentlyFollowed) {
-                return {
-                  ...prevUser,
-                  followedStores: (prevUser.followedStores || []).filter(
-                    (id) => id.toString() !== storeId && id !== storeId,
-                  ),
-                };
-              }
-              return {
-                ...prevUser,
-                followedStores: [...(prevUser.followedStores || []), storeId],
-              };
-            });
-          } else {
-            const authUser = JSON.parse(localStorage.getItem("user"));
-            if (authUser) {
-              const isCurrentlyFollowed = (authUser.followedStores || []).some(
-                (id) => id === storeId || id.toString() === storeId,
-              );
-              if (isCurrentlyFollowed) {
-                authUser.followedStores = (
-                  authUser.followedStores || []
-                ).filter((id) => id !== storeId && id.toString() !== storeId);
-              } else {
-                authUser.followedStores = [
-                  ...(authUser.followedStores || []),
-                  storeId,
-                ];
-              }
-              localStorage.setItem("user", JSON.stringify(authUser));
-            }
-          }
+          syncFollowedList("followedStores", storeId);
           return response.data;
         }
         return response.data;
@@ -359,25 +375,87 @@ export const useUserTracking = () => {
         };
       }
     },
-    [isAuthenticated, deviceId, getAuthHeaders],
+    [isAuthenticated, deviceId, getAuthHeaders, syncFollowedList],
+  );
+
+  const toggleFollowBrand = useCallback(
+    async (brandId) => {
+      if (!isAuthenticated && !deviceId) {
+        return {
+          success: false,
+          message: "Please wait for app to load",
+          requiresAuth: false,
+        };
+      }
+      try {
+        const headers = getAuthHeaders();
+        const response = await userAPI.toggleFollowBrand(
+          isAuthenticated ? null : deviceId,
+          brandId,
+          headers,
+        );
+        if (response.data.success) {
+          syncFollowedList("followedBrands", brandId);
+          return response.data;
+        }
+        return response.data;
+      } catch (error) {
+        console.error("Error toggling brand follow:", error);
+        return {
+          success: false,
+          message: error.response?.data?.message || "Failed to toggle follow",
+        };
+      }
+    },
+    [isAuthenticated, deviceId, getAuthHeaders, syncFollowedList],
+  );
+
+  const toggleFollowCompany = useCallback(
+    async (companyId) => {
+      if (!isAuthenticated && !deviceId) {
+        return {
+          success: false,
+          message: "Please wait for app to load",
+          requiresAuth: false,
+        };
+      }
+      try {
+        const headers = getAuthHeaders();
+        const response = await userAPI.toggleFollowCompany(
+          isAuthenticated ? null : deviceId,
+          companyId,
+          headers,
+        );
+        if (response.data.success) {
+          syncFollowedList("followedCompanies", companyId);
+          return response.data;
+        }
+        return response.data;
+      } catch (error) {
+        console.error("Error toggling company follow:", error);
+        return {
+          success: false,
+          message: error.response?.data?.message || "Failed to toggle follow",
+        };
+      }
+    },
+    [isAuthenticated, deviceId, getAuthHeaders, syncFollowedList],
   );
 
   // Check if store is followed
   const isStoreFollowed = useCallback(
-    (storeId) => {
-      if (isAuthenticated) {
-        const authUser = JSON.parse(localStorage.getItem("user"));
-        if (!authUser?.followedStores) return false;
-        return authUser.followedStores.some(
-          (id) => id === storeId || id.toString() === storeId,
-        );
-      }
-      if (!user?.followedStores) return false;
-      return user.followedStores.some(
-        (id) => id.toString() === storeId || id === storeId,
-      );
-    },
-    [isAuthenticated, user],
+    (storeId) => isEntityFollowed("followedStores", storeId),
+    [isEntityFollowed],
+  );
+
+  const isBrandFollowed = useCallback(
+    (brandId) => isEntityFollowed("followedBrands", brandId),
+    [isEntityFollowed],
+  );
+
+  const isCompanyFollowed = useCallback(
+    (companyId) => isEntityFollowed("followedCompanies", companyId),
+    [isEntityFollowed],
   );
 
   // Get user's followed stores
@@ -402,6 +480,30 @@ export const useUserTracking = () => {
       return {
         success: false,
         message: "Failed to get followed stores",
+      };
+    }
+  }, [isAuthenticated, deviceId, getAuthHeaders]);
+
+  const getFollowing = useCallback(async () => {
+    if (!isAuthenticated && !deviceId) {
+      return {
+        success: false,
+        message: "Please wait for app to load",
+        requiresAuth: false,
+      };
+    }
+    try {
+      const headers = getAuthHeaders();
+      const response = await userAPI.getFollowing(
+        isAuthenticated ? null : deviceId,
+        headers,
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error getting following:", error);
+      return {
+        success: false,
+        message: "Failed to get following",
       };
     }
   }, [isAuthenticated, deviceId, getAuthHeaders]);
@@ -440,12 +542,17 @@ export const useUserTracking = () => {
     toggleLike,
     toggleVideoLike,
     toggleFollowStore,
+    toggleFollowBrand,
+    toggleFollowCompany,
     recordView,
     updateGuestName,
     isProductLiked,
     isVideoLiked,
     isStoreFollowed,
+    isBrandFollowed,
+    isCompanyFollowed,
     getLikedProducts,
     getFollowedStores,
+    getFollowing,
   };
 };

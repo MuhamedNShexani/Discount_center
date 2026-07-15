@@ -141,6 +141,7 @@ const PROFILE_SHORTCUT_ICONS = {
   categories: CategoryNavIcon,
   reels: VideoLibraryNavIcon,
   favourites: FavoriteNavIcon,
+  following: PeopleIcon,
   stores: StoreNavIcon,
   gifts: CardGiftcardNavIcon,
   shopping: ShoppingBagNavIcon,
@@ -233,7 +234,7 @@ const profileSettingsRowSx = {
   gap: 1,
 };
 
-const ProfilePage = ({ onClose }) => {
+const ProfilePage = ({ onClose, onLogin, onFavourites, onFollowing }) => {
   const theme = useTheme();
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
@@ -690,12 +691,22 @@ const ProfilePage = ({ onClose }) => {
   const profileHubGroups = [
     {
       title: t("Discover", { defaultValue: "Discover" }),
-      items: profileShortcutItems.map((item) => ({
-        key: item.id,
-        label: t(item.labelKey),
-        path: item.path,
-        Icon: PROFILE_SHORTCUT_ICONS[item.id] || GridViewIcon,
-      })),
+      items: profileShortcutItems.map((item) => {
+        const openInDrawer =
+          (item.id === "favourites" && onFavourites) ||
+          (item.id === "following" && onFollowing);
+        return {
+          key: item.id,
+          label: t(item.labelKey),
+          path: openInDrawer ? undefined : item.path,
+          Icon: PROFILE_SHORTCUT_ICONS[item.id] || GridViewIcon,
+          onClick: openInDrawer
+            ? item.id === "favourites"
+              ? onFavourites
+              : onFollowing
+            : undefined,
+        };
+      }),
     },
     {
       title: t("Personal", { defaultValue: "Personal" }),
@@ -1436,9 +1447,14 @@ const ProfilePage = ({ onClose }) => {
                 </>
               ) : (
                 <ListItemButton
-                  component={Link}
-                  to="/login"
-                  onClick={() => onClose?.()}
+                  onClick={() => {
+                    if (onLogin) {
+                      onLogin();
+                      return;
+                    }
+                    onClose?.();
+                    navigate("/login");
+                  }}
                   sx={{
                     color: "primary.main",
                     "&:hover": {

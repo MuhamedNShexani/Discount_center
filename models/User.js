@@ -83,6 +83,18 @@ const userSchema = new mongoose.Schema({
       ref: "Store",
     },
   ],
+  followedBrands: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Brand",
+    },
+  ],
+  followedCompanies: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Company",
+    },
+  ],
 
   // Account status
   isActive: {
@@ -244,6 +256,9 @@ userSchema.methods.getPublicProfile = function () {
       ),
       likedProducts: this.likedProducts,
       likedVideos: this.likedVideos,
+      followedStores: this.followedStores || [],
+      followedBrands: this.followedBrands || [],
+      followedCompanies: this.followedCompanies || [],
       createdAt: this.createdAt,
     };
   } catch (error) {
@@ -257,6 +272,9 @@ userSchema.methods.getPublicProfile = function () {
       role: this.role || "user",
       likedProducts: this.likedProducts || [],
       likedVideos: this.likedVideos || [],
+      followedStores: this.followedStores || [],
+      followedBrands: this.followedBrands || [],
+      followedCompanies: this.followedCompanies || [],
       createdAt: this.createdAt,
     };
   }

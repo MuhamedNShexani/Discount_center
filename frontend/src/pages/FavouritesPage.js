@@ -25,6 +25,7 @@ import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import ArrowBack from "@mui/icons-material/ArrowBack";
+import CloseIcon from "@mui/icons-material/Close";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@mui/material/styles";
 import { useUserTracking } from "../hooks/useUserTracking";
@@ -41,7 +42,7 @@ import { useLocalizedContent } from "../hooks/useLocalizedContent";
 import { formatPriceDigits } from "../utils/formatPriceNumber";
 import ProductDetailDialog from "../components/ProductDetailDialog";
 
-const FavouritesPage = () => {
+const FavouritesPage = ({ embedded = false, onClose }) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const navigate = useNavigate();
@@ -168,30 +169,53 @@ const FavouritesPage = () => {
     return null;
   };
 
+  const navigationControl = embedded ? (
+    <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
+      <IconButton
+        onClick={() => onClose?.()}
+        aria-label={t("Close")}
+        size="small"
+        sx={{
+          width: 30,
+          height: 30,
+          bgcolor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)",
+          "&:hover": {
+            bgcolor: isDark ? "rgba(255,255,255,0.14)" : "rgba(0,0,0,0.1)",
+          },
+        }}
+      >
+        <CloseIcon sx={{ fontSize: 17 }} />
+      </IconButton>
+    </Box>
+  ) : (
+    <Button
+      variant="outlined"
+      startIcon={
+        <ArrowBack sx={{ transform: isRtl ? "scaleX(-1)" : undefined }} />
+      }
+      onClick={() => navigate(-1)}
+      sx={{
+        mt: { xs: 4, md: 3 },
+        mb: 3,
+        borderRadius: 2,
+        borderColor: isDark ? "#4A90E2" : "#1E6FD9",
+        color: isDark ? "#4A90E2" : "#1E6FD9",
+        "&:hover": {
+          borderColor: isDark ? "#4A90E2" : "#1E6FD9",
+          backgroundColor: isDark
+            ? "rgba(255, 122, 26, 0.1)"
+            : "rgba(30, 111, 217, 0.1)",
+        },
+      }}
+    >
+      {t("Back")}
+    </Button>
+  );
+
   if (loading) {
     return (
       <Box sx={{ py: 3, px: 2 }}>
-        <Button
-          variant="outlined"
-          startIcon={<ArrowBack sx={{ transform: isRtl ? "scaleX(-1)" : undefined }} />}
-          onClick={() => navigate(-1)}
-          sx={{
-            mt: { xs: 4, md: 3 },
-            mb: 3,
-            borderRadius: 2,
-            borderColor: theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
-            color: theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
-            "&:hover": {
-              borderColor:
-                theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
-              backgroundColor:
-                theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
-              color: theme.palette.mode === "dark" ? "#FFA94D" : "white",
-            },
-          }}
-        >
-          {t("Back")}
-        </Button>
+        {navigationControl}
         <Box sx={{ mt: 2 }}>
           <Skeleton variant="text" sx={{ width: "50%", mb: 2 }} />
           {Array.from({ length: 4 }).map((_, idx) => (
@@ -212,27 +236,7 @@ const FavouritesPage = () => {
   if (error) {
     return (
       <Box sx={{ py: 3, px: 2 }}>
-        <Button
-          variant="outlined"
-          startIcon={<ArrowBack sx={{ transform: isRtl ? "scaleX(-1)" : undefined }} />}
-          onClick={() => navigate(-1)}
-          sx={{
-            mt: { xs: 4, md: 3 },
-            mb: 3,
-            borderRadius: 2,
-            borderColor: theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
-            color: theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
-            "&:hover": {
-              borderColor:
-                theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
-              backgroundColor:
-                theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
-              color: theme.palette.mode === "dark" ? "#FFA94D" : "white",
-            },
-          }}
-        >
-          {t("Back")}
-        </Button>
+        {navigationControl}
         <Alert severity="error">{error}</Alert>
       </Box>
     );
@@ -249,31 +253,13 @@ const FavouritesPage = () => {
         minWidth: 0,
         overflowX: "hidden",
         boxSizing: "border-box",
-        minHeight: "100vh",
+        minHeight: embedded ? "100%" : "100vh",
+        height: embedded ? "100%" : "auto",
+        overflowY: embedded ? "auto" : undefined,
         bgcolor: "background.default",
       }}
     >
-      <Button
-        variant="outlined"
-        startIcon={<ArrowBack sx={{ transform: isRtl ? "scaleX(-1)" : undefined }} />}
-        onClick={() => navigate(-1)}
-        sx={{
-          mt: { xs: 4, md: 3 },
-          mb: 3,
-          borderRadius: 2,
-          borderColor: theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
-          color: theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
-          "&:hover": {
-            borderColor: theme.palette.mode === "dark" ? "#4A90E2" : "#1E6FD9",
-            backgroundColor:
-              theme.palette.mode === "dark"
-                ? "rgba(255, 122, 26, 0.1)"
-                : "rgba(30, 111, 217, 0.1)",
-          },
-        }}
-      >
-        {t("Back")}
-      </Button>
+      {navigationControl}
       <Typography
         variant="h4"
         sx={{

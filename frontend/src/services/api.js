@@ -337,6 +337,18 @@ export const userAPI = {
       { storeId, ...(deviceId && { deviceId }) },
       { headers },
     ),
+  toggleFollowBrand: (deviceId, brandId, headers = {}) =>
+    api.post(
+      "/users/follow-brand",
+      { brandId, ...(deviceId && { deviceId }) },
+      { headers },
+    ),
+  toggleFollowCompany: (deviceId, companyId, headers = {}) =>
+    api.post(
+      "/users/follow-company",
+      { companyId, ...(deviceId && { deviceId }) },
+      { headers },
+    ),
   recordView: (deviceId, productId, headers = {}) =>
     api.post("/users/view-product", { deviceId, productId }, { headers }),
   getLikedProducts: (deviceId, headers = {}) =>
@@ -346,6 +358,21 @@ export const userAPI = {
     }),
   getFollowedStores: (deviceId, headers = {}) =>
     api.get("/users/followed-stores", {
+      params: deviceId ? { deviceId } : {},
+      headers,
+    }),
+  getFollowedBrands: (deviceId, headers = {}) =>
+    api.get("/users/followed-brands", {
+      params: deviceId ? { deviceId } : {},
+      headers,
+    }),
+  getFollowedCompanies: (deviceId, headers = {}) =>
+    api.get("/users/followed-companies", {
+      params: deviceId ? { deviceId } : {},
+      headers,
+    }),
+  getFollowing: (deviceId, headers = {}) =>
+    api.get("/users/following", {
       params: deviceId ? { deviceId } : {},
       headers,
     }),

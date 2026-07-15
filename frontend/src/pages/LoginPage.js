@@ -26,6 +26,7 @@ import {
   Person,
   Email,
   Lock,
+  Close,
 } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { useCityFilter } from "../context/CityFilterContext";
@@ -34,7 +35,7 @@ import { useGoogleOAuthReturn } from "../hooks/useGoogleOAuthReturn";
 
 const BRAND = "var(--brand-primary-blue, #1E6FD9)";
 
-const LoginPage = () => {
+const LoginPage = ({ embedded = false, onClose, onAuthenticated }) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const [showPassword, setShowPassword] = useState(false);
@@ -74,13 +75,19 @@ const LoginPage = () => {
     if (fromOnboarding) {
       completeAccountOnboarding();
     }
+    if (embedded) {
+      onAuthenticated?.();
+      return;
+    }
     const from = location.state?.from?.pathname || "/";
     navigate(from, { replace: true });
   }, [
     fromOnboarding,
     completeAccountOnboarding,
+    embedded,
     location.state,
     navigate,
+    onAuthenticated,
   ]);
 
   // Native Google (and any async auth): leave /login when AuthContext becomes authenticated.
@@ -224,6 +231,10 @@ const LoginPage = () => {
   };
 
   const goBack = () => {
+    if (embedded) {
+      onClose?.();
+      return;
+    }
     if (fromOnboarding) {
       completeAccountOnboarding();
     }
@@ -233,9 +244,11 @@ const LoginPage = () => {
   return (
     <Box
       sx={{
-        minHeight: "100vh",
+        minHeight: embedded ? "100%" : "100vh",
+        height: embedded ? "100%" : "auto",
         position: "relative",
-        overflow: "hidden",
+        overflowX: "hidden",
+        overflowY: embedded ? "auto" : "hidden",
         background: isDark
           ? "linear-gradient(165deg, #0c1220 0%, #0a0e18 40%, #111827 100%)"
           : "linear-gradient(165deg, #eef4ff 0%, #f8fafc 45%, #ffffff 100%)",
@@ -265,7 +278,11 @@ const LoginPage = () => {
     >
       <Container
         maxWidth="sm"
-        sx={{ position: "relative", zIndex: 1, py: { xs: 2, sm: 4 } }}
+        sx={{
+          position: "relative",
+          zIndex: 1,
+          py: embedded ? 1.5 : { xs: 2, sm: 4 },
+        }}
       >
         <Box
           sx={{
@@ -277,6 +294,23 @@ const LoginPage = () => {
             mb: 2,
           }}
         >
+          {embedded ? (
+            <IconButton
+              onClick={goBack}
+              aria-label={t("Close")}
+              sx={{
+                color: isDark ? "rgba(255,255,255,0.9)" : "text.primary",
+                bgcolor: isDark
+                  ? "rgba(255,255,255,0.08)"
+                  : "rgba(255,255,255,0.8)",
+                border: `1px solid ${
+                  isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)"
+                }`,
+              }}
+            >
+              <Close />
+            </IconButton>
+          ) : null}
           {/* <IconButton
             onClick={goBack}
             aria-label={t("Back")}

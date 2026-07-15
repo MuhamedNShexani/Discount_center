@@ -2210,6 +2210,8 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
             transform: showMobileNavbar ? "translateY(0)" : "translateY(-110%)",
             transition: isAndroidPerfMode ? "none" : "transform 260ms ease",
             willChange: "transform",
+            // One continuous surface behind both the device safe area and toolbar.
+            ...mobileHeaderSurfaceSx,
           }}
         >
           <Box
@@ -2217,14 +2219,19 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
             className="mobile-header-safe-area"
             sx={{
               height: "var(--safe-top)",
-              ...mobileHeaderSurfaceSx,
+              background: "transparent",
             }}
           />
           <AppBar
             position="static"
             elevation={0}
-            style={navAppBarStyle}
-            sx={appBarSx}
+            style={{ ...navAppBarStyle, background: "transparent" }}
+            sx={{
+              ...appBarSx,
+              background: "transparent",
+              backdropFilter: "none",
+              WebkitBackdropFilter: "none",
+            }}
           >
             {appBarInner}
           </AppBar>

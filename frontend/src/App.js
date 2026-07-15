@@ -30,6 +30,7 @@ const StoreProfile = lazy(() => import("./pages/StoreProfile"));
 const SearchPage = lazy(() => import("./pages/SearchPage"));
 const Gifts = lazy(() => import("./pages/Gifts"));
 const FavouritesPage = lazy(() => import("./pages/FavouritesPage"));
+const FollowingPage = lazy(() => import("./pages/FollowingPage"));
 const AdminPage = lazy(() => import("./pages/AdminPage"));
 const AdminUsersPage = lazy(() => import("./pages/AdminUsersPage"));
 const AdminCitiesPage = lazy(() => import("./pages/AdminCitiesPage"));
@@ -65,6 +66,7 @@ import ProtectedRoute, {
 import ScrollToTop from "./components/ScrollToTop";
 import ErrorBoundary from "./components/ErrorBoundary";
 import NotificationEnableBanner from "./components/NotificationEnableBanner";
+import AuthWelcomeBanner from "./components/AuthWelcomeBanner";
 import ConnectionLostBanner from "./components/ConnectionLostBanner";
 import NetworkDebugBanner from "./components/NetworkDebugBanner";
 import AppUpdateBanner from "./components/AppUpdateBanner";
@@ -259,6 +261,7 @@ function AppContent() {
                             }}
                           >
                             <ConnectionLostBanner />
+                            <AuthWelcomeBanner />
                             {import.meta.env.DEV ||
                             import.meta.env.VITE_DEBUG_NETWORK === "true" ? (
                               <NetworkDebugBanner />
@@ -385,6 +388,10 @@ function AppContent() {
                                     <Route
                                       path="/favourites"
                                       element={<FavouritesPage />}
+                                    />
+                                    <Route
+                                      path="/following"
+                                      element={<FollowingPage />}
                                     />
                                     <Route
                                       path="/admin"

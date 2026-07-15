@@ -3,8 +3,178 @@ const ProductViewEvent = require("../models/ProductViewEvent");
 const ProductLikeEvent = require("../models/ProductLikeEvent");
 const Product = require("../models/Product");
 const Store = require("../models/Store");
+const Brand = require("../models/Brand");
+const Company = require("../models/Company");
 const Video = require("../models/Video");
 const { categoryList, storeList, brandList } = require("../utils/refPopulate");
+
+const FOLLOW_ENTITY_CONFIG = {
+  store: {
+    Model: Store,
+    userField: "followedStores",
+    idBodyKey: "storeId",
+    missingEntityMessage: "Store not found",
+    missingIdMessage: "Store ID is required",
+    followNeedMessage: "Either login or provide device ID to follow stores",
+    listNeedMessage:
+      "Either login or provide device ID to view followed stores",
+    populate: { path: "storeTypeId", select: "name icon" },
+  },
+  brand: {
+    Model: Brand,
+    userField: "followedBrands",
+    idBodyKey: "brandId",
+    missingEntityMessage: "Brand not found",
+    missingIdMessage: "Brand ID is required",
+    followNeedMessage: "Either login or provide device ID to follow brands",
+    listNeedMessage:
+      "Either login or provide device ID to view followed brands",
+    populate: { path: "brandTypeId", select: "name icon" },
+  },
+  company: {
+    Model: Company,
+    userField: "followedCompanies",
+    idBodyKey: "companyId",
+    missingEntityMessage: "Company not found",
+    missingIdMessage: "Company ID is required",
+    followNeedMessage: "Either login or provide device ID to follow companies",
+    listNeedMessage:
+      "Either login or provide device ID to view followed companies",
+    populate: { path: "brandTypeId", select: "name icon" },
+  },
+};
+
+async function resolveTrackingUser(req, { deviceId, needMessage }) {
+  const userId = req.userId;
+  let user;
+  if (userId) {
+    user = await User.findById(userId);
+  } else if (deviceId) {
+    user = await User.findOne({ deviceId });
+    if (!user) {
+      user = new User({ deviceId });
+      await user.save();
+    }
+  } else {
+    return {
+      error: {
+        status: 400,
+        body: { success: false, message: needMessage },
+      },
+    };
+  }
+
+  if (!user) {
+    return {
+      error: {
+        status: 404,
+        body: { success: false, message: "User not found" },
+      },
+    };
+  }
+
+  return { user };
+}
+
+async function toggleFollowEntity(req, res, entityType) {
+  const config = FOLLOW_ENTITY_CONFIG[entityType];
+  try {
+    const entityId = req.body[config.idBodyKey];
+    const { deviceId } = req.body;
+
+    if (!entityId) {
+      return res.status(400).json({
+        success: false,
+        message: config.missingIdMessage,
+      });
+    }
+
+    const resolved = await resolveTrackingUser(req, {
+      deviceId,
+      needMessage: config.followNeedMessage,
+    });
+    if (resolved.error) {
+      return res.status(resolved.error.status).json(resolved.error.body);
+    }
+    const { user } = resolved;
+
+    const entity = await config.Model.findById(entityId);
+    if (!entity) {
+      return res.status(404).json({
+        success: false,
+        message: config.missingEntityMessage,
+      });
+    }
+
+    const list = user[config.userField] || [];
+    const isFollowed = list.some((id) => id.toString() === String(entityId));
+
+    if (isFollowed) {
+      user[config.userField] = list.filter(
+        (id) => id.toString() !== String(entityId),
+      );
+      await config.Model.findByIdAndUpdate(entityId, {
+        $inc: { followerCount: -1 },
+      });
+    } else {
+      if (!user[config.userField]) user[config.userField] = [];
+      user[config.userField].push(entityId);
+      await config.Model.findByIdAndUpdate(entityId, {
+        $inc: { followerCount: 1 },
+      });
+    }
+    await user.save();
+
+    const updatedEntity = await config.Model.findById(entityId)
+      .select("followerCount")
+      .lean();
+    const followerCount = Math.max(0, updatedEntity?.followerCount || 0);
+    if (updatedEntity && (updatedEntity.followerCount || 0) < 0) {
+      await config.Model.findByIdAndUpdate(entityId, { followerCount: 0 });
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        isFollowed: !isFollowed,
+        followerCount,
+      },
+    });
+  } catch (error) {
+    console.error(`Error toggling ${entityType} follow:`, error);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+}
+
+async function getFollowedEntitiesOfType(req, entityType) {
+  const config = FOLLOW_ENTITY_CONFIG[entityType];
+  const userId = req.userId;
+  const deviceId = req.query.deviceId;
+
+  let user;
+  if (userId) {
+    user = await User.findById(userId);
+  } else if (deviceId) {
+    user = await User.findOne({ deviceId });
+  } else {
+    const err = new Error(config.listNeedMessage);
+    err.status = 400;
+    throw err;
+  }
+
+  if (!user || !(user[config.userField] || []).length) {
+    return [];
+  }
+
+  let query = config.Model.find({
+    _id: { $in: user[config.userField] },
+    show: { $ne: false },
+  });
+  if (config.populate) {
+    query = query.populate(config.populate.path, config.populate.select);
+  }
+  return query.lean();
+}
 
 // @desc    Get or create user by device ID (for anonymous tracking)
 // @route   GET /api/users/device/:deviceId
@@ -342,119 +512,97 @@ const getLikedProducts = async (req, res) => {
 // @desc    Follow/unfollow a store (works with auth token OR deviceId for anonymous)
 // @route   POST /api/users/follow-store
 // @access  Public (optionalAuth)
-const toggleFollowStore = async (req, res) => {
-  try {
-    const { storeId, deviceId } = req.body;
-    const userId = req.userId;
+const toggleFollowStore = (req, res) => toggleFollowEntity(req, res, "store");
 
-    if (!storeId) {
-      return res.status(400).json({
-        success: false,
-        message: "Store ID is required",
-      });
-    }
+// @desc    Follow/unfollow a brand
+// @route   POST /api/users/follow-brand
+// @access  Public (optionalAuth)
+const toggleFollowBrand = (req, res) => toggleFollowEntity(req, res, "brand");
 
-    let user;
-    if (userId) {
-      user = await User.findById(userId);
-    } else if (deviceId) {
-      user = await User.findOne({ deviceId });
-      if (!user) {
-        user = new User({ deviceId });
-        await user.save();
-      }
-    } else {
-      return res.status(400).json({
-        success: false,
-        message: "Either login or provide device ID to follow stores",
-      });
-    }
-
-    if (!user) {
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
-    }
-
-    const store = await Store.findById(storeId);
-    if (!store) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Store not found" });
-    }
-
-    const isFollowed = (user.followedStores || []).some(
-      (id) => id.toString() === storeId,
-    );
-
-    if (isFollowed) {
-      user.followedStores = (user.followedStores || []).filter(
-        (id) => id.toString() !== storeId,
-      );
-      await Store.findByIdAndUpdate(storeId, {
-        $inc: { followerCount: -1 },
-      });
-    } else {
-      if (!user.followedStores) user.followedStores = [];
-      user.followedStores.push(storeId);
-      await Store.findByIdAndUpdate(storeId, {
-        $inc: { followerCount: 1 },
-      });
-    }
-    await user.save();
-
-    const updatedStore = await Store.findById(storeId)
-      .select("followerCount")
-      .lean();
-
-    res.json({
-      success: true,
-      data: {
-        isFollowed: !isFollowed,
-        followerCount: Math.max(0, updatedStore.followerCount || 0),
-      },
-    });
-  } catch (error) {
-    console.error("Error toggling store follow:", error);
-    res.status(500).json({ success: false, message: "Server error" });
-  }
-};
+// @desc    Follow/unfollow a company
+// @route   POST /api/users/follow-company
+// @access  Public (optionalAuth)
+const toggleFollowCompany = (req, res) =>
+  toggleFollowEntity(req, res, "company");
 
 // @desc    Get user's followed stores
 // @route   GET /api/users/followed-stores
 // @access  Public (optionalAuth)
 const getFollowedStores = async (req, res) => {
   try {
+    const stores = await getFollowedEntitiesOfType(req, "store");
+    return res.json({ success: true, data: stores });
+  } catch (error) {
+    if (error.status === 400) {
+      return res.status(400).json({ success: false, message: error.message });
+    }
+    console.error("Error getting followed stores:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// @desc    Get user's followed brands
+// @route   GET /api/users/followed-brands
+// @access  Public (optionalAuth)
+const getFollowedBrands = async (req, res) => {
+  try {
+    const brands = await getFollowedEntitiesOfType(req, "brand");
+    return res.json({ success: true, data: brands });
+  } catch (error) {
+    if (error.status === 400) {
+      return res.status(400).json({ success: false, message: error.message });
+    }
+    console.error("Error getting followed brands:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// @desc    Get user's followed companies
+// @route   GET /api/users/followed-companies
+// @access  Public (optionalAuth)
+const getFollowedCompanies = async (req, res) => {
+  try {
+    const companies = await getFollowedEntitiesOfType(req, "company");
+    return res.json({ success: true, data: companies });
+  } catch (error) {
+    if (error.status === 400) {
+      return res.status(400).json({ success: false, message: error.message });
+    }
+    console.error("Error getting followed companies:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// @desc    Get all followed entities for current user
+// @route   GET /api/users/following
+// @access  Public (optionalAuth)
+const getFollowing = async (req, res) => {
+  try {
     const userId = req.userId;
     const deviceId = req.query.deviceId;
-
-    let user;
-    if (userId) {
-      user = await User.findById(userId);
-    } else if (deviceId) {
-      user = await User.findOne({ deviceId });
-    } else {
+    if (!userId && !deviceId) {
       return res.status(400).json({
         success: false,
-        message: "Either login or provide device ID to view followed stores",
+        message: "Either login or provide device ID to view following",
       });
     }
 
-    if (!user || !user.followedStores?.length) {
-      return res.json({ success: true, data: [] });
-    }
+    const [stores, brands, companies] = await Promise.all([
+      getFollowedEntitiesOfType(req, "store"),
+      getFollowedEntitiesOfType(req, "brand"),
+      getFollowedEntitiesOfType(req, "company"),
+    ]);
 
-    const stores = await Store.find({
-      _id: { $in: user.followedStores },
-      show: { $ne: false },
-    })
-      .populate("storeTypeId", "name icon")
-      .lean();
-
-    res.json({ success: true, data: stores });
+    return res.json({
+      success: true,
+      data: { stores, brands, companies },
+    });
   } catch (error) {
-    console.error("Error getting followed stores:", error);
-    res.status(500).json({ success: false, message: "Server error" });
+    if (error.status === 400) {
+      return res.status(400).json({ success: false, message: error.message });
+    }
+    console.error("Error getting following:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
@@ -499,8 +647,13 @@ module.exports = {
   toggleProductLike,
   toggleVideoLike,
   toggleFollowStore,
+  toggleFollowBrand,
+  toggleFollowCompany,
   recordProductView,
   getLikedProducts,
   getFollowedStores,
+  getFollowedBrands,
+  getFollowedCompanies,
+  getFollowing,
   updateDeviceProfile,
 };
