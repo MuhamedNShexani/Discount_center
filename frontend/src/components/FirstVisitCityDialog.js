@@ -29,6 +29,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 import GoogleSignInButton from "./GoogleSignInButton";
 import { useGoogleOAuthReturn } from "../hooks/useGoogleOAuthReturn";
+import { useProfileDrawer } from "../hooks/useProfileDrawer";
 import kurdishFlag from "../styles/kurdish_flag.jpg";
 
 const LANGUAGES = [
@@ -63,6 +64,7 @@ const FirstVisitCityDialog = () => {
   const location = useLocation();
   const { t, i18n } = useTranslation();
   const { user, loading: authLoading } = useAuth();
+  const { openLogin, isOpen: isProfileDrawerOpen } = useProfileDrawer();
   const {
     cities,
     citiesLoading,
@@ -107,15 +109,18 @@ const FirstVisitCityDialog = () => {
     setFlowStep("done");
   }, [completeAccountOnboarding]);
 
+  const handleDialogClose = useCallback(
+    (_, reason) => {
+      if (reason === "backdropClick" && flowStep === "account") {
+        handleGuestContinue();
+      }
+    },
+    [flowStep, handleGuestContinue],
+  );
+
   const handleLoginClick = useCallback(() => {
-    navigate("/login", {
-      state: {
-        from: { pathname: "/" },
-        fromOnboarding: true,
-        onboardingTab: "login",
-      },
-    });
-  }, [navigate]);
+    openLogin();
+  }, [openLogin]);
 
   const handleRegisterClick = useCallback(() => {
     navigate("/login", {
@@ -180,6 +185,7 @@ const FirstVisitCityDialog = () => {
   const onLoginPage = location.pathname === "/login";
   const showDialog =
     !onLoginPage &&
+    !isProfileDrawerOpen &&
     flowStep !== "done" &&
     (flowStep === "language" ||
       flowStep === "account" ||
@@ -225,9 +231,7 @@ const FirstVisitCityDialog = () => {
     <Dialog
       open={showDialog}
       disableEscapeKeyDown
-      onClose={(_, reason) => {
-        if (reason === "backdropClick") return;
-      }}
+      onClose={handleDialogClose}
       maxWidth="sm"
       fullWidth
       slotProps={{

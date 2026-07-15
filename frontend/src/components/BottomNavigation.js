@@ -81,6 +81,14 @@ function blurThen(fn) {
   };
 }
 
+function isIOSDevice() {
+  if (typeof navigator === "undefined") return false;
+  if (/iPad|iPhone|iPod/i.test(navigator.userAgent || "")) return true;
+  return (
+    navigator.platform === "MacIntel" && (navigator.maxTouchPoints || 0) > 1
+  );
+}
+
 function persistMainPageScrollState(y) {
   try {
     const rawState = sessionStorage.getItem(MAIN_PAGE_SCROLL_STATE_KEY);
@@ -106,6 +114,7 @@ const BottomNavigationBar = () => {
   const isDark = theme.palette.mode === "dark";
   const reduceMotion = useReducedMotion();
   const isAndroidPerfMode = useMemo(() => isAndroidPerformanceMode(), []);
+  const isIOS = useMemo(() => isIOSDevice(), []);
   const useLayoutAnimations = !reduceMotion && !isAndroidPerfMode;
   const { t, i18n } = useTranslation();
   const location = useLocation();
@@ -499,7 +508,8 @@ const BottomNavigationBar = () => {
                 alignItems: "stretch",
                 gap: isTemplate3 ? { xs: 0.25, sm: 0.75 } : { xs: 1.5, sm: 2 },
                 px: isTemplate3 ? { xs: 0.5, sm: 1.5 } : { xs: 2, sm: 3 },
-                py: { xs: 1, sm: 1.125 },
+                pt: { xs: isIOS ? 1.35 : 1, sm: 1.125 },
+                pb: { xs: isIOS ? 0.65 : 1, sm: 1.125 },
                 boxSizing: "border-box",
               }}
             >
