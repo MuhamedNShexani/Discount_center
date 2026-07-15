@@ -38,8 +38,19 @@ export default function ConnectionLostBanner() {
         role="status"
         aria-live="polite"
         sx={{
-          position: "sticky",
-          top: 0,
+          position: "fixed",
+          top: {
+            xs: "calc(var(--header-height) + 8px)",
+            md: "121px",
+          },
+          left: {
+            xs: "max(8px, env(safe-area-inset-left, 0px))",
+            md: 16,
+          },
+          right: {
+            xs: "max(8px, env(safe-area-inset-right, 0px))",
+            md: 16,
+          },
           zIndex: (z) => z.zIndex.appBar + 2,
           px: 0,
         }}
@@ -49,7 +60,7 @@ export default function ConnectionLostBanner() {
           variant="filled"
           icon={<WifiOffRoundedIcon sx={{ fontSize: 28 }} />}
           sx={{
-            borderRadius: 0,
+            borderRadius: 2,
             py: 1.5,
             px: { xs: 2, sm: 3 },
             alignItems: "center",
@@ -109,8 +120,19 @@ export default function ConnectionLostBanner() {
       role="status"
       aria-live="polite"
       sx={{
-        position: "sticky",
-        top: 0,
+        position: "fixed",
+        top: {
+          xs: "calc(var(--header-height) + 8px)",
+          md: "121px",
+        },
+        left: {
+          xs: "max(8px, env(safe-area-inset-left, 0px))",
+          md: 16,
+        },
+        right: {
+          xs: "max(8px, env(safe-area-inset-right, 0px))",
+          md: 16,
+        },
         zIndex: (z) => z.zIndex.appBar + 2,
         px: 0,
       }}
@@ -120,7 +142,7 @@ export default function ConnectionLostBanner() {
         variant="filled"
         icon={<WifiRoundedIcon sx={{ fontSize: 28 }} />}
         sx={{
-          borderRadius: 0,
+          borderRadius: 2,
           py: 1.25,
           px: { xs: 2, sm: 3 },
           alignItems: "center",

@@ -2225,8 +2225,13 @@ const NavigationBar = ({ darkMode, setDarkMode }) => {
           <AppBar
             position="static"
             elevation={0}
-            style={navAppBarStyle}
-            sx={appBarSx}
+            style={{ ...navAppBarStyle, background: "transparent" }}
+            sx={{
+              ...appBarSx,
+              background: "transparent",
+              backdropFilter: "none",
+              WebkitBackdropFilter: "none",
+            }}
           >
             {appBarInner}
           </AppBar>

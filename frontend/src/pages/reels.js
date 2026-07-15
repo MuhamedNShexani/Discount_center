@@ -651,9 +651,7 @@ const ReelsPage = () => {
     if (!sharedVideoId) return interleaved;
 
     const sharedReel =
-      interleaved.find(
-        (reel) => String(reel?._id) === String(sharedVideoId),
-      ) ||
+      interleaved.find((reel) => String(reel?._id) === String(sharedVideoId)) ||
       reels.find((reel) => String(reel?._id) === String(sharedVideoId));
 
     if (!sharedReel) return interleaved;
@@ -1223,7 +1221,7 @@ const ReelsPage = () => {
           top: "calc(10px + env(safe-area-inset-top))",
           left: "50%",
           transform: "translateX(-50%)",
-          zIndex: 20,
+          zIndex: 25,
           display: "inline-flex",
           p: 0.4,
           borderRadius: 99,

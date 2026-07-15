@@ -358,7 +358,10 @@ const BottomNavigationBar = () => {
    * Shell chrome in `sx` only — surface colors live on inline `style` so RTL (ar/ku) does not
    * transform gradients (same pattern as `NavigationBar` AppBar + theme MuiAppBar note).
    */
-  const bottomNavSafeAreaPb = "env(safe-area-inset-bottom, 0px)";
+  // Keep the iOS home indicator protected, but avoid lifting the nav too high.
+  const bottomNavSafeAreaPb = isIOS
+    ? "max(0px, calc(env(safe-area-inset-bottom, 0px) - 5px))"
+    : "env(safe-area-inset-bottom, 0px)";
   const bottomNavShellBg = getNavShellBackground(
     location.pathname,
     isDark,
