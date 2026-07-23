@@ -80,6 +80,12 @@ import useOnlineStatus from "../hooks/useOnlineStatus";
 import { useNetworkStatus } from "../hooks/useNetworkStatus";
 import { resolveConnectionFailure } from "../utils/apiError";
 import { formatPriceDigits } from "../utils/formatPriceNumber";
+import {
+  isFlutterApp as isFlutterLocationApp,
+  openLocationSettings,
+  requestCurrentLocation,
+  LocationPermissionError,
+} from "../utils/deviceLocation";
 import { storeMatchesSelectedCity } from "../utils/cityMatch";
 import {
   logSearchEvent,
@@ -272,6 +278,8 @@ const MainPage = () => {
   const [sortByNearMe, setSortByNearMe] = useState(false);
   const [userCoords, setUserCoords] = useState(null);
   const [geoLoading, setGeoLoading] = useState(false);
+  /** @type {[null|"permissionDenied"|"permissionDeniedForever"|string, Function]} */
+  const [geoError, setGeoError] = useState(null);
   const [productLayout, setProductLayoutState] = useState(() =>
     getSavedProductLayout(),
   );
@@ -1739,27 +1747,32 @@ const MainPage = () => {
     };
   }, [loading, hasMoreStores, displayedStores.length, stores.length]);
 
-  const requestUserLocation = () => {
-    if (!navigator?.geolocation) return;
+  const requestUserLocation = useCallback(async () => {
     setGeoLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setUserCoords({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        });
-        setGeoLoading(false);
-      },
-      () => {
-        setGeoLoading(false);
-      },
-      {
+    setGeoError(null);
+    try {
+      const loc = await requestCurrentLocation({
         enableHighAccuracy: true,
         timeout: 15000,
         maximumAge: 0,
-      },
-    );
-  };
+      });
+      setUserCoords({
+        lat: loc.latitude,
+        lng: loc.longitude,
+      });
+      setGeoError(null);
+    } catch (err) {
+      const code =
+        err instanceof LocationPermissionError
+          ? err.code
+          : err?.code || "permissionDenied";
+      setGeoError(code);
+      setUserCoords(null);
+      setSortByNearMe(false);
+    } finally {
+      setGeoLoading(false);
+    }
+  }, []);
 
   const formatPrice = useCallback(
     (price) => {
@@ -2003,6 +2016,37 @@ const MainPage = () => {
           priceRange={priceRange}
           onPriceRangeChange={setPriceRange}
         />
+        {geoError && (
+          <Alert
+            severity="warning"
+            onClose={() => setGeoError(null)}
+            sx={{
+              borderRadius: "14px",
+              mb: 1.5,
+              alignItems: "center",
+            }}
+            action={
+              geoError === "permissionDeniedForever" &&
+              isFlutterLocationApp() ? (
+                <Button
+                  color="inherit"
+                  size="small"
+                  onClick={() => openLocationSettings()}
+                  sx={{ textTransform: "none", fontWeight: 700 }}
+                >
+                  {t("Enable Location", {
+                    defaultValue: "Enable Location",
+                  })}
+                </Button>
+              ) : null
+            }
+          >
+            {t("Location permission is required to find nearby stores.", {
+              defaultValue:
+                "Location permission is required to find nearby stores.",
+            })}
+          </Alert>
+        )}
         <StoreTypesBrowseSection storeTypes={storeTypes} />
         {/* legacy filter content ? hidden, kept for price-range state wiring */}
         <Box sx={{ display: "none" }}>
