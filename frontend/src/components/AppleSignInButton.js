@@ -6,6 +6,7 @@ import {
   isFlutterAppleSignIn,
   loginWithApple as runAppleLoginFlow,
 } from "../utils/appleSignIn";
+import { isAndroidDevice } from "../utils/androidPerformance";
 
 function AppleLogo({ size = 20, color = "currentColor" }) {
   return (
@@ -25,8 +26,8 @@ function AppleLogo({ size = 20, color = "currentColor" }) {
 }
 
 /**
- * Continue with Apple — only shown when Flutter native bridge is present.
- * Hidden in normal browsers (Apple web SDK not implemented).
+ * Continue with Apple — iOS Flutter only.
+ * Hidden on Android and in normal browsers (no Apple web SDK).
  */
 export default function AppleSignInButton({
   onSuccess,
@@ -39,15 +40,18 @@ export default function AppleSignInButton({
   const { t } = useTranslation();
   const { loginWithApple } = useAuth();
   const [pending, setPending] = useState(false);
-  const [bridgeReady, setBridgeReady] = useState(() => isFlutterAppleSignIn());
+  const isAndroid = useMemo(() => isAndroidDevice(), []);
+  const [bridgeReady, setBridgeReady] = useState(
+    () => !isAndroidDevice() && isFlutterAppleSignIn(),
+  );
   const onSuccessRef = useRef(onSuccess);
   const onErrorRef = useRef(onError);
   onSuccessRef.current = onSuccess;
   onErrorRef.current = onError;
 
-  /** Flutter may inject the bridge shortly after the WebView loads. */
+  /** Flutter may inject the bridge shortly after the WebView loads (iOS only). */
   useEffect(() => {
-    if (bridgeReady) return undefined;
+    if (isAndroid || bridgeReady) return undefined;
     const tick = () => {
       if (isFlutterAppleSignIn()) setBridgeReady(true);
     };
@@ -58,7 +62,7 @@ export default function AppleSignInButton({
       window.clearInterval(id);
       window.clearTimeout(stop);
     };
-  }, [bridgeReady]);
+  }, [bridgeReady, isAndroid]);
 
   const buttonColors = useMemo(
     () => ({
@@ -120,7 +124,7 @@ export default function AppleSignInButton({
     }
   }, [loginWithApple, t]);
 
-  if (!bridgeReady) return null;
+  if (isAndroid || !bridgeReady) return null;
 
   return (
     <Box sx={{ width: "100%" }}>

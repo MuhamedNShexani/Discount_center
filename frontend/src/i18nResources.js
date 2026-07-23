@@ -414,6 +414,7 @@ export const resources = {
       "Sign in to your account or create a new one":
         "Sign in to your account or create a new one",
       "Continue as Guest": "Continue as Guest",
+      Skip: "Skip",
       "Continue with Google": "Continue with Google",
       "Continue with Apple": "Continue with Apple",
       "Apple sign-in failed": "Apple sign-in failed",
@@ -1451,6 +1452,7 @@ export const resources = {
       "Load More Stores": "تحميل المزيد من الأسواق",
       "Load More": "تحميل المزيد",
       "Guest User": "مستخدم زائر",
+      Skip: "تخطي",
       "Not logged in": "لم تسجيل الدخول",
       "Store Type": "نوع السوق",
       Markets: "الماركت",
@@ -2226,6 +2228,7 @@ export const resources = {
       Filters: "فلتەرەکان",
       "All Brands": "هەموو بڕاندەکان",
       "Continue as Guest": "وەکو میوان بەردەوام بە",
+      Skip: "تێپەڕاندن",
       "Browse all Brands and their products":
         "هەموو بڕاندەکان و کاڵاکانیان بگەڕێ",
       "Brands Available": "بڕاند بەردەستە",

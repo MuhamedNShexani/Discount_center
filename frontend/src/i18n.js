@@ -9,12 +9,13 @@ i18n
   .use(initReactI18next)
   .init({
     resources,
-    fallbackLng: "en",
+    fallbackLng: "ku",
     interpolation: {
       escapeValue: false,
     },
     detection: {
-      order: ["localStorage", "navigator", "htmlTag"],
+      // Prefer saved choice; otherwise Kurdish (do not auto-pick browser English).
+      order: ["localStorage"],
       caches: ["localStorage"],
     },
   });
