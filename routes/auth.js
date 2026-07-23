@@ -6,6 +6,7 @@ const {
   googleLogin,
   googleOAuthStart,
   googleOAuthCallback,
+  appleLogin,
   getProfile,
   updateProfile,
   changePassword,
@@ -20,6 +21,7 @@ router.post("/login", login);
 router.get("/google/start", googleOAuthStart);
 router.get("/google/callback", googleOAuthCallback);
 router.post("/google", googleLogin);
+router.post("/apple", appleLogin);
 
 // Protected routes (require authentication)
 router.get("/profile", protect, getProfile);

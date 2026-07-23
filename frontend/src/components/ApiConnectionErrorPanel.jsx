@@ -58,12 +58,20 @@ export default function ApiConnectionErrorPanel({
 
   return (
     <Box
-      display="flex"
-      alignItems="center"
-      justifyContent="center"
-      minHeight="55vh"
-      px={2}
-      py={4}
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: "100%",
+        boxSizing: "border-box",
+        px: 2,
+        py: 2,
+        /* Fill space between fixed header and bottom nav so the card is truly centered */
+        minHeight: {
+          xs: "calc(100dvh - var(--header-height, 56px) - 80px - env(safe-area-inset-bottom, 0px))",
+          md: "calc(100dvh - 140px)",
+        },
+      }}
     >
       <Paper
         elevation={0}

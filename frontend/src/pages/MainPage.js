@@ -1949,16 +1949,18 @@ const MainPage = () => {
     );
   if (loadError?.variant) {
     return (
-      <ApiConnectionErrorPanel
-        variant={loadError.variant}
-        onRetry={() => {
-          setLoadError(null);
-          fetchData();
-        }}
-        onReloadApp={() => {
-          window.location.reload();
-        }}
-      />
+      <Box sx={{ ...MOBILE_NAV_OFFSET_SX, width: "100%" }}>
+        <ApiConnectionErrorPanel
+          variant={loadError.variant}
+          onRetry={() => {
+            setLoadError(null);
+            fetchData();
+          }}
+          onReloadApp={() => {
+            window.location.reload();
+          }}
+        />
+      </Box>
     );
   }
 

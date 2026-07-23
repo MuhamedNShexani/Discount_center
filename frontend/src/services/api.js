@@ -392,6 +392,8 @@ export const authAPI = {
   register: (userData) => api.post("/auth/register", userData),
   login: (email, password) => api.post("/auth/login", { email, password }),
   googleLogin: (idToken) => api.post("/auth/google", { idToken }),
+  /** Apple Sign In (Flutter native / future web) → POST /api/auth/apple */
+  appleLogin: (payload) => api.post("/auth/apple", payload),
   getProfile: (headers) => api.get("/auth/profile", { headers }),
   updateProfile: (profileData, headers) =>
     api.put("/auth/profile", profileData, { headers }),

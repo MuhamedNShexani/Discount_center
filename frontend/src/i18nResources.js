@@ -382,6 +382,7 @@ export const resources = {
         "Failed to delete. Please try again.",
       Logout: "Logout",
       Login: "Login",
+      "Check Update": "Check Update",
       "Deactivate Account": "Deactivate Account",
       "Your account will be inactive immediately and you will be logged out.":
         "Your account will be inactive immediately and you will be logged out.",
@@ -414,6 +415,8 @@ export const resources = {
         "Sign in to your account or create a new one",
       "Continue as Guest": "Continue as Guest",
       "Continue with Google": "Continue with Google",
+      "Continue with Apple": "Continue with Apple",
+      "Apple sign-in failed": "Apple sign-in failed",
       or: "or",
       "Google sign-in failed": "Google sign-in failed",
       "Google sign-in not showing? Tap here":
@@ -997,6 +1000,7 @@ export const resources = {
       "Sign in to your account or create a new one":
         "سجّل دخولك أو أنشئ حسابًا جديدًا",
       Login: "تسجيل الدخول",
+      "Check Update": "تحقق من التحديث",
       Email: "البريد الإلكتروني",
       Password: "كلمة المرور",
       Username: "اسم المستخدم",
@@ -1023,6 +1027,8 @@ export const resources = {
       "Premium Store": "متجر مميز",
       "Create an account to save your favourites": "أنشئ حساباً لحفظ إعجاباتك",
       "Continue with Google": "المتابعة باستخدام Google",
+      "Continue with Apple": "المتابعة باستخدام Apple",
+      "Apple sign-in failed": "فشل تسجيل الدخول عبر Apple",
       or: "أو",
       "Google sign-in failed": "فشل تسجيل الدخول عبر Google",
       "Google sign-in not showing? Tap here":
@@ -1899,6 +1905,7 @@ export const resources = {
       "Sign in to your account or create a new one":
         "هەژمارەکەت تۆماربکە یاخود دانەیەکى نوێ دروست بکە",
       Login: "چوونەژوورەوە",
+      "Check Update": "پشکنینی نوێکردنەوە",
       Email: "ئیمەیڵ",
       "Featured Gifts": "خەڵات و دیاریەکان",
       "featured gifts": "خەڵات و دیاریەکان",
@@ -2020,6 +2027,8 @@ export const resources = {
       "Create an account to save your favourites":
         "هەژمار دروست بکە بۆ چوونەژوورەوە لەهەر شوێنێک",
       "Continue with Google": "بەردەوام بە لەگەڵ گووگڵ",
+      "Continue with Apple": "بەردەوام بە لەگەڵ ئەپڵ",
+      "Apple sign-in failed": "چوونەژوورەوە بە ئەپڵ سەرکەوتوو نەبوو",
       or: "یان",
       "Google sign-in failed": "چوونەژوورەوە لەگەڵ گووگڵ سەرکەوتوو نەبوو",
       "Google sign-in not showing? Tap here":

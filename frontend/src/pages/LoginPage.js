@@ -31,6 +31,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { useCityFilter } from "../context/CityFilterContext";
 import GoogleSignInButton from "../components/GoogleSignInButton";
+import AppleSignInButton from "../components/AppleSignInButton";
 import { useGoogleOAuthReturn } from "../hooks/useGoogleOAuthReturn";
 
 const BRAND = "var(--brand-primary-blue, #1E6FD9)";
@@ -705,6 +706,11 @@ const LoginPage = ({ embedded = false, onClose, onAuthenticated }) => {
             <GoogleSignInButton
               disabled={loading}
               returnTo={oauthReturnTo}
+              onSuccess={finishAuthNavigation}
+              onError={(message) => setError(message)}
+            />
+            <AppleSignInButton
+              disabled={loading}
               onSuccess={finishAuthNavigation}
               onError={(message) => setError(message)}
             />

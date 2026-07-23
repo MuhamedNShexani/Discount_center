@@ -28,13 +28,21 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     required: function () {
-      return !this.deviceId && !this.googleId;
+      return !this.deviceId && !this.googleId && !this.appleId;
     },
     minlength: 6,
   },
 
   /** Google account `sub` — when set, user may sign in with Google (no password). */
   googleId: {
+    type: String,
+    unique: true,
+    sparse: true,
+    trim: true,
+  },
+
+  /** Apple account `sub` — when set, user may sign in with Apple (no password). */
+  appleId: {
     type: String,
     unique: true,
     sparse: true,
@@ -234,6 +242,7 @@ userSchema.methods.getPublicProfile = function () {
       email: this.email,
       avatar: this.avatar,
       googleId: this.googleId || undefined,
+      appleId: this.appleId || undefined,
       isActive: this.isActive,
       role: this.role || "user",
       ownerEntities: ownerEntities.map((e) => ({

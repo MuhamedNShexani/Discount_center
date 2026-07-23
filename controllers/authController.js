@@ -778,12 +778,203 @@ const googleOAuthCallback = async (req, res) => {
   }
 };
 
+function getAppleClientId() {
+  return (
+    (process.env.APPLE_CLIENT_ID || process.env.APPLE_BUNDLE_ID || "").trim()
+  );
+}
+
+/**
+ * Create or update user from verified Apple identity token claims + optional first-login profile.
+ * @param {object} claims - Verified JWT claims (sub, email, email_verified, …)
+ * @param {{ givenName?: string, familyName?: string, email?: string }} [profile]
+ */
+async function finalizeAppleLoginFromClaims(claims, profile = {}) {
+  if (!claims || !claims.sub) {
+    return {
+      ok: false,
+      status: 401,
+      message: "Invalid Apple token",
+    };
+  }
+
+  const appleId = String(claims.sub).trim();
+  const tokenEmail = (claims.email || "").toLowerCase().trim();
+  const bodyEmail = (profile.email || "").toLowerCase().trim();
+  let email = tokenEmail || bodyEmail;
+
+  // Subsequent Apple logins often omit email — keep a stable unique placeholder if needed for new users.
+  if (!email) {
+    const safeSub = appleId.replace(/[^a-zA-Z0-9]/g, "").slice(0, 40) || "user";
+    email = `apple_${safeSub}@privaterelay.appleid.com`.toLowerCase();
+  }
+
+  const givenName = (profile.givenName || "").trim();
+  const familyName = (profile.familyName || "").trim();
+  const displayName =
+    [givenName, familyName].filter(Boolean).join(" ").trim() || null;
+
+  let user =
+    (await User.findOne({ appleId })) || (await User.findOne({ email }));
+
+  if (user && user.deviceId && !user.username) {
+    return {
+      ok: false,
+      status: 400,
+      message:
+        "This email is linked to a guest session. Use a full account or another email.",
+    };
+  }
+
+  if (user && !user.isActive && user.scheduledDeletionAt) {
+    const now = new Date();
+    if (now >= user.scheduledDeletionAt) {
+      await deleteUserAndAssociatedData(user._id);
+      return {
+        ok: false,
+        status: 401,
+        message: "Account has been permanently deleted after the grace period",
+      };
+    }
+    user.isActive = true;
+    user.deactivatedAt = undefined;
+    user.scheduledDeletionAt = undefined;
+    if (!user.appleId) user.appleId = appleId;
+    if (displayName && !user.displayName) user.displayName = displayName;
+    user.lastLogin = new Date();
+    await user.save();
+    const token = generateToken(user._id);
+    return {
+      ok: true,
+      data: { user: user.getPublicProfile(), token },
+      message: "Login successful. Account reactivated.",
+    };
+  }
+
+  if (user && !user.isActive) {
+    return {
+      ok: false,
+      status: 401,
+      message: "Account is deactivated",
+    };
+  }
+
+  if (!user) {
+    const username = await uniqueUsernameFromEmail(email);
+    user = new User({
+      username,
+      email,
+      appleId,
+      displayName,
+      isVerified: true,
+    });
+    await user.save();
+  } else {
+    if (!user.appleId) user.appleId = appleId;
+    if (displayName && !user.displayName) user.displayName = displayName;
+    // Prefer real Apple email over synthetic placeholder when linking later.
+    if (
+      tokenEmail &&
+      user.email &&
+      String(user.email).startsWith("apple_") &&
+      String(user.email).endsWith("@privaterelay.appleid.com")
+    ) {
+      const taken = await User.findOne({
+        email: tokenEmail,
+        _id: { $ne: user._id },
+      });
+      if (!taken) user.email = tokenEmail;
+    }
+    user.lastLogin = new Date();
+    await user.save();
+  }
+
+  const token = generateToken(user._id);
+  return {
+    ok: true,
+    data: { user: user.getPublicProfile(), token },
+    message: "Login successful",
+  };
+}
+
+// @desc    Sign in / register with Apple identity token (native iOS / Flutter)
+// @route   POST /api/auth/apple
+// @access  Public
+const appleLogin = async (req, res) => {
+  try {
+    const clientId = getAppleClientId();
+    if (!clientId) {
+      return res.status(503).json({
+        success: false,
+        message: "Apple sign-in is not configured on the server",
+      });
+    }
+
+    const identityToken = (req.body?.identityToken || "").trim();
+    if (!identityToken) {
+      return res.status(400).json({
+        success: false,
+        message: "Apple identity token is required",
+      });
+    }
+
+    let claims;
+    try {
+      const appleSignin = require("apple-signin-auth");
+      claims = await appleSignin.verifyIdToken(identityToken, {
+        audience: clientId,
+        ignoreExpiration: false,
+      });
+    } catch (verifyErr) {
+      console.warn("Apple token verification failed:", verifyErr?.message || verifyErr);
+      return res.status(401).json({
+        success: false,
+        message: "Invalid Apple token",
+      });
+    }
+
+    if (!claims || !claims.sub) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid Apple token",
+      });
+    }
+
+    // apple-signin-auth validates signature, exp, iss (https://appleid.apple.com), and aud.
+    const result = await finalizeAppleLoginFromClaims(claims, {
+      email: req.body?.email,
+      givenName: req.body?.givenName,
+      familyName: req.body?.familyName,
+    });
+
+    if (!result.ok) {
+      return res.status(result.status).json({
+        success: false,
+        message: result.message,
+      });
+    }
+
+    res.json({
+      success: true,
+      data: result.data,
+      message: result.message || "Login successful",
+    });
+  } catch (error) {
+    console.error("Apple login error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error during Apple sign-in",
+    });
+  }
+};
+
 module.exports = {
   register,
   login,
   googleLogin,
   googleOAuthStart,
   googleOAuthCallback,
+  appleLogin,
   getProfile,
   updateProfile,
   changePassword,

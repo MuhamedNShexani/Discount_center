@@ -28,6 +28,7 @@ import {
 } from "../context/CityFilterContext";
 import { useAuth } from "../context/AuthContext";
 import GoogleSignInButton from "./GoogleSignInButton";
+import AppleSignInButton from "./AppleSignInButton";
 import { useGoogleOAuthReturn } from "../hooks/useGoogleOAuthReturn";
 import { useProfileDrawer } from "../hooks/useProfileDrawer";
 import kurdishFlag from "../styles/kurdish_flag.jpg";
@@ -805,6 +806,7 @@ const FirstVisitCityDialog = () => {
                   buttonSx={outlinedButtonSx}
                   showEnvWarning={false}
                 />
+                <AppleSignInButton />
                 <Box
                   sx={{
                     display: "flex",

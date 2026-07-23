@@ -156,6 +156,41 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  /**
+   * Apple Sign In — same JWT/session path as Google.
+   * Expects backend POST /api/auth/apple to return { success, data: { user, token } }.
+   */
+  const loginWithApple = async (credential) => {
+    try {
+      const response = await authAPI.appleLogin({
+        identityToken: credential?.identityToken,
+        authorizationCode: credential?.authorizationCode,
+        email: credential?.email,
+        givenName: credential?.givenName,
+        familyName: credential?.familyName,
+        userIdentifier: credential?.userIdentifier,
+      });
+      if (response.data.success) {
+        const { user, token } = response.data.data;
+        setUser(user);
+        setToken(token);
+        localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify(user));
+        showWelcome(user);
+        LOG("Apple loginWithApple success → state + localStorage updated");
+        return { success: true };
+      }
+      return { success: false, message: response.data.message };
+    } catch (error) {
+      console.error("Apple login error:", error);
+      return {
+        success: false,
+        message:
+          error.response?.data?.message || "Apple sign-in failed",
+      };
+    }
+  };
+
   /** After Google OAuth redirect or native Flutter JWT injection. */
   const completeSessionWithToken = useCallback(
     async (appJwt) => {
@@ -357,6 +392,7 @@ export const AuthProvider = ({ children }) => {
         loading,
         login,
         loginWithGoogle,
+        loginWithApple,
         completeSessionWithToken,
         acceptNativeAuthSession,
         logout,

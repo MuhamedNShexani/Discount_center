@@ -78,6 +78,7 @@ import {
   CorporateFare as CorporateFareNavIcon,
   WorkOutline as WorkOutlineNavIcon,
   BarChart as BarChartIcon,
+  SystemUpdateAlt as SystemUpdateAltIcon,
   HourglassTop as HourglassTopIcon,
   Feedback as FeedbackIcon,
   GridView as GridViewIcon,
@@ -98,6 +99,8 @@ import {
   normalizeWhatsAppUrl,
   openWhatsAppLink,
 } from "../utils/openWhatsAppLink";
+import { openExternal } from "../utils/externalLink";
+import { isAndroidDevice } from "../utils/androidPerformance";
 import {
   useDataLanguage,
   DATA_LANG_AR,
@@ -233,6 +236,28 @@ const profileSettingsRowSx = {
   width: "100%",
   gap: 1,
 };
+
+const ANDROID_APP_STORE_URL =
+  "https://play.google.com/store/apps/details?id=com.dashkan.webnet&hl=en";
+const IOS_APP_STORE_URL = "https://apps.apple.com/us/app/idashkan/id6759827343";
+
+function isIosDevice() {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent || "";
+  if (/iPad|iPhone|iPod/i.test(ua)) return true;
+  return (
+    navigator.platform === "MacIntel" && (navigator.maxTouchPoints || 0) > 1
+  );
+}
+
+function openStoreForAppUpdate() {
+  const url = isIosDevice()
+    ? IOS_APP_STORE_URL
+    : isAndroidDevice()
+      ? ANDROID_APP_STORE_URL
+      : ANDROID_APP_STORE_URL;
+  openExternal(url);
+}
 
 const ProfilePage = ({ onClose, onLogin, onFavourites, onFollowing }) => {
   const theme = useTheme();
@@ -1471,6 +1496,27 @@ const ProfilePage = ({ onClose, onLogin, onFavourites, onFollowing }) => {
                   <ListItemText primary={t("Login")} />
                 </ListItemButton>
               )}
+              <Divider sx={{ mx: 2, opacity: 0.4 }} />
+              <ListItemButton
+                onClick={() => openStoreForAppUpdate()}
+                sx={{
+                  "&:hover": {
+                    bgcolor: alpha(theme.palette.primary.main, 0.07),
+                  },
+                }}
+              >
+                <ListItemIcon>
+                  <SystemUpdateAltIcon
+                    sx={{ color: "text.secondary" }}
+                    fontSize="small"
+                  />
+                </ListItemIcon>
+                <ListItemText
+                  primary={t("Check Update", {
+                    defaultValue: "Check Update",
+                  })}
+                />
+              </ListItemButton>
             </Box>
           </Box>
         </Box>
