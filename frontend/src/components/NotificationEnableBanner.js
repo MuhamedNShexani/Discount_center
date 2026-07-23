@@ -9,23 +9,24 @@ export default function NotificationEnableBanner() {
   const { t } = useTranslation();
   const {
     pushSupported,
-    pushPermission,
     pushSubscribing,
     requestPushPermission,
     pushEnabled,
+    showEnableNotifications,
   } = useNotifications();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
     if (!pushSupported) return;
     if (!pushEnabled) return;
-    if (pushPermission === "denied") return;
     if (sessionStorage.getItem(DISMISS_KEY)) return;
 
-    if (pushPermission === "default") {
+    if (showEnableNotifications) {
       setOpen(true);
+    } else {
+      setOpen(false);
     }
-  }, [pushSupported, pushPermission, pushEnabled]);
+  }, [pushSupported, pushEnabled, showEnableNotifications]);
 
   const handleEnable = async () => {
     const ok = await requestPushPermission();

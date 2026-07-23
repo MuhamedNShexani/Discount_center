@@ -15,6 +15,13 @@ import {
   isPushSupported,
   getPermissionState,
 } from "../utils/pushNotifications";
+import {
+  isFlutterApp,
+  isNotificationsEnabled,
+  requestNotifications,
+  shouldShowEnableNotificationsButton,
+  subscribeFlutterNotificationStatus,
+} from "../utils/notificationPermission";
 
 const PUSH_ENABLED_KEY = "push-enabled";
 const LEGACY_KEY = "notifications-enabled";
@@ -49,6 +56,17 @@ export const NotificationProvider = ({ children }) => {
   const [pushPermission, setPushPermission] = useState("default");
   const [pushSubscribing, setPushSubscribing] = useState(false);
   const [pushEnableError, setPushEnableError] = useState(null);
+  const [showEnableNotifications, setShowEnableNotifications] = useState(false);
+
+  const refreshPermissionState = useCallback(() => {
+    const perm = getPermissionState();
+    setPushPermission(perm);
+    setPushSupported(isPushSupported());
+    setShowEnableNotifications(
+      isPushSupported() && shouldShowEnableNotificationsButton(),
+    );
+    return perm;
+  }, []);
 
   const fetchNotifications = useCallback(async () => {
     if (authRequired && !isAuthenticated) {
@@ -85,7 +103,10 @@ export const NotificationProvider = ({ children }) => {
   }, [fetchNotifications]);
 
   const ensurePushSubscription = useCallback(async () => {
-    if (!pushEnabled || !isPushSupported() || getPermissionState() !== "granted") return;
+    /** Native Flutter FCM handles delivery; skip web PushManager in the shell. */
+    if (isFlutterApp()) return;
+    if (!pushEnabled || !isPushSupported() || getPermissionState() !== "granted")
+      return;
     try {
       const res = await notificationAPI.getVapidPublic();
       if (!res.data?.success || !res.data?.vapidPublicKey) return;
@@ -102,8 +123,8 @@ export const NotificationProvider = ({ children }) => {
 
   useEffect(() => {
     try {
-      setPushSupported(isPushSupported());
-      setPushPermission(getPermissionState());
+      refreshPermissionState();
+      if (isFlutterApp()) return undefined;
       registerServiceWorker()
         .then(async (reg) => {
           if (!reg) return;
@@ -118,10 +139,30 @@ export const NotificationProvider = ({ children }) => {
     } catch (e) {
       setPushSupported(false);
       setPushPermission("denied");
+      setShowEnableNotifications(false);
     }
-  }, [ensurePushSubscription, pushEnabled]);
+  }, [ensurePushSubscription, pushEnabled, refreshPermissionState]);
+
+  /** Flutter: refresh UI when returning from native notification settings. */
+  useEffect(() => {
+    const unsubscribe = subscribeFlutterNotificationStatus(() => {
+      const perm = refreshPermissionState();
+      if (perm === "granted" || isNotificationsEnabled()) {
+        setPushEnabledState(true);
+        try {
+          localStorage.setItem(PUSH_ENABLED_KEY, "true");
+        } catch {}
+        setPushEnableError(null);
+      }
+    });
+    return unsubscribe;
+  }, [refreshPermissionState]);
 
   const subscribeToPush = useCallback(async () => {
+    if (isFlutterApp()) {
+      refreshPermissionState();
+      return isNotificationsEnabled();
+    }
     if (!isPushSupported() || getPermissionState() !== "granted") return false;
     setPushSubscribing(true);
     try {
@@ -134,6 +175,7 @@ export const NotificationProvider = ({ children }) => {
       const deviceId = isAuthenticated ? null : getDeviceId();
       await userAPI.pushSubscribe(subscription, deviceId);
       setPushPermission("granted");
+      setShowEnableNotifications(false);
       return true;
     } catch (err) {
       console.error("Push subscribe error:", err);
@@ -141,10 +183,25 @@ export const NotificationProvider = ({ children }) => {
     } finally {
       setPushSubscribing(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, refreshPermissionState]);
 
   const enablePushNotifications = useCallback(async () => {
     if (!isPushSupported()) return false;
+
+    if (isFlutterApp()) {
+      setPushSubscribing(true);
+      try {
+        await requestNotifications();
+        const perm = refreshPermissionState();
+        return perm === "granted" || isNotificationsEnabled();
+      } catch (e) {
+        console.error("Request Flutter notification settings error:", e);
+        return false;
+      } finally {
+        setPushSubscribing(false);
+      }
+    }
+
     const perm = getPermissionState();
     if (perm === "granted") {
       return await subscribeToPush();
@@ -152,8 +209,11 @@ export const NotificationProvider = ({ children }) => {
     if (perm === "denied") return false;
     setPushSubscribing(true);
     try {
-      const permission = await Notification.requestPermission();
+      const permission = await requestNotifications();
       setPushPermission(permission);
+      setShowEnableNotifications(
+        isPushSupported() && shouldShowEnableNotificationsButton(),
+      );
       if (permission === "granted") {
         return await subscribeToPush();
       }
@@ -168,13 +228,40 @@ export const NotificationProvider = ({ children }) => {
     } finally {
       setPushSubscribing(false);
     }
-  }, [subscribeToPush]);
+  }, [refreshPermissionState, subscribeToPush]);
 
   const requestPushPermission = useCallback(async () => {
-    if (!isPushSupported() || getPermissionState() !== "default") return false;
+    if (!isPushSupported()) return false;
+
+    if (isFlutterApp()) {
+      setPushSubscribing(true);
+      try {
+        await requestNotifications();
+        const perm = refreshPermissionState();
+        if (perm === "granted" || isNotificationsEnabled()) {
+          setPushEnabledState(true);
+          try {
+            localStorage.setItem(PUSH_ENABLED_KEY, "true");
+          } catch {}
+          setPushEnableError(null);
+          return true;
+        }
+        return false;
+      } catch (e) {
+        console.error("Flutter notification settings error:", e);
+        return false;
+      } finally {
+        setPushSubscribing(false);
+      }
+    }
+
+    if (getPermissionState() !== "default") return false;
     try {
-      const permission = await Notification.requestPermission();
+      const permission = await requestNotifications();
       setPushPermission(permission);
+      setShowEnableNotifications(
+        isPushSupported() && shouldShowEnableNotificationsButton(),
+      );
       if (permission === "granted") {
         const ok = await enablePushNotifications();
         if (ok) {
@@ -189,36 +276,48 @@ export const NotificationProvider = ({ children }) => {
       setPushPermission("denied");
     }
     return false;
-  }, [enablePushNotifications]);
+  }, [enablePushNotifications, refreshPermissionState]);
 
-  const setPushEnabled = useCallback(async (enabled) => {
-    setPushEnableError(null);
-    if (enabled) {
-      if (getPermissionState() === "denied") {
-        setPushEnableError("denied");
-        return;
-      }
-      setPushEnabledState(true);
-      const ok = await enablePushNotifications();
-      if (!ok) {
+  const setPushEnabled = useCallback(
+    async (enabled) => {
+      setPushEnableError(null);
+      if (enabled) {
+        if (getPermissionState() === "denied" && !isFlutterApp()) {
+          setPushEnableError("denied");
+          return;
+        }
+        setPushEnabledState(true);
+        const ok = await enablePushNotifications();
+        if (!ok) {
+          /** Flutter opens Settings asynchronously — keep optimistic enabled until status event. */
+          if (isFlutterApp()) {
+            try {
+              localStorage.setItem(PUSH_ENABLED_KEY, "true");
+            } catch {}
+            return;
+          }
+          setPushEnabledState(false);
+          try {
+            localStorage.setItem(PUSH_ENABLED_KEY, "false");
+          } catch {}
+          setPushEnableError("failed");
+        } else {
+          try {
+            localStorage.setItem(PUSH_ENABLED_KEY, "true");
+          } catch {}
+        }
+      } else {
+        if (!isFlutterApp()) {
+          await unsubscribePush();
+        }
         setPushEnabledState(false);
         try {
           localStorage.setItem(PUSH_ENABLED_KEY, "false");
         } catch {}
-        setPushEnableError("failed");
-      } else {
-        try {
-          localStorage.setItem(PUSH_ENABLED_KEY, "true");
-        } catch {}
       }
-    } else {
-      await unsubscribePush();
-      setPushEnabledState(false);
-      try {
-        localStorage.setItem(PUSH_ENABLED_KEY, "false");
-      } catch {}
-    }
-  }, [enablePushNotifications]);
+    },
+    [enablePushNotifications],
+  );
 
   const markAsRead = useCallback(
     async (id) => {
@@ -277,6 +376,8 @@ export const NotificationProvider = ({ children }) => {
         setPushEnabled,
         pushEnableError,
         setPushEnableError,
+        showEnableNotifications,
+        refreshPermissionState,
       }}
     >
       {children}

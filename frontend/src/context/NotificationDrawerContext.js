@@ -47,9 +47,9 @@ export function NotificationDrawerProvider({ children }) {
     markAllAsRead,
     clearAll,
     pushSupported,
-    pushPermission,
     pushSubscribing,
     requestPushPermission,
+    showEnableNotifications,
   } = useNotifications();
 
   const openNotifications = useCallback(() => {
@@ -201,7 +201,7 @@ export function NotificationDrawerProvider({ children }) {
               </Box>
             )}
 
-            {pushSupported && pushPermission === "default" && (
+            {pushSupported && showEnableNotifications && (
               <Button
                 fullWidth
                 variant="outlined"

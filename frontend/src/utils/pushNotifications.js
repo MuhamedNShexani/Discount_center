@@ -1,4 +1,8 @@
 import { registerAppServiceWorker } from "../serviceWorkerRegistration";
+import {
+  isFlutterApp,
+  toBrowserPermission,
+} from "./notificationPermission";
 
 /**
  * Register the service worker for push notifications
@@ -57,8 +61,10 @@ function urlBase64ToUint8Array(base64String) {
 
 export const isPushSupported = () => {
   try {
+    if (typeof window === "undefined") return false;
+    /** Flutter WebView uses native notification permissions (FCM), not web PushManager. */
+    if (isFlutterApp()) return true;
     return (
-      typeof window !== "undefined" &&
       "Notification" in window &&
       "serviceWorker" in navigator &&
       "PushManager" in window
@@ -68,12 +74,10 @@ export const isPushSupported = () => {
   }
 };
 
+/** Browser-compatible: "granted" | "denied" | "default" (maps Flutter statuses). */
 export const getPermissionState = () => {
   try {
-    if (typeof window === "undefined" || !("Notification" in window)) {
-      return "denied";
-    }
-    return Notification.permission;
+    return toBrowserPermission();
   } catch (e) {
     return "denied";
   }
