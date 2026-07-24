@@ -445,6 +445,24 @@ function openTikTokOutOfWebView(httpsUrl) {
 }
 
 /**
+ * Main-frame navigation only (no window.open / _blank).
+ * Required for Flutter InAppWebView: popups are blocked but location.assign is intercepted.
+ */
+export function openExternalMainFrame(url) {
+  const u = String(url || "").trim();
+  if (!u || u.toLowerCase().startsWith("javascript:")) return;
+  try {
+    window.location.assign(u);
+  } catch {
+    try {
+      window.location.href = u;
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
+/**
  * Never assign `intent://...` from JS inside embedded Android WebViews — they show ERR_UNKNOWN_URL_SCHEME.
  * Native shells must intercept intents in WebViewClient; until then use plain https opens only.
  */
@@ -457,15 +475,7 @@ function tryOpenExternalHttps(url) {
   } catch {
     /* ignore */
   }
-  try {
-    window.location.assign(u);
-  } catch {
-    try {
-      window.location.href = u;
-    } catch {
-      /* ignore */
-    }
-  }
+  openExternalMainFrame(u);
 }
 
 function openAndroidMapsHandoff(originalUrl) {

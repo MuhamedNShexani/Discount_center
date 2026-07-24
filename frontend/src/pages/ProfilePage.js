@@ -99,7 +99,7 @@ import {
   normalizeWhatsAppUrl,
   openWhatsAppLink,
 } from "../utils/openWhatsAppLink";
-import { openExternal } from "../utils/externalLink";
+import { openExternalMainFrame } from "../utils/externalLink";
 import { isAndroidDevice } from "../utils/androidPerformance";
 import {
   useDataLanguage,
@@ -256,7 +256,8 @@ function openStoreForAppUpdate() {
     : isAndroidDevice()
       ? ANDROID_APP_STORE_URL
       : ANDROID_APP_STORE_URL;
-  openExternal(url);
+  /** Main-frame only — Flutter WebView blocks window.open popups even when a Window is returned. */
+  openExternalMainFrame(url);
 }
 
 const ProfilePage = ({ onClose, onLogin, onFavourites, onFollowing }) => {
