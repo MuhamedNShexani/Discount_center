@@ -149,6 +149,14 @@ function normalizeDataPayload({ type = "general", link = "" } = {}) {
   };
 }
 
+/** Mask FCM token for logs (keep prefix/suffix only). */
+function maskToken(token) {
+  const t = String(token || "").trim();
+  if (!t) return "(empty)";
+  if (t.length <= 12) return `${t.slice(0, 4)}…`;
+  return `${t.slice(0, 8)}…${t.slice(-4)}`;
+}
+
 /**
  * Send FCM to a single device token.
  * @returns {{ success: boolean, invalidToken?: boolean, error?: string }}
@@ -208,9 +216,10 @@ async function removeInvalidTokens(tokens, responses) {
 
 /**
  * Send the same notification to many tokens (deduped). Batches in groups of 500.
+ * @param {Map<string, string>|Record<string, string>|undefined} tokenMeta token → platform
  * @returns {{ sent: number, failed: number, removed: number }}
  */
-async function sendToTokens(tokens, { title, body, type, link } = {}) {
+async function sendToTokens(tokens, { title, body, type, link, tokenMeta } = {}) {
   const messaging = getFirebaseMessaging();
   if (!messaging) {
     return { sent: 0, failed: 0, removed: 0, skipped: true };
@@ -220,6 +229,14 @@ async function sendToTokens(tokens, { title, body, type, link } = {}) {
   if (uniqueTokens.length === 0) {
     return { sent: 0, failed: 0, removed: 0 };
   }
+
+  const platformOf = (token) => {
+    if (!tokenMeta) return "(unknown)";
+    if (typeof tokenMeta.get === "function") {
+      return tokenMeta.get(token) || "(unknown)";
+    }
+    return tokenMeta[token] || "(unknown)";
+  };
 
   let sent = 0;
   let failed = 0;
@@ -240,10 +257,35 @@ async function sendToTokens(tokens, { title, body, type, link } = {}) {
         data,
       });
 
-      sent += response.successCount || 0;
-      failed += response.failureCount || 0;
+      const successCount = response.successCount || 0;
+      const failureCount = response.failureCount || 0;
+      sent += successCount;
+      failed += failureCount;
+
+      console.log(
+        `[Firebase] FCM batch summary: successCount=${successCount} failureCount=${failureCount}`,
+      );
 
       if (response.responses?.length) {
+        for (let i = 0; i < response.responses.length; i++) {
+          const resp = response.responses[i];
+          if (resp.success) continue;
+
+          const token = batch[i] || "";
+          const code =
+            resp.error?.code ||
+            resp.error?.errorInfo?.code ||
+            "(no-code)";
+          const message =
+            resp.error?.message ||
+            resp.error?.errorInfo?.message ||
+            String(resp.error || "(no-message)");
+
+          console.error(
+            `[Firebase] FCM FAIL\nplatform=${platformOf(token)}\ntoken=${maskToken(token)}\ncode=${code}\nmessage=${message}`,
+          );
+        }
+
         removed += await removeInvalidTokens(batch, response.responses);
       }
     } catch (err) {
@@ -264,10 +306,16 @@ async function sendFcmToAll(title, body = "", { type = "general", link = "" } = 
     return { sent: 0, failed: 0, removed: 0, skipped: true };
   }
 
-  const docs = await FcmToken.find({}).select("token").lean();
-  const tokens = docs.map((d) => d.token).filter(Boolean);
+  const docs = await FcmToken.find({}).select("token platform").lean();
+  const tokenMeta = new Map();
+  for (const d of docs) {
+    const t = d?.token ? String(d.token).trim() : "";
+    if (!t) continue;
+    tokenMeta.set(t, d.platform ? String(d.platform) : "(unknown)");
+  }
+  const tokens = [...tokenMeta.keys()];
   console.log(`[Firebase] sendFcmToAll: ${tokens.length} token(s) in fcmtokens`);
-  return sendToTokens(tokens, { title, body, type, link });
+  return sendToTokens(tokens, { title, body, type, link, tokenMeta });
 }
 
 module.exports = {
