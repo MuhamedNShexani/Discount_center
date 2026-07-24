@@ -38,6 +38,26 @@ const generateToken = (userId) => {
   });
 };
 
+/**
+ * Google ID tokens are issued for a specific OAuth client (`aud`).
+ * Web GIS uses the Web client ID; Flutter native Sign-In usually uses
+ * the Android or iOS client ID. Accept all configured clients in the
+ * same Google Cloud project.
+ */
+function getGoogleAuthAudiences() {
+  const ids = [
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_ANDROID_CLIENT_ID,
+    process.env.GOOGLE_IOS_CLIENT_ID,
+    ...(String(process.env.GOOGLE_CLIENT_IDS || "")
+      .split(",")
+      .map((s) => s.trim())),
+  ]
+    .map((s) => (typeof s === "string" ? s.trim() : ""))
+    .filter(Boolean);
+  return [...new Set(ids)];
+}
+
 /** Username from email local part; ensure min length + uniqueness. */
 async function uniqueUsernameFromEmail(email) {
   const raw = (email.split("@")[0] || "user").replace(/[^a-zA-Z0-9_]/g, "");
@@ -623,8 +643,8 @@ const deactivate = async (req, res) => {
 // @access  Public
 const googleLogin = async (req, res) => {
   try {
-    const clientId = (process.env.GOOGLE_CLIENT_ID || "").trim();
-    if (!clientId) {
+    const audiences = getGoogleAuthAudiences();
+    if (!audiences.length) {
       return res.status(503).json({
         success: false,
         message: "Google sign-in is not configured on the server",
@@ -639,10 +659,10 @@ const googleLogin = async (req, res) => {
       });
     }
 
-    const client = new OAuth2Client(clientId);
+    const client = new OAuth2Client(audiences[0]);
     const ticket = await client.verifyIdToken({
       idToken,
-      audience: clientId,
+      audience: audiences.length === 1 ? audiences[0] : audiences,
     });
     const payload = ticket.getPayload();
 
@@ -661,6 +681,19 @@ const googleLogin = async (req, res) => {
     });
   } catch (error) {
     console.error("Google login error:", error);
+    const msg = String(error?.message || "");
+    if (
+      msg.includes("Wrong recipient") ||
+      msg.includes("audience") ||
+      msg.includes("Token used too late") ||
+      msg.includes("Invalid token")
+    ) {
+      return res.status(401).json({
+        success: false,
+        message:
+          "Invalid Google credential (client ID / audience mismatch). Ensure Railway GOOGLE_CLIENT_ID matches the Web client, and set GOOGLE_ANDROID_CLIENT_ID / GOOGLE_IOS_CLIENT_ID for Flutter native Sign-In.",
+      });
+    }
     res.status(500).json({
       success: false,
       message: "Server error during Google sign-in",
