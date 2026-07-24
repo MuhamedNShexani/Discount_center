@@ -16,47 +16,10 @@ console.log("Environment variables:");
 console.log("MONGO_URI:", process.env.MONGO_URI || "Using default");
 console.log("PORT:", process.env.PORT);
 
-// Connect Database
 if (!process.env.MONGO_URI) {
   console.log("MONGO_URI not found in environment, using default connection");
   process.env.MONGO_URI = "mongodb://localhost:27017/storeplace";
 }
-
-connectDB();
-
-mongoose.connection.once("open", async () => {
-  try {
-    const { seedCitiesIfEmpty } = require("./controllers/cityController");
-    await seedCitiesIfEmpty();
-  } catch (e) {
-    console.error("[migration] cities:", e.message);
-  }
-  try {
-    const result = await User.updateMany(
-      {
-        $or: [
-          { role: { $exists: false } },
-          { role: null },
-          { role: "" },
-        ],
-      },
-      { $set: { role: "user" } },
-    );
-    if (result.modifiedCount > 0) {
-      console.log(
-        `[migration] Default role=user applied to ${result.modifiedCount} user document(s)`,
-      );
-    }
-  } catch (e) {
-    console.error("[migration] user role:", e.message);
-  }
-  try {
-    const { seedDefaultFaqsIfMissing } = require("./controllers/faqController");
-    await seedDefaultFaqsIfMissing();
-  } catch (e) {
-    console.error("[migration] default FAQs:", e.message);
-  }
-});
 
 // Middleware - CORS: allow known frontends + localhost; mobile needs explicit origins
 const allowedOrigins = [
@@ -75,7 +38,7 @@ app.use(
       return cb(null, true);
     },
     credentials: true,
-  })
+  }),
 );
 app.use(express.json());
 app.use(runWithAuditContext);
@@ -87,8 +50,10 @@ app.use("/uploads", express.static("uploads"));
 
 // Health check (used for keep-alive / monitoring)
 app.get("/health", (req, res) => {
-  res.status(200).json({
-    ok: true,
+  const dbReady = mongoose.connection.readyState === 1;
+  res.status(dbReady ? 200 : 503).json({
+    ok: dbReady,
+    db: dbReady ? "connected" : "disconnected",
     ts: new Date().toISOString(),
   });
 });
@@ -125,15 +90,97 @@ app.use("/api/feedback", require("./routes/feedback"));
 app.use("/api/faqs", require("./routes/faq"));
 
 const PORT = process.env.PORT || 5000;
-const { initializeFirebase } = require("./services/firebaseService");
-// app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server started on http://0.0.0.0:${PORT}`);
-  initializeFirebase();
-  // Run job to delete deactivated users past grace period (every 24h)
-  const deleteDeactivatedUsers = require("./jobs/deleteDeactivatedUsers");
-  setInterval(() => deleteDeactivatedUsers.run().catch((e) => console.error("[deleteDeactivatedUsers]", e.message)), 24 * 60 * 60 * 1000);
-  deleteDeactivatedUsers.run().catch((e) => console.error("[deleteDeactivatedUsers]", e.message));
+
+async function runStartupMigrations() {
+  try {
+    const { seedCitiesIfEmpty } = require("./controllers/cityController");
+    await seedCitiesIfEmpty();
+  } catch (e) {
+    console.error("[migration] cities:", e.message);
+  }
+  try {
+    const result = await User.updateMany(
+      {
+        $or: [
+          { role: { $exists: false } },
+          { role: null },
+          { role: "" },
+        ],
+      },
+      { $set: { role: "user" } },
+    );
+    if (result.modifiedCount > 0) {
+      console.log(
+        `[migration] Default role=user applied to ${result.modifiedCount} user document(s)`,
+      );
+    }
+  } catch (e) {
+    console.error("[migration] user role:", e.message);
+  }
+  try {
+    const { seedDefaultFaqsIfMissing } = require("./controllers/faqController");
+    await seedDefaultFaqsIfMissing();
+  } catch (e) {
+    console.error("[migration] default FAQs:", e.message);
+  }
+}
+
+function setupGracefulShutdown(server) {
+  const shutdown = async (signal) => {
+    console.log(`Received ${signal}, shutting down gracefully...`);
+    server.close(async () => {
+      try {
+        await mongoose.connection.close();
+        console.log("MongoDB connection closed");
+      } catch (err) {
+        console.error("Error closing MongoDB connection:", err.message);
+      }
+      process.exit(0);
+    });
+
+    // Force exit if connections hang
+    setTimeout(() => {
+      console.error("Forced shutdown after timeout");
+      process.exit(1);
+    }, 10000).unref();
+  };
+
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT"));
+}
+
+async function start() {
+  // 1) MongoDB must connect before accepting traffic
+  await connectDB();
+
+  // 2) One-time seeds / migrations only after a live connection
+  await runStartupMigrations();
+
+  // 3) Listen only when DB is ready
+  const { initializeFirebase } = require("./services/firebaseService");
+  const server = app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server started on http://0.0.0.0:${PORT}`);
+    initializeFirebase();
+    // Run job to delete deactivated users past grace period (every 24h)
+    const deleteDeactivatedUsers = require("./jobs/deleteDeactivatedUsers");
+    setInterval(
+      () =>
+        deleteDeactivatedUsers
+          .run()
+          .catch((e) => console.error("[deleteDeactivatedUsers]", e.message)),
+      24 * 60 * 60 * 1000,
+    );
+    deleteDeactivatedUsers
+      .run()
+      .catch((e) => console.error("[deleteDeactivatedUsers]", e.message));
+  });
+
+  setupGracefulShutdown(server);
+}
+
+start().catch((err) => {
+  console.error("Fatal startup error:", err && err.message ? err.message : err);
+  process.exit(1);
 });
 
 // Local frontend is a separate process: cd frontend && npm start → http://localhost:5173
